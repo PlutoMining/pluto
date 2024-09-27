@@ -44,10 +44,10 @@ interface PatchPayload {
 }
 
 const deviceDashboardTemplatePath = path.resolve(
-  "./grafana_dashboard_templates/bitaxe_dashboard_template.json"
+  "./grafana_templates/bitaxe_dashboard_template.json"
 ); // Path al template JSON
 const overviewDashboardTemplatePath = path.resolve(
-  "./grafana_dashboard_templates/bitaxe_overview_dashboard_template.json"
+  "./grafana_templates/bitaxe_overview_dashboard_template.json"
 ); // Path al template JSON
 const dashboardsDir = path.resolve("./grafana/dashboards"); // Directory per salvare le dashboard generate
 

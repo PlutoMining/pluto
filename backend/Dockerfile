@@ -16,6 +16,9 @@ RUN npm ci
 # Copia il resto dei file e costruisce l'applicazione
 COPY ./backend .
 
+# Copia i templates delle dashboard di grafana
+COPY ./grafana/templates .
+
 # Compila il modulo TypeScript `common/utils`
 RUN npm run build --prefix /common/utils
 # Compila il modulo TypeScript `common/db`

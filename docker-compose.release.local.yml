@@ -10,9 +10,9 @@ services:
   #   restart: unless-stopped
 
   mock:
-    build:
-      context: .
-      dockerfile: mock/Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: mock/Dockerfile
     image: whirmill/pluto-mock:0.4.0 # Docker image with specific version
     ports:
       - "7770:7770" # Map port 7770 on the host to port 7770 on the container
@@ -42,9 +42,9 @@ services:
     #   - ./mock:/app/
 
   discovery:
-    build:
-      context: .
-      dockerfile: discovery/Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: discovery/Dockerfile
     image: whirmill/pluto-discovery:0.4.0 # Docker image with specific version
     network_mode: "host"
     # ports:
@@ -71,9 +71,9 @@ services:
         condition: service_completed_successfully
 
   backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: backend/Dockerfile
     image: whirmill/pluto-backend:0.4.1 # Docker image with specific version
     ports:
       - "7776:7776" # Map port 7776 on the host to port 7776 on the container
@@ -95,6 +95,7 @@ services:
       # - ./common/db:/common/db:ro # Monta il modulo in read-only
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       # - ./backend:/app/
+      # - ./grafana/templates:/app/grafana_templates/
       - ./data/leveldb:/app/data
       - ./data/grafana:/app/grafana
     depends_on:
@@ -106,9 +107,9 @@ services:
         condition: service_healthy
 
   frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: frontend/Dockerfile
     image: whirmill/pluto-frontend:0.4.3 # Docker image with specific version
     ports:
       - "7777:7777" # Map port 7777 on the host to port 7777 on the container
@@ -132,9 +133,9 @@ services:
     #   - ./frontend:/app/
 
   prometheus:
-    build:
-      context: prometheus
-      dockerfile: Dockerfile
+    # build:
+    #   context: prometheus
+    #   dockerfile: Dockerfile
     image: whirmill/pluto-prometheus:0.1.1
     volumes:
       - ./data/prometheus:/prometheus
@@ -154,9 +155,9 @@ services:
         condition: service_completed_successfully
 
   grafana:
-    build:
-      context: grafana
-      dockerfile: Dockerfile
+    # build:
+    #   context: grafana
+    #   dockerfile: Dockerfile
     image: whirmill/pluto-grafana:0.1.1
     # ports:
     #   - "7778:3000"
@@ -184,9 +185,9 @@ services:
         condition: service_healthy # Attende che prometheus sia in stato "healthy"
 
   prometheus-init: # sidecar container for volume permissions
-    build:
-      context: init
-      dockerfile: Dockerfile
+    # build:
+    #   context: init
+    #   dockerfile: Dockerfile
     image: whirmill/pluto-init:0.1.1
     volumes:
       # - ./init/init-prometheus.sh:/init-scripts/init-prometheus.sh
@@ -194,9 +195,9 @@ services:
     command: /init-scripts/init-prometheus.sh
 
   grafana-init: # sidecar container for volume permissions
-    build:
-      context: init
-      dockerfile: Dockerfile
+    # build:
+    #   context: init
+    #   dockerfile: Dockerfile
     image: whirmill/pluto-init:0.1.1
     volumes:
       # - ./init/init-grafana.sh:/init-scripts/init-grafana.sh
@@ -204,9 +205,9 @@ services:
     command: /init-scripts/init-grafana.sh
 
   leveldb-init: # sidecar container for volume permissions
-    build:
-      context: init
-      dockerfile: Dockerfile
+    # build:
+    #   context: init
+    #   dockerfile: Dockerfile
     image: whirmill/pluto-init:0.1.1
     volumes:
       # - ./init/init-leveldb.sh:/init-scripts/init-leveldb.sh

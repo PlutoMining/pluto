@@ -98,6 +98,7 @@ services:
       - ./common/db:/common/db:ro # Monta il modulo in read-only
       - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       - ./backend:/app/
+      - ./grafana/templates:/app/grafana_templates/
       - ./data/leveldb:/app/data
       - ./data/grafana:/app/grafana
     depends_on:
