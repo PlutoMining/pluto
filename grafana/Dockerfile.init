@@ -1,3 +1,0 @@
-FROM busybox
-
-COPY init.sh /init-scripts/init.sh
