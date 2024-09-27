@@ -1,0 +1,38 @@
+{
+  "name": "@pluto/backend",
+  "version": "0.4.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
+    "dev:debug": "nodemon --watch 'src/**/*.ts' --exec 'node --inspect=0.0.0.0:9229 -r ts-node/register' src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@pluto/utils": "file:../common/utils",
+    "@pluto/db": "file:../common/db",
+    "@pluto/interfaces": "file:../common/interfaces",
+    "@pluto/logger": "file:../common/logger",
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "prom-client": "^15.1.3",
+    "radash": "^12.1.0",
+    "socket.io": "^4.7.5",
+    "uuid": "^10.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.5.2",
+    "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.5.12",
+    "nodemon": "^3.1.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  }
+}

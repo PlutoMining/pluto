@@ -1,0 +1,9 @@
+# Fase 1: Costruzione
+FROM node:20-alpine AS builder
+
+RUN apk add arp-scan
+
+WORKDIR /app
+
+# Avvia l'applicazione
+CMD ["npm", "run", "dev"]

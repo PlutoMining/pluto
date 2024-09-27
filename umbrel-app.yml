@@ -1,0 +1,32 @@
+manifestVersion: 1
+id: bemind-pluto
+name: Pluto
+category: Mining
+version: "0.4.14"
+tagline: Pluto
+icon: https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/pluto_logo.png
+description: >
+  Pluto is an advanced platform designed for open source miners. It provides a comprehensive and improved mining experience with enhanced features and functionalities.
+developer: Bemind
+website: https://gitlab.com/bemindinteractive/pluto
+dependencies: []
+repo: https://gitlab.com/bemindinteractive/pluto
+support: https://gitlab.com/bemindinteractive/pluto/issues
+port: 7777
+gallery:
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/Screenshot%202024-09-26%20alle%2017.50.22.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/Screenshot+2024-09-26+alle+17.53.15.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/Screenshot%202024-09-26%20alle%2017.52.06.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/Screenshot%202024-09-26%20alle%2017.52.22.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/Screenshot%202024-09-26%20alle%2017.52.37.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/Screenshot%202024-09-26%20alle%2017.52.49.png
+path: ""
+defaultPassword: ""
+releaseNotes: >
+  Version 0.4.14
+  - MVP Release
+
+submitter: Bemind
+submission:
+defaultUsername: admin
+deterministicPassword: true

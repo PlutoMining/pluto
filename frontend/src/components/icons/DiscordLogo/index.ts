@@ -1,0 +1,1 @@
+export { DiscordLogo } from "./DiscordLogo";

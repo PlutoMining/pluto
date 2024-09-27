@@ -1,0 +1,175 @@
+// Importa config
+import { DeviceInfo } from "@pluto/interfaces";
+import { config } from "../config/environment";
+// Funzione per estrarre la parte numerica dall'hostname
+const extractNumericFromHostname = (hostname: string): number => {
+  const match = hostname.match(/\d+$/); // Trova i numeri alla fine dell'hostname
+  return match ? parseInt(match[0], 10) : 0; // Restituisci il numero o 0 se non c'è una parte numerica
+};
+
+// Mappa delle versioni di firmware con percentuali
+const firmwareVersionsWithPercentages = [
+  { version: "v2.2.2", percentage: 0.05 }, // 5%
+  { version: "v2.2.0", percentage: 0.05 }, // 5%
+  { version: "v2.1.10", percentage: 0.2 }, // 20%
+  { version: "v2.1.9", percentage: 0.02 }, // 2%
+  { version: "v2.1.8", percentage: 0.05 }, // 5%
+  { version: "v2.1.7", percentage: 0.02 }, // 2%
+  { version: "v2.1.6", percentage: 0.02 }, // 2%
+  { version: "v2.0.3", percentage: 0.02 }, // 2%
+  { version: "v1.2.0", percentage: 0.01 }, // 1%
+  { version: "v1.1.0", percentage: 0.01 }, // 1%
+];
+
+// // Funzione per distribuire i firmware in modo proporzionale
+// const distributeFirmwareProportionally = (ports: number[]): { [port: number]: string[] } => {
+//   const totalPorts = ports.length;
+
+//   // Calcola il numero totale di distribuzioni basato sulle percentuali
+//   let totalFirmwareAssigned = 0;
+//   const firmwareDistribution = firmwareVersionsWithPercentages.map((fw) => {
+//     const assignCount = Math.floor(fw.percentage * totalPorts);
+//     totalFirmwareAssigned += assignCount;
+//     return { ...fw, assignCount };
+//   });
+
+//   // Se c'è qualche differenza dovuta all'arrotondamento, aggiusta i conti
+//   let remainder = totalPorts - totalFirmwareAssigned;
+//   firmwareDistribution.forEach((fw, index) => {
+//     if (remainder > 0 && fw.assignCount > 0) {
+//       firmwareDistribution[index].assignCount += 1; // Aggiungi uno ai primi firmware fino a esaurimento remainder
+//       remainder--;
+//     }
+//   });
+
+//   // Mappa finale per la distribuzione dei firmware
+//   const distribution: { [port: number]: string[] } = {};
+//   let portIndex = 0;
+
+//   firmwareDistribution.forEach((fw) => {
+//     for (let i = 0; i < fw.assignCount; i++) {
+//       if (portIndex >= totalPorts) break;
+//       const port = ports[portIndex];
+//       if (!distribution[port]) distribution[port] = [];
+//       distribution[port].push(fw.version);
+//       portIndex++;
+//     }
+//   });
+
+//   return distribution;
+// };
+
+// Funzione per distribuire i firmware in modo proporzionale con una logica probabilistica
+const distributeFirmwareProportionally = (ports: number[]): { [port: number]: string[] } => {
+  const totalPorts = ports.length;
+
+  // Genera una lista di firmware basata sulle percentuali
+  const firmwareList: { version: string; cumulativeProbability: number }[] = [];
+  let cumulativeProbability = 0;
+
+  firmwareVersionsWithPercentages.forEach((fw) => {
+    cumulativeProbability += fw.percentage;
+    firmwareList.push({ version: fw.version, cumulativeProbability });
+  });
+
+  // Funzione per ottenere un firmware in base a una selezione randomica
+  const getRandomFirmware = (): string => {
+    const randomValue = Math.random();
+    return firmwareList.find((fw) => randomValue <= fw.cumulativeProbability)?.version || "v2.1.8";
+  };
+
+  // Mappa finale per la distribuzione dei firmware
+  const distribution: { [port: number]: string[] } = {};
+
+  ports.forEach((port) => {
+    distribution[port] = [getRandomFirmware()];
+  });
+
+  return distribution;
+};
+
+// Chiamata della funzione con config.ports
+const firmwareDistribution = distributeFirmwareProportionally(config.ports);
+
+// Funzione per ottenere la versione firmware in base all'indice
+const getFirmwareVersion = (hostname: string): string => {
+  const numericPart = extractNumericFromHostname(hostname);
+  const portIndex = numericPart - 1;
+  // Trova la porta associata e recupera una delle versioni assegnate
+  const port = config.ports[portIndex % config.ports.length];
+  const assignedFirmwares = firmwareDistribution[port];
+  return assignedFirmwares ? assignedFirmwares[numericPart % assignedFirmwares.length] : "v2.1.8"; // Default version
+};
+
+// Funzione per generare informazioni di sistema
+export const generateSystemInfo = (
+  hostname: string,
+  uptimeSeconds: number,
+  systemInfo: Partial<DeviceInfo> = {}
+) => {
+  const getRandomInt = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
+  const getRandomFloat = (min: number, max: number, decimals: number) => {
+    const str = (Math.random() * (max - min) + min).toFixed(decimals);
+    return parseFloat(str);
+  };
+
+  // Recupera la versione firmware in base all'hostname
+  const firmwareVersion = getFirmwareVersion(hostname);
+
+  const defaultSystemInfo: Partial<DeviceInfo> = {
+    power: getRandomFloat(10, 20, 6),
+    voltage: getRandomInt(5000, 6000),
+    current: getRandomFloat(2000, 3000, 1),
+    fanSpeedRpm: getRandomInt(4000, 6000),
+    temp: getRandomInt(30, 70),
+    hashRate: getRandomFloat(700, 800, 9),
+    bestDiff: `${getRandomFloat(1, 5, 2)}M`,
+    bestSessionDiff: `${getRandomFloat(10, 30, 1)}k`,
+    freeHeap: getRandomInt(100000, 200000),
+    coreVoltage: getRandomInt(1000, 1300),
+    coreVoltageActual: getRandomInt(1000, 1300),
+    frequency: getRandomInt(400, 600),
+    ssid: `WiFi-SSID`,
+    hostname,
+    wifiStatus: "Connected!",
+    sharesAccepted: getRandomInt(0, 10),
+    sharesRejected: getRandomInt(0, 10),
+    uptimeSeconds,
+    ASICModel: "BM1368",
+    stratumURL: "solo.ckpool.org",
+    stratumPort: 3333,
+    stratumUser: `bc1asdasdasdasdasasdasdasdasdasdasd.${hostname}`,
+    version: firmwareVersion, // Usa la versione firmware dinamica
+    boardVersion: "401",
+    runningPartition: "factory",
+    flipscreen: getRandomInt(0, 1),
+    invertscreen: getRandomInt(0, 1),
+    invertfanpolarity: getRandomInt(0, 1),
+    autofanspeed: getRandomInt(0, 1),
+    fanspeed: getRandomInt(0, 100),
+  };
+
+  // Sovrascrive i valori casuali con quelli di systemInfo se presenti
+  return {
+    ...defaultSystemInfo, // Valori casuali di default
+    ...systemInfo, // Sovrascrittura con i dati forniti
+  };
+};
+
+export const generateFakeLog = (): string => {
+  const logs = [
+    "System started",
+    "Temperature reading failed",
+    "Fan speed increased",
+    "Power supply issue detected",
+    "System performance optimal",
+    "Network connection lost",
+    "ASIC failure detected",
+    "Overclocking applied successfully",
+    "Temperature is stable",
+    "Fan is operating within limits",
+  ];
+  const randomIndex = Math.floor(Math.random() * logs.length);
+  return logs[randomIndex];
+};

@@ -1,0 +1,1 @@
+export { PauseIcon } from "./PauseIcon";

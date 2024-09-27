@@ -1,0 +1,1 @@
+export { SignalIcon } from "./SignalIcon";
