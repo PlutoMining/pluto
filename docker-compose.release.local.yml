@@ -74,7 +74,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: whirmill/pluto-backend:0.4.3 # Docker image with specific version
+    image: whirmill/pluto-backend:0.4.4 # Docker image with specific version
     ports:
       - "7776:7776" # Map port 7776 on the host to port 7776 on the container
     pid: host
