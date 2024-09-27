@@ -191,7 +191,7 @@ services:
     image: whirmill/pluto-init:0.1.1
     volumes:
       # - ./init/init-prometheus.sh:/init-scripts/init-prometheus.sh
-      - ./data/prometheus:/prometheus
+      - /home/umbrel/umbrel/app-data/bemind-pluto/data/prometheus:/prometheus
     command: /init-scripts/init-prometheus.sh
 
   grafana-init: # sidecar container for volume permissions
@@ -201,7 +201,7 @@ services:
     image: whirmill/pluto-init:0.1.1
     volumes:
       # - ./init/init-grafana.sh:/init-scripts/init-grafana.sh
-      - ./data/grafana:/grafana
+      - /home/umbrel/umbrel/app-data/bemind-pluto/data/grafana:/grafana
     command: /init-scripts/init-grafana.sh
 
   leveldb-init: # sidecar container for volume permissions
@@ -211,5 +211,5 @@ services:
     image: whirmill/pluto-init:0.1.1
     volumes:
       # - ./init/init-leveldb.sh:/init-scripts/init-leveldb.sh
-      - ./data/leveldb:/leveldb
+      - /home/umbrel/umbrel/app-data/bemind-pluto/data/leveldb:/leveldb
     command: /init-scripts/init-leveldb.sh
