@@ -16,9 +16,6 @@ RUN npm ci
 # Copia il resto dei file e costruisce l'applicazione
 COPY ./backend .
 
-# Copia i templates delle dashboard di grafana
-COPY ./grafana/templates ./grafana_templates
-
 # Compila il modulo TypeScript `common/utils`
 RUN npm run build --prefix /common/utils
 # Compila il modulo TypeScript `common/db`
@@ -45,6 +42,9 @@ COPY --from=builder /app/dist ./dist
 
 # Copia il package.json necessario per eseguire l'applicazione
 COPY --from=builder /app/package*.json ./
+
+# Copia i templates delle dashboard di grafana
+COPY ./grafana/templates ./grafana_templates
 
 # Avvia l'applicazione
 CMD ["npm", "start"]
