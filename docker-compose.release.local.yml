@@ -135,7 +135,7 @@ services:
     build:
       context: prometheus
       dockerfile: Dockerfile
-    image: whirmill/pluto-prometheus:0.0.1
+    image: whirmill/pluto-prometheus:0.1.0
     volumes:
       - ./data/prometheus:/prometheus
       # - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -157,7 +157,7 @@ services:
     build:
       context: grafana
       dockerfile: Dockerfile
-    image: whirmill/pluto-grafana:0.0.1
+    image: whirmill/pluto-grafana:0.1.0
     # ports:
     #   - "7778:3000"
     pid: host
@@ -187,7 +187,7 @@ services:
     build:
       context: init
       dockerfile: Dockerfile
-    image: whirmill/pluto-init:0.0.1
+    image: whirmill/pluto-init:0.1.0
     volumes:
       # - ./init/init-prometheus.sh:/init-scripts/init-prometheus.sh
       - ./data/prometheus:/prometheus
@@ -197,7 +197,7 @@ services:
     build:
       context: init
       dockerfile: Dockerfile
-    image: whirmill/pluto-init:0.0.1
+    image: whirmill/pluto-init:0.1.0
     volumes:
       # - ./init/init-grafana.sh:/init-scripts/init-grafana.sh
       - ./data/grafana:/grafana
@@ -207,7 +207,7 @@ services:
     build:
       context: init
       dockerfile: Dockerfile
-    image: whirmill/pluto-init:0.0.1
+    image: whirmill/pluto-init:0.1.0
     volumes:
       # - ./init/init-leveldb.sh:/init-scripts/init-leveldb.sh
       - ./data/leveldb:/leveldb

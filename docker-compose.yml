@@ -188,7 +188,7 @@ services:
     # build:
     #   context: init
     #   dockerfile: Dockerfile
-    image: whirmill/pluto-init:0.0.1
+    image: whirmill/pluto-init:0.1.0
     volumes:
       # - ./init/init-prometheus.sh:/init-scripts/init-prometheus.sh
       - ./data/prometheus:/prometheus
@@ -198,7 +198,7 @@ services:
     # build:
     #   context: init
     #   dockerfile: Dockerfile
-    image: whirmill/pluto-init:0.0.1
+    image: whirmill/pluto-init:0.1.0
     volumes:
       # - ./init/init-grafana.sh:/init-scripts/init-grafana.sh
       - ./data/grafana:/grafana
@@ -208,7 +208,7 @@ services:
     # build:
     #   context: init
     #   dockerfile: Dockerfile
-    image: whirmill/pluto-init:0.0.1
+    image: whirmill/pluto-init:0.1.0
     volumes:
       # - ./init/init-leveldb.sh:/init-scripts/init-leveldb.sh
       - ./data/leveldb:/leveldb
