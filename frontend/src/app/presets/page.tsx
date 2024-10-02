@@ -17,7 +17,7 @@ import {
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
 import axios from "axios";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { MouseEvent, useCallback, useEffect, useState } from "react";
 
 const PresetsListingPage: React.FC = () => {
   const [presets, setPresets] = useState<Preset[] | null>(null);
@@ -136,10 +136,16 @@ const PresetsListingPage: React.FC = () => {
     }
   }, [closeAlert, onDeletePresetModalClose, onOpenAlert, selectedPresetUuid]);
 
-  const handleDuplicatePreset = (presetUuid: string) => {
-    setSelectedPresetUuid(presetUuid);
-    onNewPresetModalOpen();
-  };
+  const handleNewPreset = useCallback(
+    (presetUuid?: string) => (e: MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      if (presetUuid) {
+        setSelectedPresetUuid(presetUuid);
+      }
+      onNewPresetModalOpen();
+    },
+    []
+  );
 
   const onNewPresetModalCloseSuccessfully = async () => {
     onNewPresetModalClose();
@@ -164,7 +170,7 @@ const PresetsListingPage: React.FC = () => {
             <Flex>
               <Button
                 variant="primaryPurple"
-                onClick={onNewPresetModalOpen}
+                onClick={handleNewPreset()}
                 disabled={presets.length >= maxNumberOfPresets}
               >
                 Add a New Preset
@@ -182,9 +188,9 @@ const PresetsListingPage: React.FC = () => {
                     index={index}
                     key={`preset-${preset.uuid}`} // Prefisso specifico per ogni preset
                     preset={preset}
-                    onDuplicate={handleDuplicatePreset}
+                    onDuplicate={handleNewPreset}
                     onDelete={openDeleteConfirmationModal}
-                    isDuplicateDisabled={presets.length >= 7}
+                    isDuplicateDisabled={presets.length >= maxNumberOfPresets}
                   />
                 ))}
               </Accordion>

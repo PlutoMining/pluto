@@ -9,6 +9,7 @@ import presetsRoutes from "./routes/presets.routes";
 import socketRoutes from "./routes/socket.routes";
 import { listenToDevices } from "./services/device.service";
 import { createGrafanaOverviewDashboard } from "./services/grafana.service";
+import { removeSecretsMiddleware } from "./middleware/remove-secrets.middleware";
 
 const { port, autoListen } = config;
 
@@ -16,6 +17,8 @@ const app = express();
 const server = http.createServer(app);
 
 app.use(express.json());
+
+app.use(removeSecretsMiddleware);
 
 // Imposta il server nell'app per poterlo riutilizzare nei controller
 app.set("server", server);

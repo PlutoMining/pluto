@@ -1,15 +1,11 @@
 import {
   Box,
-  Button as ChakraButton,
   Checkbox as ChakraCheckbox,
   Flex,
-  Heading,
-  HStack,
   Modal,
   ModalBody,
   ModalCloseButton,
   ModalContent,
-  ModalFooter,
   ModalHeader,
   ModalOverlay,
   Spinner,
@@ -31,14 +27,13 @@ import {
 } from "@chakra-ui/react";
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { Input } from "../Input/Input";
-
+import { getMinerName } from "@/utils/minerMap";
+import { Device } from "@pluto/interfaces";
+import { isValidIp, isValidMac } from "@pluto/utils";
 import axios from "axios";
 import Button from "../Button/Button";
-import { AddIcon } from "../icons/AddIcon";
-import { Device } from "@pluto/interfaces";
-import { getMinerName } from "@/utils/minerMap";
 import { Checkbox } from "../Checkbox";
-import { isValidIp, isValidMac } from "@pluto/utils";
+import { AddIcon } from "../icons/AddIcon";
 
 interface RegisterDevicesModalProps {
   isOpen: boolean;
@@ -58,23 +53,25 @@ function ModalBodyContent({
   const [discoveredDevices, setDiscoveredDevices] = useState<Device[] | null>(null);
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
   const [tabIndex, setTabIndex] = useState(0);
-  const [deviceIp, setDeviceIp] = useState("");
-  const [deviceMac, setDeviceMac] = useState("");
 
-  const [isIpValid, setIsIpValid] = useState(true);
-  const [isMacValid, setIsMacValid] = useState(true);
   const [searchError, setSearchError] = useState<string | null>(null);
+
+  const [errors, setErrors] = useState({
+    ipAddress: "",
+    macAddress: "",
+  });
+
+  const [ipAndMacAddress, setIpAndMacAddress] = useState({
+    ipAddress: "",
+    macAddress: "",
+  });
 
   const [checkedFetchedItems, setCheckedFetchedItems] = React.useState<boolean[]>([]);
 
   const allChecked = checkedFetchedItems.every(Boolean);
-  // const isIndeterminate = checkedFetchedItems.some(Boolean) && !allChecked;
 
   useEffect(() => {
-    setDeviceIp("");
-    setDeviceMac("");
-    setIsIpValid(true);
-    setIsMacValid(true);
+    setIpAndMacAddress({ ipAddress: "", macAddress: "" });
     setSearchError(null);
     setDiscoveredDevices(null);
     if (tabIndex === 1) {
@@ -116,34 +113,22 @@ function ModalBodyContent({
   };
 
   const searchDevice = useCallback(async () => {
-    // Verifica che entrambi i campi siano compilati e validi
-    if (!isValidIp(deviceIp)) {
-      setIsIpValid(false);
-      setSearchError("Please enter a valid IP address.");
-      return;
-    }
-    if (!isValidMac(deviceMac)) {
-      setIsMacValid(false);
-      setSearchError("Please enter a valid MAC address.");
-      return;
-    }
-
-    setSearchError(null); // Rimuove l'errore se entrambi i campi sono validi
+    if (hasErrorFields(errors) || hasEmptyFields(ipAndMacAddress)) return;
 
     try {
       setIsLoadingData(true);
 
       const response = await axios.get("/api/devices/discover", {
         params: {
-          ip: deviceIp,
-          mac: deviceMac,
+          ip: ipAndMacAddress.ipAddress,
+          mac: ipAndMacAddress.macAddress,
         },
       });
 
       const discoveredDevices: Device[] = response.data;
 
       if (discoveredDevices.length === 1) {
-        discoveredDevices[0].mac = deviceMac;
+        discoveredDevices[0].mac = ipAndMacAddress.macAddress;
       }
 
       setDiscoveredDevices(discoveredDevices || []);
@@ -152,12 +137,12 @@ function ModalBodyContent({
     } finally {
       setIsLoadingData(false);
     }
-  }, [deviceIp, deviceMac]);
+  }, [ipAndMacAddress]);
 
   const registerDevice = async () => {
     try {
       const response = await axios.patch(`/api/devices/imprint`, {
-        mac: discoveredDevices?.find((d) => d.ip === deviceIp)?.mac,
+        mac: discoveredDevices?.find((d) => d.ip === ipAndMacAddress.ipAddress)?.mac,
       });
       await onDevicesChanged();
       onClose();
@@ -227,405 +212,455 @@ function ModalBodyContent({
     );
   };
 
-  const handleSetIpInputChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    setDeviceIp(e.target.value);
-    setIsIpValid(isValidIp(e.target.value)); // Valida l'IP durante l'inserimento
+  const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    const isValid = name === "ipAddress" ? isValidIp(value) : isValidMac(value);
+
+    const errorLabel = value === "" ? `${name} is required` : isValid ? "" : `${name} is not valid`;
+
+    setErrors({ ...errors, [name]: errorLabel });
+    setIpAndMacAddress((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
   }, []);
 
-  const handleSetMacInputChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    setDeviceMac(e.target.value);
-    setIsMacValid(isValidMac(e.target.value)); // Valida il MAC durante l'inserimento
-  }, []);
+  // const hasEmptyFields = (obj: any): boolean => {
+  //   return ipAndMacAddress.ipAddress === "" || ipAndMacAddress.macAddress === ""
+  // };
+
+  const hasEmptyFields = (obj: any): boolean => {
+    for (const key in obj) {
+      if (typeof obj[key] === "object" && obj[key] !== null) {
+        if (hasEmptyFields(obj[key])) return true; // Ricorsione per oggetti annidati
+      } else if (obj[key] === "") {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const hasErrorFields = (obj: any): boolean => {
+    for (const key in obj) {
+      if (typeof obj[key] === "object" && obj[key] !== null) {
+        if (hasErrorFields(obj[key])) return true; // Ricorsione per oggetti annidati
+      } else if (obj[key] !== "") {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const areManuallySearchFieldsValid = useCallback(() => {
+    return hasErrorFields(errors) || hasEmptyFields(ipAndMacAddress);
+  }, [errors, ipAndMacAddress]);
 
   return (
-    <>
-      <Box
-        backgroundColor={theme.colors.greyscale[0]}
+    <Box p={0} pt={"1rem"}>
+      <Flex
+        flexDir={"column"}
+        gap={"2rem"}
         borderRadius={"1rem"}
         p={"1rem"}
         borderWidth={"1px"}
         borderColor={theme.colors.greyscale[200]}
       >
-        <Tabs onChange={(index) => setTabIndex(index)} variant="unstyled">
-          <TabList>
-            <Tab
-              fontFamily={"heading"}
-              fontSize={"sm"}
-              _selected={{
-                _after: {
-                  content: '""',
-                  width: "32px",
-                  height: "2px",
-                  backgroundColor: theme.colors.brand.secondary,
-                  display: "block",
-                  position: "absolute",
-                  bottom: "8px",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  borderRadius: "3px",
-                },
-                fontWeight: 700,
-              }}
-              position="relative"
-            >
-              Manually
-            </Tab>
-            <Tab
-              fontFamily={"heading"}
-              fontSize={"sm"}
-              _selected={{
-                _after: {
-                  content: '""',
-                  width: "32px",
-                  height: "2px",
-                  backgroundColor: theme.colors.brand.secondary,
-                  display: "block",
-                  position: "absolute",
-                  bottom: "8px",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  borderRadius: "3px",
-                },
-                fontWeight: 700,
-              }}
-              position="relative"
-            >
-              Auto discovery
-            </Tab>
-          </TabList>
+        <VStack spacing={4} align="stretch">
+          <Tabs onChange={(index) => setTabIndex(index)} variant="unstyled">
+            <TabList>
+              <Tab
+                fontFamily={"heading"}
+                fontSize={"sm"}
+                _selected={{
+                  _after: {
+                    content: '""',
+                    width: "32px",
+                    height: "2px",
+                    backgroundColor: theme.colors.brand.secondary,
+                    display: "block",
+                    position: "absolute",
+                    bottom: "8px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    borderRadius: "3px",
+                  },
+                  fontWeight: 700,
+                }}
+                position="relative"
+              >
+                Manually
+              </Tab>
+              <Tab
+                fontFamily={"heading"}
+                fontSize={"sm"}
+                _selected={{
+                  _after: {
+                    content: '""',
+                    width: "32px",
+                    height: "2px",
+                    backgroundColor: theme.colors.brand.secondary,
+                    display: "block",
+                    position: "absolute",
+                    bottom: "8px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    borderRadius: "3px",
+                  },
+                  fontWeight: 700,
+                }}
+                position="relative"
+              >
+                Auto discovery
+              </Tab>
+            </TabList>
 
-          <TabPanels>
-            <TabPanel>
-              <VStack alignItems={"start"} spacing={"1rem"}>
-                <HStack>
-                  <Input
-                    label="IP Address"
-                    name="ip_address"
-                    id="ip_address"
-                    placeholder="IP address"
-                    value={deviceIp}
-                    onChange={handleSetIpInputChange}
-                    isInvalid={!isIpValid}
-                  />
-                  <Input
-                    label="MAC Address"
-                    name="mac_address"
-                    id="mac_address"
-                    placeholder="MAC Address"
-                    value={deviceMac}
-                    onChange={handleSetMacInputChange}
-                    isInvalid={!isMacValid}
-                  />
-                </HStack>
+            <TabPanels>
+              <TabPanel>
+                <VStack alignItems={"start"} spacing={"1rem"}>
+                  <Flex w={"100%"} gap={"1rem"}>
+                    <Flex flex={1}>
+                      <Input
+                        label="IP Address"
+                        name="ipAddress"
+                        id="ipAddress"
+                        placeholder="IP address"
+                        value={ipAndMacAddress.ipAddress}
+                        onChange={handleChange}
+                        error={errors.ipAddress}
+                      />
+                    </Flex>
+                    <Flex flex={1}>
+                      <Input
+                        label="MAC Address"
+                        name="macAddress"
+                        id="macAddress"
+                        placeholder="MAC Address"
+                        value={ipAndMacAddress.macAddress}
+                        onChange={handleChange}
+                        error={errors.macAddress}
+                      />
+                    </Flex>
+                  </Flex>
 
-                {/* Mostra errore di ricerca */}
-                {searchError && <Text color="red.500">{searchError}</Text>}
+                  {/* Mostra errore di ricerca */}
+                  {searchError && <Text color="red.500">{searchError}</Text>}
 
-                <Flex align={"start"}>
-                  <Button variant="primaryPurple" onClick={searchDevice} isLoading={isLoadingData}>
-                    Search
-                  </Button>
-                </Flex>
+                  <Flex align={"start"}>
+                    <Button
+                      variant="primaryPurple"
+                      onClick={searchDevice}
+                      isLoading={isLoadingData}
+                      disabled={areManuallySearchFieldsValid()}
+                    >
+                      Search
+                    </Button>
+                  </Flex>
 
-                {isLoadingData ? (
-                  <Spinner />
-                ) : (
-                  <Box w={"100%"}>
-                    {discoveredDevices && (
-                      <Box>
-                        {discoveredDevices.length > 0 ? (
-                          <Flex flexDir={"column"} gap={"1rem"} mt={"1rem"}>
-                            <Text
-                              color={theme.colors.greyscale[900]}
-                              fontFamily={"heading"}
-                              fontSize={"sm"}
-                              fontWeight={"700"}
-                            >
-                              Result for {deviceIp}
-                            </Text>
-                            <TableContainer>
-                              <Table variant="simple">
-                                <Thead backgroundColor={theme.colors.greyscale[100]}>
-                                  <Tr>
-                                    <Th borderColor={theme.colors.greyscale[100]}>
-                                      <Text
-                                        fontWeight={500}
-                                        color={theme.colors.greyscale[500]}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"12px"}
-                                      >
-                                        Hostname
-                                      </Text>
-                                    </Th>
-                                    <Th borderColor={theme.colors.greyscale[100]}>
-                                      <Text
-                                        fontWeight={500}
-                                        color={theme.colors.greyscale[500]}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"12px"}
-                                      >
-                                        IP
-                                      </Text>
-                                    </Th>
-                                    <Th borderColor={theme.colors.greyscale[100]}>
-                                      <Text
-                                        fontWeight={500}
-                                        color={theme.colors.greyscale[500]}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"12px"}
-                                      >
-                                        Mac Address
-                                      </Text>
-                                    </Th>
-                                    <Th borderColor={theme.colors.greyscale[100]}>
-                                      <Text
-                                        fontWeight={500}
-                                        color={theme.colors.greyscale[500]}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"12px"}
-                                      >
-                                        Miner
-                                      </Text>
-                                    </Th>
-                                    <Th borderColor={theme.colors.greyscale[100]}>
-                                      <Text
-                                        fontWeight={500}
-                                        color={theme.colors.greyscale[500]}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"12px"}
-                                      >
-                                        Asic
-                                      </Text>
-                                    </Th>
-                                    <Th borderColor={theme.colors.greyscale[100]}>
-                                      <Text
-                                        fontWeight={500}
-                                        color={theme.colors.greyscale[500]}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"12px"}
-                                      >
-                                        FW v.
-                                      </Text>
-                                    </Th>
-                                  </Tr>
-                                </Thead>
-                                <Tbody>
-                                  {discoveredDevices.map((device, index) => (
-                                    <Tr key={`tab0-device-${device.ip}`}>
-                                      <Td borderColor={theme.colors.greyscale[100]}>
-                                        {device.info.hostname}
-                                      </Td>
-                                      <Td borderColor={theme.colors.greyscale[100]}>{device.ip}</Td>
-                                      <Td borderColor={theme.colors.greyscale[100]}>
-                                        {device.mac}
-                                      </Td>
-                                      <Td borderColor={theme.colors.greyscale[100]}>
-                                        {getMinerName(device.info.boardVersion)}
-                                      </Td>
-                                      <Td borderColor={theme.colors.greyscale[100]}>
-                                        {device.info.ASICModel}
-                                      </Td>
-                                      <Td borderColor={theme.colors.greyscale[100]}>
-                                        {device.info.version}
-                                      </Td>
+                  {isLoadingData ? (
+                    <Spinner />
+                  ) : (
+                    <Box w={"100%"}>
+                      {discoveredDevices && (
+                        <Box>
+                          {discoveredDevices.length > 0 ? (
+                            <Flex flexDir={"column"} gap={"1rem"} mt={"1rem"}>
+                              <Text
+                                color={theme.colors.greyscale[900]}
+                                fontFamily={"heading"}
+                                fontSize={"sm"}
+                                fontWeight={"700"}
+                              >
+                                Result for {ipAndMacAddress.macAddress}
+                              </Text>
+                              <TableContainer>
+                                <Table variant="simple">
+                                  <Thead backgroundColor={theme.colors.greyscale[100]}>
+                                    <Tr>
+                                      <Th borderColor={theme.colors.greyscale[100]}>
+                                        <Text
+                                          fontWeight={500}
+                                          color={theme.colors.greyscale[500]}
+                                          fontFamily={"heading"}
+                                          textTransform={"capitalize"}
+                                          fontSize={"12px"}
+                                        >
+                                          Hostname
+                                        </Text>
+                                      </Th>
+                                      <Th borderColor={theme.colors.greyscale[100]}>
+                                        <Text
+                                          fontWeight={500}
+                                          color={theme.colors.greyscale[500]}
+                                          fontFamily={"heading"}
+                                          textTransform={"capitalize"}
+                                          fontSize={"12px"}
+                                        >
+                                          IP
+                                        </Text>
+                                      </Th>
+                                      <Th borderColor={theme.colors.greyscale[100]}>
+                                        <Text
+                                          fontWeight={500}
+                                          color={theme.colors.greyscale[500]}
+                                          fontFamily={"heading"}
+                                          textTransform={"capitalize"}
+                                          fontSize={"12px"}
+                                        >
+                                          Mac Address
+                                        </Text>
+                                      </Th>
+                                      <Th borderColor={theme.colors.greyscale[100]}>
+                                        <Text
+                                          fontWeight={500}
+                                          color={theme.colors.greyscale[500]}
+                                          fontFamily={"heading"}
+                                          textTransform={"capitalize"}
+                                          fontSize={"12px"}
+                                        >
+                                          Miner
+                                        </Text>
+                                      </Th>
+                                      <Th borderColor={theme.colors.greyscale[100]}>
+                                        <Text
+                                          fontWeight={500}
+                                          color={theme.colors.greyscale[500]}
+                                          fontFamily={"heading"}
+                                          textTransform={"capitalize"}
+                                          fontSize={"12px"}
+                                        >
+                                          Asic
+                                        </Text>
+                                      </Th>
+                                      <Th borderColor={theme.colors.greyscale[100]}>
+                                        <Text
+                                          fontWeight={500}
+                                          color={theme.colors.greyscale[500]}
+                                          fontFamily={"heading"}
+                                          textTransform={"capitalize"}
+                                          fontSize={"12px"}
+                                        >
+                                          FW v.
+                                        </Text>
+                                      </Th>
                                     </Tr>
-                                  ))}
-                                </Tbody>
-                              </Table>
-                            </TableContainer>
-                            <Flex align={"start"}>
-                              <Flex gap={"1rem"}>
-                                <Button variant="secondary" onClick={onClose}>
-                                  Cancel
-                                </Button>
-                                <Button
-                                  variant="primaryPurple"
-                                  onClick={() => registerDevice()}
-                                  rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
-                                  disabled={discoveredDevices.length !== 1}
-                                >
-                                  Add device
-                                </Button>
+                                  </Thead>
+                                  <Tbody>
+                                    {discoveredDevices.map((device, index) => (
+                                      <Tr key={`tab0-device-${device.ip}`}>
+                                        <Td borderColor={theme.colors.greyscale[100]}>
+                                          {device.info.hostname}
+                                        </Td>
+                                        <Td borderColor={theme.colors.greyscale[100]}>
+                                          {device.ip}
+                                        </Td>
+                                        <Td borderColor={theme.colors.greyscale[100]}>
+                                          {device.mac}
+                                        </Td>
+                                        <Td borderColor={theme.colors.greyscale[100]}>
+                                          {getMinerName(device.info.boardVersion)}
+                                        </Td>
+                                        <Td borderColor={theme.colors.greyscale[100]}>
+                                          {device.info.ASICModel}
+                                        </Td>
+                                        <Td borderColor={theme.colors.greyscale[100]}>
+                                          {device.info.version}
+                                        </Td>
+                                      </Tr>
+                                    ))}
+                                  </Tbody>
+                                </Table>
+                              </TableContainer>
+                              <Flex align={"start"}>
+                                <Flex gap={"1rem"}>
+                                  <Button variant="secondary" onClick={onClose}>
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    variant="primaryPurple"
+                                    onClick={() => registerDevice()}
+                                    rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
+                                    disabled={discoveredDevices.length !== 1}
+                                  >
+                                    Add device
+                                  </Button>
+                                </Flex>
                               </Flex>
                             </Flex>
-                          </Flex>
-                        ) : (
-                          <Text>No device found</Text>
-                        )}
-                      </Box>
-                    )}
-                  </Box>
-                )}
-              </VStack>
-            </TabPanel>
-            <TabPanel>
-              {isLoadingData ? (
-                <Spinner color="orange" />
-              ) : (
-                <VStack>
-                  {discoveredDevices ? (
-                    <Box as={Flex} flexDir={"column"} gap={"1rem"} w={"100%"}>
-                      <Text>“{discoveredDevices?.length}” new devices found</Text>
-                      <TableContainer>
-                        <Table variant="simple">
-                          <Thead>
-                            <Tr>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <ChakraCheckbox
-                                  borderColor={theme.colors.greyscale[900]}
-                                  borderRadius={"3px"}
-                                  size="lg"
-                                  sx={{
-                                    "& .chakra-checkbox__control": {
-                                      bg: theme.colors.greyscale[0], // colore di sfondo (hex)
-                                      borderColor: theme.colors.greyscale[900], // colore del bordo (hex)
-                                    },
-                                    "& .chakra-checkbox__control[data-checked]": {
-                                      bg: theme.colors.brand.secondary, // colore quando è selezionato (checked)
-                                      borderColor: theme.colors.greyscale[900], // colore bordo quando è selezionato
-                                      color: theme.colors.greyscale[0], // colore di sfondo (hex)
-                                      boxShadow: "inset 0 0 0 2px white", // spazio bianco tra bordo e riempimento
-                                    },
-                                  }}
-                                  isChecked={allChecked}
-                                  // isIndeterminate={isIndeterminate}
-                                  onChange={(e) => handleAllCheckbox(e.target.checked)}
-                                >
+                          ) : (
+                            <Text>No device found</Text>
+                          )}
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+                </VStack>
+              </TabPanel>
+              <TabPanel>
+                {isLoadingData ? (
+                  <Spinner color="orange" />
+                ) : (
+                  <VStack>
+                    {discoveredDevices && discoveredDevices.length > 0 ? (
+                      <Box as={Flex} flexDir={"column"} gap={"1rem"} w={"100%"}>
+                        <Text>“{discoveredDevices?.length}” new devices found</Text>
+                        <TableContainer>
+                          <Table variant="simple">
+                            <Thead>
+                              <Tr>
+                                <Th borderColor={theme.colors.greyscale[100]}>
+                                  <ChakraCheckbox
+                                    borderColor={theme.colors.greyscale[900]}
+                                    borderRadius={"3px"}
+                                    size="lg"
+                                    sx={{
+                                      "& .chakra-checkbox__control": {
+                                        bg: theme.colors.greyscale[0], // colore di sfondo (hex)
+                                        borderColor: theme.colors.greyscale[900], // colore del bordo (hex)
+                                      },
+                                      "& .chakra-checkbox__control[data-checked]": {
+                                        bg: theme.colors.brand.secondary, // colore quando è selezionato (checked)
+                                        borderColor: theme.colors.greyscale[900], // colore bordo quando è selezionato
+                                        color: theme.colors.greyscale[0], // colore di sfondo (hex)
+                                        boxShadow: "inset 0 0 0 2px white", // spazio bianco tra bordo e riempimento
+                                      },
+                                    }}
+                                    isChecked={allChecked}
+                                    // isIndeterminate={isIndeterminate}
+                                    onChange={(e) => handleAllCheckbox(e.target.checked)}
+                                  >
+                                    <Text
+                                      fontWeight={500}
+                                      color={theme.colors.greyscale[500]}
+                                      fontFamily={"heading"}
+                                      textTransform={"capitalize"}
+                                      fontSize={"12px"}
+                                      pl={"0.5rem"}
+                                    >
+                                      Hostname
+                                    </Text>
+                                  </ChakraCheckbox>
+                                </Th>
+                                <Th borderColor={theme.colors.greyscale[100]}>
                                   <Text
                                     fontWeight={500}
                                     color={theme.colors.greyscale[500]}
                                     fontFamily={"heading"}
                                     textTransform={"capitalize"}
                                     fontSize={"12px"}
-                                    pl={"0.5rem"}
                                   >
-                                    Hostname
+                                    IP
                                   </Text>
-                                </ChakraCheckbox>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  IP
-                                </Text>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  Mac Address
-                                </Text>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  Miner
-                                </Text>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  Asic
-                                </Text>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  FW v.
-                                </Text>
-                              </Th>
-                            </Tr>
-                          </Thead>
-                          <Tbody fontSize={"14px"}>
-                            {discoveredDevices?.map((device, index) => (
-                              <Tr key={`tab1-device-${device.ip}`}>
-                                <Td borderColor={theme.colors.greyscale[100]}>
-                                  <Checkbox
-                                    id={device.mac}
-                                    name={device.mac}
-                                    label={device.info.hostname}
-                                    onChange={() => handleCheckbox(index)}
-                                    isChecked={checkedFetchedItems[index]}
-                                    size="md"
-                                  />
-                                </Td>
-                                <Td borderColor={theme.colors.greyscale[100]}>{device.ip}</Td>
-                                <Td borderColor={theme.colors.greyscale[100]}>{device.mac}</Td>
-                                <Td borderColor={theme.colors.greyscale[100]}>
-                                  {getMinerName(device.info.boardVersion)}
-                                </Td>
-                                <Td borderColor={theme.colors.greyscale[100]}>
-                                  {device.info.ASICModel}
-                                </Td>
-                                <Td borderColor={theme.colors.greyscale[100]}>
-                                  {device.info.version}
-                                </Td>
-                                <Td borderColor={theme.colors.greyscale[100]}></Td>
+                                </Th>
+                                <Th borderColor={theme.colors.greyscale[100]}>
+                                  <Text
+                                    fontWeight={500}
+                                    color={theme.colors.greyscale[500]}
+                                    fontFamily={"heading"}
+                                    textTransform={"capitalize"}
+                                    fontSize={"12px"}
+                                  >
+                                    Mac Address
+                                  </Text>
+                                </Th>
+                                <Th borderColor={theme.colors.greyscale[100]}>
+                                  <Text
+                                    fontWeight={500}
+                                    color={theme.colors.greyscale[500]}
+                                    fontFamily={"heading"}
+                                    textTransform={"capitalize"}
+                                    fontSize={"12px"}
+                                  >
+                                    Miner
+                                  </Text>
+                                </Th>
+                                <Th borderColor={theme.colors.greyscale[100]}>
+                                  <Text
+                                    fontWeight={500}
+                                    color={theme.colors.greyscale[500]}
+                                    fontFamily={"heading"}
+                                    textTransform={"capitalize"}
+                                    fontSize={"12px"}
+                                  >
+                                    Asic
+                                  </Text>
+                                </Th>
+                                <Th borderColor={theme.colors.greyscale[100]}>
+                                  <Text
+                                    fontWeight={500}
+                                    color={theme.colors.greyscale[500]}
+                                    fontFamily={"heading"}
+                                    textTransform={"capitalize"}
+                                    fontSize={"12px"}
+                                  >
+                                    FW v.
+                                  </Text>
+                                </Th>
                               </Tr>
-                            ))}
-                          </Tbody>
-                        </Table>
-                      </TableContainer>
-                      <Flex align={"start"}>
-                        <Flex gap={"1rem"}>
-                          <Button variant="secondary" onClick={onClose}>
-                            Cancel
-                          </Button>
-                          <Button
-                            variant="primaryPurple"
-                            onClick={() => registerDevices()}
-                            rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
-                            disabled={checkedFetchedItems.filter((el) => el === true).length === 0}
-                          >
-                            Add{" "}
-                            {checkedFetchedItems.filter((el) => el === true).length > 0
-                              ? checkedFetchedItems.filter((el) => el === true).length
-                              : ""}{" "}
-                            device
-                          </Button>
+                            </Thead>
+                            <Tbody fontSize={"14px"}>
+                              {discoveredDevices?.map((device, index) => (
+                                <Tr key={`tab1-device-${device.ip}`}>
+                                  <Td borderColor={theme.colors.greyscale[100]}>
+                                    <Checkbox
+                                      id={device.mac}
+                                      name={device.mac}
+                                      label={device.info.hostname}
+                                      onChange={() => handleCheckbox(index)}
+                                      isChecked={checkedFetchedItems[index]}
+                                      size="md"
+                                    />
+                                  </Td>
+                                  <Td borderColor={theme.colors.greyscale[100]}>{device.ip}</Td>
+                                  <Td borderColor={theme.colors.greyscale[100]}>{device.mac}</Td>
+                                  <Td borderColor={theme.colors.greyscale[100]}>
+                                    {getMinerName(device.info.boardVersion)}
+                                  </Td>
+                                  <Td borderColor={theme.colors.greyscale[100]}>
+                                    {device.info.ASICModel}
+                                  </Td>
+                                  <Td borderColor={theme.colors.greyscale[100]}>
+                                    {device.info.version}
+                                  </Td>
+                                  <Td borderColor={theme.colors.greyscale[100]}></Td>
+                                </Tr>
+                              ))}
+                            </Tbody>
+                          </Table>
+                        </TableContainer>
+                        <Flex align={"start"}>
+                          <Flex gap={"1rem"}>
+                            <Button variant="secondary" onClick={onClose}>
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="primaryPurple"
+                              onClick={() => registerDevices()}
+                              rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
+                              disabled={
+                                checkedFetchedItems.filter((el) => el === true).length === 0
+                              }
+                            >
+                              Add{" "}
+                              {checkedFetchedItems.filter((el) => el === true).length > 0
+                                ? checkedFetchedItems.filter((el) => el === true).length
+                                : ""}{" "}
+                              device
+                            </Button>
+                          </Flex>
                         </Flex>
-                      </Flex>
-                    </Box>
-                  ) : (
-                    <Text>No device found.</Text>
-                  )}
-                </VStack>
-              )}
-            </TabPanel>
-          </TabPanels>
-        </Tabs>
-      </Box>
-    </>
+                      </Box>
+                    ) : (
+                      <Text>No device found.</Text>
+                    )}
+                  </VStack>
+                )}
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+        </VStack>
+      </Flex>
+    </Box>
   );
 }
 
@@ -636,23 +671,26 @@ export const RegisterDevicesModal: React.FC<RegisterDevicesModalProps> = ({
 }) => {
   const theme = useTheme();
   return (
-    <Modal onClose={onClose} size={"full"} isOpen={isOpen}>
+    <Modal onClose={onClose} size={"full)"} isOpen={isOpen}>
       <ModalOverlay />
-      <ModalContent bg={theme.colors.greyscale[0]} borderRadius={"1rem"} marginTop={"5rem"}>
-        <ModalHeader>
-          <Heading fontSize={"4xl"}>Add a new Device</Heading>
-        </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <ModalBodyContent
-            onClose={onClose}
-            theme={theme}
-            onDevicesChanged={onDevicesChanged}
-          ></ModalBodyContent>
-        </ModalBody>
-        <ModalFooter>
-          <ChakraButton onClick={onClose}>Close</ChakraButton>
-        </ModalFooter>
+      <ModalContent
+        bg={theme.colors.greyscale[0]}
+        borderRadius={"1rem"}
+        height={"calc(100% - 8rem)"}
+      >
+        <Box maxW="container.2xl" margin={"0 auto"} p={"2rem"} w={"100%"}>
+          <ModalHeader p={0} fontFamily={"heading"} fontWeight={400} fontSize={"2rem"}>
+            Add a new Device
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody overflow={"scroll"} p={0}>
+            <ModalBodyContent
+              onClose={onClose}
+              theme={theme}
+              onDevicesChanged={onDevicesChanged}
+            ></ModalBodyContent>
+          </ModalBody>
+        </Box>
       </ModalContent>
     </Modal>
   );

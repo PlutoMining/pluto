@@ -1,6 +1,7 @@
 import { logger } from "@pluto/logger";
 import { Request, Response } from "express";
 import * as deviceService from "../services/device.service";
+import * as presetsService from "../services/presets.service";
 import { Device } from "@pluto/interfaces";
 import axios from "axios";
 
@@ -229,14 +230,29 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Device IP not available" });
     }
 
+    const payload: Device = req.body;
+
+    if (payload.presetUuid) {
+      const preset = await presetsService.getPreset(payload.presetUuid);
+
+      if (preset) {
+        payload.info.stratumPort = preset.configuration.stratumPort;
+        payload.info.stratumURL = preset.configuration.stratumURL;
+        payload.info.stratumUser = preset.configuration.stratumUser;
+        payload.info.stratumPassword = preset.configuration.stratumPassword;
+      } else {
+        return res.status(400).json({ error: "Associated Preset id not available" });
+      }
+    }
+
     // Invia la richiesta PATCH per aggiornare le informazioni di sistema
     const patchUrl = `http://${deviceIp}/api/system`; // Assumendo che l'endpoint sia /api/system
-    const response = await axios.patch(patchUrl, req.body); // Passa i dati nel body
+    const response = await axios.patch(patchUrl, payload.info); // Passa i dati nel body
 
     // Inoltra la risposta del dispositivo al client
     res
       .status(response.status)
-      .json({ message: "Device system info updated successfully", data: response.data });
+      .json({ message: "Device system info updated successfully", data: payload });
   } catch (error) {
     logger.error("Error in putDeviceSystemInfo request:", error);
 

@@ -91,10 +91,6 @@ const DevicePage: React.FC = () => {
     try {
       const response = await axios.get("/api/devices/imprint");
       let imprintedDevices: Device[] = response.data.data;
-      // Ordina le imprintedDevices per createdAt (stringa ISO) in ordine decrescente
-      imprintedDevices = imprintedDevices.sort(
-        (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
-      );
 
       setRegisteredDevices(imprintedDevices || []);
       // setCheckedItems(Array.from({ length: imprintedDevices.length }, () => false));

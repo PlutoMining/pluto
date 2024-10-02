@@ -1,9 +1,22 @@
 import { deleteOne, findMany, findOne, insertOne, updateOne } from "@pluto/db";
-import { Device } from "@pluto/interfaces";
+import { Device, DeviceInfo } from "@pluto/interfaces";
 import { logger } from "@pluto/logger";
 import axios from "axios";
 import { config } from "../config/environment";
 import { updateOriginalIpsListeners } from "./tracing.service";
+
+const cleanDeviceInfo = (deviceInfo: DeviceInfo) => {
+  const deviceInfoCopy = { ...deviceInfo };
+  if (deviceInfoCopy.stratumPassword) {
+    delete deviceInfoCopy.stratumPassword;
+  }
+
+  if (deviceInfoCopy.wifiPassword) {
+    delete deviceInfoCopy.wifiPassword;
+  }
+
+  return deviceInfoCopy;
+};
 
 // Funzione per cercare dispositivi scoperti da una lista di MAC address
 export const discoverDevices = async ({
@@ -97,6 +110,7 @@ export const imprintDevices = async (macs: string[]): Promise<Device[]> => {
 
     for (const device of devices) {
       const { mac } = device;
+      device.info = cleanDeviceInfo(device.info);
 
       try {
         // Prova ad inserire il dispositivo
@@ -178,9 +192,11 @@ export const patchImprintedDevice = async (
   objectValue: Device
 ): Promise<Device | null> => {
   try {
-    const preset = await updateOne<Device>("pluto_core", "devices:imprinted", id, objectValue);
+    const payload = { ...objectValue, info: cleanDeviceInfo(objectValue.info) };
 
-    return preset;
+    const device = await updateOne<Device>("pluto_core", "devices:imprinted", id, payload);
+
+    return device;
   } catch (error) {
     logger.error("Error in patchImprintedDevice:", error);
     throw error;

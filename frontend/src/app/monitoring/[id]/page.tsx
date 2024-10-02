@@ -1,11 +1,14 @@
 "use client";
-import { Box, Heading, useMediaQuery, VStack } from "@chakra-ui/react";
+import Link from "@/components/Link/Link";
+import { ArrowLeftIcon } from "@/components/icons/ArrowIcon";
+import { Box, Heading, Text, useMediaQuery, useTheme, VStack } from "@chakra-ui/react";
 import axios from "axios";
-import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
-const OverviewPage: React.FC = () => {
+const MonitoringPage: React.FC = () => {
   const { id }: { id: string } = useParams();
+  const theme = useTheme();
 
   const [dashboardPublicUrl, setDashboardPublicUrl] = useState<string>();
   const iframeRef = useRef<HTMLIFrameElement>(null); // Inizializziamo la ref
@@ -28,7 +31,15 @@ const OverviewPage: React.FC = () => {
 
   return (
     <VStack p={8} spacing={4} align="stretch" height={"100%"}>
-      <Heading>Overview Dashboard</Heading>
+      <Link
+        href={"/monitoring"}
+        label="Go back"
+        leftIcon={<ArrowLeftIcon color={theme.colors.greyscale[900]} />}
+      />
+
+      <Heading>
+        <Text style={{ textTransform: "capitalize" }}>{id} Dashboard</Text>
+      </Heading>
       {dashboardPublicUrl && (
         <Box minHeight={!isNotMobile ? "3950px" : "1750px"} position={"relative"}>
           <iframe
@@ -42,4 +53,4 @@ const OverviewPage: React.FC = () => {
   );
 };
 
-export default OverviewPage;
+export default MonitoringPage;

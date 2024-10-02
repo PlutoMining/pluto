@@ -71,10 +71,6 @@ const MonitoringTablePage: React.FC = () => {
     try {
       const deviceResponse = await axios.get<{ data: Device[] }>("/api/devices/imprint");
       let fetchedDevices = deviceResponse.data.data;
-      // Ordina le imprintedDevices per createdAt (stringa ISO) in ordine decrescente
-      fetchedDevices = fetchedDevices.sort(
-        (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
-      );
 
       const dashboardResponse = await axios.get<Dashboard[]>("/api/dashboards");
       const fetchedDashboards = dashboardResponse.data;
@@ -86,7 +82,7 @@ const MonitoringTablePage: React.FC = () => {
         })
       );
 
-      console.log(updatedDevices);
+      // console.log(updatedDevices);
 
       setRegisteredDevices(updatedDevices || []);
     } catch (error) {

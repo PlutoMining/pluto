@@ -15,4 +15,6 @@ echo "Removing contents of /grafana..."
 # Rimuove tutti i file e cartelle sotto la directory /grafana
 rm -rf /grafana/* /grafana/.* 2>/dev/null || true
 
+mkdir -p /grafana/dashboards # ricreo la cartella delle dashboards per evitare problemi durante l'inizializzazione
+
 echo "Contents of /grafana removed successfully!"

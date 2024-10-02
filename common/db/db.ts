@@ -6,6 +6,11 @@ const dbInstances: Map<string, Level<string, any>> = new Map();
 // Variabile per tenere traccia se l'handler è stato già registrato
 let exitHandlerRegistered = false;
 
+interface BaseEntity {
+  createdAt: string; // Oppure Date, a seconda di come rappresenti il timestamp
+  updatedAt: string; // Oppure Date
+}
+
 // Funzione per ottenere l'istanza singleton di un database in base al nome
 async function getDatabase(dbName: string): Promise<Level<string, any>> {
   if (!dbName) {
@@ -53,7 +58,11 @@ async function closeDatabase(dbName: string): Promise<void> {
 }
 
 // Funzione per ottenere un record specifico con prefisso
-export async function findOne<T>(dbName: string, prefix: string, key: string): Promise<T | null> {
+export async function findOne<T extends BaseEntity>(
+  dbName: string,
+  prefix: string,
+  key: string
+): Promise<T | null> {
   const db = await getDatabase(dbName);
 
   if (!prefix || !key) {
@@ -78,7 +87,7 @@ export async function findOne<T>(dbName: string, prefix: string, key: string): P
 }
 
 // Funzione per ottenere una lista di oggetti da una lista di chiavi con prefisso, con filtri opzionali
-export async function findMany<T>(
+export async function findMany<T extends BaseEntity>(
   dbName: string,
   fullListKey: string, // Chiave completa della lista (es. 'devices:discovered')
   filters?: (record: T) => boolean // Funzione di filtro opzionale
@@ -109,7 +118,12 @@ export async function findMany<T>(
       }
     }
 
-    return objects;
+    // Ordina le liste per createdAt (stringa ISO) in ordine decrescente
+    const sortedObjects = objects.sort(
+      (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+    );
+
+    return sortedObjects;
   } catch (error) {
     if (error instanceof Error && (error as any).code === "LEVEL_NOT_FOUND") {
       return []; // Restituisce un array vuoto se la lista di chiavi non esiste
@@ -122,7 +136,7 @@ export async function findMany<T>(
   }
 }
 
-export async function insertOne<T>(
+export async function insertOne<T extends BaseEntity>(
   dbName: string,
   fullListKey: string, // Chiave completa della lista (es. 'devices:discovered')
   objectKey: string, // Chiave univoca dell'oggetto (es. MAC address)
@@ -181,11 +195,11 @@ export async function insertOne<T>(
 }
 
 // Funzione per aggiornare una lista di oggetti con prefisso (semplificata)
-export async function updateOne<T>(
+export async function updateOne<T extends BaseEntity>(
   dbName: string,
   fullListKey: string, // Chiave completa della lista (es. 'devices:discovered')
   objectKey: string, // Chiave univoca dell'oggetto (es. MAC address)
-  objectValue: T // Valore dell'oggetto (es. DeviceInfo)
+  objectValue: Partial<T> // Valore dell'oggetto (es. DeviceInfo)
 ): Promise<T> {
   const db = await getDatabase(dbName);
   let keyList: string[] = [];
@@ -221,11 +235,11 @@ export async function updateOne<T>(
 
   // Unisci il record esistente con il nuovo oggetto (shallow merge)
   const mergedObject = {
-    ...(existingRecord || {}), // Record esistente (se presente)
+    ...existingRecord, // Record esistente (se presente, se non presente viene scatenata eccezione prima)
     ...objectValue, // Nuovo oggetto che viene passato
     updatedAt: new Date().toISOString(),
     createdAt: existingRecord ? (existingRecord as any).createdAt : new Date().toISOString(),
-  };
+  } as T;
 
   try {
     // Salva l'oggetto con la chiave completa e aggiorna la lista delle chiavi
@@ -244,7 +258,7 @@ export async function updateOne<T>(
 }
 
 // Funzione per cancellare un record specifico con prefisso e aggiornare la lista delle chiavi
-export async function deleteOne<T>(
+export async function deleteOne<T extends BaseEntity>(
   dbName: string,
   fullListKey: string, // Chiave della lista
   objectKey: string
@@ -303,12 +317,15 @@ function buildKeyWithPrefix(prefix: string, key: string): string {
 }
 
 // Funzione per inserire più documenti (stub)
-export async function insertMany<T>(dbName: string, objects: T[]): Promise<void> {
+export async function insertMany<T extends BaseEntity>(
+  dbName: string,
+  objects: T[]
+): Promise<void> {
   throw new Error("Method insertMany is not implemented.");
 }
 
 // Funzione per aggiornare più documenti (stub)
-export async function updateMany<T>(
+export async function updateMany<T extends BaseEntity>(
   dbName: string,
   filter: Partial<T>,
   update: Partial<T>
@@ -317,16 +334,22 @@ export async function updateMany<T>(
 }
 
 // Funzione per cancellare più documenti (stub)
-export async function deleteMany<T>(dbName: string, filter: Partial<T>): Promise<void> {
+export async function deleteMany<T extends BaseEntity>(
+  dbName: string,
+  filter: Partial<T>
+): Promise<void> {
   throw new Error("Method deleteMany is not implemented.");
 }
 
 // Funzione per contare i documenti (stub)
-export async function countDocuments<T>(dbName: string, filter: Partial<T>): Promise<number> {
+export async function countDocuments<T extends BaseEntity>(
+  dbName: string,
+  filter: Partial<T>
+): Promise<number> {
   throw new Error("Method countDocuments is not implemented.");
 }
 
 // Funzione per ottenere valori distinti (stub)
-export async function distinct<T>(dbName: string, field: keyof T): Promise<T[]> {
+export async function distinct<T extends BaseEntity>(dbName: string, field: keyof T): Promise<T[]> {
   throw new Error("Method distinct is not implemented.");
 }

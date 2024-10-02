@@ -34,35 +34,47 @@ export const PresetEditor = ({
       stratumURL: "",
       stratumPort: "",
       stratumUser: "",
-      stratumPassword: ""
-    }
+      stratumPassword: "",
+    },
   });
 
   const [preset, setPreset] = useState<Partial<Preset>>({
+    uuid: presetId,
     name: "",
     configuration: {
       stratumURL: "",
       stratumPort: "",
       stratumUser: "",
-      stratumPassword: ""
-    }
+      stratumPassword: "",
+    },
   });
+
+  const [presets, setPresets] = useState<Preset[]>();
 
   // Carica il preset se un presetId è fornito
   useEffect(() => {
-    if (presetId) {
+    if (preset.uuid) {
       fetchPreset();
     }
-  }, [presetId]);
+  }, [preset.uuid]);
 
   const fetchPreset = async () => {
     try {
       const response = await fetch("/api/presets");
       if (response.ok) {
         const data: { data: Preset[] } = await response.json();
-        const preset = data.data.find((p: { uuid: string }) => p.uuid === presetId);
-        if (preset) {
-          setPreset(preset)
+        setPresets(data.data);
+        const newData = data.data.find((p: { uuid: string }) => p.uuid === preset.uuid);
+        if (newData) {
+          setPreset((prevPreset) => ({
+            ...prevPreset,
+            ...newData,
+            name: "",
+            configuration: {
+              ...prevPreset.configuration,
+              ...newData.configuration,
+            },
+          }));
         }
       } else {
         console.error("Failed to fetch presets");
@@ -77,38 +89,42 @@ export const PresetEditor = ({
       case "stratumURL":
         return validateDomain(value, { allowIP: true });
       case "stratumPort":
-        return validateTCPPort(parseInt(value));
+        const numericRegex = /^\d+$/;
+        return validateTCPPort(numericRegex.test(value) ? parseInt(value) : -1);
       case "stratumUser":
         return validateBitcoinAddress(value);
       default:
         return true;
     }
-  }
+  };
 
   const validateField = (name: string, value: string) => {
-    const label = 
-      value === "" 
-      ? `${name} is required.` 
-      : 
-        validateFieldByName(name, value)
+    let label =
+      value === ""
+        ? `${name} is required.`
+        : validateFieldByName(name, value)
         ? ""
         : `${name} is not correct.`;
 
     if (name === "presetName") {
+      const preset = presets?.find((p) => p.name === value);
+      if (preset) {
+        label = `A preset called "${preset.name}" already exists.`;
+      }
       setPresetErrors((prevPreset) => ({
         ...prevPreset,
-        name: label
+        name: label,
       }));
     } else {
       setPresetErrors((prevPreset) => ({
         ...prevPreset,
         configuration: {
           ...prevPreset.configuration,
-          [name]: label
-        }
+          [name]: label,
+        },
       }));
     }
-  }
+  };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -118,15 +134,15 @@ export const PresetEditor = ({
     if (name === "presetName") {
       setPreset((prevPreset) => ({
         ...prevPreset,
-        name: value
+        name: value,
       }));
     } else {
       setPreset((prevPreset) => ({
         ...prevPreset,
         configuration: {
           ...prevPreset.configuration,
-          [name]: value === "" ? undefined : name === "stratumPort" ? parseInt(value): value
-        }
+          [name]: value,
+        },
       }));
     }
   };
@@ -135,7 +151,11 @@ export const PresetEditor = ({
     const uuid = uuidv4();
     const updatedPreset = {
       ...preset,
-      uuid
+      uuid,
+      configuration: {
+        ...preset.configuration,
+        stratumPort: parseInt(preset.configuration?.stratumPort),
+      },
     };
 
     const promise = axios.post("/api/presets", updatedPreset);
@@ -160,10 +180,14 @@ export const PresetEditor = ({
     onCloseAlert();
   };
 
-  const hasEmptyFields = (obj: any): boolean => {
+  const hasEmptyFields = (obj: any, excludeKeys: string[]): boolean => {
     for (const key in obj) {
-      if (typeof obj[key] === 'object' && obj[key] !== null) {
-        if (hasEmptyFields(obj[key])) return true; // Ricorsione per oggetti annidati
+      if (excludeKeys.includes(key)) {
+        continue;
+      }
+
+      if (typeof obj[key] === "object" && obj[key] !== null) {
+        if (hasEmptyFields(obj[key], excludeKeys)) return true; // Ricorsione per oggetti annidati
       } else if (obj[key] === "") {
         return true;
       }
@@ -173,7 +197,7 @@ export const PresetEditor = ({
 
   const hasErrorFields = (obj: any): boolean => {
     for (const key in obj) {
-      if (typeof obj[key] === 'object' && obj[key] !== null) {
+      if (typeof obj[key] === "object" && obj[key] !== null) {
         if (hasErrorFields(obj[key])) return true; // Ricorsione per oggetti annidati
       } else if (obj[key] !== "") {
         return true;
@@ -183,8 +207,8 @@ export const PresetEditor = ({
   };
 
   const isPresetValid = useCallback(() => {
-    return hasEmptyFields(preset) || hasErrorFields(presetErrors)
-  }, [preset])
+    return hasEmptyFields(preset, ["uuid"]) || hasErrorFields(presetErrors);
+  }, [preset, presetErrors]);
 
   return (
     <>
@@ -192,7 +216,7 @@ export const PresetEditor = ({
         <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
       )}
 
-      <Box p={0} pt={'1rem'}>
+      <Box p={0} pt={"1rem"}>
         <Flex as="form" flexDir={"column"} gap={"2rem"}>
           <VStack spacing={4} align="stretch">
             <Input
@@ -205,7 +229,9 @@ export const PresetEditor = ({
               error={presetErrors.name}
             />
             <VStack align={"stretch"} spacing={4}>
-              <Text fontFamily={'heading'} fontWeight={500} fontSize={'14px'}>Settings</Text>
+              <Text fontFamily={"heading"} fontWeight={500} fontSize={"14px"}>
+                Settings
+              </Text>
               <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8}>
                 <Input
                   label="Stratum URL"
@@ -220,7 +246,6 @@ export const PresetEditor = ({
                   label="Stratum Port"
                   name="stratumPort"
                   id="stratumPort"
-                  type="number"
                   placeholder="stratumPort"
                   defaultValue={preset.configuration?.stratumPort}
                   onChange={handleChange}
