@@ -5,6 +5,7 @@ import {
   AccordionPanel,
   Accordion as ChakraAccordion,
   AccordionItem as ChakraAccordionItem,
+  Button as ChakraButton,
   Divider,
   Flex,
   FormControl,
@@ -26,11 +27,12 @@ import {
   Text,
   useAccordionItemState,
   useTheme,
-  Button as ChakraButton,
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
+import { validateBitcoinAddress, validateDomain, validateTCPPort } from "@pluto/utils";
 import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
+import { AlertInterface, AlertStatus } from "../Alert/interfaces";
 import { Badge, DeviceStatusBadge } from "../Badge";
 import Button from "../Button/Button";
 import { Checkbox } from "../Checkbox/Checkbox";
@@ -39,7 +41,6 @@ import { RestartIcon } from "../icons/RestartIcon";
 import { Input } from "../Input/Input";
 import { RadioButton } from "../RadioButton";
 import { Select } from "../Select/Select";
-import { AlertInterface, AlertStatus } from "../Alert/interfaces";
 
 interface DeviceSettingsAccordionProps {
   devices: Device[] | undefined;
@@ -73,7 +74,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   onOpenAlert,
 }) => {
   const [presets, setPresets] = useState<Preset[]>([]);
-  const accordionStateMap = useRef<Map<string, boolean>>(new Map()); // Mappa per tracciare lo stato degli accordion
 
   // Recupera i preset tramite le API
   const fetchPresets = async () => {
@@ -94,10 +94,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
     fetchPresets();
   }, []);
 
-  const updateAccordionState = (mac: string, isOpen: boolean) => {
-    accordionStateMap.current.set(mac, isOpen);
-  };
-
   return (
     <ChakraAccordion allowMultiple as={Flex} flexDir={"column"} gap={"1rem"}>
       {devices?.map((device) => (
@@ -113,8 +109,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             key={device.mac}
             device={device}
             presets={presets}
-            updateAccordionState={updateAccordionState}
-            accordionStateMap={accordionStateMap}
             setAlert={setAlert}
             alert={alert}
             onOpenAlert={onOpenAlert}
@@ -125,22 +119,24 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   );
 };
 
-const AccordionItem: React.FC<
-  AccordionItemProps & {
-    updateAccordionState: (mac: string, isOpen: boolean) => void;
-    accordionStateMap: React.MutableRefObject<Map<string, boolean>>;
-  }
-> = ({
+const AccordionItem: React.FC<AccordionItemProps> = ({
   device: deviceInfo,
   presets,
-  updateAccordionState,
-  accordionStateMap,
-  alert,
   setAlert,
   onOpenAlert,
 }) => {
   const { isOpen: isAccordionOpen } = useAccordionItemState(); // Hook per sapere se l'accordion è aperto o chiuso
-  const [device, setDevice] = useState<Device>(deviceInfo);
+  const [device, setDevice] = useState<Device>({
+    ...deviceInfo,
+    info: deviceInfo.info,
+  });
+  const [deviceError, setDeviceError] = useState<any>({
+    hostname: "",
+    stratumURL: "",
+    stratumPort: "",
+    stratumUser: "",
+    workerName: "",
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [isRestartLoading, setIsRestartLoading] = useState(false);
 
@@ -161,18 +157,34 @@ const AccordionItem: React.FC<
   const theme = useTheme();
   const { isConnected, socket } = useSocket();
 
-  // Traccia lo stato dell'accordion ogni volta che cambia
   useEffect(() => {
-    updateAccordionState(device.mac, isAccordionOpen);
-  }, [isAccordionOpen, device.mac, updateAccordionState]);
+    if (presets && isAccordionOpen && isPresetRadioButtonSelected && !selectedPreset) {
+      setSelectedPreset(presets[0]);
+    }
+  }, [isAccordionOpen, presets, isPresetRadioButtonSelected, selectedPreset]);
 
   const handleSaveDeviceSettings = useCallback(
     async (e: { preventDefault: () => void }) => {
       e.preventDefault();
       try {
         setIsSaving(true);
-        await axios.patch(`/api/devices/${device.mac}/system`, device.info);
-        await axios.patch(`/api/devices/imprint/${device.mac}`, { device: device });
+        const {
+          data: { data: updatedDestDevice },
+        } = await axios.patch<{ message: string; data: Device }>(
+          `/api/devices/${device.mac}/system`,
+          device
+        );
+        const {
+          data: { data: updatedDevice },
+        } = await axios.patch<{ message: string; data: Device }>(
+          `/api/devices/imprint/${device.mac}`,
+          {
+            device: updatedDestDevice,
+          }
+        );
+
+        setDevice(updatedDevice);
+
         setAlert({
           status: AlertStatus.SUCCESS,
           title: "Save Successful",
@@ -202,50 +214,80 @@ const AccordionItem: React.FC<
     [device, setAlert, onOpenAlert]
   );
 
+  const validateFieldByName = (name: string, value: string) => {
+    switch (name) {
+      case "stratumURL":
+        return validateDomain(value, { allowIP: true });
+      case "stratumPort":
+        const numericRegex = /^\d+$/;
+        return validateTCPPort(numericRegex.test(value) ? parseInt(value) : -1);
+      case "stratumUser":
+        return validateBitcoinAddress(value);
+      default:
+        return true;
+    }
+  };
+
+  const validateField = (name: string, value: string) => {
+    const label =
+      value === ""
+        ? `${name} is required.`
+        : validateFieldByName(name, value)
+        ? ""
+        : `${name} is not correct.`;
+
+    setDeviceError((prevDevice: any) => ({
+      ...prevDevice,
+      [name]: label,
+    }));
+  };
+
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value, type } = e.target;
+
+      validateField(name, value);
+
       const isCheckbox = type === "checkbox";
 
-      setDevice(() => {
-        const updatedDevice = {
-          ...device,
-          info: {
-            ...device.info,
-            [name]: isCheckbox
-              ? (e.target as HTMLInputElement).checked
-                ? 1
-                : 0
-              : name === "stratumPort"
-              ? value.replace(/\D/g, "") // Mantieni solo numeri nell'input
-              : ["wifiPass", "stratumPassword"].includes(name)
-              ? value
-              : parseInt(value) || value,
-          },
-        };
+      const updatedDevice = {
+        ...device,
+        info: {
+          ...device.info,
+          [name]: isCheckbox
+            ? (e.target as HTMLInputElement).checked
+              ? 1
+              : 0
+            : name === "stratumPort"
+            ? value.replace(/\D/g, "") // Mantieni solo numeri nell'input
+            : ["wifiPass", "stratumPassword"].includes(name)
+            ? value
+            : parseInt(value) || value,
+        },
+      };
 
-        return updatedDevice;
-      });
+      setDevice(updatedDevice);
     },
     [device]
   );
 
   const handleChangeOnStratumUser = useCallback(
-    (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    (e: ChangeEvent<HTMLInputElement>) => {
       const { name, value } = e.target;
+
+      validateField(name, value);
+
       setStratumUser({ ...stratumUser, [name]: value });
 
-      setDevice(() => {
-        const updatedDevice = {
-          ...device,
-          info: {
-            ...device.info,
-            [name]: name === "workerName" ? value : `${value}.${stratumUser.workerName}`,
-          },
-        };
+      const updatedDevice = {
+        ...device,
+        info: {
+          ...device.info,
+          [name]: name === "workerName" ? value : `${value}.${stratumUser.workerName}`,
+        },
+      };
 
-        return updatedDevice;
-      });
+      setDevice(updatedDevice);
     },
     [device, stratumUser]
   );
@@ -254,26 +296,20 @@ const AccordionItem: React.FC<
     (value: string) => {
       setIsPresetRadioButtonSelected(value === RadioButtonStatus.PRESET ? true : false);
 
-      console.log(presets);
-
       if (value === RadioButtonStatus.CUSTOM && device.presetUuid) {
-        setDevice(() => {
-          const updatedDevice = {
-            ...device,
-            presetUuid: null,
-          };
+        const updatedDevice = {
+          ...device,
+          presetUuid: null,
+        };
 
-          return updatedDevice;
-        });
+        setDevice(updatedDevice);
       } else if (value === RadioButtonStatus.PRESET) {
-        setDevice(() => {
-          const updatedDevice = {
-            ...device,
-            presetUuid: selectedPreset?.uuid || presets[0].uuid,
-          };
+        const updatedDevice = {
+          ...device,
+          presetUuid: selectedPreset?.uuid || presets[0].uuid,
+        };
 
-          return updatedDevice;
-        });
+        setDevice(updatedDevice);
       }
     },
     [selectedPreset, device, presets]
@@ -323,32 +359,31 @@ const AccordionItem: React.FC<
       const preset = presets.find((p) => p.uuid === e.target.value);
       if (preset) {
         setSelectedPreset(preset);
-        setDevice(() => {
-          const updatedDevice = {
-            ...device,
-            presetUuid: preset?.uuid || null,
-          };
 
-          return updatedDevice;
-        });
+        const updatedDevice = {
+          ...device,
+          presetUuid: preset?.uuid || null,
+        };
+
+        setDevice(updatedDevice);
       }
     },
     [presets]
   );
 
-  const fetchDevice = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/devices/imprint/${device.mac}`);
-      if (response.ok) {
-        const data: { data: Device } = await response.json();
-        setDevice(data.data);
-      } else {
-        console.error("Failed to fetch device");
-      }
-    } catch (error) {
-      console.error("Error fetching device", error);
-    }
-  }, [device]);
+  // const fetchDevice = useCallback(async () => {
+  //   try {
+  //     const response = await fetch(`/api/devices/imprint/${device.mac}`);
+  //     if (response.ok) {
+  //       const data: { data: Device } = await response.json();
+  //       setDevice(data.data);
+  //     } else {
+  //       console.error("Failed to fetch device");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching device", error);
+  //   }
+  // }, [device]);
 
   useEffect(() => {
     const listener = (e: Device) => {
@@ -356,10 +391,12 @@ const AccordionItem: React.FC<
         if (!prevDevice || prevDevice.mac !== e.mac) return prevDevice;
 
         // Solo aggiorna i dati se l'accordion è aperto
-        if (accordionStateMap.current.get(e.mac)) {
+        if (isAccordionOpen) {
+          // console.log("device partially updated: ", device);
           return { ...prevDevice, tracing: e.tracing }; // Esegui solo l'aggiornamento della proprietà di interesse
         }
-        return prevDevice;
+        // console.log("device updated: ", device);
+        return e;
       });
     };
 
@@ -372,7 +409,33 @@ const AccordionItem: React.FC<
         socket.off("error", listener);
       };
     }
-  }, [isConnected, socket]);
+  }, [isAccordionOpen, isConnected, socket]);
+
+  const hasEmptyFields = (obj: any): boolean => {
+    for (const key in obj) {
+      if (typeof obj[key] === "object" && obj[key] !== null) {
+        if (hasEmptyFields(obj[key])) return true; // Ricorsione per oggetti annidati
+      } else if (obj[key] === "") {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const hasErrorFields = (obj: any): boolean => {
+    for (const key in obj) {
+      if (typeof obj[key] === "object" && obj[key] !== null) {
+        if (hasErrorFields(obj[key])) return true; // Ricorsione per oggetti annidati
+      } else if (obj[key] !== "") {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const isPresetValid = useCallback(() => {
+    return hasEmptyFields(device) || hasErrorFields(deviceError);
+  }, [device, deviceError]);
 
   return (
     <>
@@ -401,6 +464,7 @@ const AccordionItem: React.FC<
               placeholder="hostname"
               defaultValue={device.info.hostname}
               onChange={handleChange}
+              error={deviceError.hostname}
             />
 
             <Input
@@ -410,6 +474,7 @@ const AccordionItem: React.FC<
               placeholder="worker name"
               defaultValue={stratumUser.workerName}
               onChange={handleChangeOnStratumUser}
+              error={deviceError.workerName}
             />
           </SimpleGrid>
         </Flex>
@@ -603,11 +668,11 @@ const AccordionItem: React.FC<
                     label={selectedPreset.configuration.stratumUser}
                     color={theme.colors.greyscale[200]}
                   ></Badge>
-                  <Badge
+                  {/* <Badge
                     title={"Stratum Password:"}
                     label={selectedPreset.configuration.stratumPassword}
                     color={theme.colors.greyscale[200]}
-                  ></Badge>
+                  ></Badge> */}
                 </Flex>
               )}
             </Flex>
@@ -622,6 +687,7 @@ const AccordionItem: React.FC<
                   placeholder="Add your stratum URL"
                   defaultValue={device.info.stratumURL}
                   onChange={handleChange}
+                  error={deviceError.stratumURL}
                 />
               </Flex>
               <Flex flex={1}>
@@ -633,6 +699,7 @@ const AccordionItem: React.FC<
                   placeholder="Add your stratum port"
                   defaultValue={device.info.stratumPort}
                   onChange={handleChange}
+                  error={deviceError.stratumPort}
                 />
               </Flex>
               <Flex flex={2}>
@@ -645,6 +712,7 @@ const AccordionItem: React.FC<
                   defaultValue={stratumUser.stratumUser}
                   onChange={handleChangeOnStratumUser}
                   rightAddon={`.${stratumUser.workerName}`}
+                  error={deviceError.stratumUser}
                 />
               </Flex>
               <Flex flex={1}>
@@ -655,6 +723,7 @@ const AccordionItem: React.FC<
                   id={`${device.mac}-stratumPassword`}
                   placeholder="Add your stratum password"
                   defaultValue={device.info.stratumPassword}
+                  error={deviceError.stratumPassword}
                   onChange={handleChange}
                 />
               </Flex>
@@ -669,7 +738,7 @@ const AccordionItem: React.FC<
               setIsRestartModalOpen(false);
               setIsSaveModalOpen(true);
             }}
-            // disabled={isDeviceModified}
+            disabled={isPresetValid()}
           >
             Save
           </Button>

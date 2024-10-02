@@ -7,7 +7,6 @@ import {
   IconButton,
   Stack,
   StackDivider,
-  Text,
   useDisclosure,
   useTheme,
 } from "@chakra-ui/react";
@@ -113,61 +112,6 @@ export const NavBar = () => {
         </Box>
       ),
     },
-    // {
-    //   key: "logs",
-    //   href: "/logs",
-    //   component: (pathname?: string | null) => (
-    //     <Box
-    //       color={"#fff"}
-    //       fontWeight={pathname === "/logs" ? "700" : "400"}
-    //       fontFamily={"heading"}
-    //       fontSize={"sm"}
-    //       position={"relative"}
-    //       _after={{
-    //         display: pathname === "/logs" ? "block" : "none",
-    //         content: '""',
-    //         width: "32px",
-    //         height: "2px",
-    //         borderRadius: "3px",
-    //         backgroundColor: theme.colors.greyscale[0],
-    //         position: "absolute",
-    //         bottom: "0",
-    //         left: "50%",
-    //         transform: "translateX(-50%)",
-    //       }}
-    //     >
-    //       Logs
-    //     </Box>
-    //   ),
-    // },
-    // {
-    //   key: "grafana",
-    //   href: "/grafana/dashboards",
-    //   target: "_blank",
-    //   component: (pathname?: string | null) => (
-    //     <Box
-    //       color={"#fff"}
-    //       fontWeight={pathname === "/grafana/dashboards" ? "700" : "400"}
-    //       fontFamily={"heading"}
-    //       fontSize={"sm"}
-    //       position={"relative"}
-    //       _after={{
-    //         display: pathname === "/grafana/dashboards" ? "block" : "none",
-    //         content: '""',
-    //         width: "32px",
-    //         height: "2px",
-    //         borderRadius: "3px",
-    //         backgroundColor: theme.colors.greyscale[0],
-    //         position: "absolute",
-    //         bottom: "0",
-    //         left: "50%",
-    //         transform: "translateX(-50%)",
-    //       }}
-    //     >
-    //       Grafana
-    //     </Box>
-    //   ),
-    // },
     {
       key: "presets",
       href: "/presets",
@@ -237,9 +181,11 @@ export const NavBar = () => {
                 display={{ md: "none" }}
                 onClick={isOpen ? onClose : onOpen}
               />
-              <Link key={`md-nav-link-logo`} href={"/"}>
-                <Logo />
-              </Link>
+              <Box marginRight={"auto"}>
+                <Link key={`md-nav-link-logo`} href={"/"}>
+                  <Logo />
+                </Link>
+              </Box>
               <HStack
                 as="nav"
                 spacing={4}
@@ -251,6 +197,9 @@ export const NavBar = () => {
                 fontSize={"14px"}
                 fontWeight={"400"}
                 lineHeight={"24px"}
+                position={"absolute"}
+                left={"50%"}
+                transform={"translateX(-50%)"}
               >
                 {links.map((link) => (
                   <Link key={`md-nav-link-${link.key}`} href={link.href}>
@@ -259,12 +208,12 @@ export const NavBar = () => {
                 ))}
               </HStack>
               <Flex alignItems="center" gap={"1rem"} color={"#fff"}>
-                <Text fontFamily={"heading"} fontSize={"14px"}>
+                {/* <Text fontFamily={"heading"} fontSize={"14px"}>
                   Notification
                 </Text>
                 <Text fontFamily={"heading"} fontSize={"14px"}>
                   Profile
-                </Text>
+                </Text> */}
               </Flex>
             </Flex>
           </Flex>

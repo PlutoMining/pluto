@@ -6,7 +6,7 @@
       "type": "node-terminal",
       "request": "launch",
       "command": "npm run dev",
-      "cwd": "${workspaceFolder}/bemind-pluto"
+      "cwd": "${workspaceFolder}/frontend"
     },
     {
       "name": "Next.js: debug client-side",
@@ -18,7 +18,7 @@
       "name": "Next.js: debug full stack",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/bemind-pluto/node_modules/.bin/next",
+      "program": "${workspaceFolder}/frontend/node_modules/.bin/next",
       "runtimeArgs": [
         "--inspect"
       ],
@@ -30,7 +30,7 @@
         "killOnServerStop": true,
         "pattern": "- Local:.+(https?://.+)",
         "uriFormat": "%s",
-        "webRoot": "${workspaceFolder}/bemind-pluto/"
+        "webRoot": "${workspaceFolder}/frontend/"
       }
     },
     {
@@ -40,7 +40,7 @@
       "port": 9229,
       "address": "localhost",
       "restart": true,
-      "localRoot": "${workspaceFolder}/bemind-pluto/backend/src", // Puntiamo ai file sorgente TypeScript
+      "localRoot": "${workspaceFolder}/backend/src", // Puntiamo ai file sorgente TypeScript
       "remoteRoot": "/app/src" // Assicurati che corrisponda alla cartella nel container
     }
   ]

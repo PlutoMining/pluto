@@ -27,7 +27,7 @@ export const getSystemInfo = async (req: Request, res: Response) => {
 
 export const patchSystemInfo = async (req: Request, res: Response) => {
   try {
-    const updatedInfo = req.body as Partial<DeviceInfo>;
+    const updatedInfo: Partial<DeviceInfo> = req.body;
 
     // Se ci sono campi da aggiornare, vengono salvati su req.app.locals
     if (!req.app.locals.systemInfo) {

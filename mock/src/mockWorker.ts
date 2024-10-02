@@ -59,6 +59,8 @@ const createMockServer = (port: number, hostname: string): void => {
     broadcastLogs();
   }
 
+  app.use(express.json());
+
   // Applica il middleware a tutte le rotte
   app.use(checkIfRestarting);
 

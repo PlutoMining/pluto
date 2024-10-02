@@ -23,7 +23,8 @@ export interface DeviceInfo {
   stratumURL: string;
   stratumPort: number;
   stratumUser: string;
-  stratumPassword: string;
+  wifiPassword?: string;
+  stratumPassword?: string;
   version: string;
   boardVersion: string;
   runningPartition: string;

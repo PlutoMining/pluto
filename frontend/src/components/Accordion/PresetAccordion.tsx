@@ -9,9 +9,8 @@ import {
   Text,
   useTheme,
 } from "@chakra-ui/react";
-import { Device, Preset } from "@pluto/interfaces";
-import axios from "axios";
-import { useEffect, useState } from "react";
+import { Preset } from "@pluto/interfaces";
+import { MouseEvent } from "react";
 import { Badge } from "../Badge";
 import Button from "../Button/Button";
 import { DeleteIcon } from "../icons/DeleteIcon";
@@ -19,7 +18,7 @@ import { DuplicateIcon } from "../icons/DuplicateIcon";
 
 interface PresetProps {
   preset: Preset;
-  onDuplicate: (uuid: string) => void;
+  onDuplicate: (uuid: string) => (e: MouseEvent<HTMLButtonElement>) => void;
   onDelete: (uuid: string) => void;
   isDuplicateDisabled: boolean;
   index: number;
@@ -81,11 +80,11 @@ export const PresetAccordion: React.FC<PresetProps> = ({
               label={preset.configuration.stratumUser}
               color={theme.colors.greyscale[200]}
             ></Badge>
-            <Badge
+            {/* <Badge
               title={"Stratum Password:"}
               label={preset.configuration.stratumPassword}
               color={theme.colors.greyscale[200]}
-            ></Badge>
+            ></Badge> */}
           </Flex>
 
           <Text fontFamily={"heading"} fontWeight={"bold"} textTransform={"capitalize"}>
@@ -114,7 +113,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
       <Flex alignItems={"center"}>
         <Button
           variant="text"
-          onClick={() => onDuplicate(preset.uuid)}
+          onClick={onDuplicate(preset.uuid)}
           icon={<DuplicateIcon h={"18"} color={theme.colors.greyscale[500]} />}
           disabled={isDuplicateDisabled}
         >
