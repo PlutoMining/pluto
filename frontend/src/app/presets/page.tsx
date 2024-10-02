@@ -42,7 +42,7 @@ const PresetsListingPage: React.FC = () => {
     onClose: onDeletePresetModalClose,
   } = useDisclosure();
 
-  const [selectedPresetUuid, setSelectedPresetUuid] = useState<string>("");
+  const [selectedPresetUuid, setSelectedPresetUuid] = useState<string | undefined>(undefined);
 
   // Recupera i preset tramite le API
   const fetchPresets = async () => {
@@ -106,33 +106,36 @@ const PresetsListingPage: React.FC = () => {
   const handleDeletePreset = useCallback(async () => {
     onDeletePresetModalClose();
     closeAlert();
-    try {
-      await axios.delete(`/api/presets/${encodeURIComponent(selectedPresetUuid)}`);
 
-      const devices = presets?.find((p) => p.uuid === selectedPresetUuid)?.associatedDevices;
-      if (devices) {
-        devices.forEach(async (d) => {
-          await axios.patch(`/api/devices/imprint/${d.mac}`, {
-            device: {
-              presetUuid: null,
-            },
+    if (selectedPresetUuid) {
+      try {
+        await axios.delete(`/api/presets/${encodeURIComponent(selectedPresetUuid)}`);
+
+        const devices = presets?.find((p) => p.uuid === selectedPresetUuid)?.associatedDevices;
+        if (devices) {
+          devices.forEach(async (d) => {
+            await axios.patch(`/api/devices/imprint/${d.mac}`, {
+              device: {
+                presetUuid: null,
+              },
+            });
           });
-        });
-      }
+        }
 
-      setAlert({
-        status: AlertStatus.SUCCESS,
-        title: "Preset Deleted Successfully!",
-        message: `Your preset has been correctly deleted.`,
-      });
-      onOpenAlert();
-    } catch (error) {
-      setAlert({
-        status: AlertStatus.ERROR,
-        title: "Error deleting preset",
-        message: `An error occured while deleting the preset.`,
-      });
-      onOpenAlert();
+        setAlert({
+          status: AlertStatus.SUCCESS,
+          title: "Preset Deleted Successfully!",
+          message: `Your preset has been correctly deleted.`,
+        });
+        onOpenAlert();
+      } catch (error) {
+        setAlert({
+          status: AlertStatus.ERROR,
+          title: "Error deleting preset",
+          message: `An error occured while deleting the preset.`,
+        });
+        onOpenAlert();
+      }
     }
   }, [closeAlert, onDeletePresetModalClose, onOpenAlert, selectedPresetUuid]);
 
@@ -141,7 +144,7 @@ const PresetsListingPage: React.FC = () => {
       e.preventDefault();
       if (presetUuid) {
         setSelectedPresetUuid(presetUuid);
-      }
+      } else setSelectedPresetUuid(undefined);
       onNewPresetModalOpen();
     },
     []
