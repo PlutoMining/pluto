@@ -7,8 +7,8 @@ const dbInstances: Map<string, Level<string, any>> = new Map();
 let exitHandlerRegistered = false;
 
 interface BaseEntity {
-  createdAt: string; // Oppure Date, a seconda di come rappresenti il timestamp
-  updatedAt: string; // Oppure Date
+  createdAt?: string; // Oppure Date, a seconda di come rappresenti il timestamp
+  updatedAt?: string; // Oppure Date
 }
 
 // Funzione per ottenere l'istanza singleton di un database in base al nome
