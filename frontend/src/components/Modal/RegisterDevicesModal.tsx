@@ -257,7 +257,7 @@ function ModalBodyContent({
   }, [errors, ipAndMacAddress]);
 
   return (
-    <Box p={0} pt={"1rem"}>
+    <Box p={0} pt={"1rem"} h={"100%"}>
       <Flex
         flexDir={"column"}
         gap={"2rem"}
@@ -265,9 +265,11 @@ function ModalBodyContent({
         p={"1rem"}
         borderWidth={"1px"}
         borderColor={theme.colors.greyscale[200]}
+        h={"100%"}
+        overflow={"scroll"}
       >
-        <VStack spacing={4} align="stretch">
-          <Tabs onChange={(index) => setTabIndex(index)} variant="unstyled">
+        <VStack spacing={4} align="stretch" h={"100%"}>
+          <Tabs onChange={(index) => setTabIndex(index)} variant="unstyled" h={"100%"}>
             <TabList>
               <Tab
                 fontFamily={"heading"}
@@ -373,104 +375,106 @@ function ModalBodyContent({
                               >
                                 Result for {ipAndMacAddress.macAddress}
                               </Text>
-                              <TableContainer>
-                                <Table variant="simple">
-                                  <Thead backgroundColor={theme.colors.greyscale[100]}>
-                                    <Tr>
-                                      <Th borderColor={theme.colors.greyscale[100]}>
-                                        <Text
-                                          fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"12px"}
-                                        >
-                                          Hostname
-                                        </Text>
-                                      </Th>
-                                      <Th borderColor={theme.colors.greyscale[100]}>
-                                        <Text
-                                          fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"12px"}
-                                        >
-                                          IP
-                                        </Text>
-                                      </Th>
-                                      <Th borderColor={theme.colors.greyscale[100]}>
-                                        <Text
-                                          fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"12px"}
-                                        >
-                                          Mac Address
-                                        </Text>
-                                      </Th>
-                                      <Th borderColor={theme.colors.greyscale[100]}>
-                                        <Text
-                                          fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"12px"}
-                                        >
-                                          Miner
-                                        </Text>
-                                      </Th>
-                                      <Th borderColor={theme.colors.greyscale[100]}>
-                                        <Text
-                                          fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"12px"}
-                                        >
-                                          Asic
-                                        </Text>
-                                      </Th>
-                                      <Th borderColor={theme.colors.greyscale[100]}>
-                                        <Text
-                                          fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"12px"}
-                                        >
-                                          FW v.
-                                        </Text>
-                                      </Th>
-                                    </Tr>
-                                  </Thead>
-                                  <Tbody>
-                                    {discoveredDevices.map((device, index) => (
-                                      <Tr key={`tab0-device-${device.ip}`}>
-                                        <Td borderColor={theme.colors.greyscale[100]}>
-                                          {device.info.hostname}
-                                        </Td>
-                                        <Td borderColor={theme.colors.greyscale[100]}>
-                                          {device.ip}
-                                        </Td>
-                                        <Td borderColor={theme.colors.greyscale[100]}>
-                                          {device.mac}
-                                        </Td>
-                                        <Td borderColor={theme.colors.greyscale[100]}>
-                                          {getMinerName(device.info.boardVersion)}
-                                        </Td>
-                                        <Td borderColor={theme.colors.greyscale[100]}>
-                                          {device.info.ASICModel}
-                                        </Td>
-                                        <Td borderColor={theme.colors.greyscale[100]}>
-                                          {device.info.version}
-                                        </Td>
+                              <Box>
+                                <TableContainer>
+                                  <Table variant="simple">
+                                    <Thead backgroundColor={theme.colors.greyscale[100]}>
+                                      <Tr>
+                                        <Th borderColor={theme.colors.greyscale[100]}>
+                                          <Text
+                                            fontWeight={500}
+                                            color={theme.colors.greyscale[500]}
+                                            fontFamily={"heading"}
+                                            textTransform={"capitalize"}
+                                            fontSize={"12px"}
+                                          >
+                                            Hostname
+                                          </Text>
+                                        </Th>
+                                        <Th borderColor={theme.colors.greyscale[100]}>
+                                          <Text
+                                            fontWeight={500}
+                                            color={theme.colors.greyscale[500]}
+                                            fontFamily={"heading"}
+                                            textTransform={"capitalize"}
+                                            fontSize={"12px"}
+                                          >
+                                            IP
+                                          </Text>
+                                        </Th>
+                                        <Th borderColor={theme.colors.greyscale[100]}>
+                                          <Text
+                                            fontWeight={500}
+                                            color={theme.colors.greyscale[500]}
+                                            fontFamily={"heading"}
+                                            textTransform={"capitalize"}
+                                            fontSize={"12px"}
+                                          >
+                                            Mac Address
+                                          </Text>
+                                        </Th>
+                                        <Th borderColor={theme.colors.greyscale[100]}>
+                                          <Text
+                                            fontWeight={500}
+                                            color={theme.colors.greyscale[500]}
+                                            fontFamily={"heading"}
+                                            textTransform={"capitalize"}
+                                            fontSize={"12px"}
+                                          >
+                                            Miner
+                                          </Text>
+                                        </Th>
+                                        <Th borderColor={theme.colors.greyscale[100]}>
+                                          <Text
+                                            fontWeight={500}
+                                            color={theme.colors.greyscale[500]}
+                                            fontFamily={"heading"}
+                                            textTransform={"capitalize"}
+                                            fontSize={"12px"}
+                                          >
+                                            Asic
+                                          </Text>
+                                        </Th>
+                                        <Th borderColor={theme.colors.greyscale[100]}>
+                                          <Text
+                                            fontWeight={500}
+                                            color={theme.colors.greyscale[500]}
+                                            fontFamily={"heading"}
+                                            textTransform={"capitalize"}
+                                            fontSize={"12px"}
+                                          >
+                                            FW v.
+                                          </Text>
+                                        </Th>
                                       </Tr>
-                                    ))}
-                                  </Tbody>
-                                </Table>
-                              </TableContainer>
+                                    </Thead>
+                                    <Tbody>
+                                      {discoveredDevices.map((device, index) => (
+                                        <Tr key={`tab0-device-${device.ip}`}>
+                                          <Td borderColor={theme.colors.greyscale[100]}>
+                                            {device.info.hostname}
+                                          </Td>
+                                          <Td borderColor={theme.colors.greyscale[100]}>
+                                            {device.ip}
+                                          </Td>
+                                          <Td borderColor={theme.colors.greyscale[100]}>
+                                            {device.mac}
+                                          </Td>
+                                          <Td borderColor={theme.colors.greyscale[100]}>
+                                            {getMinerName(device.info.boardVersion)}
+                                          </Td>
+                                          <Td borderColor={theme.colors.greyscale[100]}>
+                                            {device.info.ASICModel}
+                                          </Td>
+                                          <Td borderColor={theme.colors.greyscale[100]}>
+                                            {device.info.version}
+                                          </Td>
+                                        </Tr>
+                                      ))}
+                                    </Tbody>
+                                  </Table>
+                                </TableContainer>
+                              </Box>
                               <Flex align={"start"}>
                                 <Flex gap={"1rem"}>
                                   <Button variant="secondary" onClick={onClose}>
@@ -500,12 +504,12 @@ function ModalBodyContent({
                 {isLoadingData ? (
                   <Spinner color="orange" />
                 ) : (
-                  <VStack>
+                  <VStack h={"100%"}>
                     {discoveredDevices && discoveredDevices.length > 0 ? (
-                      <Box as={Flex} flexDir={"column"} gap={"1rem"} w={"100%"}>
+                      <Box as={Flex} flexDir={"column"} gap={"1rem"} w={"100%"} h={"100%"}>
                         <Text>“{discoveredDevices?.length}” new devices found</Text>
-                        <TableContainer>
-                          <Table variant="simple">
+                        <TableContainer h={"100%"}>
+                          <Table variant="simple" h={"100%"} overflow={"scroll"}>
                             <Thead>
                               <Tr>
                                 <Th borderColor={theme.colors.greyscale[100]}>
@@ -676,14 +680,21 @@ export const RegisterDevicesModal: React.FC<RegisterDevicesModalProps> = ({
       <ModalContent
         bg={theme.colors.greyscale[0]}
         borderRadius={"1rem"}
-        height={"calc(100% - 8rem)"}
+        height={"calc(100% - 3rem)"}
       >
-        <Box maxW="container.2xl" margin={"0 auto"} p={"2rem"} w={"100%"}>
+        <Box
+          maxW="container.2xl"
+          margin={"0 auto"}
+          p={"2rem"}
+          w={"100%"}
+          h={"100%"}
+          overflow={"hidden"}
+        >
           <ModalHeader p={0} fontFamily={"heading"} fontWeight={400} fontSize={"2rem"}>
             Add a new Device
           </ModalHeader>
           <ModalCloseButton />
-          <ModalBody overflow={"scroll"} p={0}>
+          <ModalBody overflow={"scroll"} p={0} height={"calc(100% - 8rem)"}>
             <ModalBodyContent
               onClose={onClose}
               theme={theme}

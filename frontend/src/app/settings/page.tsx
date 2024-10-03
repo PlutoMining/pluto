@@ -9,6 +9,7 @@ import { SearchInput } from "@/components/Input";
 import {
   Box,
   Container,
+  Fade,
   Flex,
   Heading,
   Modal,
@@ -125,15 +126,17 @@ const SettingsPage = () => {
     }
   };
 
-  const closeAlert = () => {
+  const closeAlert = useCallback(() => {
     setAlert(undefined);
     onCloseAlert();
-  };
+  }, [onCloseAlert]);
 
   return (
     <Container flex="1" maxW="container.2xl" h={"100%"}>
       {alert && (
-        <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
+        <Fade in={isOpenAlert}>
+          <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
+        </Fade>
       )}
 
       <Box p={8}>

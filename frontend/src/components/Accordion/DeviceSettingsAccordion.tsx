@@ -98,7 +98,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
     <ChakraAccordion allowMultiple as={Flex} flexDir={"column"} gap={"1rem"}>
       {devices?.map((device) => (
         <ChakraAccordionItem
-          key={`device-settings-${device.ip}`} // Prefisso specifico per ogni device
+          key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
           backgroundColor={"greyscale.0"}
           borderWidth={"1px"}
           borderColor={"greyscale.200"}
@@ -441,9 +441,12 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     <>
       <AccordionButton p={0} justifyContent={"space-between"} _hover={{ backgroundColor: "none" }}>
         <Flex gap={"1rem"} alignItems={"center"}>
-          <Heading fontSize={"md"} fontWeight={"bold"}>
-            {device.ip}
+          <Heading fontSize={"md"} fontWeight={"bold"} textTransform={"capitalize"}>
+            {device.info.hostname}
           </Heading>
+          <Text fontSize={"sm"} fontWeight={400}>
+            {device.ip}
+          </Text>
           <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
         </Flex>
         <Flex alignItems={"center"} gap={"0.5rem"} fontFamily={"heading"}>

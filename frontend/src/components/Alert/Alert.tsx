@@ -41,7 +41,7 @@ const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
       default:
         break;
     }
-  }, []);
+  }, [content.status]);
 
   return (
     <Box
