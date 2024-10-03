@@ -21,7 +21,6 @@ import React, { MouseEvent, useCallback, useEffect, useState } from "react";
 
 const PresetsListingPage: React.FC = () => {
   const [presets, setPresets] = useState<Preset[] | null>(null);
-  const maxNumberOfPresets = 7;
 
   const [alert, setAlert] = useState<AlertInterface>();
   const {
@@ -116,6 +115,7 @@ const PresetsListingPage: React.FC = () => {
           devices.forEach(async (d) => {
             await axios.patch(`/api/devices/imprint/${d.mac}`, {
               device: {
+                ...d,
                 presetUuid: null,
               },
             });
@@ -174,7 +174,7 @@ const PresetsListingPage: React.FC = () => {
               <Button
                 variant="primaryPurple"
                 onClick={handleNewPreset()}
-                disabled={presets.length >= maxNumberOfPresets}
+                // disabled={presets.length >= maxNumberOfPresets}
               >
                 Add a New Preset
               </Button>
@@ -193,7 +193,10 @@ const PresetsListingPage: React.FC = () => {
                     preset={preset}
                     onDuplicate={handleNewPreset}
                     onDelete={openDeleteConfirmationModal}
-                    isDuplicateDisabled={presets.length >= maxNumberOfPresets}
+                    isDuplicateDisabled={
+                      false
+                      // presets.length >= maxNumberOfPresets
+                    }
                   />
                 ))}
               </Accordion>
