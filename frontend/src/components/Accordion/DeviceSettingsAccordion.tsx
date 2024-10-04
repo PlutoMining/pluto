@@ -41,6 +41,7 @@ import { RestartIcon } from "../icons/RestartIcon";
 import { Input } from "../Input/Input";
 import { RadioButton } from "../RadioButton";
 import { Select } from "../Select/Select";
+import Link from "../Link/Link";
 
 interface DeviceSettingsAccordionProps {
   devices: Device[] | undefined;
@@ -441,12 +442,22 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     <>
       <AccordionButton p={0} justifyContent={"space-between"} _hover={{ backgroundColor: "none" }}>
         <Flex gap={"1rem"} alignItems={"center"}>
-          <Heading fontSize={"md"} fontWeight={"bold"} textTransform={"capitalize"}>
-            {device.info.hostname}
-          </Heading>
-          <Text fontSize={"sm"} fontWeight={400}>
-            {device.ip}
-          </Text>
+          <Flex alignItems={"center"} gap={"0.25rem"}>
+            <Heading fontSize={"md"} fontWeight={500} textTransform={"capitalize"}>
+              {device.info.hostname}
+            </Heading>
+            {" - "}
+            <Link
+              href="/"
+              label={device.ip}
+              fontSize={"md"}
+              fontWeight={400}
+              color={theme.colors.brand.lightBlue}
+              textDecoration="underline"
+              isDisabled={device.tracing ? false : true}
+            />
+          </Flex>
+
           <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
         </Flex>
         <Flex alignItems={"center"} gap={"0.5rem"} fontFamily={"heading"}>

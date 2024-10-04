@@ -21,6 +21,7 @@ export const colors = {
     secondary: "#7B00CC", // viola
     secondaryDark: "#3D0066", // viola scuro
     purple0: "#3D0066",
+    lightBlue: "#6BB4F6",
   },
   generic: {
     green: "#51E33A",
