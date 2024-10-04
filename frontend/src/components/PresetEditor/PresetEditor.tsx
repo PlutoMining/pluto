@@ -90,7 +90,7 @@ export const PresetEditor = ({
         return validateDomain(value, { allowIP: true });
       case "stratumPort":
         const numericRegex = /^\d+$/;
-        return validateTCPPort(numericRegex.test(value) ? parseInt(value) : -1);
+        return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
       case "stratumUser":
         return validateBitcoinAddress(value);
       default:
@@ -127,7 +127,7 @@ export const PresetEditor = ({
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
 
     validateField(name, value);
 
@@ -152,11 +152,9 @@ export const PresetEditor = ({
     const updatedPreset = {
       ...preset,
       uuid,
-      configuration: {
-        ...preset.configuration,
-        stratumPort: parseInt(preset.configuration?.stratumPort),
-      },
     };
+
+    console.log(updatedPreset);
 
     const promise = axios.post("/api/presets", updatedPreset);
 

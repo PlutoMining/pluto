@@ -220,7 +220,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         return validateDomain(value, { allowIP: true });
       case "stratumPort":
         const numericRegex = /^\d+$/;
-        return validateTCPPort(numericRegex.test(value) ? parseInt(value) : -1);
+        return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
       case "stratumUser":
         return validateBitcoinAddress(value);
       default:
