@@ -8,6 +8,7 @@ import {
   Heading,
   Text,
   useTheme,
+  Badge as ChakraBadge,
 } from "@chakra-ui/react";
 import { Preset } from "@pluto/interfaces";
 import { MouseEvent } from "react";
@@ -15,6 +16,7 @@ import { Badge } from "../Badge";
 import Button from "../Button/Button";
 import { DeleteIcon } from "../icons/DeleteIcon";
 import { DuplicateIcon } from "../icons/DuplicateIcon";
+import Link from "../Link/Link";
 
 interface PresetProps {
   preset: Preset;
@@ -94,12 +96,34 @@ export const PresetAccordion: React.FC<PresetProps> = ({
           {preset.associatedDevices && preset.associatedDevices.length > 0 ? (
             <Flex gap={"1rem"}>
               {preset.associatedDevices?.map((device) => (
-                <Badge
+                <ChakraBadge
                   key={device.mac}
-                  label={device.ip}
-                  color={theme.colors.greyscale[0]}
                   bg={theme.colors.brand.secondaryDark}
-                />
+                  color={theme.colors.greyscale[0]}
+                  fontSize={"13px"}
+                  borderRadius={"50px"}
+                  padding={"4px 6px"}
+                >
+                  <Flex alignItems={"center"} gap={"0.25rem"} p={"5px 8px"} height={"21.5px"}>
+                    <Text
+                      fontFamily="heading"
+                      fontSize={"md"}
+                      fontWeight={500}
+                      textTransform={"capitalize"}
+                    >
+                      {device.info.hostname}
+                    </Text>
+                    {" - "}
+                    <Link
+                      href="/"
+                      label={device.ip}
+                      fontSize={"md"}
+                      fontWeight={400}
+                      textDecoration="underline"
+                      isDisabled={device.tracing ? false : true}
+                    />
+                  </Flex>
+                </ChakraBadge>
               ))}
             </Flex>
           ) : (

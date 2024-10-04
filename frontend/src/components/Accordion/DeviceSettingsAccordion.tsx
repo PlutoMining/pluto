@@ -452,12 +452,10 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               label={device.ip}
               fontSize={"md"}
               fontWeight={400}
-              color={theme.colors.brand.lightBlue}
               textDecoration="underline"
               isDisabled={device.tracing ? false : true}
             />
           </Flex>
-
           <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
         </Flex>
         <Flex alignItems={"center"} gap={"0.5rem"} fontFamily={"heading"}>
