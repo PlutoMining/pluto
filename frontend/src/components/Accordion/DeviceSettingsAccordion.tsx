@@ -42,6 +42,8 @@ import { Input } from "../Input/Input";
 import { RadioButton } from "../RadioButton";
 import { Select } from "../Select/Select";
 import Link from "../Link/Link";
+import { SaveAndRestartModal } from "../Modal";
+import { RadioButtonValues } from "../Modal/SaveAndRestartModal";
 
 interface DeviceSettingsAccordionProps {
   devices: Device[] | undefined;
@@ -144,6 +146,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isRestartModalOpen, setIsRestartModalOpen] = useState(false);
 
+  const [isSaveAndRestartModalOpen, setIsSaveAndRestartModalOpen] = useState(false);
+
   const [selectedPreset, setSelectedPreset] = useState<Preset>(
     (presets.length > 0 && presets.find((d) => d.uuid === deviceInfo?.presetUuid)) || presets[0]
   );
@@ -164,9 +168,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     }
   }, [isAccordionOpen, presets, isPresetRadioButtonSelected, selectedPreset]);
 
-  const handleSaveDeviceSettings = useCallback(
-    async (e: { preventDefault: () => void }) => {
-      e.preventDefault();
+  const handleSaveOrSaveAndRestartDeviceSettings = useCallback(
+    async (shouldRestart: boolean) => {
       try {
         setIsSaving(true);
         const {
@@ -184,17 +187,21 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           }
         );
 
-        setDevice(updatedDevice);
+        if (updatedDevice) {
+          setDevice(updatedDevice);
 
-        setAlert({
-          status: AlertStatus.SUCCESS,
-          title: "Save Successful",
-          message: `The settings for device ${device.mac} have been successfully saved.`,
-        });
-        onOpenAlert(); // Aprire l'alert per mostrare il messaggio di successo
+          setAlert({
+            status: AlertStatus.SUCCESS,
+            title: "Save Successful",
+            message: `The settings for device ${device.mac} have been successfully saved.`,
+          });
+          onOpenAlert(); // Aprire l'alert per mostrare il messaggio di successo
 
-        // Dopo il salvataggio, mostra la modale di conferma restart
-        setIsRestartModalOpen(true);
+          // Se il salvataggio è andato a buon fine e serve il restart, esegui subito il restart
+          if (shouldRestart) {
+            handleRestartDevice();
+          }
+        }
       } catch (error) {
         let errorMessage = "An error occurred while saving the device settings.";
 
@@ -316,44 +323,39 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     [selectedPreset, device, presets]
   );
 
-  const handleRestartDevice = useCallback(
-    async (e: { preventDefault: () => void }) => {
-      e.preventDefault();
+  const handleRestartDevice = useCallback(async () => {
+    setIsRestartLoading(true);
 
-      setIsRestartLoading(true);
+    const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
 
-      const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
+    try {
+      await handleRestart(device.mac);
 
-      try {
-        await handleRestart(device.mac);
+      setAlert({
+        status: AlertStatus.SUCCESS,
+        title: "Restart Successful",
+        message:
+          "The device has been restarted successfully. The eventual new settings have been applied, and the miner is back online.",
+      });
 
-        setAlert({
-          status: AlertStatus.SUCCESS,
-          title: "Restart Successful",
-          message:
-            "The device has been restarted successfully. The eventual new settings have been applied, and the miner is back online.",
-        });
+      onOpenAlert();
+    } catch (error) {
+      let errorMessage = "An error occurred while attempting to restart the device.";
 
-        onOpenAlert();
-      } catch (error) {
-        let errorMessage = "An error occurred while attempting to restart the device.";
-
-        if (axios.isAxiosError(error)) {
-          errorMessage = error.response?.data?.message || error.message;
-        }
-
-        setAlert({
-          status: AlertStatus.ERROR,
-          title: "Restart Failed",
-          message: `${errorMessage} Please try again or contact support if the issue persists.`,
-        });
-        onOpenAlert();
-      } finally {
-        setIsRestartLoading(false);
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || error.message;
       }
-    },
-    [device.mac, onOpenAlert, setAlert]
-  );
+
+      setAlert({
+        status: AlertStatus.ERROR,
+        title: "Restart Failed",
+        message: `${errorMessage} Please try again or contact support if the issue persists.`,
+      });
+      onOpenAlert();
+    } finally {
+      setIsRestartLoading(false);
+    }
+  }, [device.mac, onOpenAlert, setAlert]);
 
   const handleChangeOnSelectPreset = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
@@ -371,20 +373,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     },
     [presets]
   );
-
-  // const fetchDevice = useCallback(async () => {
-  //   try {
-  //     const response = await fetch(`/api/devices/imprint/${device.mac}`);
-  //     if (response.ok) {
-  //       const data: { data: Device } = await response.json();
-  //       setDevice(data.data);
-  //     } else {
-  //       console.error("Failed to fetch device");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching device", error);
-  //   }
-  // }, [device]);
 
   useEffect(() => {
     const listener = (e: Device) => {
@@ -437,6 +425,15 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const isPresetValid = useCallback(() => {
     return hasEmptyFields(device) || hasErrorFields(deviceError);
   }, [device, deviceError]);
+
+  const handleModalClose = useCallback(async (value: string) => {
+    // Funzione di callback per gestire il valore restituito dalla modale
+    if (value !== "") {
+      const shouldRestart = value === RadioButtonValues.SAVE_AND_RESTART ? true : false;
+      await handleSaveOrSaveAndRestartDeviceSettings(shouldRestart);
+    }
+    setIsSaveAndRestartModalOpen(false);
+  }, []);
 
   return (
     <>
@@ -746,10 +743,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           <Button
             variant="primaryPurple"
             rightIcon={<ArrowIcon color="#fff" />}
-            onClick={(e) => {
-              setIsRestartModalOpen(false);
-              setIsSaveModalOpen(true);
-            }}
+            onClick={() => setIsSaveAndRestartModalOpen(true)}
             disabled={isPresetValid()}
           >
             Save
@@ -769,87 +763,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           Restart
         </Button>
       </Flex>
-      {/* Save Confirmation Modal */}
-      <Modal
-        isCentered
-        isOpen={isSaveModalOpen}
-        onClose={() => setIsSaveModalOpen(false)}
-        motionPreset="slideInBottom"
-        blockScrollOnMount={false}
-        returnFocusOnClose={false}
-      >
-        <ModalOverlay bg="none" backdropFilter="auto" backdropBlur="3px" />
-        <ModalContent
-          bg={"#fff"}
-          borderColor={"#E1DEE3"}
-          borderWidth={"1px"}
-          borderRadius={"1rem"}
-          p={"1rem"}
-          color={"greyscale.900"}
-        >
-          <ModalHeader>Confirm Save</ModalHeader>
-          <ModalBody>
-            <Text>Do you want to save the new settings for device {device.mac}?</Text>
-          </ModalBody>
-          <ModalFooter gap={"1.5rem"}>
-            <ChakraButton variant="secondary" onClick={() => setIsSaveModalOpen(false)}>
-              Cancel
-            </ChakraButton>
-            <ChakraButton
-              variant="primaryPurple"
-              onClick={(e) => {
-                setIsSaveModalOpen(false); // Chiudi la modale di salvataggio
-                handleSaveDeviceSettings(e); // Esegui il salvataggio
-              }}
-            >
-              Save
-            </ChakraButton>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* Restart Confirmation Modal */}
-      <Modal
-        isCentered
-        isOpen={isRestartModalOpen}
-        onClose={() => setIsRestartModalOpen(false)}
-        motionPreset="slideInBottom"
-        blockScrollOnMount={false}
-        returnFocusOnClose={false}
-      >
-        <ModalOverlay bg="none" backdropFilter="auto" backdropBlur="3px" />
-        <ModalContent
-          bg={"#fff"}
-          borderColor={"#E1DEE3"}
-          borderWidth={"1px"}
-          borderRadius={"1rem"}
-          p={"1rem"}
-          color={"greyscale.900"}
-        >
-          <ModalHeader>Confirm Restart</ModalHeader>
-          <ModalBody>
-            <Text>
-              The new settings have been saved. Do you want to restart device {device.mac} to apply
-              the changes?
-            </Text>
-          </ModalBody>
-          <ModalFooter gap={"1.5rem"}>
-            <ChakraButton variant="secondary" onClick={() => setIsRestartModalOpen(false)}>
-              No
-            </ChakraButton>
-            <ChakraButton
-              variant="primaryPurple"
-              onClick={(e) => {
-                setIsRestartModalOpen(false); // Chiudi la modale di restart
-                handleRestartDevice(e); // Esegui il restart
-              }}
-              isLoading={isRestartLoading}
-            >
-              Restart
-            </ChakraButton>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <SaveAndRestartModal isOpen={isSaveAndRestartModalOpen} onClose={handleModalClose} />
     </>
   );
 };
