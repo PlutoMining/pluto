@@ -333,9 +333,9 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
 
       setAlert({
         status: AlertStatus.SUCCESS,
-        title: "Restart Successful",
+        title: "Save and Restart went successfully",
         message:
-          "The device has been restarted successfully. The eventual new settings have been applied, and the miner is back online.",
+          "The device has been saved and restarted successfully. The new settings have been applied, and the miner is back online.",
       });
 
       onOpenAlert();
