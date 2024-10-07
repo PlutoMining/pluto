@@ -465,7 +465,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           <Text fontWeight={"bold"} textTransform={"uppercase"}>
             General
           </Text>
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 2 }} spacing={8}>
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 2 }} spacing={"1rem"}>
             <Input
               label="Hostname"
               name="hostname"
@@ -475,7 +475,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               onChange={handleChange}
               error={deviceError.hostname}
             />
-
             <Input
               label="Worker Name"
               name="workerName"
@@ -492,9 +491,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           <Text fontWeight={"bold"} textTransform={"uppercase"}>
             Hardware settings
           </Text>
-
-          <Flex gap={"1rem"}>
-            <Flex flex={1}>
+          <Flex flexDir={{ base: "column", md: "column", lg: "row" }} gap={"1rem"}>
+            <Flex flex={2} flexDir={{ base: "column", md: "row" }} gap={"1rem"}>
               <Select
                 id={`${device.mac}-frequency`}
                 label="Frequency"
@@ -513,8 +511,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                   { value: 575, label: "575" },
                 ]}
               />
-            </Flex>
-            <Flex flex={1}>
               <Select
                 id={`${device.mac}-coreVoltage`}
                 label="Core Voltage"
@@ -531,11 +527,17 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 ]}
               />
             </Flex>
-            <Flex flex={3} flexDirection={"column"} justify={"space-between"}>
+
+            <Flex flex={3} flexDirection={"column"} justify={"space-between"} gap={"1rem"}>
               <Text fontWeight={400} fontSize={"13px"}>
                 Advanced Hardware Settings
               </Text>
-              <Flex gap={"1rem"} justify={"flex-start"}>
+              <Flex
+                gap={"0.5rem"}
+                justify={"flex-start"}
+                alignItems={"start"}
+                flexDir={{ base: "column", md: "row", lg: "row" }}
+              >
                 <Checkbox
                   id={`${device.mac}-flipscreen`}
                   name="flipscreen"
@@ -636,7 +638,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
             defaultValue={isPresetRadioButtonSelected ? "preset" : "custom"}
             onChange={(value) => handleRadioButtonChange(value)}
           >
-            <Stack spacing={8} direction="row">
+            <Stack spacing={"1rem"} direction="row">
               <RadioButton
                 id={`${device.mac}-${RadioButtonStatus.PRESET}`}
                 value={RadioButtonStatus.PRESET}
@@ -661,7 +663,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 optionValues={presets.map((preset) => ({ value: preset.uuid, label: preset.name }))}
               />
               {selectedPreset && (
-                <Flex gap={"1rem"}>
+                <Flex gap={"1rem"} flexWrap={"wrap"}>
                   <Badge
                     title={"Stratum URL:"}
                     label={selectedPreset.configuration.stratumURL}
@@ -686,7 +688,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               )}
             </Flex>
           ) : (
-            <Flex gap={"1rem"}>
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={"1rem"}>
               <Flex flex={1}>
                 <Input
                   type="text"
@@ -736,7 +738,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                   onChange={handleChange}
                 />
               </Flex>
-            </Flex>
+            </SimpleGrid>
           )}
         </Flex>
         <Flex justifyContent={"flex-start"}>
