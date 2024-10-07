@@ -5,17 +5,10 @@ import {
   AccordionPanel,
   Accordion as ChakraAccordion,
   AccordionItem as ChakraAccordionItem,
-  Button as ChakraButton,
   Divider,
   Flex,
   FormControl,
   Heading,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
   RadioGroup,
   SimpleGrid,
   Slider,
@@ -44,6 +37,7 @@ import { Select } from "../Select/Select";
 import Link from "../Link/Link";
 import { SaveAndRestartModal } from "../Modal";
 import { RadioButtonValues } from "../Modal/SaveAndRestartModal";
+import { RestartModal } from "../Modal/RestartModal";
 
 interface DeviceSettingsAccordionProps {
   devices: Device[] | undefined;
@@ -143,10 +137,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isRestartLoading, setIsRestartLoading] = useState(false);
 
-  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
-  const [isRestartModalOpen, setIsRestartModalOpen] = useState(false);
-
   const [isSaveAndRestartModalOpen, setIsSaveAndRestartModalOpen] = useState(false);
+  const [isRestartModalOpen, setIsRestartModalOpen] = useState(false);
 
   const [selectedPreset, setSelectedPreset] = useState<Preset>(
     (presets.length > 0 && presets.find((d) => d.uuid === deviceInfo?.presetUuid)) || presets[0]
@@ -352,6 +344,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         message: `${errorMessage} Please try again or contact support if the issue persists.`,
       });
       onOpenAlert();
+      setIsRestartModalOpen(false);
     } finally {
       setIsRestartLoading(false);
     }
@@ -426,13 +419,21 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     return hasEmptyFields(device) || hasErrorFields(deviceError);
   }, [device, deviceError]);
 
-  const handleModalClose = useCallback(async (value: string) => {
+  const handleSaveAndRestartModalClose = useCallback(async (value: string) => {
     // Funzione di callback per gestire il valore restituito dalla modale
     if (value !== "") {
       const shouldRestart = value === RadioButtonValues.SAVE_AND_RESTART ? true : false;
       await handleSaveOrSaveAndRestartDeviceSettings(shouldRestart);
     }
     setIsSaveAndRestartModalOpen(false);
+  }, []);
+
+  const handleRestartModalClose = useCallback(async (value: boolean) => {
+    // Funzione di callback per gestire il valore restituito dalla modale
+    if (value) {
+      handleRestartDevice();
+    }
+    setIsRestartModalOpen(false);
   }, []);
 
   return (
@@ -757,15 +758,16 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         <Button
           variant="text"
           icon={<RestartIcon color={theme.colors.greyscale[500]} />}
-          onClick={(e) => {
-            setIsSaveModalOpen(false);
-            setIsRestartModalOpen(true);
-          }}
+          onClick={() => setIsRestartModalOpen(true)}
         >
           Restart
         </Button>
       </Flex>
-      <SaveAndRestartModal isOpen={isSaveAndRestartModalOpen} onClose={handleModalClose} />
+      <RestartModal isOpen={isRestartModalOpen} onClose={handleRestartModalClose} />
+      <SaveAndRestartModal
+        isOpen={isSaveAndRestartModalOpen}
+        onClose={handleSaveAndRestartModalClose}
+      />
     </>
   );
 };
