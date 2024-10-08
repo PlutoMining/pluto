@@ -21,7 +21,13 @@ export default function RootLayout({
         <Providers>
           <Box height={"100vh"} bg={"brand.purple0"}>
             <NavBar />
-            <Box style={{ height: "calc(100vh - 7rem)" }}>
+            <Box
+              height={{
+                base: "calc(100vh - 9rem)",
+                md: "calc(100vh - 7rem)",
+                lg: "calc(100vh - 7rem)",
+              }}
+            >
               <Box h={"100%"} borderRadius={"1rem"} bg={"greyscale.100"} overflow={"scroll"}>
                 {children}
               </Box>

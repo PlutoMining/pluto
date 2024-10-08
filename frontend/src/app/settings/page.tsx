@@ -139,12 +139,21 @@ const SettingsPage = () => {
         </Fade>
       )}
 
-      <Box p={8}>
+      <Box p={{ base: "1rem 0", md: "1rem", lg: "1rem" }}>
         <Flex as="form" flexDir={"column"} gap={"2rem"}>
           <VStack spacing={4} align="stretch">
-            <Flex justify={"space-between"} alignItems={"center"}>
+            <Flex
+              justify={{ base: "flex-start", md: "space-between", lg: "space-between" }}
+              alignItems={{ base: "start", md: "center", lg: "center" }}
+              flexDir={{ base: "column", md: "row", lg: "row" }}
+              gap={"1rem"}
+            >
               <Heading>Device settings</Heading>
-              <Flex gap={"1rem"} alignItems={"center"}>
+              <Flex
+                gap={"1rem"}
+                alignItems={"center"}
+                w={{ base: "100%", md: "unset", lg: "unset" }}
+              >
                 <SearchInput
                   label="Search device"
                   onChange={handleSearch}
