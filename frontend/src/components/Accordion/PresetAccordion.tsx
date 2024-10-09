@@ -98,26 +98,21 @@ export const PresetAccordion: React.FC<PresetProps> = ({
               {preset.associatedDevices?.map((device) => (
                 <ChakraBadge
                   key={device.mac}
-                  bg={theme.colors.brand.secondaryDark}
-                  color={theme.colors.greyscale[0]}
+                  bg={theme.colors.greyscale[200]}
+                  color={theme.colors.greyscale[500]}
                   fontSize={"13px"}
-                  borderRadius={"50px"}
+                  borderRadius={"6px"}
                   padding={"4px 6px"}
                 >
                   <Flex alignItems={"center"} gap={"0.25rem"} p={"5px 8px"} height={"21.5px"}>
-                    <Text
-                      fontFamily="heading"
-                      fontSize={"md"}
-                      fontWeight={500}
-                      textTransform={"capitalize"}
-                    >
+                    <Text fontWeight={500} textTransform={"capitalize"}>
                       {device.info.hostname}
                     </Text>
                     {" - "}
                     <Link
-                      href="/"
+                      href={device.ip}
                       label={device.ip}
-                      fontSize={"md"}
+                      fontFamily="body"
                       fontWeight={400}
                       textDecoration="underline"
                       isDisabled={device.tracing ? false : true}
