@@ -8,6 +8,7 @@ import {
   Divider,
   Flex,
   FormControl,
+  Grid,
   Heading,
   RadioGroup,
   SimpleGrid,
@@ -147,16 +148,29 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     deviceInfo?.presetUuid ? true : false
   );
   const [stratumUser, setStratumUser] = useState<StratumUser>({
-    workerName: device.info.stratumUser.split(".").pop() || "",
-    stratumUser: device.info.stratumUser.split(".")[0] || "",
+    workerName: "",
+    stratumUser: "",
   });
 
   const theme = useTheme();
   const { isConnected, socket } = useSocket();
 
+  const parseString = (input: string) => {
+    const dotIndex = input.indexOf(".");
+
+    setStratumUser({
+      workerName: dotIndex === -1 ? device.info.hostname : input.substring(dotIndex + 1),
+      stratumUser: dotIndex === -1 ? input : input.substring(0, dotIndex),
+    });
+  };
+
   useEffect(() => {
     if (presets && isAccordionOpen && isPresetRadioButtonSelected && !selectedPreset) {
       setSelectedPreset(presets[0]);
+    }
+
+    if (device) {
+      parseString(device.info.stratumUser);
     }
   }, [isAccordionOpen, presets, isPresetRadioButtonSelected, selectedPreset]);
 
@@ -689,7 +703,14 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               )}
             </Flex>
           ) : (
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={"1rem"}>
+            <Grid
+              templateColumns={{
+                base: "repeat(1, 1fr)",
+                md: "repeat(2, 1fr)",
+                lg: "repeat(2, 1fr) 2fr repeat(1, 1fr)",
+              }}
+              gap={"1rem"}
+            >
               <Flex flex={1}>
                 <Input
                   type="text"
@@ -739,7 +760,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                   onChange={handleChange}
                 />
               </Flex>
-            </SimpleGrid>
+            </Grid>
           )}
         </Flex>
         <Flex justifyContent={"flex-start"}>

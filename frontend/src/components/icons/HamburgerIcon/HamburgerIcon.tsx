@@ -25,9 +25,9 @@ export const HamburgerIcon = ({
       <path
         d="M6.66663 8H25.3333M6.66663 16H25.3333M6.66663 24H25.3333"
         stroke={color}
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

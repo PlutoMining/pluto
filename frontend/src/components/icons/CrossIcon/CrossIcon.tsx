@@ -20,9 +20,9 @@ export const CrossIcon = ({ color = "white", w = "24", h = "24", onClick }: Cros
       <path
         d="M10.6665 10.6667L15.9999 16M21.3332 21.3333L15.9999 16M15.9999 16L21.3332 10.6667M15.9999 16L10.6665 21.3333"
         stroke={color}
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
