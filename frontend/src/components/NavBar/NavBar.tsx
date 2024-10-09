@@ -1,21 +1,13 @@
 "use client";
-import { CloseIcon, HamburgerIcon } from "@chakra-ui/icons";
-import {
-  Box,
-  Flex,
-  HStack,
-  IconButton,
-  Stack,
-  StackDivider,
-  useDisclosure,
-  useTheme,
-} from "@chakra-ui/react";
+import { Box, Flex, HStack, Stack, StackDivider, useDisclosure, useTheme } from "@chakra-ui/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Alert from "../Alert/Alert";
 import { AlertInterface } from "../Alert/interfaces";
 import { Logo } from "../icons/Logo";
+import { HamburgerIcon } from "../icons/HamburgerIcon";
+import { CrossIcon } from "../icons/CrossIcon";
 
 export const NavBar = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -174,13 +166,6 @@ export const NavBar = () => {
         <Flex px={"2rem"} alignItems="center" maxW="container.2xl" margin={"0 auto"}>
           <Flex h={16} alignItems="center" gap={"1rem"} justifyContent="space-between" w={"100%"}>
             <Flex alignItems="center" gap={"1rem"} justify={"space-between"} w={"100%"}>
-              <IconButton
-                size="md"
-                icon={isOpen ? <CloseIcon /> : <HamburgerIcon />}
-                aria-label="Open Menu"
-                display={{ md: "none" }}
-                onClick={isOpen ? onClose : onOpen}
-              />
               <Box marginRight={"auto"}>
                 <Link key={`md-nav-link-logo`} href={"/"}>
                   <Logo />
@@ -215,12 +200,30 @@ export const NavBar = () => {
                   Profile
                 </Text> */}
               </Flex>
+
+              <Box aria-label="Open Menu" display={{ md: "none" }}>
+                {isOpen ? (
+                  <CrossIcon w={"32"} h={"32"} onClick={onClose} />
+                ) : (
+                  <HamburgerIcon w={"32"} h={"32"} onClick={onOpen} />
+                )}
+              </Box>
             </Flex>
           </Flex>
         </Flex>
         {isOpen ? (
-          <Box p={"2rem"} display={{ md: "none" }}>
-            <Stack divider={<StackDivider />} alignItems={"start"} as="nav" spacing={"2rem"}>
+          <Box
+            position="fixed" // Cambia la posizione in fixed per sovrastare tutto
+            top={"4rem"}
+            left={0}
+            width="100vw"
+            height="100vh"
+            bgColor="rgb(71, 25, 107)"
+            zIndex={20} // Imposta un z-index alto per sovrapporsi al resto
+            p={"2rem"}
+            display={{ md: "none" }}
+          >
+            <Stack alignItems={"start"} as="nav" spacing={"2rem"}>
               {links.map((link) => (
                 <Link key={`sm-nav-link-${link.key}`} href={link.href}>
                   {link.component(pathname)}

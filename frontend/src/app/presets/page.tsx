@@ -166,7 +166,7 @@ const PresetsListingPage: React.FC = () => {
       {alert && (
         <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
       )}
-      <Box p={8}>
+      <Box p={{ base: "1rem 0", md: "1rem", lg: "1rem" }}>
         <Flex justify="space-between" align="center" mb={8}>
           <Heading>Pool Presets</Heading>
           {presets && presets.length > 0 && (
