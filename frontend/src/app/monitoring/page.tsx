@@ -112,7 +112,7 @@ const MonitoringTablePage: React.FC = () => {
   };
 
   return (
-    <Container flex="1" maxW="container.2xl" h={"100%"}>
+    <Container flex="1" maxW="container.desktop" h={"100%"}>
       <VStack p={8} spacing={4} align="stretch">
         <Heading>Dashboards</Heading>
         {registeredDevices ? (

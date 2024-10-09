@@ -162,11 +162,11 @@ const PresetsListingPage: React.FC = () => {
   };
 
   return (
-    <Container flex="1" maxW="container.2xl" h={"100%"}>
+    <Container flex="1" maxW="container.desktop" h={"100%"}>
       {alert && (
         <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
       )}
-      <Box p={{ base: "1rem 0", md: "1rem", lg: "1rem" }}>
+      <Box p={{ mobileP: "1rem 0", tabletP: "1rem", desktop: "1rem" }}>
         <Flex justify="space-between" align="center" mb={8}>
           <Heading>Pool Presets</Heading>
           {presets && presets.length > 0 && (

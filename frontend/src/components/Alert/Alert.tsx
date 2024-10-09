@@ -50,7 +50,7 @@ const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
       left={0}
       right={0}
       zIndex={10}
-      maxWidth={theme.breakpoints["2xl"]}
+      maxWidth={theme.breakpoints["desktop"]}
       margin={"0 auto"}
       p={"1rem 3rem"}
     >

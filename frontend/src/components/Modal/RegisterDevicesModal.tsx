@@ -683,7 +683,7 @@ export const RegisterDevicesModal: React.FC<RegisterDevicesModalProps> = ({
         height={"calc(100% - 3rem)"}
       >
         <Box
-          maxW="container.2xl"
+          maxW="container.desktop"
           margin={"0 auto"}
           p={"2rem"}
           w={"100%"}

@@ -8,7 +8,6 @@ export const Footer = () => {
       alignItems={"center"}
       position={"sticky"}
       bottom={0}
-      // height={{base: "67px""40px"}}
       zIndex={"10"}
       bg={"brand.purple0"}
       fontWeight={400}
@@ -17,23 +16,23 @@ export const Footer = () => {
     >
       <Flex
         margin={"0 auto"}
-        justify={{ base: "flex-start", md: "space-between", lg: "space-between" }}
-        flexDir={{ base: "column", md: "row", lg: "row" }}
+        justify={{ mobileP: "flex-start", tabletP: "space-between", desktop: "space-between" }}
+        flexDir={{ mobileP: "column", tabletP: "row", desktop: "row" }}
         gap={"1rem"}
         w={"100%"}
-        maxW="container.2xl"
+        maxW="container.desktop"
         p={"0 2rem"}
       >
         <Flex
-          alignItems={{ base: "flex-start", md: "flex-start", lg: "center" }}
-          gap={{ base: "0.5rem", md: "0.5rem", lg: "1rem" }}
-          flexDir={{ base: "column", md: "column-reverse", lg: "row" }}
+          alignItems={{ mobileP: "flex-start", tabletP: "flex-start", desktop: "center" }}
+          gap={{ mobileP: "0.5rem", tabletP: "0.5rem", desktop: "1rem" }}
+          flexDir={{ mobileP: "column", tabletP: "column-reverse", desktop: "row" }}
         >
           <Flex
             alignItems={"center"}
             gap={"1rem"}
-            justify={{ base: "space-between", md: "flex-start", lg: "flex-start" }}
-            w={{ base: "100%", md: "unset", lg: "unset" }}
+            justify={{ mobileP: "space-between", tabletP: "flex-start", desktop: "flex-start" }}
+            w={{ mobileP: "100%", tabletP: "unset", desktop: "unset" }}
           >
             <Text fontFamily={"heading"} fontSize={"xs"} color={"greyscale.200"} fontWeight={500}>
               Terms & Conditions

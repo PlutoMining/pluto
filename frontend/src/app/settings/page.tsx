@@ -132,27 +132,31 @@ const SettingsPage = () => {
   }, [onCloseAlert]);
 
   return (
-    <Container flex="1" maxW="container.2xl" h={"100%"}>
+    <Container flex="1" maxW="container.desktop" h={"100%"}>
       {alert && (
         <Fade in={isOpenAlert}>
           <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
         </Fade>
       )}
 
-      <Box p={{ base: "1rem 0", md: "1rem", lg: "1rem" }}>
+      <Box p={{ mobileP: "1rem 0", tabletP: "1rem", desktop: "1rem" }}>
         <Flex as="form" flexDir={"column"} gap={"2rem"}>
           <VStack spacing={4} align="stretch">
             <Flex
-              justify={{ base: "flex-start", md: "space-between", lg: "space-between" }}
-              alignItems={{ base: "start", md: "center", lg: "center" }}
-              flexDir={{ base: "column", md: "row", lg: "row" }}
+              justify={{
+                mobileP: "flex-start",
+                tabletP: "space-between",
+                desktop: "space-between",
+              }}
+              alignItems={{ mobileP: "start", tabletP: "center", desktop: "center" }}
+              flexDir={{ mobileP: "column", tabletP: "row", desktop: "row" }}
               gap={"1rem"}
             >
               <Heading>Device settings</Heading>
               <Flex
                 gap={"1rem"}
                 alignItems={"center"}
-                w={{ base: "100%", md: "unset", lg: "unset" }}
+                w={{ mobileP: "100%", tabletP: "unset", desktop: "unset" }}
               >
                 <SearchInput
                   label="Search device"

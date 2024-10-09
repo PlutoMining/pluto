@@ -168,7 +168,7 @@ const DevicePage: React.FC = () => {
   };
 
   return (
-    <Container flex="1" maxW="container.2xl" h={"100%"}>
+    <Container flex="1" maxW="container.desktop" h={"100%"}>
       <VStack p={8} spacing={4} align="stretch">
         <Heading>Your devices</Heading>
 
@@ -193,7 +193,7 @@ const DevicePage: React.FC = () => {
                   gap={"1rem"}
                 >
                   <Flex justify={"flex-end"}>
-                    <Flex gap={"1rem"} direction={{ base: "column", md: "row" }} p={"0 1rem"}>
+                    <Flex gap={"1rem"} p={"0 1rem"}>
                       <Button
                         variant={"primaryBlack"}
                         onClick={onOpen}

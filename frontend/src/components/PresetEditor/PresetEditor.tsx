@@ -230,7 +230,7 @@ export const PresetEditor = ({
               <Text fontFamily={"heading"} fontWeight={500} fontSize={"14px"}>
                 Settings
               </Text>
-              <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8}>
+              <SimpleGrid columns={{ mobileP: 1, tabletP: 2, desktop: 4 }} spacing={8}>
                 <Input
                   label="Stratum URL"
                   name="stratumURL"

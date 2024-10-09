@@ -23,9 +23,9 @@ export default function RootLayout({
             <NavBar />
             <Box
               height={{
-                base: "calc(100vh - 9rem)",
-                md: "calc(100vh - 7rem)",
-                lg: "calc(100vh - 7rem)",
+                mobileP: "calc(100vh - 9rem)",
+                tabletP: "calc(100vh - 7rem)",
+                desktop: "calc(100vh - 7rem)",
               }}
             >
               <Box h={"100%"} borderRadius={"1rem"} bg={"greyscale.100"} overflow={"scroll"}>

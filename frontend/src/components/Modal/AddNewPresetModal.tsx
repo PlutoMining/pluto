@@ -34,7 +34,7 @@ export const AddNewPresetModal: React.FC<AddNewPresetModalProps> = ({
         borderRadius={"1rem"}
         height={"calc(100% - 8rem)"}
       >
-        <Box maxW="container.2xl" margin={"0 auto"} p={"2rem"}>
+        <Box maxW="container.desktop" margin={"0 auto"} p={"2rem"}>
           <ModalHeader p={0} fontFamily={"heading"} fontWeight={400} fontSize={"2rem"}>
             Add a new preset
           </ModalHeader>

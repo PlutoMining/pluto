@@ -1,6 +1,5 @@
 "use client";
-import { Box, Flex, HStack, Stack, StackDivider, useDisclosure, useTheme } from "@chakra-ui/react";
-import Link from "next/link";
+import { Box, Flex, HStack, Link, Stack, Text, useDisclosure, useTheme } from "@chakra-ui/react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Alert from "../Alert/Alert";
@@ -163,7 +162,7 @@ export const NavBar = () => {
   return (
     <>
       <Box position={"sticky"} top={0} zIndex={"10"} bg={"brand.purple0"}>
-        <Flex px={"2rem"} alignItems="center" maxW="container.2xl" margin={"0 auto"}>
+        <Flex px={"2rem"} alignItems="center" maxW="container.desktop" margin={"0 auto"}>
           <Flex h={16} alignItems="center" gap={"1rem"} justifyContent="space-between" w={"100%"}>
             <Flex alignItems="center" gap={"1rem"} justify={"space-between"} w={"100%"}>
               <Box marginRight={"auto"}>
@@ -174,7 +173,7 @@ export const NavBar = () => {
               <HStack
                 as="nav"
                 spacing={4}
-                display={{ base: "none", md: "flex" }}
+                display={{ mobileP: "none", tabletP: "flex" }}
                 backgroundColor={"rgba(255, 255, 255, 0.10)"}
                 p={"0.75rem"}
                 borderRadius={"8px"}
@@ -185,9 +184,10 @@ export const NavBar = () => {
                 position={"absolute"}
                 left={"50%"}
                 transform={"translateX(-50%)"}
+                height={"34px"}
               >
                 {links.map((link) => (
-                  <Link key={`md-nav-link-${link.key}`} href={link.href}>
+                  <Link key={`md-nav-link-${link.key}`} href={link.href} whiteSpace={"nowrap"}>
                     {link.component(pathname)}
                   </Link>
                 ))}
@@ -201,7 +201,7 @@ export const NavBar = () => {
                 </Text> */}
               </Flex>
 
-              <Box aria-label="Open Menu" display={{ md: "none" }}>
+              <Box aria-label="Open Menu" display={{ tabletP: "none" }}>
                 {isOpen ? (
                   <CrossIcon w={"32"} h={"32"} onClick={onClose} />
                 ) : (
@@ -221,7 +221,7 @@ export const NavBar = () => {
             bgColor="rgb(71, 25, 107)"
             zIndex={20} // Imposta un z-index alto per sovrapporsi al resto
             p={"2rem"}
-            display={{ md: "none" }}
+            display={{ tabletP: "none" }}
           >
             <Stack alignItems={"start"} as="nav" spacing={"2rem"}>
               {links.map((link) => (
