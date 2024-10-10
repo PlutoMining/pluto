@@ -83,37 +83,47 @@ export async function discoverDevices(options?: DiscoveryOptions) {
       }
     }
 
-    let arpTable: ArpScanResult[] = [];
-    try {
-      const arpScan = new ArpScanWrapper(config.arpScanInterface);
-      arpTable = await arpScan.scan();
+    // let arpTable: ArpScanResult[] = [];
 
-      if (config.detectMockDevices) {
-        const response = await axios.get(`${config.mockDiscoveryHost}/servers`);
-        if (response.data && Array.isArray(response.data.servers)) {
-          logger.info(`Mock servers retrieved: ${response.data.servers.length} found.`);
+    let arpTable = (
+      await Promise.all(
+        config.arpScanInterfaces.map(async (arpScanInterface) => {
+          try {
+            const arpScan = new ArpScanWrapper(arpScanInterface);
+            const localArpTable = await arpScan.scan();
+            return localArpTable;
+          } catch (error) {
+            logger.error(
+              "Error retrieving ARP table:",
+              error instanceof Error ? error.message : String(error)
+            );
+            throw new Error("Failed to retrieve ARP table");
+          }
+        })
+      )
+    ).flat();
 
-          const mockDevices = response.data.servers.map((server: any, index: number) => ({
-            ip: config.mockDiscoveryHost.replace(/https?:\/\/(.+)(\:.+)$/, `$1:${server.port}`),
-            mac: `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`,
-            type: "unknown",
-          }));
-
-          arpTable = arpTable.concat(mockDevices);
-          logger.info(`Mock devices added to the ARP table. Total devices: ${arpTable.length}`);
-        } else {
-          throw new Error("No mock servers found");
-        }
-      }
-
-      logger.debug(arpTable);
+    logger.debug(arpTable);
+    if (arpTable.length > 0) {
       logger.info(`ARP table retrieved successfully: ${arpTable.length} devices found.`);
-    } catch (error) {
-      logger.error(
-        "Error retrieving ARP table:",
-        error instanceof Error ? error.message : String(error)
-      );
-      throw new Error("Failed to retrieve ARP table");
+    }
+
+    if (config.detectMockDevices) {
+      const response = await axios.get(`${config.mockDiscoveryHost}/servers`);
+      if (response.data && Array.isArray(response.data.servers)) {
+        logger.info(`Mock servers retrieved: ${response.data.servers.length} found.`);
+
+        const mockDevices = response.data.servers.map((server: any, index: number) => ({
+          ip: config.mockDiscoveryHost.replace(/https?:\/\/(.+)(\:.+)$/, `$1:${server.port}`),
+          mac: `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`,
+          type: "unknown",
+        }));
+
+        arpTable = arpTable.concat(mockDevices);
+        logger.info(`Mock devices added to the ARP table. Total devices: ${arpTable.length}`);
+      } else {
+        throw new Error("No mock servers found");
+      }
     }
 
     let filteredArpTable = arpTable;

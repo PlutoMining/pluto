@@ -126,7 +126,7 @@ The release configuration uses external directories for persistent data storage:
   - `PORT`: Discovery service port.
   - `DETECT_MOCK_DEVICES`: Enables mock device detection.
   - `MOCK_DISCOVERY_HOST`: URL for the mock service.
-  - `ARP_SCAN_IFACE`: Network interface used for ARP scanning.
+  - `ARP_SCAN_IFACES`: Network interfaces used for ARP scanning.
 
 ### backend
 
