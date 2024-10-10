@@ -480,7 +480,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           <Text fontWeight={"bold"} textTransform={"uppercase"}>
             General
           </Text>
-          <SimpleGrid columns={{ mobileP: 1, tabletP: 2, desktop: 2 }} spacing={"1rem"}>
+          <SimpleGrid columns={{ mobile: 1, tablet: 2, desktop: 2 }} spacing={"1rem"}>
             <Input
               label="Hostname"
               name="hostname"
@@ -506,8 +506,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           <Text fontWeight={"bold"} textTransform={"uppercase"}>
             Hardware settings
           </Text>
-          <Flex flexDir={{ mobileP: "column", tabletP: "column", desktop: "row" }} gap={"1rem"}>
-            <Flex flex={2} flexDir={{ mobileP: "column", tabletP: "row" }} gap={"1rem"}>
+          <Flex flexDir={{ mobile: "column", tablet: "column", desktop: "row" }} gap={"1rem"}>
+            <Flex flex={2} flexDir={{ mobile: "column", tablet: "row" }} gap={"1rem"}>
               <Select
                 id={`${device.mac}-frequency`}
                 label="Frequency"
@@ -551,7 +551,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 gap={"0.5rem"}
                 justify={"flex-start"}
                 alignItems={"start"}
-                flexDir={{ mobileP: "column", tabletP: "row", desktop: "row" }}
+                flexDir={{ mobile: "column", tablet: "row", desktop: "row" }}
               >
                 <Checkbox
                   id={`${device.mac}-flipscreen`}
@@ -705,8 +705,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           ) : (
             <Grid
               templateColumns={{
-                mobileP: "repeat(1, 1fr)",
-                tabletP: "repeat(2, 1fr)",
+                mobile: "repeat(1, 1fr)",
+                tablet: "repeat(2, 1fr)",
                 desktop: "repeat(2, 1fr) 2fr repeat(1, 1fr)",
               }}
               gap={"1rem"}

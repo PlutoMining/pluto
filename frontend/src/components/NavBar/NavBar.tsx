@@ -161,7 +161,7 @@ export const NavBar = () => {
 
   return (
     <>
-      <Box position={"sticky"} top={0} zIndex={"10"} bg={"brand.purple0"}>
+      <Box position={"sticky"} top={0} zIndex={isOpen ? "20" : "10"} bg={"brand.purple0"}>
         <Flex px={"2rem"} alignItems="center" maxW="container.desktop" margin={"0 auto"}>
           <Flex h={16} alignItems="center" gap={"1rem"} justifyContent="space-between" w={"100%"}>
             <Flex alignItems="center" gap={"1rem"} justify={"space-between"} w={"100%"}>
@@ -173,7 +173,7 @@ export const NavBar = () => {
               <HStack
                 as="nav"
                 spacing={4}
-                display={{ mobileP: "none", tabletP: "flex" }}
+                display={{ mobile: "none", tablet: "flex" }}
                 backgroundColor={"rgba(255, 255, 255, 0.10)"}
                 p={"0.75rem"}
                 borderRadius={"8px"}
@@ -187,7 +187,12 @@ export const NavBar = () => {
                 height={"34px"}
               >
                 {links.map((link) => (
-                  <Link key={`md-nav-link-${link.key}`} href={link.href} whiteSpace={"nowrap"}>
+                  <Link
+                    key={`md-nav-link-${link.key}`}
+                    href={link.href}
+                    whiteSpace={"nowrap"}
+                    _hover={{ textDecoration: "none" }}
+                  >
                     {link.component(pathname)}
                   </Link>
                 ))}
@@ -201,7 +206,7 @@ export const NavBar = () => {
                 </Text> */}
               </Flex>
 
-              <Box aria-label="Open Menu" display={{ tabletP: "none" }}>
+              <Box aria-label="Open Menu" display={{ tablet: "none" }}>
                 {isOpen ? (
                   <CrossIcon w={"32"} h={"32"} onClick={onClose} />
                 ) : (
@@ -221,11 +226,11 @@ export const NavBar = () => {
             bgColor="rgb(71, 25, 107)"
             zIndex={20} // Imposta un z-index alto per sovrapporsi al resto
             p={"2rem"}
-            display={{ tabletP: "none" }}
+            display={{ tablet: "none" }}
           >
             <Stack alignItems={"start"} as="nav" spacing={"2rem"}>
               {links.map((link) => (
-                <Link key={`sm-nav-link-${link.key}`} href={link.href}>
+                <Link key={`sm-nav-link-${link.key}`} href={link.href} cursor={"pointer"}>
                   {link.component(pathname)}
                 </Link>
               ))}

@@ -16,23 +16,24 @@ export const Footer = () => {
     >
       <Flex
         margin={"0 auto"}
-        justify={{ mobileP: "flex-start", tabletP: "space-between", desktop: "space-between" }}
-        flexDir={{ mobileP: "column", tabletP: "row", desktop: "row" }}
+        justify={{ mobile: "flex-start", tablet: "space-between", desktop: "space-between" }}
+        flexDir={{ mobile: "column", tablet: "row", desktop: "row" }}
         gap={"1rem"}
         w={"100%"}
         maxW="container.desktop"
         p={"0 2rem"}
       >
         <Flex
-          alignItems={{ mobileP: "flex-start", tabletP: "flex-start", desktop: "center" }}
-          gap={{ mobileP: "0.5rem", tabletP: "0.5rem", desktop: "1rem" }}
-          flexDir={{ mobileP: "column", tabletP: "column-reverse", desktop: "row" }}
+          display={{ base: "none", tablet: "unset" }}
+          alignItems={{ mobile: "flex-start", tablet: "flex-start", desktop: "center" }}
+          gap={{ mobile: "0.5rem", tablet: "0.5rem", desktop: "1rem" }}
+          flexDir={{ mobile: "column", tablet: "column-reverse", desktop: "row" }}
         >
           <Flex
             alignItems={"center"}
             gap={"1rem"}
-            justify={{ mobileP: "space-between", tabletP: "flex-start", desktop: "flex-start" }}
-            w={{ mobileP: "100%", tabletP: "unset", desktop: "unset" }}
+            justify={{ mobile: "space-between", tablet: "flex-start", desktop: "flex-start" }}
+            w={{ mobile: "100%", tablet: "unset", desktop: "unset" }}
           >
             <Text fontFamily={"heading"} fontSize={"xs"} color={"greyscale.200"} fontWeight={500}>
               Terms & Conditions

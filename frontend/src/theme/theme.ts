@@ -4,10 +4,10 @@ import { fonts, fontSizes, fontWeights } from "./typography";
 import { colors as themeColors } from "./colors";
 
 const breakpoints = {
-  mobileP: "375px",
-  mobileL: "812px",
-  tabletP: "834px",
-  tabletL: "870px",
+  base: "0",
+  mobile: "375px",
+  tablet: "834px",
+  tabletL: "935px",
   desktop: "1440px",
 };
 
@@ -64,10 +64,8 @@ const sizes = {
   "8xl": "90rem",
   prose: "60ch",
   container: {
-    mobileP: breakpoints.mobileP,
-    mobileL: breakpoints.mobileL,
-    tabletP: breakpoints.tabletP,
-    tabletL: breakpoints.tabletL,
+    mobile: breakpoints.mobile,
+    tablet: breakpoints.tablet,
     desktop: breakpoints.desktop,
   },
 };
