@@ -150,16 +150,28 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     deviceInfo?.presetUuid ? true : false
   );
   const [stratumUser, setStratumUser] = useState<StratumUser>({
-    workerName: device.info.stratumUser.split(".").pop() || "",
-    stratumUser: device.info.stratumUser.split(".")[0] || "",
+    workerName: "",
+    stratumUser: "",
   });
 
   const theme = useTheme();
   const { isConnected, socket } = useSocket();
 
+  const parseString = (input: string) => {
+    const dotIndex = input.indexOf(".");
+
+    setStratumUser({
+      workerName: dotIndex === -1 ? device.info.hostname : input.substring(dotIndex + 1),
+      stratumUser: dotIndex === -1 ? input : input.substring(0, dotIndex),
+    });
+  };
+
   useEffect(() => {
     if (presets && isAccordionOpen && isPresetRadioButtonSelected && !selectedPreset) {
       setSelectedPreset(presets[0]);
+    }
+    if (device) {
+      parseString(device.info.stratumUser);
     }
   }, [isAccordionOpen, presets, isPresetRadioButtonSelected, selectedPreset]);
 
