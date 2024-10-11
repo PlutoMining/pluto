@@ -3,7 +3,7 @@ import { Device } from "@pluto/interfaces";
 import { logger } from "@pluto/logger";
 import axios from "axios";
 import { config } from "../config/environment";
-import { ArpScanResult, ArpScanWrapper } from "./arpScanWrapper";
+import { ArpScanResult, arpScan, getActiveNetworkInterfaces } from "./arpScanWrapper";
 
 interface DiscoveryOptions {
   ip?: string;
@@ -83,37 +83,55 @@ export async function discoverDevices(options?: DiscoveryOptions) {
       }
     }
 
-    let arpTable: ArpScanResult[] = [];
-    try {
-      const arpScan = new ArpScanWrapper(config.arpScanInterface);
-      arpTable = await arpScan.scan();
+    const arpScanInterfaces = await getActiveNetworkInterfaces();
 
-      if (config.detectMockDevices) {
-        const response = await axios.get(`${config.mockDiscoveryHost}/servers`);
-        if (response.data && Array.isArray(response.data.servers)) {
-          logger.info(`Mock servers retrieved: ${response.data.servers.length} found.`);
+    let arpTable = (
+      await Promise.allSettled(
+        arpScanInterfaces.map(async (arpScanInterface) => {
+          try {
+            // Esegui l'ARP scan per l'interfaccia specificata
+            const localArpTable = await arpScan(arpScanInterface);
+            return localArpTable;
+          } catch (error) {
+            logger.error(
+              `Error retrieving ARP table for interface ${arpScanInterface}:`,
+              error instanceof Error ? error.message : String(error)
+            );
+            // Restituisci un array vuoto in caso di errore per non interrompere l'esecuzione
+            return [];
+          }
+        })
+      )
+    )
+      .filter((result) => result.status === "fulfilled") // Considera solo i risultati che hanno avuto successo
+      .map((result) => (result as PromiseFulfilledResult<ArpScanResult[]>).value) // Estrai il valore dai risultati risolti
+      .flat();
 
-          const mockDevices = response.data.servers.map((server: any, index: number) => ({
-            ip: config.mockDiscoveryHost.replace(/https?:\/\/(.+)(\:.+)$/, `$1:${server.port}`),
-            mac: `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`,
-            type: "unknown",
-          }));
-
-          arpTable = arpTable.concat(mockDevices);
-          logger.info(`Mock devices added to the ARP table. Total devices: ${arpTable.length}`);
-        } else {
-          throw new Error("No mock servers found");
-        }
-      }
-
-      logger.debug(arpTable);
+    if (arpTable.length > 0) {
       logger.info(`ARP table retrieved successfully: ${arpTable.length} devices found.`);
-    } catch (error) {
-      logger.error(
-        "Error retrieving ARP table:",
-        error instanceof Error ? error.message : String(error)
+      logger.debug(arpTable);
+    } else {
+      logger.warn(
+        "No devices found in the ARP scan. Verify that your network interfaces are active and have IP addresses assigned."
       );
-      throw new Error("Failed to retrieve ARP table");
+    }
+
+    if (config.detectMockDevices) {
+      const response = await axios.get(`${config.mockDiscoveryHost}/servers`);
+      if (response.data && Array.isArray(response.data.servers)) {
+        logger.info(`Mock servers retrieved: ${response.data.servers.length} found.`);
+
+        const mockDevices = response.data.servers.map((server: any, index: number) => ({
+          ip: config.mockDiscoveryHost.replace(/https?:\/\/(.+)(\:.+)$/, `$1:${server.port}`),
+          mac: `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`,
+          type: "unknown",
+        }));
+
+        arpTable = arpTable.concat(mockDevices);
+        logger.info(`Mock devices added to the ARP table. Total devices: ${arpTable.length}`);
+      } else {
+        throw new Error("No mock servers found");
+      }
     }
 
     let filteredArpTable = arpTable;
