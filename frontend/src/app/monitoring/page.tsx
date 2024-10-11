@@ -254,7 +254,7 @@ const MonitoringTablePage: React.FC = () => {
                           opacity={!device?.publicDashboardUrl ? "0.3" : "1"}
                           pointerEvents={!device?.publicDashboardUrl ? "none" : "auto"}
                         >
-                          {device.info.hostname}
+                          Dashboard
                         </Link>
                       </Td>
                     </Tr>
