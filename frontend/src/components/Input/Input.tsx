@@ -96,7 +96,7 @@ export const Input: React.FC<InputProps> = ({
           <InputRightAddon
             padding="1rem"
             height="2rem"
-            borderColor={theme.colors.greyscale[500]}
+            borderColor={error ? theme.colors.alert.error : theme.colors.greyscale[500]}
             borderLeft={"none"}
             backgroundColor={theme.colors.greyscale[100]}
             opacity={isDisabled ? 0.5 : 1}
@@ -105,7 +105,12 @@ export const Input: React.FC<InputProps> = ({
           </InputRightAddon>
         )}
       </InputGroup>
-      <FormLabel pt={"4px"} fontSize={"11px"} color={theme.colors.alert.error}>
+      <FormLabel
+        pt={"4px"}
+        fontSize={"11px"}
+        color={theme.colors.alert.error}
+        opacity={isDisabled ? 0.5 : 1}
+      >
         {error}
       </FormLabel>
     </FormControl>

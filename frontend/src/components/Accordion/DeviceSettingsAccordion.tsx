@@ -8,16 +8,10 @@ import {
   AccordionItem as ChakraAccordionItem,
   Divider,
   Flex,
-  FormControl,
   Grid,
   Heading,
   RadioGroup,
   SimpleGrid,
-  Slider,
-  SliderFilledTrack,
-  SliderMark,
-  SliderThumb,
-  SliderTrack,
   Stack,
   Text,
   useAccordionItemState,
@@ -135,6 +129,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     stratumPort: "",
     stratumUser: "",
     workerName: "",
+    fanspeed: "",
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isRestartLoading, setIsRestartLoading] = useState(false);
@@ -289,7 +284,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
 
       setDevice(updatedDevice);
     },
-    [device]
+    [device, validateField]
   );
 
   const handleChangeOnStratumUser = useCallback(
@@ -428,8 +423,13 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const hasErrorFields = (obj: any): boolean => {
     for (const key in obj) {
       if (typeof obj[key] === "object" && obj[key] !== null) {
-        if (hasErrorFields(obj[key])) return true; // Ricorsione per oggetti annidati
+        if (hasErrorFields(obj[key])) {
+          return true; // Ricorsione per oggetti annidati
+        }
       } else if (obj[key] !== "") {
+        if (key === "fanspeed" && !(device.info.autofanspeed === 0)) {
+          return false;
+        }
         return true;
       }
     }
