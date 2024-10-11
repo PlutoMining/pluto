@@ -45,7 +45,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: whirmill/pluto-discovery:0.4.2 # Docker image with specific version
+    image: whirmill/pluto-discovery:0.4.3 # Docker image with specific version
     network_mode: "host"
     # ports:
     #   - "7775:7775" # Map port 7775 on the host to port 7775 on the container
