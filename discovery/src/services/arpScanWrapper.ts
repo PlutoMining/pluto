@@ -40,7 +40,7 @@ export async function arpScan(networkInterface: string): Promise<ArpScanResult[]
  * @returns {Promise<string[]>} List of active network interface names.
  */
 export async function getActiveNetworkInterfaces(): Promise<string[]> {
-  const command = `ip -o addr show | awk '{print $2}' | grep -Ev '^(docker|br-|veth|lo|dind)' | sort -u`;
+  const command = `ip -o addr show | awk '{print $2}' | grep -Ev '^(docker|br-|veth|lo|dind|.orbmirror)' | sort -u`;
   try {
     const { stdout, stderr } = await execPromise(command);
 
