@@ -59,7 +59,6 @@ services:
       - PORT=7775
       - DETECT_MOCK_DEVICES=true
       - MOCK_DISCOVERY_HOST=http://172.17.0.1:7770
-      - ARP_SCAN_IFACES=enp1s0,enp2s0
     volumes:
       # - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
       # - ./common/db:/common/db:ro # Monta il modulo in read-only

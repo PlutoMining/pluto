@@ -3,7 +3,7 @@ import { Device } from "@pluto/interfaces";
 import { logger } from "@pluto/logger";
 import axios from "axios";
 import { config } from "../config/environment";
-import { ArpScanResult, ArpScanWrapper } from "./arpScanWrapper";
+import { ArpScanResult, arpScan, getActiveNetworkInterfaces } from "./arpScanWrapper";
 
 interface DiscoveryOptions {
   ip?: string;
@@ -83,29 +83,37 @@ export async function discoverDevices(options?: DiscoveryOptions) {
       }
     }
 
-    // let arpTable: ArpScanResult[] = [];
+    const arpScanInterfaces = await getActiveNetworkInterfaces();
 
     let arpTable = (
-      await Promise.all(
-        config.arpScanInterfaces.map(async (arpScanInterface) => {
+      await Promise.allSettled(
+        arpScanInterfaces.map(async (arpScanInterface) => {
           try {
-            const arpScan = new ArpScanWrapper(arpScanInterface);
-            const localArpTable = await arpScan.scan();
+            // Esegui l'ARP scan per l'interfaccia specificata
+            const localArpTable = await arpScan(arpScanInterface);
             return localArpTable;
           } catch (error) {
             logger.error(
-              "Error retrieving ARP table:",
+              `Error retrieving ARP table for interface ${arpScanInterface}:`,
               error instanceof Error ? error.message : String(error)
             );
-            throw new Error("Failed to retrieve ARP table");
+            // Restituisci un array vuoto in caso di errore per non interrompere l'esecuzione
+            return [];
           }
         })
       )
-    ).flat();
+    )
+      .filter((result) => result.status === "fulfilled") // Considera solo i risultati che hanno avuto successo
+      .map((result) => (result as PromiseFulfilledResult<ArpScanResult[]>).value) // Estrai il valore dai risultati risolti
+      .flat();
 
-    logger.debug(arpTable);
     if (arpTable.length > 0) {
       logger.info(`ARP table retrieved successfully: ${arpTable.length} devices found.`);
+      logger.debug(arpTable);
+    } else {
+      logger.warn(
+        "No devices found in the ARP scan. Verify that your network interfaces are active and have IP addresses assigned."
+      );
     }
 
     if (config.detectMockDevices) {
