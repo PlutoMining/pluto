@@ -66,7 +66,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
             Settings
           </Text>
 
-          <Flex gap={"1rem"}>
+          <Flex gap={"1rem"} flexWrap={"wrap"}>
             <Badge
               title={"Stratum URL:"}
               label={preset.configuration.stratumURL}
@@ -94,7 +94,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
           </Text>
 
           {preset.associatedDevices && preset.associatedDevices.length > 0 ? (
-            <Flex gap={"1rem"}>
+            <Flex gap={"1rem"} flexWrap={"wrap"}>
               {preset.associatedDevices?.map((device) => (
                 <ChakraBadge
                   key={device.mac}

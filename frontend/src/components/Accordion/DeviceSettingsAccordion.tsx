@@ -3,6 +3,7 @@ import {
   AccordionButton,
   AccordionIcon,
   AccordionPanel,
+  Box,
   Accordion as ChakraAccordion,
   AccordionItem as ChakraAccordionItem,
   Divider,
@@ -237,9 +238,15 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
       case "stratumUser":
         return validateBitcoinAddress(value);
+      case "fanspeed":
+        return validatePercentage(value);
       default:
         return true;
     }
+  };
+
+  const validatePercentage = (value: string) => {
+    return parseInt(value) <= 100 && parseInt(value) >= 0;
   };
 
   const validateField = (name: string, value: string) => {
@@ -543,14 +550,14 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               />
             </Flex>
 
-            <Flex flex={3} flexDirection={"column"} justify={"space-between"} gap={"1rem"}>
+            <Flex flex={3} flexDirection={"column"} justify={"space-between"} gap={"0.25rem"}>
               <Text fontWeight={400} fontSize={"13px"}>
                 Advanced Hardware Settings
               </Text>
               <Flex
                 gap={"0.5rem"}
                 justify={"flex-start"}
-                alignItems={"start"}
+                alignItems={"center"}
                 flexDir={{ mobile: "column", tablet: "row", desktop: "row" }}
               >
                 <Checkbox
@@ -574,75 +581,22 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                   defaultChecked={device.info.autofanspeed === 1}
                   onChange={handleChange}
                 />
+                <Box w={"30rem"}>
+                  <Input
+                    name="fanspeed"
+                    id={`${device.mac}-fanspeed`}
+                    placeholder=""
+                    type="number"
+                    defaultValue={device.info.fanspeed || 0}
+                    onChange={handleChange}
+                    isDisabled={!(device.info.autofanspeed === 0)}
+                    rightAddon={"%"}
+                    error={deviceError.fanspeed}
+                  />
+                </Box>
               </Flex>
             </Flex>
           </Flex>
-
-          {device.info.autofanspeed === 0 && (
-            <FormControl padding={"1rem 0"} w={"100%"} px="1rem">
-              <Slider
-                id={`${device.mac}-fanspeed`}
-                name="fanspeed"
-                onChange={(val: number) =>
-                  handleChange({ target: { name: "fanspeed", value: val.toString() } } as any)
-                }
-                defaultValue={device.info.fanspeed}
-              >
-                <SliderMark
-                  value={0}
-                  pt={"0.5rem"}
-                  transform="translateX(-50%)"
-                  whiteSpace="nowrap"
-                  textAlign="center"
-                >
-                  0%
-                </SliderMark>
-                <SliderMark
-                  value={25}
-                  pt={"0.5rem"}
-                  transform="translateX(-50%)"
-                  whiteSpace="nowrap"
-                  textAlign="center"
-                >
-                  25%
-                </SliderMark>
-                <SliderMark
-                  value={50}
-                  pt={"0.5rem"}
-                  transform="translateX(-50%)"
-                  whiteSpace="nowrap"
-                  textAlign="center"
-                >
-                  50%
-                </SliderMark>
-                <SliderMark
-                  value={75}
-                  pt={"0.5rem"}
-                  transform="translateX(-50%)"
-                  whiteSpace="nowrap"
-                  textAlign="center"
-                >
-                  75%
-                </SliderMark>
-                <SliderMark
-                  value={100}
-                  pt={"0.5rem"}
-                  transform="translateX(-50%)"
-                  whiteSpace="nowrap"
-                  textAlign="center"
-                >
-                  100%
-                </SliderMark>
-                <SliderTrack bg={theme.colors.greyscale[200]}>
-                  <SliderFilledTrack bg={theme.colors.brand.secondary} />
-                </SliderTrack>
-                <SliderThumb
-                  bg={theme.colors.brand.secondary}
-                  _hover={{ bg: theme.colors.brand.secondaryDark }}
-                />
-              </Slider>
-            </FormControl>
-          )}
         </Flex>
 
         <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"full"}>
