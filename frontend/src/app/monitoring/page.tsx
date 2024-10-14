@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import {
   Box,
   Heading,
@@ -15,11 +15,15 @@ import {
   VStack,
   Link,
   Container,
+  Flex,
+  Accordion as ChakraAccordion,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { Dashboard, Device } from "@pluto/interfaces";
 import { useSocket } from "@/providers/SocketProvider";
 import { DeviceStatusBadge } from "@/components/Badge";
+import { SearchInput } from "@/components/Input";
+import { DeviceMonitoringAccordion } from "@/components/Accordion";
 
 const MonitoringTablePage: React.FC = () => {
   const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
@@ -111,10 +115,46 @@ const MonitoringTablePage: React.FC = () => {
     }
   };
 
+  const handleSearch = async (e: ChangeEvent<HTMLInputElement>) => {
+    try {
+      const response = await axios.get<{ data: Device[] }>("/api/devices/imprint", {
+        params: {
+          q: e.target.value,
+        },
+      });
+
+      const discoveredDevices = response.data;
+      setRegisteredDevices(discoveredDevices.data);
+    } catch (error) {
+      console.error("Error searching devices:", error);
+    }
+  };
+
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
       <VStack p={8} spacing={4} align="stretch">
-        <Heading>Dashboards</Heading>
+        <Flex
+          justify={{
+            base: "flex-start",
+            tablet: "space-between",
+            desktop: "space-between",
+          }}
+          alignItems={{ base: "start", tablet: "center", desktop: "center" }}
+          flexDir={{ base: "column", tablet: "row", desktop: "row" }}
+          gap={"1rem"}
+        >
+          <Heading fontSize={"4xl"} fontWeight={400}>
+            Monitoring
+          </Heading>
+          <Box w={{ base: "100%", tablet: "unset" }}>
+            <SearchInput
+              label="Search device"
+              onChange={handleSearch}
+              placeholder="Search device"
+            />
+          </Box>
+        </Flex>
+
         {registeredDevices ? (
           <Box
             backgroundColor={theme.colors.greyscale[0]}
@@ -127,6 +167,7 @@ const MonitoringTablePage: React.FC = () => {
               borderRadius={"1rem"}
               borderWidth={"1px"}
               borderColor={theme.colors.greyscale[200]}
+              display={{ base: "none", tablet: "block" }}
             >
               <Table variant="simple">
                 <Thead backgroundColor={theme.colors.greyscale[100]}>
@@ -262,6 +303,10 @@ const MonitoringTablePage: React.FC = () => {
                 </Tbody>
               </Table>
             </TableContainer>
+
+            <Box display={{ base: "block", tablet: "none" }}>
+              <DeviceMonitoringAccordion devices={registeredDevices}></DeviceMonitoringAccordion>
+            </Box>
           </Box>
         ) : (
           <Text>No dashboards available.</Text>

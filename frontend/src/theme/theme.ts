@@ -6,6 +6,7 @@ import { colors as themeColors } from "./colors";
 const breakpoints = {
   base: "0",
   mobile: "375px",
+  mobileL: "570px",
   tablet: "834px",
   tabletL: "935px",
   desktop: "1440px",

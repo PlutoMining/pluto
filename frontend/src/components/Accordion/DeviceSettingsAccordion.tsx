@@ -467,7 +467,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
             </Heading>
             {" - "}
             <Link
-              href="/"
+              href={device.ip}
               label={device.ip}
               fontSize={"md"}
               fontWeight={400}
