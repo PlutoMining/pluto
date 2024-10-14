@@ -1,5 +1,15 @@
 "use client";
-import { Box, Flex, HStack, Link, Stack, Text, useDisclosure, useTheme } from "@chakra-ui/react";
+import {
+  Box,
+  Divider,
+  Flex,
+  HStack,
+  Link,
+  Stack,
+  Text,
+  useDisclosure,
+  useTheme,
+} from "@chakra-ui/react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Alert from "../Alert/Alert";
@@ -7,6 +17,7 @@ import { AlertInterface } from "../Alert/interfaces";
 import { Logo } from "../icons/Logo";
 import { HamburgerIcon } from "../icons/HamburgerIcon";
 import { CrossIcon } from "../icons/CrossIcon";
+import { DiscordLogo, GitLabLogo, MetaLogo, RedditLogo } from "../icons/FooterIcons";
 
 export const NavBar = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -206,7 +217,7 @@ export const NavBar = () => {
                 </Text> */}
               </Flex>
 
-              <Box aria-label="Open Menu" display={{ tablet: "none" }}>
+              <Box aria-label="Open Menu" display={{ tablet: "none" }} cursor={"pointer"}>
                 {isOpen ? (
                   <CrossIcon w={"32"} h={"32"} onClick={onClose} />
                 ) : (
@@ -220,21 +231,61 @@ export const NavBar = () => {
           <Box
             position="fixed" // Cambia la posizione in fixed per sovrastare tutto
             top={"4rem"}
-            left={0}
-            width="100vw"
-            height="100vh"
+            right={0}
+            width="70%"
+            height={{
+              base: "calc(100vh - 7.25rem)",
+              tablet: "calc(100vh - 9.5rem)",
+              tabletL: "calc(100vh - 8.5rem)",
+            }}
             bgColor="rgb(71, 25, 107)"
-            zIndex={20} // Imposta un z-index alto per sovrapporsi al resto
+            borderTopLeftRadius="1rem"
+            borderBottomLeftRadius="1rem"
             p={"2rem"}
             display={{ tablet: "none" }}
           >
-            <Stack alignItems={"start"} as="nav" spacing={"2rem"}>
-              {links.map((link) => (
-                <Link key={`sm-nav-link-${link.key}`} href={link.href} cursor={"pointer"}>
-                  {link.component(pathname)}
+            <Flex flexDir={"column"} justify={"space-between"} height={"100%"}>
+              <Stack alignItems={"start"} as="nav" spacing={"2rem"}>
+                {links.map((link) => (
+                  <Link
+                    key={`sm-nav-link-${link.key}`}
+                    href={link.href}
+                    cursor={"pointer"}
+                    _hover={{ textDecoration: "none" }}
+                  >
+                    {link.component(pathname)}
+                  </Link>
+                ))}
+              </Stack>
+              <Flex flexDir={"column"} gap={"1rem"}>
+                <Flex
+                  gap={"0.5rem"}
+                  justify={"space-between"}
+                  borderBottomWidth={"0.5px"}
+                  borderBottomColor={"greyscale.200"}
+                  paddingBottom={"1rem"}
+                >
+                  <MetaLogo />
+                  <GitLabLogo />
+                  <DiscordLogo />
+                  <RedditLogo />
+                </Flex>
+                <Link
+                  fontFamily={"heading"}
+                  fontSize={"xs"}
+                  color={"greyscale.200"}
+                  fontWeight={500}
+                  textDecoration={"underline"}
+                >
+                  Terms & Conditions
                 </Link>
-              ))}
-            </Stack>
+
+                <Text fontSize={"xs"} fontWeight={300} color={"greyscale.200"}>
+                  © 2024 Pluto. All rights reserved. This open-source application software is
+                  licensed under the Lorem Ipsum License.
+                </Text>
+              </Flex>
+            </Flex>
           </Box>
         ) : null}
       </Box>
