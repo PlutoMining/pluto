@@ -5,6 +5,7 @@ import {
   Flex,
   HStack,
   Link,
+  Slide,
   Stack,
   Text,
   useDisclosure,
@@ -20,7 +21,7 @@ import { CrossIcon } from "../icons/CrossIcon";
 import { DiscordLogo, GitLabLogo, MetaLogo, RedditLogo } from "../icons/FooterIcons";
 
 export const NavBar = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onOpen, onClose, onToggle } = useDisclosure();
   const pathname = usePathname();
   const theme = useTheme();
 
@@ -219,74 +220,81 @@ export const NavBar = () => {
 
               <Box aria-label="Open Menu" display={{ tablet: "none" }} cursor={"pointer"}>
                 {isOpen ? (
-                  <CrossIcon w={"32"} h={"32"} onClick={onClose} />
+                  <CrossIcon w={"32"} h={"32"} onClick={onToggle} />
                 ) : (
-                  <HamburgerIcon w={"32"} h={"32"} onClick={onOpen} />
+                  <HamburgerIcon w={"32"} h={"32"} onClick={onToggle} />
                 )}
               </Box>
             </Flex>
           </Flex>
         </Flex>
         {isOpen ? (
-          <Box
-            position="fixed" // Cambia la posizione in fixed per sovrastare tutto
-            top={"4rem"}
-            right={0}
-            width="70%"
-            height={{
-              base: "calc(100vh - 7.25rem)",
-              tablet: "calc(100vh - 9.5rem)",
-              tabletL: "calc(100vh - 8.5rem)",
+          <Slide
+            direction="right"
+            in={isOpen}
+            style={{
+              position: "fixed",
+              top: "4rem",
+              right: 0,
+              width: "70%",
             }}
-            bgColor="rgb(71, 25, 107)"
-            borderTopLeftRadius="1rem"
-            borderBottomLeftRadius="1rem"
-            p={"2rem"}
-            display={{ tablet: "none" }}
           >
-            <Flex flexDir={"column"} justify={"space-between"} height={"100%"}>
-              <Stack alignItems={"start"} as="nav" spacing={"2rem"}>
-                {links.map((link) => (
-                  <Link
-                    key={`sm-nav-link-${link.key}`}
-                    href={link.href}
-                    cursor={"pointer"}
-                    _hover={{ textDecoration: "none" }}
+            <Box
+              bgColor="rgb(71, 25, 107)"
+              borderTopLeftRadius="1rem"
+              borderBottomLeftRadius="1rem"
+              p={"2rem"}
+              display={{ tablet: "none" }}
+              height={{
+                base: "calc(100vh - 7.25rem)",
+                tablet: "calc(100vh - 9.5rem)",
+                tabletL: "calc(100vh - 8.5rem)",
+              }}
+            >
+              <Flex flexDir={"column"} justify={"space-between"} height={"100%"}>
+                <Stack alignItems={"start"} as="nav" spacing={"2rem"}>
+                  {links.map((link) => (
+                    <Link
+                      key={`sm-nav-link-${link.key}`}
+                      href={link.href}
+                      cursor={"pointer"}
+                      _hover={{ textDecoration: "none" }}
+                    >
+                      {link.component(pathname)}
+                    </Link>
+                  ))}
+                </Stack>
+                <Flex flexDir={"column"} gap={"1rem"}>
+                  <Flex
+                    gap={"0.5rem"}
+                    justify={"space-between"}
+                    borderBottomWidth={"0.5px"}
+                    borderBottomColor={"greyscale.200"}
+                    paddingBottom={"1rem"}
                   >
-                    {link.component(pathname)}
+                    <MetaLogo />
+                    <GitLabLogo />
+                    <DiscordLogo />
+                    <RedditLogo />
+                  </Flex>
+                  <Link
+                    fontFamily={"heading"}
+                    fontSize={"xs"}
+                    color={"greyscale.200"}
+                    fontWeight={500}
+                    textDecoration={"underline"}
+                  >
+                    Terms & Conditions
                   </Link>
-                ))}
-              </Stack>
-              <Flex flexDir={"column"} gap={"1rem"}>
-                <Flex
-                  gap={"0.5rem"}
-                  justify={"space-between"}
-                  borderBottomWidth={"0.5px"}
-                  borderBottomColor={"greyscale.200"}
-                  paddingBottom={"1rem"}
-                >
-                  <MetaLogo />
-                  <GitLabLogo />
-                  <DiscordLogo />
-                  <RedditLogo />
-                </Flex>
-                <Link
-                  fontFamily={"heading"}
-                  fontSize={"xs"}
-                  color={"greyscale.200"}
-                  fontWeight={500}
-                  textDecoration={"underline"}
-                >
-                  Terms & Conditions
-                </Link>
 
-                <Text fontSize={"xs"} fontWeight={300} color={"greyscale.200"}>
-                  © 2024 Pluto. All rights reserved. This open-source application software is
-                  licensed under the Lorem Ipsum License.
-                </Text>
+                  <Text fontSize={"xs"} fontWeight={300} color={"greyscale.200"}>
+                    © 2024 Pluto. All rights reserved. This open-source application software is
+                    licensed under the Lorem Ipsum License.
+                  </Text>
+                </Flex>
               </Flex>
-            </Flex>
-          </Box>
+            </Box>
+          </Slide>
         ) : null}
       </Box>
       {alert && (
