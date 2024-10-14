@@ -1,4 +1,5 @@
 "use client";
+import { DeviceAccordion } from "@/components/Accordion/DeviceAccordion";
 import { DeviceStatusBadge } from "@/components/Badge";
 import Button from "@/components/Button/Button";
 import { AddIcon } from "@/components/icons/AddIcon";
@@ -169,216 +170,228 @@ const DevicePage: React.FC = () => {
 
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
-      <VStack p={8} spacing={4} align="stretch">
-        <Heading>Your devices</Heading>
-
-        {registeredDevices ? (
-          <>
-            {registeredDevices && registeredDevices.length > 0 ? (
-              <Box
-                backgroundColor={theme.colors.greyscale[0]}
-                borderRadius={"1rem"}
-                p={"1rem"}
-                borderWidth={"1px"}
-                borderColor={theme.colors.greyscale[200]}
+      <Box p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}>
+        <Flex as="form" flexDir={"column"} gap={"2rem"}>
+          <VStack spacing={4} align="stretch">
+            <Flex alignItems={"center"} justify={"space-between"} gap={"1rem"}>
+              <Heading fontSize={"4xl"} fontWeight={400}>
+                Your devices
+              </Heading>
+              <Button
+                variant={"primaryBlack"}
+                onClick={onOpen}
+                rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
               >
-                <Box
-                  backgroundColor={theme.colors.greyscale[0]}
-                  borderRadius={"0.5rem"}
-                  p={"1rem 0"}
-                  borderWidth={"1px"}
-                  borderColor={theme.colors.greyscale[200]}
-                  as={Flex}
-                  flexDir={"column"}
-                  gap={"1rem"}
-                >
-                  <Flex justify={"flex-end"}>
-                    <Flex gap={"1rem"} p={"0 1rem"}>
-                      <Button
-                        variant={"primaryBlack"}
-                        onClick={onOpen}
-                        rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
-                      >
-                        Add a new device
-                      </Button>
-                    </Flex>
-                  </Flex>
-                  <TableContainer>
-                    <Table variant="simple">
-                      <Thead backgroundColor={theme.colors.greyscale[100]}>
-                        <Tr>
-                          <Th borderColor={theme.colors.greyscale[100]}>
-                            {/* <Checkbox
+                Add a new device
+              </Button>
+            </Flex>
+            {registeredDevices ? (
+              <>
+                {registeredDevices && registeredDevices.length > 0 ? (
+                  <Box
+                    backgroundColor={theme.colors.greyscale[0]}
+                    borderRadius={"1rem"}
+                    p={"1rem"}
+                    borderWidth={"1px"}
+                    borderColor={theme.colors.greyscale[200]}
+                  >
+                    <Box
+                      backgroundColor={theme.colors.greyscale[0]}
+                      borderRadius={"0.5rem"}
+                      borderWidth={"1px"}
+                      borderColor={theme.colors.greyscale[200]}
+                      as={Flex}
+                      flexDir={"column"}
+                      gap={"1rem"}
+                    >
+                      <TableContainer display={{ base: "none", tablet: "block" }}>
+                        <Table variant="simple">
+                          <Thead backgroundColor={theme.colors.greyscale[100]}>
+                            <Tr>
+                              <Th borderColor={theme.colors.greyscale[100]}>
+                                {/* <Checkbox
                             isChecked={allChecked}
                             isIndeterminate={isIndeterminate}
                             onChange={(e) => handleAllCheckbox(e.target.checked)}
                           > */}
-                            <Text
-                              pl={"0.5rem"}
-                              color={theme.colors.greyscale[500]}
-                              fontFamily={"heading"}
-                              textTransform={"capitalize"}
-                              fontSize={"12px"}
-                            >
-                              Hostname
-                            </Text>
-                            {/* </Checkbox> */}
-                          </Th>
-                          <Th borderColor={theme.colors.greyscale[100]}>
-                            <Text
-                              fontWeight={500}
-                              color={theme.colors.greyscale[500]}
-                              fontFamily={"heading"}
-                              textTransform={"capitalize"}
-                              fontSize={"12px"}
-                            >
-                              Date added
-                            </Text>
-                          </Th>
-                          <Th borderColor={theme.colors.greyscale[100]}>
-                            <Text
-                              fontWeight={500}
-                              color={theme.colors.greyscale[500]}
-                              fontFamily={"heading"}
-                              textTransform={"capitalize"}
-                              fontSize={"12px"}
-                            >
-                              IP
-                            </Text>
-                          </Th>
-                          <Th borderColor={theme.colors.greyscale[100]}>
-                            <Text
-                              fontWeight={500}
-                              color={theme.colors.greyscale[500]}
-                              fontFamily={"heading"}
-                              textTransform={"capitalize"}
-                              fontSize={"12px"}
-                            >
-                              Miner
-                            </Text>
-                          </Th>
-                          <Th borderColor={theme.colors.greyscale[100]}>
-                            <Text
-                              fontWeight={500}
-                              color={theme.colors.greyscale[500]}
-                              fontFamily={"heading"}
-                              textTransform={"capitalize"}
-                              fontSize={"12px"}
-                            >
-                              ASIC
-                            </Text>
-                          </Th>
-                          <Th borderColor={theme.colors.greyscale[100]}>
-                            <Text
-                              fontWeight={500}
-                              color={theme.colors.greyscale[500]}
-                              fontFamily={"heading"}
-                              textTransform={"capitalize"}
-                              fontSize={"12px"}
-                            >
-                              Uptime
-                            </Text>
-                          </Th>
-                          <Th borderColor={theme.colors.greyscale[100]}>
-                            <Text
-                              fontWeight={500}
-                              color={theme.colors.greyscale[500]}
-                              fontFamily={"heading"}
-                              textTransform={"capitalize"}
-                              fontSize={"12px"}
-                            >
-                              FW v.
-                            </Text>
-                          </Th>
-                          <Th borderColor={theme.colors.greyscale[100]}>
-                            <Text
-                              fontWeight={500}
-                              color={theme.colors.greyscale[500]}
-                              fontFamily={"heading"}
-                              textTransform={"capitalize"}
-                              fontSize={"12px"}
-                            >
-                              Status
-                            </Text>
-                          </Th>
-                          <Th borderColor={theme.colors.greyscale[100]}></Th>
-                        </Tr>
-                      </Thead>
-                      <Tbody>
-                        {registeredDevices.map((device, index) => (
-                          <Tr key={`registered-device-${device.mac}`}>
-                            <Td borderColor={theme.colors.greyscale[100]}>
-                              {/* <Checkbox
+                                <Text
+                                  pl={"0.5rem"}
+                                  color={theme.colors.greyscale[500]}
+                                  fontFamily={"heading"}
+                                  textTransform={"capitalize"}
+                                  fontSize={"12px"}
+                                >
+                                  Hostname
+                                </Text>
+                                {/* </Checkbox> */}
+                              </Th>
+                              <Th borderColor={theme.colors.greyscale[100]}>
+                                <Text
+                                  fontWeight={500}
+                                  color={theme.colors.greyscale[500]}
+                                  fontFamily={"heading"}
+                                  textTransform={"capitalize"}
+                                  fontSize={"12px"}
+                                >
+                                  Date added
+                                </Text>
+                              </Th>
+                              <Th borderColor={theme.colors.greyscale[100]}>
+                                <Text
+                                  fontWeight={500}
+                                  color={theme.colors.greyscale[500]}
+                                  fontFamily={"heading"}
+                                  textTransform={"capitalize"}
+                                  fontSize={"12px"}
+                                >
+                                  IP
+                                </Text>
+                              </Th>
+                              <Th borderColor={theme.colors.greyscale[100]}>
+                                <Text
+                                  fontWeight={500}
+                                  color={theme.colors.greyscale[500]}
+                                  fontFamily={"heading"}
+                                  textTransform={"capitalize"}
+                                  fontSize={"12px"}
+                                >
+                                  Miner
+                                </Text>
+                              </Th>
+                              <Th borderColor={theme.colors.greyscale[100]}>
+                                <Text
+                                  fontWeight={500}
+                                  color={theme.colors.greyscale[500]}
+                                  fontFamily={"heading"}
+                                  textTransform={"capitalize"}
+                                  fontSize={"12px"}
+                                >
+                                  ASIC
+                                </Text>
+                              </Th>
+                              <Th borderColor={theme.colors.greyscale[100]}>
+                                <Text
+                                  fontWeight={500}
+                                  color={theme.colors.greyscale[500]}
+                                  fontFamily={"heading"}
+                                  textTransform={"capitalize"}
+                                  fontSize={"12px"}
+                                >
+                                  Uptime
+                                </Text>
+                              </Th>
+                              <Th borderColor={theme.colors.greyscale[100]}>
+                                <Text
+                                  fontWeight={500}
+                                  color={theme.colors.greyscale[500]}
+                                  fontFamily={"heading"}
+                                  textTransform={"capitalize"}
+                                  fontSize={"12px"}
+                                >
+                                  FW v.
+                                </Text>
+                              </Th>
+                              <Th borderColor={theme.colors.greyscale[100]}>
+                                <Text
+                                  fontWeight={500}
+                                  color={theme.colors.greyscale[500]}
+                                  fontFamily={"heading"}
+                                  textTransform={"capitalize"}
+                                  fontSize={"12px"}
+                                >
+                                  Status
+                                </Text>
+                              </Th>
+                              <Th borderColor={theme.colors.greyscale[100]}></Th>
+                            </Tr>
+                          </Thead>
+                          <Tbody>
+                            {registeredDevices.map((device, index) => (
+                              <Tr key={`registered-device-${device.mac}`}>
+                                <Td borderColor={theme.colors.greyscale[100]}>
+                                  {/* <Checkbox
                               isChecked={checkedItems[index]}
                               onChange={() => handleCheckbox(index)}
                             > */}
-                              <Text pl={"0.5rem"}>{device.info.hostname}</Text>
-                              {/* </Checkbox> */}
-                            </Td>
-                            <Td borderColor={theme.colors.greyscale[100]}>
-                              {new Date(device.createdAt!).toLocaleDateString()}
-                            </Td>
-                            <Td borderColor={theme.colors.greyscale[100]}>{device.ip}</Td>
-                            <Td borderColor={theme.colors.greyscale[100]}>
-                              {getMinerName(device.info.boardVersion)}
-                            </Td>
-                            <Td borderColor={theme.colors.greyscale[100]}>
-                              {device.info.ASICModel}
-                            </Td>
-                            <Td borderColor={theme.colors.greyscale[100]}>
-                              {formatTime(device.info.uptimeSeconds)}
-                            </Td>
-                            <Td borderColor={theme.colors.greyscale[100]}>{device.info.version}</Td>
-                            <Td borderColor={theme.colors.greyscale[100]}>
-                              <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
-                            </Td>
-                            <Td
-                              borderColor={theme.colors.greyscale[100]}
-                              fontFamily={"heading"}
-                              textDecoration={"underline"}
-                              fontWeight={"600"}
-                            >
-                              {/* Pass the device ID to the removeRegisteredDevice function */}
-                              <Link onClick={() => removeRegisteredDevice(device.mac)}>Remove</Link>
-                            </Td>
-                          </Tr>
-                        ))}
-                      </Tbody>
-                    </Table>
-                  </TableContainer>
-                </Box>
-              </Box>
+                                  <Text pl={"0.5rem"}>{device.info.hostname}</Text>
+                                  {/* </Checkbox> */}
+                                </Td>
+                                <Td borderColor={theme.colors.greyscale[100]}>
+                                  {new Date(device.createdAt!).toLocaleDateString()}
+                                </Td>
+                                <Td borderColor={theme.colors.greyscale[100]}>{device.ip}</Td>
+                                <Td borderColor={theme.colors.greyscale[100]}>
+                                  {getMinerName(device.info.boardVersion)}
+                                </Td>
+                                <Td borderColor={theme.colors.greyscale[100]}>
+                                  {device.info.ASICModel}
+                                </Td>
+                                <Td borderColor={theme.colors.greyscale[100]}>
+                                  {formatTime(device.info.uptimeSeconds)}
+                                </Td>
+                                <Td borderColor={theme.colors.greyscale[100]}>
+                                  {device.info.version}
+                                </Td>
+                                <Td borderColor={theme.colors.greyscale[100]}>
+                                  <DeviceStatusBadge
+                                    status={device.tracing ? "online" : "offline"}
+                                  />
+                                </Td>
+                                <Td
+                                  borderColor={theme.colors.greyscale[100]}
+                                  fontFamily={"heading"}
+                                  textDecoration={"underline"}
+                                  fontWeight={"600"}
+                                >
+                                  {/* Pass the device ID to the removeRegisteredDevice function */}
+                                  <Link onClick={() => removeRegisteredDevice(device.mac)}>
+                                    Remove
+                                  </Link>
+                                </Td>
+                              </Tr>
+                            ))}
+                          </Tbody>
+                        </Table>
+                      </TableContainer>
+
+                      <Box display={{ base: "block", tablet: "none" }}>
+                        <DeviceAccordion devices={registeredDevices}></DeviceAccordion>
+                      </Box>
+                    </Box>
+                  </Box>
+                ) : (
+                  <VStack>
+                    <Text>Looks like you haven&lsquo;t added any devices yet!</Text>
+                    <Text>To get started with monitoring, please add your first device.</Text>
+                    <Button variant={"primaryPurple"} onClick={onOpen}>
+                      Add a new device
+                    </Button>
+                  </VStack>
+                )}
+              </>
             ) : (
-              <VStack>
-                <Text>Looks like you haven&lsquo;t added any devices yet!</Text>
-                <Text>To get started with monitoring, please add your first device.</Text>
-                <Button variant={"primaryPurple"} onClick={onOpen}>
-                  Add a new device
-                </Button>
-              </VStack>
+              <Spinner />
             )}
-          </>
-        ) : (
-          <Spinner />
-        )}
 
-        <RegisterDevicesModal
-          isOpen={isOpen}
-          onClose={onClose}
-          onDevicesChanged={handleDevicesChanged}
-        />
+            <RegisterDevicesModal
+              isOpen={isOpen}
+              onClose={onClose}
+              onDevicesChanged={handleDevicesChanged}
+            />
 
-        <BasicModal
-          isOpen={isConfirmationModalOpen}
-          onClose={onConfirmationModalClose}
-          title={"Device removal"}
-          body={"Are you sure you want to remove this device?"}
-          primaryActionLabel={"Proceed"}
-          primaryAction={handleConfirmDelete}
-          secondaryActionLabel={"Cancel"}
-          secondaryAction={onConfirmationModalClose}
-        />
-      </VStack>
+            <BasicModal
+              isOpen={isConfirmationModalOpen}
+              onClose={onConfirmationModalClose}
+              title={"Device removal"}
+              body={"Are you sure you want to remove this device?"}
+              primaryActionLabel={"Proceed"}
+              primaryAction={handleConfirmDelete}
+              secondaryActionLabel={"Cancel"}
+              secondaryAction={onConfirmationModalClose}
+            />
+          </VStack>
+        </Flex>
+      </Box>
     </Container>
   );
 };

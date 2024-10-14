@@ -152,7 +152,9 @@ const SettingsPage = () => {
               flexDir={{ mobile: "column", tablet: "row", desktop: "row" }}
               gap={"1rem"}
             >
-              <Heading>Device settings</Heading>
+              <Heading fontSize={"4xl"} fontWeight={400}>
+                Device settings
+              </Heading>
               <Flex
                 gap={"1rem"}
                 alignItems={"center"}

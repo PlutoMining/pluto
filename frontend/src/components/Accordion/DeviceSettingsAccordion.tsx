@@ -581,7 +581,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                   defaultChecked={device.info.autofanspeed === 1}
                   onChange={handleChange}
                 />
-                <Box w={"30rem"}>
+                <Box w={"100%"}>
                   <Input
                     name="fanspeed"
                     id={`${device.mac}-fanspeed`}
