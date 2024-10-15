@@ -6,6 +6,7 @@ import Button from "@/components/Button/Button";
 import { CloseIcon } from "@/components/icons/CloseIcon";
 import { RestartIcon } from "@/components/icons/RestartIcon";
 import { SearchInput } from "@/components/Input";
+import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import {
   Box,
   Container,
@@ -18,7 +19,6 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  Spinner,
   Text,
   useDisclosure,
   useTheme,
@@ -183,7 +183,9 @@ const SettingsPage = () => {
                 onOpenAlert={onOpenAlert}
               />
             ) : (
-              <Spinner />
+              <Flex w={"100%"} alignItems={"center"} flexDirection={"column"} m={"2rem auto"}>
+                <CircularProgressWithDots />
+              </Flex>
             )}
           </VStack>
         </Flex>

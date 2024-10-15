@@ -25,7 +25,9 @@ const OverviewPage: React.FC = () => {
 
   return (
     <VStack p={8} spacing={4} align="stretch" height={"100%"}>
-      <Heading>Overview Dashboard</Heading>
+      <Heading fontSize={"4xl"} fontWeight={400}>
+        Overview Dashboard
+      </Heading>
       {dashboardPublicUrl && (
         <Box minHeight={!isNotMobile ? "3150px" : "1850px"} position={"relative"}>
           <iframe

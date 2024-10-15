@@ -4,13 +4,13 @@ import Alert from "@/components/Alert/Alert";
 import { AlertInterface, AlertStatus } from "@/components/Alert/interfaces";
 import Button from "@/components/Button/Button";
 import { AddNewPresetModal, BasicModal } from "@/components/Modal";
+import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import {
   Accordion,
   Box,
   Container,
   Flex,
   Heading,
-  Spinner,
   Text,
   useDisclosure,
   VStack,
@@ -168,7 +168,9 @@ const PresetsListingPage: React.FC = () => {
       )}
       <Box p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}>
         <Flex justify="space-between" align="center" mb={8}>
-          <Heading>Pool Presets</Heading>
+          <Heading fontSize={"4xl"} fontWeight={400}>
+            Pool Presets
+          </Heading>
           {presets && presets.length > 0 && (
             <Flex>
               <Button
@@ -216,7 +218,9 @@ const PresetsListingPage: React.FC = () => {
             )}
           </>
         ) : (
-          <Spinner />
+          <Flex w={"100%"} alignItems={"center"} flexDirection={"column"} m={"2rem auto"}>
+            <CircularProgressWithDots />
+          </Flex>
         )}
 
         <AddNewPresetModal

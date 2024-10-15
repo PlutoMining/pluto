@@ -5,6 +5,7 @@ import Button from "@/components/Button/Button";
 import { AddIcon } from "@/components/icons/AddIcon";
 import { BasicModal } from "@/components/Modal/BasicModal";
 import { RegisterDevicesModal } from "@/components/Modal/RegisterDevicesModal";
+import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import { useSocket } from "@/providers/SocketProvider";
 import { getMinerName } from "@/utils/minerMap";
 import {
@@ -13,7 +14,6 @@ import {
   Flex,
   Heading,
   Link,
-  Spinner,
   Table,
   TableContainer,
   Tbody,
@@ -370,7 +370,9 @@ const DevicePage: React.FC = () => {
                 )}
               </>
             ) : (
-              <Spinner />
+              <Flex w={"100%"} alignItems={"center"} flexDirection={"column"} m={"2rem auto"}>
+                <CircularProgressWithDots />
+              </Flex>
             )}
 
             <RegisterDevicesModal
