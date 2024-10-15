@@ -238,7 +238,7 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
       if (preset) {
         payload.info.stratumPort = preset.configuration.stratumPort;
         payload.info.stratumURL = preset.configuration.stratumURL;
-        payload.info.stratumUser = preset.configuration.stratumUser;
+        payload.info.stratumUser = `${preset.configuration.stratumUser}.${payload.info.hostname}`;
         payload.info.stratumPassword = preset.configuration.stratumPassword;
       } else {
         return res.status(400).json({ error: "Associated Preset id not available" });

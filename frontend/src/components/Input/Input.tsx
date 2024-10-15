@@ -16,13 +16,13 @@ interface InputProps {
   name: string;
   id: string;
   type?: "text" | "number" | "password";
-  placeholder: string;
+  placeholder?: string;
   defaultValue?: string | number;
   value?: string | number;
   pattern?: string;
   error?: string;
   isInvalid?: boolean;
-  onChange: ChangeEventHandler<HTMLInputElement>;
+  onChange?: ChangeEventHandler<HTMLInputElement>;
   leftAddon?: string;
   rightAddon?: string;
   isDisabled?: boolean;

@@ -174,11 +174,19 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     async (shouldRestart: boolean) => {
       try {
         setIsSaving(true);
+        const deviceToUpdate = {
+          ...device,
+          info: {
+            ...device.info,
+            stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
+          },
+        };
+
         const {
           data: { data: updatedDestDevice },
         } = await axios.patch<{ message: string; data: Device }>(
-          `/api/devices/${device.mac}/system`,
-          device
+          `/api/devices/${deviceToUpdate.mac}/system`,
+          deviceToUpdate
         );
         const {
           data: { data: updatedDevice },
@@ -232,7 +240,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         const numericRegex = /^\d+$/;
         return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
       case "stratumUser":
-        return validateBitcoinAddress(value);
+        // return validateBitcoinAddress(value);
+        return !value.includes(".");
       case "fanspeed":
         return validatePercentage(value);
       default:
@@ -323,6 +332,10 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         const updatedDevice = {
           ...device,
           presetUuid: selectedPreset?.uuid || presets[0].uuid,
+          info: {
+            ...device.info,
+            stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
+          },
         };
 
         setDevice(updatedDevice);
@@ -375,6 +388,10 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         const updatedDevice = {
           ...device,
           presetUuid: preset?.uuid || null,
+          info: {
+            ...device.info,
+            stratumUser: `${preset.configuration.stratumUser}.${stratumUser.workerName}`,
+          },
         };
 
         setDevice(updatedDevice);
@@ -632,27 +649,38 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 optionValues={presets.map((preset) => ({ value: preset.uuid, label: preset.name }))}
               />
               {selectedPreset && (
-                <Flex gap={"1rem"} flexWrap={"wrap"}>
-                  <Badge
-                    title={"Stratum URL:"}
-                    label={selectedPreset.configuration.stratumURL}
-                    color={theme.colors.greyscale[200]}
-                  ></Badge>
-                  <Badge
-                    title={"Stratum Port:"}
-                    label={selectedPreset.configuration.stratumPort}
-                    color={theme.colors.greyscale[200]}
-                  ></Badge>
-                  <Badge
-                    title={"Stratum User:"}
-                    label={selectedPreset.configuration.stratumUser}
-                    color={theme.colors.greyscale[200]}
-                  ></Badge>
-                  {/* <Badge
-                    title={"Stratum Password:"}
-                    label={selectedPreset.configuration.stratumPassword}
-                    color={theme.colors.greyscale[200]}
-                  ></Badge> */}
+                <Flex gap={"1rem"}>
+                  <Flex flex={1}>
+                    <Input
+                      isDisabled={true}
+                      type="text"
+                      label="Stratum URL"
+                      name="stratumURL"
+                      id={`${selectedPreset.uuid}-stratumUrl`}
+                      defaultValue={selectedPreset.configuration.stratumURL}
+                    />
+                  </Flex>
+                  <Flex flex={1}>
+                    <Input
+                      isDisabled={true}
+                      type="number"
+                      label="Stratum Port"
+                      name="stratumPort"
+                      id={`${selectedPreset.uuid}-stratumPort`}
+                      defaultValue={selectedPreset.configuration.stratumPort}
+                    />
+                  </Flex>
+                  <Flex flex={2}>
+                    <Input
+                      isDisabled={true}
+                      type="text"
+                      label="Stratum User"
+                      name="stratumUser"
+                      id={`${selectedPreset.uuid}-stratumUser`}
+                      defaultValue={selectedPreset.configuration.stratumUser}
+                      rightAddon={`.${stratumUser.workerName}`}
+                    />
+                  </Flex>
                 </Flex>
               )}
             </Flex>
