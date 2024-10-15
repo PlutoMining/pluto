@@ -24,6 +24,12 @@ import {
   Tr,
   useTheme,
   VStack,
+  Accordion as ChakraAccordion,
+  AccordionItem as ChakraAccordionItem,
+  AccordionButton,
+  AccordionIcon,
+  AccordionPanel,
+  Divider,
 } from "@chakra-ui/react";
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { Input } from "../Input/Input";
@@ -35,6 +41,9 @@ import Button from "../Button/Button";
 import { Checkbox } from "../Checkbox";
 import { AddIcon } from "../icons/AddIcon";
 import { CircularProgressWithDots } from "../ProgressBar/CircularProgressWithDots";
+import { DeviceMonitoringAccordion } from "../Accordion";
+import { DeviceAccordion } from "../Accordion/DeviceAccordion";
+import { DeviceAddAccordion } from "../Accordion/DeviceAddAccordion";
 
 interface RegisterDevicesModalProps {
   isOpen: boolean;
@@ -344,7 +353,7 @@ function ModalBodyContent({
                               Result for {ipAndMacAddress.macAddress}
                             </Text>
                             <Box>
-                              <TableContainer>
+                              <TableContainer display={{ base: "none", tablet: "block" }}>
                                 <Table variant="simple">
                                   <Thead backgroundColor={theme.colors.greyscale[100]}>
                                     <Tr>
@@ -442,6 +451,145 @@ function ModalBodyContent({
                                   </Tbody>
                                 </Table>
                               </TableContainer>
+
+                              <ChakraAccordion
+                                display={{ base: "block", tablet: "none" }}
+                                allowMultiple
+                                as={Flex}
+                                flexDir={"column"}
+                                backgroundColor={"greyscale.0"}
+                                borderWidth={"1px"}
+                                borderColor={"greyscale.200"}
+                                borderRadius={"1rem"}
+                              >
+                                {discoveredDevices?.map((device, index) => (
+                                  <ChakraAccordionItem
+                                    key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
+                                    borderTopWidth={index > 0 ? "1px" : "0"}
+                                    borderBottomWidth={"0!important"}
+                                    padding={"1rem"}
+                                  >
+                                    <AccordionButton
+                                      p={0}
+                                      justifyContent={"space-between"}
+                                      _hover={{ backgroundColor: "none" }}
+                                    >
+                                      <Flex gap={"1rem"} alignItems={"center"}>
+                                        <AccordionIcon />
+                                        <Heading
+                                          fontSize={"sm"}
+                                          fontWeight={600}
+                                          textTransform={"capitalize"}
+                                          fontFamily={"body"}
+                                        >
+                                          {device.info.hostname}
+                                        </Heading>
+                                      </Flex>
+                                    </AccordionButton>
+                                    <AccordionPanel
+                                      p={0}
+                                      pb={4}
+                                      as={Flex}
+                                      flexDir={"column"}
+                                      alignItems={"flex-start"}
+                                    >
+                                      <Divider
+                                        mb={"1rem"}
+                                        mt={"1rem"}
+                                        borderColor={theme.colors.greyscale[200]}
+                                      />
+
+                                      <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"}>
+                                        <Flex justify={"space-between"}>
+                                          <Text
+                                            fontWeight={500}
+                                            textTransform={"capitalize"}
+                                            fontSize={"sm"}
+                                            fontFamily={"heading"}
+                                          >
+                                            IP
+                                          </Text>
+                                          <Text
+                                            fontWeight={400}
+                                            fontSize={"sm"}
+                                            fontFamily={"body"}
+                                          >
+                                            {device.ip}
+                                          </Text>
+                                        </Flex>
+                                        <Flex justify={"space-between"}>
+                                          <Text
+                                            fontWeight={500}
+                                            textTransform={"capitalize"}
+                                            fontSize={"sm"}
+                                            fontFamily={"heading"}
+                                          >
+                                            Mac Address
+                                          </Text>
+                                          <Text
+                                            fontWeight={400}
+                                            fontSize={"sm"}
+                                            fontFamily={"body"}
+                                          >
+                                            {device.mac}
+                                          </Text>
+                                        </Flex>
+                                        <Flex justify={"space-between"}>
+                                          <Text
+                                            fontWeight={500}
+                                            textTransform={"capitalize"}
+                                            fontSize={"sm"}
+                                            fontFamily={"heading"}
+                                          >
+                                            Miner
+                                          </Text>
+                                          <Text
+                                            fontWeight={400}
+                                            fontSize={"sm"}
+                                            fontFamily={"body"}
+                                          >
+                                            {getMinerName(device.info.boardVersion)}
+                                          </Text>
+                                        </Flex>
+                                        <Flex justify={"space-between"}>
+                                          <Text
+                                            fontWeight={500}
+                                            textTransform={"capitalize"}
+                                            fontSize={"sm"}
+                                            fontFamily={"heading"}
+                                          >
+                                            ASIC
+                                          </Text>
+                                          <Text
+                                            fontWeight={400}
+                                            fontSize={"sm"}
+                                            fontFamily={"body"}
+                                          >
+                                            {device.info.ASICModel}
+                                          </Text>
+                                        </Flex>
+                                        <Flex justify={"space-between"}>
+                                          <Text
+                                            fontWeight={500}
+                                            textTransform={"capitalize"}
+                                            fontSize={"sm"}
+                                            fontFamily={"heading"}
+                                          >
+                                            FW v.
+                                          </Text>
+                                          <Text
+                                            fontWeight={400}
+                                            fontSize={"sm"}
+                                            fontFamily={"body"}
+                                          >
+                                            {device.info.version}
+                                          </Text>
+                                        </Flex>
+                                      </Flex>
+                                    </AccordionPanel>
+                                  </ChakraAccordionItem>
+                                ))}
+                              </ChakraAccordion>
                             </Box>
                             <Flex align={"start"}>
                               <Flex gap={"1rem"}>
@@ -485,8 +633,40 @@ function ModalBodyContent({
                   <VStack h={"100%"}>
                     {discoveredDevices && discoveredDevices.length > 0 ? (
                       <Box as={Flex} flexDir={"column"} gap={"1rem"} w={"100%"} h={"100%"}>
-                        <Text>“{discoveredDevices?.length}” new devices found</Text>
-                        <TableContainer h={"100%"}>
+                        <Flex alignItems={"center"} justify={"space-between"} gap={"1rem"}>
+                          <Text>“{discoveredDevices?.length}” new devices found</Text>
+                          <ChakraCheckbox
+                            borderColor={theme.colors.greyscale[900]}
+                            borderRadius={"3px"}
+                            size="lg"
+                            display={{ base: "flex", tablet: "none" }}
+                            gap={"0.5rem"}
+                            flexDirection="row-reverse" // Posiziona il testo a sinistra e la checkbox a destra
+                            alignItems="center" // Allinea verticalmente checkbox e testo
+                            sx={{
+                              "& .chakra-checkbox__control": {
+                                bg: theme.colors.greyscale[0], // colore di sfondo (hex)
+                                borderColor: theme.colors.greyscale[900], // colore del bordo (hex)
+                              },
+                              "& .chakra-checkbox__control[data-checked]": {
+                                bg: theme.colors.brand.secondary, // colore quando è selezionato (checked)
+                                borderColor: theme.colors.greyscale[900], // colore bordo quando è selezionato
+                                color: theme.colors.greyscale[0], // colore di sfondo (hex)
+                                boxShadow: "inset 0 0 0 2px white", // spazio bianco tra bordo e riempimento
+                              },
+                              "& .chakra-checkbox__control:focus": {
+                                borderColor: theme.colors.brand.primary, // colore del bordo quando la checkbox è in focus
+                                boxShadow: `0 0 0 2px ${theme.colors.brand.primary}`, // effetto di ombra quando è in focus
+                              },
+                            }}
+                            isChecked={allChecked}
+                            onChange={(e) => handleAllCheckbox(e.target.checked)}
+                          >
+                            <Text textDecoration={"underline"}>Select all</Text>
+                          </ChakraCheckbox>
+                        </Flex>
+
+                        <TableContainer h={"100%"} display={{ base: "none", tablet: "block" }}>
                           <Table variant="simple" h={"100%"} overflow={"scroll"}>
                             <Thead>
                               <Tr>
@@ -505,6 +685,10 @@ function ModalBodyContent({
                                         borderColor: theme.colors.greyscale[900], // colore bordo quando è selezionato
                                         color: theme.colors.greyscale[0], // colore di sfondo (hex)
                                         boxShadow: "inset 0 0 0 2px white", // spazio bianco tra bordo e riempimento
+                                      },
+                                      "& .chakra-checkbox__control:focus": {
+                                        borderColor: theme.colors.brand.primary, // colore del bordo quando la checkbox è in focus
+                                        boxShadow: `0 0 0 2px ${theme.colors.brand.primary}`, // effetto di ombra quando è in focus
                                       },
                                     }}
                                     isChecked={allChecked}
@@ -604,12 +788,160 @@ function ModalBodyContent({
                                   <Td borderColor={theme.colors.greyscale[100]}>
                                     {device.info.version}
                                   </Td>
-                                  <Td borderColor={theme.colors.greyscale[100]}></Td>
                                 </Tr>
                               ))}
                             </Tbody>
                           </Table>
                         </TableContainer>
+                        <Box display={{ base: "block", tablet: "none" }}>
+                          {discoveredDevices && discoveredDevices.length > 0 ? (
+                            <ChakraAccordion
+                              allowMultiple
+                              as={Flex}
+                              flexDir={"column"}
+                              backgroundColor={"greyscale.0"}
+                              borderWidth={"1px"}
+                              borderColor={"greyscale.200"}
+                              borderRadius={"1rem"}
+                            >
+                              {discoveredDevices?.map((device, index) => (
+                                <ChakraAccordionItem
+                                  key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
+                                  borderTopWidth={index > 0 ? "1px" : "0"}
+                                  borderBottomWidth={"0!important"}
+                                  padding={"1rem"}
+                                >
+                                  <AccordionButton
+                                    p={0}
+                                    justifyContent={"space-between"}
+                                    _hover={{ backgroundColor: "none" }}
+                                  >
+                                    <Flex gap={"1rem"} alignItems={"center"}>
+                                      <AccordionIcon />
+                                      <Heading
+                                        fontSize={"sm"}
+                                        fontWeight={600}
+                                        textTransform={"capitalize"}
+                                        fontFamily={"body"}
+                                      >
+                                        {device.info.hostname}
+                                      </Heading>
+                                    </Flex>
+
+                                    <ChakraCheckbox
+                                      borderColor={theme.colors.greyscale[900]}
+                                      borderRadius={"3px"}
+                                      size="lg"
+                                      sx={{
+                                        "& .chakra-checkbox__control": {
+                                          bg: theme.colors.greyscale[0], // colore di sfondo (hex)
+                                          borderColor: theme.colors.greyscale[900], // colore del bordo (hex)
+                                        },
+                                        "& .chakra-checkbox__control[data-checked]": {
+                                          bg: theme.colors.brand.secondary, // colore quando è selezionato (checked)
+                                          borderColor: theme.colors.greyscale[900], // colore bordo quando è selezionato
+                                          color: theme.colors.greyscale[0], // colore di sfondo (hex)
+                                          boxShadow: "inset 0 0 0 2px white", // spazio bianco tra bordo e riempimento
+                                        },
+                                        "& .chakra-checkbox__control:focus": {
+                                          borderColor: theme.colors.brand.primary, // colore del bordo quando la checkbox è in focus
+                                          boxShadow: `0 0 0 2px ${theme.colors.brand.primary}`, // effetto di ombra quando è in focus
+                                        },
+                                      }}
+                                      id={device.mac}
+                                      name={device.mac}
+                                      onChange={() => handleCheckbox(index)}
+                                      isChecked={checkedFetchedItems[index]}
+                                    ></ChakraCheckbox>
+                                  </AccordionButton>
+                                  <AccordionPanel
+                                    p={0}
+                                    pb={4}
+                                    as={Flex}
+                                    flexDir={"column"}
+                                    alignItems={"flex-start"}
+                                  >
+                                    <Divider
+                                      mb={"1rem"}
+                                      mt={"1rem"}
+                                      borderColor={theme.colors.greyscale[200]}
+                                    />
+
+                                    <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"}>
+                                      <Flex justify={"space-between"}>
+                                        <Text
+                                          fontWeight={500}
+                                          textTransform={"capitalize"}
+                                          fontSize={"sm"}
+                                          fontFamily={"heading"}
+                                        >
+                                          IP
+                                        </Text>
+                                        <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
+                                          {device.ip}
+                                        </Text>
+                                      </Flex>
+                                      <Flex justify={"space-between"}>
+                                        <Text
+                                          fontWeight={500}
+                                          textTransform={"capitalize"}
+                                          fontSize={"sm"}
+                                          fontFamily={"heading"}
+                                        >
+                                          Mac Address
+                                        </Text>
+                                        <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
+                                          {device.mac}
+                                        </Text>
+                                      </Flex>
+                                      <Flex justify={"space-between"}>
+                                        <Text
+                                          fontWeight={500}
+                                          textTransform={"capitalize"}
+                                          fontSize={"sm"}
+                                          fontFamily={"heading"}
+                                        >
+                                          Miner
+                                        </Text>
+                                        <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
+                                          {getMinerName(device.info.boardVersion)}
+                                        </Text>
+                                      </Flex>
+                                      <Flex justify={"space-between"}>
+                                        <Text
+                                          fontWeight={500}
+                                          textTransform={"capitalize"}
+                                          fontSize={"sm"}
+                                          fontFamily={"heading"}
+                                        >
+                                          ASIC
+                                        </Text>
+                                        <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
+                                          {device.info.ASICModel}
+                                        </Text>
+                                      </Flex>
+                                      <Flex justify={"space-between"}>
+                                        <Text
+                                          fontWeight={500}
+                                          textTransform={"capitalize"}
+                                          fontSize={"sm"}
+                                          fontFamily={"heading"}
+                                        >
+                                          FW v.
+                                        </Text>
+                                        <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
+                                          {device.info.version}
+                                        </Text>
+                                      </Flex>
+                                    </Flex>
+                                  </AccordionPanel>
+                                </ChakraAccordionItem>
+                              ))}
+                            </ChakraAccordion>
+                          ) : (
+                            <Text textAlign={"center"}>No device found</Text>
+                          )}
+                        </Box>
                         <Flex align={"start"}>
                           <Flex gap={"1rem"}>
                             <Button variant="secondary" onClick={onClose}>

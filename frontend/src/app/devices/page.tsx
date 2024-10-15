@@ -255,6 +255,17 @@ const DevicePage: React.FC = () => {
                                   textTransform={"capitalize"}
                                   fontSize={"12px"}
                                 >
+                                  Mac Address
+                                </Text>
+                              </Th>
+                              <Th borderColor={theme.colors.greyscale[100]}>
+                                <Text
+                                  fontWeight={500}
+                                  color={theme.colors.greyscale[500]}
+                                  fontFamily={"heading"}
+                                  textTransform={"capitalize"}
+                                  fontSize={"12px"}
+                                >
                                   Miner
                                 </Text>
                               </Th>
@@ -308,28 +319,28 @@ const DevicePage: React.FC = () => {
                           <Tbody>
                             {registeredDevices.map((device, index) => (
                               <Tr key={`registered-device-${device.mac}`}>
-                                <Td borderColor={theme.colors.greyscale[100]}>
-                                  {/* <Checkbox
-                              isChecked={checkedItems[index]}
-                              onChange={() => handleCheckbox(index)}
-                            > */}
+                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
                                   <Text pl={"0.5rem"}>{device.info.hostname}</Text>
-                                  {/* </Checkbox> */}
                                 </Td>
-                                <Td borderColor={theme.colors.greyscale[100]}>
+                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
                                   {new Date(device.createdAt!).toLocaleDateString()}
                                 </Td>
-                                <Td borderColor={theme.colors.greyscale[100]}>{device.ip}</Td>
-                                <Td borderColor={theme.colors.greyscale[100]}>
+                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                                  {device.ip}
+                                </Td>
+                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                                  {device.mac}
+                                </Td>
+                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
                                   {getMinerName(device.info.boardVersion)}
                                 </Td>
-                                <Td borderColor={theme.colors.greyscale[100]}>
+                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
                                   {device.info.ASICModel}
                                 </Td>
-                                <Td borderColor={theme.colors.greyscale[100]}>
+                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
                                   {formatTime(device.info.uptimeSeconds)}
                                 </Td>
-                                <Td borderColor={theme.colors.greyscale[100]}>
+                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
                                   {device.info.version}
                                 </Td>
                                 <Td borderColor={theme.colors.greyscale[100]}>
@@ -342,6 +353,7 @@ const DevicePage: React.FC = () => {
                                   fontFamily={"heading"}
                                   textDecoration={"underline"}
                                   fontWeight={"600"}
+                                  fontSize={"14px"}
                                 >
                                   {/* Pass the device ID to the removeRegisteredDevice function */}
                                   <Link onClick={() => removeRegisteredDevice(device.mac)}>

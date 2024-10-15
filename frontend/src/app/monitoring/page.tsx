@@ -24,6 +24,7 @@ import { useSocket } from "@/providers/SocketProvider";
 import { DeviceStatusBadge } from "@/components/Badge";
 import { SearchInput } from "@/components/Input";
 import { DeviceMonitoringAccordion } from "@/components/Accordion";
+import { ArrowLeftSmallIcon } from "@/components/icons/ArrowIcon";
 
 const MonitoringTablePage: React.FC = () => {
   const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
@@ -294,8 +295,12 @@ const MonitoringTablePage: React.FC = () => {
                           textDecoration={"underline"}
                           opacity={!device?.publicDashboardUrl ? "0.3" : "1"}
                           pointerEvents={!device?.publicDashboardUrl ? "none" : "auto"}
+                          as={Flex}
+                          alignItems={"center"}
+                          gap={"0.25rem"}
                         >
-                          Dashboard
+                          <Text display={{ base: "none", mobileL: "inherit" }}>Dashboard</Text>
+                          <ArrowLeftSmallIcon color="#000" />
                         </Link>
                       </Td>
                     </Tr>
