@@ -86,14 +86,14 @@ const DevicePage: React.FC = () => {
         socket.off("error", listener);
       };
     }
-  }, [isConnected, socket]);
+  }, [isConnected, socket, registeredDevices]);
 
   const fetchRegisteredDevices = async () => {
     try {
       const response = await axios.get("/api/devices/imprint");
       let imprintedDevices: Device[] = response.data.data;
 
-      setRegisteredDevices(imprintedDevices || []);
+      setRegisteredDevices([...imprintedDevices]);
       // setCheckedItems(Array.from({ length: imprintedDevices.length }, () => false));
       return imprintedDevices;
     } catch (error) {
@@ -112,10 +112,10 @@ const DevicePage: React.FC = () => {
   };
 
   // Aggiorna per accettare l'ID del dispositivo da eliminare
-  const removeRegisteredDevice = (deviceId: string) => {
+  const removeRegisteredDevice = useCallback((deviceId: string) => {
     setDeviceIdToRemove(deviceId); // Imposta l'ID del dispositivo che vuoi eliminare
     onConfirmationModalOpen(); // Apri la modale di conferma
-  };
+  }, []);
 
   const handleConfirmDelete = useCallback(async () => {
     if (deviceIdToRemove) {
@@ -140,7 +140,7 @@ const DevicePage: React.FC = () => {
         console.error("Error deleting device:", error);
       }
     }
-  }, [deviceIdToRemove]);
+  }, [deviceIdToRemove, registeredDevices]);
 
   const handleDevicesChanged = async () => {
     const imprintedDevices = await fetchRegisteredDevices();
@@ -355,7 +355,10 @@ const DevicePage: React.FC = () => {
                       </TableContainer>
 
                       <Box display={{ base: "block", tablet: "none" }}>
-                        <DeviceAccordion devices={registeredDevices}></DeviceAccordion>
+                        <DeviceAccordion
+                          removeFunction={removeRegisteredDevice}
+                          devices={registeredDevices}
+                        ></DeviceAccordion>
                       </Box>
                     </Box>
                   </Box>

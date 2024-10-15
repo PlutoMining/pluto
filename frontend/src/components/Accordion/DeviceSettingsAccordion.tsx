@@ -18,11 +18,11 @@ import {
   useTheme,
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
-import { validateBitcoinAddress, validateDomain, validateTCPPort } from "@pluto/utils";
+import { validateDomain, validateTCPPort } from "@pluto/utils";
 import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { AlertInterface, AlertStatus } from "../Alert/interfaces";
-import { Badge, DeviceStatusBadge } from "../Badge";
+import { DeviceStatusBadge } from "../Badge";
 import Button from "../Button/Button";
 import { Checkbox } from "../Checkbox/Checkbox";
 import { ArrowIcon } from "../icons/ArrowIcon";

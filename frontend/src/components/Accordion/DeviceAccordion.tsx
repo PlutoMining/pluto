@@ -15,18 +15,22 @@ import {
 import { Device } from "@pluto/interfaces";
 import { useEffect, useState } from "react";
 import { DeviceStatusBadge } from "../Badge";
-import { ArrowLeftSmallIcon } from "../icons/ArrowIcon";
 import { getMinerName } from "@/utils/minerMap";
 
 interface DeviceAccordionProps {
   devices: Device[] | undefined;
+  removeFunction: (deviceId: string) => void;
 }
 
 interface AccordionItemProps {
   device: Device;
+  removeFunction: (deviceId: string) => void;
 }
 
-export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({ devices: deviceList }) => {
+export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({
+  devices: deviceList,
+  removeFunction,
+}) => {
   const [devices, setDevices] = useState<Device[]>(deviceList || []);
 
   const { isConnected, socket } = useSocket();
@@ -85,7 +89,7 @@ export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({ devices: devic
               borderBottomWidth={"0!important"}
               padding={"1rem"}
             >
-              <AccordionItem key={device.mac} device={device} />
+              <AccordionItem key={device.mac} device={device} removeFunction={removeFunction} />
             </ChakraAccordionItem>
           ))}
         </ChakraAccordion>
@@ -96,7 +100,7 @@ export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({ devices: devic
   );
 };
 
-const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
+const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction }) => {
   const theme = useTheme();
 
   const formatTime = (seconds: number) => {
@@ -155,6 +159,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
           fontWeight={500}
           textDecoration={"underline"}
           fontSize={"14px"}
+          onClick={() => removeFunction(device.mac)}
         >
           Remove
         </Link>
