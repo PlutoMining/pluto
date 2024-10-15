@@ -16,15 +16,16 @@ interface InputProps {
   name: string;
   id: string;
   type?: "text" | "number" | "password";
-  placeholder: string;
+  placeholder?: string;
   defaultValue?: string | number;
   value?: string | number;
   pattern?: string;
   error?: string;
   isInvalid?: boolean;
-  onChange: ChangeEventHandler<HTMLInputElement>;
+  onChange?: ChangeEventHandler<HTMLInputElement>;
   leftAddon?: string;
   rightAddon?: string;
+  disabled?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -40,16 +41,17 @@ export const Input: React.FC<InputProps> = ({
   error,
   leftAddon,
   rightAddon,
+  disabled,
 }) => {
   const theme = useTheme();
 
   return (
     <FormControl>
-      <FormLabel htmlFor={name} fontWeight={400} fontSize={'13px'} margin={'4px 0'}>{label}</FormLabel>
+      <FormLabel htmlFor={name} fontWeight={400} fontSize={"13px"} margin={"4px 0"}>
+        {label}
+      </FormLabel>
       <InputGroup>
-        {leftAddon &&
-          <InputLeftAddon>{leftAddon}</InputLeftAddon>
-        }
+        {leftAddon && <InputLeftAddon>{leftAddon}</InputLeftAddon>}
         <ChakraInput
           id={id}
           name={name}
@@ -73,31 +75,37 @@ export const Input: React.FC<InputProps> = ({
           }}
           _hover={{
             borderColor: theme.colors.greyscale[500],
-            borderWidth: '1px',
+            borderWidth: "1px",
           }}
           _focus={{
             outline: "none",
             boxShadow: "none",
             borderColor: theme.colors.brand.secondary,
-            borderWidth: '1px',
+            borderWidth: "1px",
           }}
           isInvalid={!!error}
           _invalid={{
             borderColor: theme.colors.alert.error,
-            borderWidth: '1px',
+            borderWidth: "1px",
           }}
+          disabled={disabled}
         />
-        {rightAddon &&
+        {rightAddon && (
           <InputRightAddon
-            padding='1rem'
-            height='2rem'
+            padding="1rem"
+            height="2rem"
             borderColor={theme.colors.greyscale[500]}
-            borderLeft={'none'}
+            borderLeft={"none"}
             backgroundColor={theme.colors.greyscale[100]}
-          >{rightAddon}</InputRightAddon>
-        }
+            opacity={disabled ? 0.5 : 1}
+          >
+            {rightAddon}
+          </InputRightAddon>
+        )}
       </InputGroup>
-      <FormLabel pt={'4px'} fontSize={'11px'} color={theme.colors.alert.error}>{error}</FormLabel>
+      <FormLabel pt={"4px"} fontSize={"11px"} color={theme.colors.alert.error}>
+        {error}
+      </FormLabel>
     </FormControl>
   );
 };

@@ -92,7 +92,8 @@ export const PresetEditor = ({
         const numericRegex = /^\d+$/;
         return validateTCPPort(numericRegex.test(value) ? parseInt(value) : -1);
       case "stratumUser":
-        return validateBitcoinAddress(value);
+        // return validateBitcoinAddress(value);
+        return !value.includes(".");
       default:
         return true;
     }
