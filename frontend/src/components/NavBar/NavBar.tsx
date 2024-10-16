@@ -236,7 +236,8 @@ export const NavBar = () => {
               position: "fixed",
               top: "4rem",
               right: 0,
-              width: "70%",
+              width: "calc(50% + 160px)",
+              maxWidth: "100vw",
             }}
           >
             <Box
