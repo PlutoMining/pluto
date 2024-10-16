@@ -65,7 +65,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
           <Tr backgroundColor={theme.colors.greyscale[100]} h={"40px"}>
             <Th
               borderColor={theme.colors.greyscale[100]}
-              // p={"6px 12px 6px 16px"}
+              p={"8px 0 8px 12px"}
               borderRadius={"7px 0 0 0"}
               color={theme.colors.greyscale[500]}
               fontFamily={"heading"}
@@ -82,12 +82,14 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 textTransform={"capitalize"}
                 fontSize={"12px"}
                 textAlign={"center"}
+                p={0}
               >
                 Date added
               </Text>
             </Th>
             <Th borderColor={theme.colors.greyscale[100]}>
               <Text
+                p={0}
                 fontWeight={500}
                 color={theme.colors.greyscale[500]}
                 fontFamily={"heading"}
@@ -100,6 +102,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
             </Th>
             <Th borderColor={theme.colors.greyscale[100]}>
               <Text
+                p={0}
                 fontWeight={500}
                 color={theme.colors.greyscale[500]}
                 fontFamily={"heading"}
@@ -112,6 +115,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
             </Th>
             <Th borderColor={theme.colors.greyscale[100]}>
               <Text
+                p={0}
                 fontWeight={500}
                 color={theme.colors.greyscale[500]}
                 fontFamily={"heading"}
@@ -124,6 +128,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
             </Th>
             <Th borderColor={theme.colors.greyscale[100]}>
               <Text
+                p={0}
                 fontWeight={500}
                 color={theme.colors.greyscale[500]}
                 fontFamily={"heading"}
@@ -136,6 +141,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
             </Th>
             <Th borderColor={theme.colors.greyscale[100]}>
               <Text
+                p={0}
                 fontWeight={500}
                 color={theme.colors.greyscale[500]}
                 fontFamily={"heading"}
@@ -148,6 +154,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
             </Th>
             <Th borderColor={theme.colors.greyscale[100]}>
               <Text
+                p={0}
                 fontWeight={500}
                 color={theme.colors.greyscale[500]}
                 fontFamily={"heading"}
@@ -160,6 +167,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
             </Th>
             <Th borderColor={theme.colors.greyscale[100]}>
               <Text
+                p={0}
                 fontWeight={500}
                 color={theme.colors.greyscale[500]}
                 fontFamily={"heading"}

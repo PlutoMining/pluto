@@ -40,7 +40,7 @@ const Link: React.FC<LinkProps> = ({
       cursor={isDisabled ? "not-allowed" : "pointer"} // Change cursor to 'not-allowed'
       _hover={{ textDecoration: isDisabled ? "none" : "underline" }} // Disable hover effect when disabled
     >
-      <Flex alignItems={"center"} gap={"0.5rem"}>
+      <Flex alignItems={"center"} gap={"0.25rem"}>
         {leftIcon && leftIcon}
         {label}
         {rightIcon && rightIcon}

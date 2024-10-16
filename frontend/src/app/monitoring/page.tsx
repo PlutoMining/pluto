@@ -13,7 +13,6 @@ import {
   Tr,
   useTheme,
   VStack,
-  Link,
   Container,
   Flex,
   Accordion as ChakraAccordion,
@@ -25,6 +24,7 @@ import { DeviceStatusBadge } from "@/components/Badge";
 import { SearchInput } from "@/components/Input";
 import { DeviceMonitoringAccordion } from "@/components/Accordion";
 import { ArrowLeftSmallIcon } from "@/components/icons/ArrowIcon";
+import Link from "@/components/Link/Link";
 
 const MonitoringTablePage: React.FC = () => {
   const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
@@ -267,41 +267,42 @@ const MonitoringTablePage: React.FC = () => {
                 <Tbody>
                   {registeredDevices.map((device) => (
                     <Tr key={device.mac}>
-                      <Td borderColor={theme.colors.greyscale[100]}>{device.info.hostname}</Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>
+                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                        {device.info.hostname}
+                      </Td>
+                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
                         {device.info.hashRate.toFixed(2)} GH/s
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>
+                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
                         {device.info.sharesAccepted}|
                         <Text as={"label"} color={theme.colors.brand.secondary}>
                           {device.info.sharesRejected}
                         </Text>
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>
+                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
                         {device.info.power.toFixed(2)} W
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>{device.info.temp} °C</Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>{device.info.bestDiff}</Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>
+                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                        {device.info.temp} °C
+                      </Td>
+                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                        {device.info.bestDiff}
+                      </Td>
+                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
                         {formatTime(device.info.uptimeSeconds)}
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>
+                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
                         <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>
+                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
                         <Link
                           href={`monitoring/${device.info.hostname}`}
-                          fontWeight={500}
+                          label="Dashboard"
                           textDecoration={"underline"}
-                          opacity={!device?.publicDashboardUrl ? "0.3" : "1"}
-                          pointerEvents={!device?.publicDashboardUrl ? "none" : "auto"}
-                          as={Flex}
-                          alignItems={"center"}
-                          gap={"0.25rem"}
-                        >
-                          <Text display={{ base: "none", mobileL: "inherit" }}>Dashboard</Text>
-                          <ArrowLeftSmallIcon color="#000" />
-                        </Link>
+                          fontWeight={500}
+                          rightIcon={<ArrowLeftSmallIcon color="#000" />}
+                          isDisabled={!device?.publicDashboardUrl}
+                        />
                       </Td>
                     </Tr>
                   ))}
