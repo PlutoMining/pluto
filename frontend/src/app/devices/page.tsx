@@ -2,12 +2,12 @@
 import { DeviceAccordion } from "@/components/Accordion/DeviceAccordion";
 import { DeviceStatusBadge } from "@/components/Badge";
 import Button from "@/components/Button/Button";
+import { DeviceTable } from "@/components/Table/DeviceTable";
 import { AddIcon } from "@/components/icons/AddIcon";
 import { BasicModal } from "@/components/Modal/BasicModal";
 import { RegisterDevicesModal } from "@/components/Modal/RegisterDevicesModal";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import { useSocket } from "@/providers/SocketProvider";
-import { getMinerName } from "@/utils/minerMap";
 import {
   Box,
   Container,
@@ -147,27 +147,6 @@ const DevicePage: React.FC = () => {
     await putListenDevices(imprintedDevices);
   };
 
-  const formatTime = (seconds: number) => {
-    const oneDayInSeconds = 86400;
-    const oneHourInSeconds = 3600;
-    const oneMinuteInSeconds = 60;
-
-    if (seconds === 0) {
-      return "-";
-    } else if (seconds >= oneDayInSeconds) {
-      const days = Math.floor(seconds / oneDayInSeconds);
-      return `${days} ${days > 1 ? "days" : "day"}`;
-    } else if (seconds >= oneHourInSeconds) {
-      const hours = Math.floor(seconds / oneHourInSeconds);
-      return `${hours} ${hours > 1 ? "hours" : "hour"}`;
-    } else if (seconds >= oneMinuteInSeconds) {
-      const minutes = Math.floor(seconds / oneMinuteInSeconds);
-      return `${minutes} ${minutes > 1 ? "minutes" : "minute"}`;
-    } else {
-      return "< 1 minute"; // Se il tempo è inferiore a un minuto, mostra "meno di 1 minuto"
-    }
-  };
-
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
       <Box p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}>
@@ -204,167 +183,10 @@ const DevicePage: React.FC = () => {
                       flexDir={"column"}
                       gap={"1rem"}
                     >
-                      <TableContainer display={{ base: "none", tablet: "block" }}>
-                        <Table variant="simple">
-                          <Thead backgroundColor={theme.colors.greyscale[100]}>
-                            <Tr>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                {/* <Checkbox
-                            isChecked={allChecked}
-                            isIndeterminate={isIndeterminate}
-                            onChange={(e) => handleAllCheckbox(e.target.checked)}
-                          > */}
-                                <Text
-                                  pl={"0.5rem"}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  Hostname
-                                </Text>
-                                {/* </Checkbox> */}
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  Date added
-                                </Text>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  IP
-                                </Text>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  Mac Address
-                                </Text>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  Miner
-                                </Text>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  ASIC
-                                </Text>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  Uptime
-                                </Text>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  FW v.
-                                </Text>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}>
-                                <Text
-                                  fontWeight={500}
-                                  color={theme.colors.greyscale[500]}
-                                  fontFamily={"heading"}
-                                  textTransform={"capitalize"}
-                                  fontSize={"12px"}
-                                >
-                                  Status
-                                </Text>
-                              </Th>
-                              <Th borderColor={theme.colors.greyscale[100]}></Th>
-                            </Tr>
-                          </Thead>
-                          <Tbody>
-                            {registeredDevices.map((device, index) => (
-                              <Tr key={`registered-device-${device.mac}`}>
-                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
-                                  <Text pl={"0.5rem"}>{device.info.hostname}</Text>
-                                </Td>
-                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
-                                  {new Date(device.createdAt!).toLocaleDateString()}
-                                </Td>
-                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
-                                  {device.ip}
-                                </Td>
-                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
-                                  {device.mac}
-                                </Td>
-                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
-                                  {getMinerName(device.info.boardVersion)}
-                                </Td>
-                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
-                                  {device.info.ASICModel}
-                                </Td>
-                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
-                                  {formatTime(device.info.uptimeSeconds)}
-                                </Td>
-                                <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
-                                  {device.info.version}
-                                </Td>
-                                <Td borderColor={theme.colors.greyscale[100]}>
-                                  <DeviceStatusBadge
-                                    status={device.tracing ? "online" : "offline"}
-                                  />
-                                </Td>
-                                <Td
-                                  borderColor={theme.colors.greyscale[100]}
-                                  fontFamily={"heading"}
-                                  textDecoration={"underline"}
-                                  fontWeight={"600"}
-                                  fontSize={"14px"}
-                                >
-                                  {/* Pass the device ID to the removeRegisteredDevice function */}
-                                  <Link onClick={() => removeRegisteredDevice(device.mac)}>
-                                    Remove
-                                  </Link>
-                                </Td>
-                              </Tr>
-                            ))}
-                          </Tbody>
-                        </Table>
-                      </TableContainer>
+                      <DeviceTable
+                        devices={registeredDevices}
+                        removeDeviceFunction={removeRegisteredDevice}
+                      ></DeviceTable>
 
                       <Box display={{ base: "block", tablet: "none" }}>
                         <DeviceAccordion

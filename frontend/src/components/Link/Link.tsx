@@ -43,6 +43,7 @@ const Link: React.FC<LinkProps> = ({
       <Flex alignItems={"center"} gap={"0.5rem"}>
         {leftIcon && leftIcon}
         {label}
+        {rightIcon && rightIcon}
       </Flex>
     </ChakraLink>
   );

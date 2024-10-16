@@ -8,8 +8,8 @@ import {
   Divider,
   Flex,
   Heading,
-  Link,
   Text,
+  Link as ChakraLink,
   useAccordionItemState,
   useTheme,
 } from "@chakra-ui/react";
@@ -17,6 +17,7 @@ import { Device } from "@pluto/interfaces";
 import { useEffect, useState } from "react";
 import { DeviceStatusBadge } from "../Badge";
 import { ArrowLeftSmallIcon } from "../icons/ArrowIcon";
+import Link from "../Link/Link";
 
 interface DeviceMonitoringAccordionProps {
   devices: Device[] | undefined;
@@ -137,19 +138,16 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
           </Heading>
           <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
         </Flex>
-        <Link
+        {/* <Link
           href={`monitoring/${device.info.hostname}`}
           fontWeight={500}
           textDecoration={"underline"}
-          opacity={!device?.publicDashboardUrl ? "0.3" : "1"}
-          pointerEvents={!device?.publicDashboardUrl ? "none" : "auto"}
-          as={Flex}
-          alignItems={"center"}
-          gap={"0.25rem"}
-        >
-          <Text display={{ base: "none", mobileL: "inherit" }}>Dashboard</Text>
-          <ArrowLeftSmallIcon color="#000" />
-        </Link>
+          // opacity={!device?.publicDashboardUrl ? "0.3" : "1"}
+          // pointerEvents={!device?.publicDashboardUrl ? "none" : "auto"}
+          label="Dashboard"
+          rightIcon={<ArrowLeftSmallIcon color="#000" />}
+        ></Link> */}
+        <ChakraLink href={`monitoring/${device.info.hostname}`}></ChakraLink>
       </AccordionButton>
       <AccordionPanel p={0} pb={4} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
         <Divider mb={"1rem"} mt={"1rem"} borderColor={theme.colors.greyscale[200]} />
