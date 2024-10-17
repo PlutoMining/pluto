@@ -278,7 +278,6 @@ const MonitoringTablePage: React.FC = () => {
                         <Link
                           href={`monitoring/${device.info.hostname}`}
                           label="Dashboard"
-                          textDecoration={"underline"}
                           fontWeight={500}
                           rightIcon={<ArrowLeftSmallIcon color="#000" />}
                           isDisabled={!device?.publicDashboardUrl}
