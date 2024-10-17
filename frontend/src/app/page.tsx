@@ -1,5 +1,6 @@
 "use client";
 import { Box, Container, Heading, useMediaQuery, VStack } from "@chakra-ui/react";
+import { Device } from "@pluto/interfaces";
 import axios from "axios";
 import { useEffect, useState, useRef } from "react";
 
@@ -32,8 +33,14 @@ const OverviewPage: React.FC = () => {
           <Box position={"relative"} height={"100vh"}>
             <iframe
               ref={iframeRef} // Applichiamo la ref qui
-              src={`${dashboardPublicUrl}&theme=light&kiosk`}
-              style={{ width: "100%", height: "100%", border: "none", position: "absolute" }} // Opzionale: stile per rimuovere il bordo
+              src={`${dashboardPublicUrl}&theme=light&transparent=true`}
+              style={{
+                width: "100%",
+                height: "100%",
+                border: "none",
+                position: "absolute",
+                backgroundColor: "transparent",
+              }} // Opzionale: stile per rimuovere il bordo
             ></iframe>
           </Box>
         )}
