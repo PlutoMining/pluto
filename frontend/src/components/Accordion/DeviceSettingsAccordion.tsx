@@ -68,6 +68,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 }) => {
   const [presets, setPresets] = useState<Preset[]>([]);
 
+  const theme = useTheme();
+
   // Recupera i preset tramite le API
   const fetchPresets = async () => {
     try {
@@ -88,15 +90,54 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   }, []);
 
   return (
-    <ChakraAccordion allowMultiple as={Flex} flexDir={"column"} gap={"1rem"}>
+    <ChakraAccordion
+      allowMultiple
+      as={Flex}
+      flexDir={"column"}
+      borderWidth={"1px"}
+      borderColor={"greyscale.200"}
+      borderRadius={"1rem"}
+      // p={"1rem"}
+      backgroundColor={theme.colors.greyscale[0]}
+    >
+      <Flex
+        backgroundColor={theme.colors.greyscale[100]}
+        justify={"space-between"}
+        p={"1rem"}
+        borderTopRadius={"1rem"}
+      >
+        <Text
+          fontWeight={500}
+          color={theme.colors.greyscale[500]}
+          fontFamily={"heading"}
+          textTransform={"capitalize"}
+          fontSize={"12px"}
+          textAlign={"center"}
+          p={0}
+          as={Flex}
+          flex={10}
+        >
+          Hostname
+        </Text>
+        <Text
+          fontWeight={500}
+          color={theme.colors.greyscale[500]}
+          fontFamily={"heading"}
+          textTransform={"capitalize"}
+          fontSize={"12px"}
+          textAlign={"center"}
+          p={0}
+          as={Flex}
+          flex={2}
+        >
+          Status
+        </Text>
+      </Flex>
       {devices?.map((device) => (
         <ChakraAccordionItem
           key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
-          backgroundColor={"greyscale.0"}
-          borderWidth={"1px"}
-          borderColor={"greyscale.200"}
-          borderRadius={"1rem"}
-          p={"1rem"}
+          // backgroundColor={"greyscale.0"}
+          p={"0.5rem 1rem"}
         >
           <AccordionItem
             key={device.mac}
@@ -232,7 +273,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     [device, setAlert, onOpenAlert]
   );
 
-  const validateFieldByName = (name: string, value: string) => {
+  const validateFieldByName = useCallback((name: string, value: string) => {
     switch (name) {
       case "stratumURL":
         return validateDomain(value, { allowIP: true });
@@ -247,25 +288,28 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
       default:
         return true;
     }
-  };
+  }, []);
 
   const validatePercentage = (value: string) => {
     return parseInt(value) <= 100 && parseInt(value) >= 0;
   };
 
-  const validateField = (name: string, value: string) => {
-    const label =
-      value === ""
-        ? `${name} is required.`
-        : validateFieldByName(name, value)
-        ? ""
-        : `${name} is not correct.`;
+  const validateField = useCallback(
+    (name: string, value: string) => {
+      const label =
+        value === ""
+          ? `${name} is required.`
+          : validateFieldByName(name, value)
+          ? ""
+          : `${name} is not correct.`;
 
-    setDeviceError((prevDevice: any) => ({
-      ...prevDevice,
-      [name]: label,
-    }));
-  };
+      setDeviceError((prevDevice: any) => ({
+        ...prevDevice,
+        [name]: label,
+      }));
+    },
+    [validateFieldByName]
+  );
 
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -474,17 +518,51 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     setIsRestartModalOpen(false);
   }, []);
 
+  const [checkedFetchedItems, setCheckedFetchedItems] = useState<{ mac: String; value: boolean }[]>(
+    []
+  );
+  const allChecked = checkedFetchedItems.every(Boolean);
+
+  // const handleAllCheckbox = (value: boolean) => {
+  //   setCheckedFetchedItems(Array.from({ length: checkedFetchedItems.length }, () => value));
+  // };
+
+  const handleCheckboxChange = (mac: string, isChecked: boolean) => {
+    setCheckedFetchedItems((prevItems) => {
+      // Controlla se l'elemento con il MAC esiste già
+      const existingItem = prevItems.find((item) => item.mac === mac);
+
+      if (existingItem) {
+        // Se esiste, aggiorna il valore
+        return prevItems.map((item) => (item.mac === mac ? { ...item, value: isChecked } : item));
+      } else {
+        // Se non esiste, aggiungi un nuovo elemento
+        return [...prevItems, { mac, value: isChecked }];
+      }
+    });
+  };
+
   return (
     <>
       <AccordionButton p={0} justifyContent={"space-between"} _hover={{ backgroundColor: "none" }}>
-        <Flex gap={"1rem"} alignItems={"center"}>
-          <Flex alignItems={"center"} gap={"0.25rem"}>
-            <Heading fontSize={"md"} fontWeight={500} textTransform={"capitalize"}>
+        <Flex gap={"1rem"} alignItems={"center"} justify={"space-between"} w={"100%"}>
+          <Flex alignItems={"center"} gap={"0.25rem"} flex={10}>
+            <Flex alignItems={"center"} gap={"0.5rem"} fontFamily={"heading"}>
+              <Checkbox
+                id={device.mac}
+                name={device.mac}
+                isChecked={checkedFetchedItems.find((d) => d.mac === device.mac)?.value}
+                onChange={(e) => handleCheckboxChange(device.mac, e.target.checked)}
+              ></Checkbox>
+              <AccordionIcon />
+            </Flex>
+            <Text fontSize={"md"} fontWeight={400} textTransform={"capitalize"}>
               {device.info.hostname}
-            </Heading>
+            </Text>
             {" - "}
             <Link
-              href={device.ip}
+              href={`http://${device.ip}`}
+              isExternal={true}
               label={device.ip}
               fontSize={"md"}
               fontWeight={400}
@@ -492,14 +570,22 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               isDisabled={device.tracing ? false : true}
             />
           </Flex>
-          <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
-        </Flex>
-        <Flex alignItems={"center"} gap={"0.5rem"} fontFamily={"heading"}>
-          {isAccordionOpen ? "Collapse" : "View more"}
-          <AccordionIcon />
+          <Flex alignItems={"center"} gap={"1rem"} flex={2}>
+            <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
+            <Flex alignItems={"center"}>
+              <Button
+                variant="text"
+                icon={<RestartIcon color={theme.colors.greyscale[500]} />}
+                onClick={() => setIsRestartModalOpen(true)}
+              >
+                Restart
+              </Button>
+            </Flex>
+          </Flex>
         </Flex>
       </AccordionButton>
       <AccordionPanel p={0} pb={4} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
+        <Divider mb={"1rem"} mt={"1rem"} borderColor={theme.colors.greyscale[200]} />
         <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"100%"}>
           <Text fontWeight={"bold"} textTransform={"uppercase"}>
             General
@@ -756,16 +842,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           </Button>
         </Flex>
       </AccordionPanel>
-      <Divider mb={"1rem"} mt={"1rem"} borderColor={theme.colors.greyscale[200]} />
-      <Flex alignItems={"center"}>
-        <Button
-          variant="text"
-          icon={<RestartIcon color={theme.colors.greyscale[500]} />}
-          onClick={() => setIsRestartModalOpen(true)}
-        >
-          Restart
-        </Button>
-      </Flex>
       <RestartModal isOpen={isRestartModalOpen} onClose={handleRestartModalClose} />
       <SaveAndRestartModal
         isOpen={isSaveAndRestartModalOpen}

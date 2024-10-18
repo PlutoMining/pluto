@@ -13,6 +13,7 @@ interface LinkProps {
   color?: string;
   textDecoration?: string;
   isDisabled?: boolean;
+  isExternal?: boolean;
 }
 
 const Link: React.FC<LinkProps> = ({
@@ -26,6 +27,7 @@ const Link: React.FC<LinkProps> = ({
   color,
   textDecoration,
   isDisabled,
+  isExternal,
 }) => {
   const theme = useTheme();
   return (
@@ -39,6 +41,7 @@ const Link: React.FC<LinkProps> = ({
       pointerEvents={isDisabled ? "none" : "auto"} // Disables the pointer events
       cursor={isDisabled ? "not-allowed" : "pointer"} // Change cursor to 'not-allowed'
       _hover={{ textDecoration: isDisabled ? "none" : "underline" }} // Disable hover effect when disabled
+      isExternal={isExternal}
     >
       <Flex alignItems={"center"} gap={"0.25rem"}>
         {leftIcon && leftIcon}

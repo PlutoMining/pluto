@@ -7,6 +7,7 @@ import { CloseIcon } from "@/components/icons/CloseIcon";
 import { RestartIcon } from "@/components/icons/RestartIcon";
 import { SearchInput } from "@/components/Input";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
+import { DeviceSettingsTable } from "@/components/Table";
 import {
   Box,
   Container,
@@ -165,13 +166,15 @@ const SettingsPage = () => {
                   onChange={handleSearch}
                   placeholder="Search device"
                 />
-                <Button
-                  variant="text"
-                  icon={<RestartIcon color={theme.colors.greyscale[900]} />}
-                  onClick={onOpenModal}
-                >
-                  Restart all
-                </Button>
+                <Box>
+                  <Button
+                    variant="primaryBlack"
+                    icon={<RestartIcon color={theme.colors.greyscale[0]} />}
+                    onClick={onOpenModal}
+                  >
+                    Restart all
+                  </Button>
+                </Box>
               </Flex>
             </Flex>
 
@@ -183,6 +186,7 @@ const SettingsPage = () => {
                 onOpenAlert={onOpenAlert}
               />
             ) : (
+              // <DeviceSettingsTable devices={imprintedDevices}></DeviceSettingsTable>
               <Flex w={"100%"} alignItems={"center"} flexDirection={"column"} m={"2rem auto"}>
                 <CircularProgressWithDots />
               </Flex>
