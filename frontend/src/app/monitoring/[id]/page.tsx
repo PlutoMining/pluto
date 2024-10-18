@@ -4,18 +4,7 @@ import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgr
 import { ArrowLeftIcon } from "@/components/icons/ArrowIcon";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatTime } from "@/utils/formatTime";
-import {
-  Box,
-  Center,
-  Container,
-  Divider,
-  Flex,
-  Heading,
-  Text,
-  useMediaQuery,
-  useTheme,
-  VStack,
-} from "@chakra-ui/react";
+import { Box, Container, Flex, Heading, Text, useTheme } from "@chakra-ui/react";
 import { Device } from "@pluto/interfaces";
 import axios from "axios";
 import { useParams } from "next/navigation";

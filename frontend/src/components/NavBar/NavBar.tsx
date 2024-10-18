@@ -1,7 +1,6 @@
 "use client";
 import {
   Box,
-  Divider,
   Flex,
   HStack,
   Link,
@@ -23,6 +22,7 @@ import { DiscordLogo, GitLabLogo, MetaLogo, RedditLogo } from "../icons/FooterIc
 export const NavBar = () => {
   const { isOpen, onOpen, onClose, onToggle } = useDisclosure();
   const pathname = usePathname();
+  console.log(pathname);
   const theme = useTheme();
 
   const [alert, setAlert] = useState<AlertInterface>();
@@ -67,12 +67,15 @@ export const NavBar = () => {
       component: (pathname?: string | null) => (
         <Box
           color={"#fff"}
-          fontWeight={pathname === "/monitoring" ? "700" : "400"}
+          fontWeight={
+            pathname === "/monitoring" || /^\/monitoring/.test(pathname || "") ? "700" : "400"
+          }
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
           _after={{
-            display: pathname === "/monitoring" ? "block" : "none",
+            display:
+              pathname === "/monitoring" || /^\/monitoring/.test(pathname || "") ? "block" : "none",
             content: '""',
             width: "32px",
             height: "2px",
@@ -267,16 +270,16 @@ export const NavBar = () => {
                 </Stack>
                 <Flex flexDir={"column"} gap={"1rem"}>
                   <Flex
-                    gap={"0.5rem"}
-                    justify={"space-between"}
+                    gap={"1rem"}
+                    justify={"flex-start"}
                     borderBottomWidth={"0.5px"}
                     borderBottomColor={"greyscale.200"}
                     paddingBottom={"1rem"}
                   >
-                    <MetaLogo />
-                    <GitLabLogo />
-                    <DiscordLogo />
-                    <RedditLogo />
+                    {/* <MetaLogo /> */}
+                    <GitLabLogo url="https://gitlab.com/bemindinteractive/umbrel-community-app-store" />
+                    {/* <DiscordLogo /> */}
+                    {/* <RedditLogo /> */}
                   </Flex>
                   <Link
                     fontFamily={"heading"}

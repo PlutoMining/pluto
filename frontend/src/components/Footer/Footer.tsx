@@ -39,10 +39,10 @@ export const Footer = () => {
               Terms & Conditions
             </Text>
             <Flex gap={"0.5rem"}>
-              <MetaLogo />
-              <GitLabLogo />
-              <DiscordLogo />
-              <RedditLogo />
+              {/* <MetaLogo /> */}
+              <GitLabLogo url="https://gitlab.com/bemindinteractive/umbrel-community-app-store" />
+              {/* <DiscordLogo /> */}
+              {/* <RedditLogo /> */}
             </Flex>
           </Flex>
           <Text fontSize={"xs"} fontWeight={300} color={"greyscale.200"}>
@@ -54,7 +54,7 @@ export const Footer = () => {
           <Text fontSize={"xs"} fontWeight={300} color={"greyscale.200"}>
             Designed with love by
           </Text>
-          <BemindLogo />
+          <BemindLogo url="https://www.bemind.me/" />
         </Flex>
       </Flex>
     </Flex>
