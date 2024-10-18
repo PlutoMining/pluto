@@ -7,7 +7,6 @@ import { CloseIcon } from "@/components/icons/CloseIcon";
 import { RestartIcon } from "@/components/icons/RestartIcon";
 import { SearchInput } from "@/components/Input";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
-import { DeviceSettingsTable } from "@/components/Table";
 import {
   Box,
   Container,

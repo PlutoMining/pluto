@@ -191,15 +191,13 @@ const MonitoringPage: React.FC = () => {
               backgroundColor={theme.colors.greyscale[0]}
               borderRadius={"1rem"}
               p={"1rem"}
-              h={"100vh"}
+              h={{ base: "2350px", tablet: "1300px" }}
             >
-              <Box position={"relative"} h={"100%"}>
-                <iframe
-                  ref={iframeRef} // Applichiamo la ref qui
-                  src={`${dashboardPublicUrl}&transparent=true&theme=light`}
-                  style={{ width: "100%", height: "100%", border: "none", position: "absolute" }}
-                ></iframe>
-              </Box>
+              <iframe
+                ref={iframeRef} // Applichiamo la ref qui
+                src={`${dashboardPublicUrl}&kiosk=1&theme=light`}
+                style={{ width: "100%", height: "100%", border: "none" }}
+              ></iframe>
             </Box>
           </Flex>
         ) : (

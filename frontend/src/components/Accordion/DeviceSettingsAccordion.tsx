@@ -90,66 +90,85 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   }, []);
 
   return (
-    <ChakraAccordion
-      allowMultiple
-      as={Flex}
-      flexDir={"column"}
+    <Flex
+      flexDirection={"column"}
+      gap={"1rem"}
       borderWidth={"1px"}
       borderColor={"greyscale.200"}
       borderRadius={"1rem"}
-      // p={"1rem"}
       backgroundColor={theme.colors.greyscale[0]}
+      p={"1rem"}
     >
-      <Flex
-        backgroundColor={theme.colors.greyscale[100]}
-        justify={"space-between"}
-        p={"1rem"}
-        borderTopRadius={"1rem"}
-      >
-        <Text
-          fontWeight={500}
-          color={theme.colors.greyscale[500]}
-          fontFamily={"heading"}
-          textTransform={"capitalize"}
-          fontSize={"12px"}
-          textAlign={"center"}
-          p={0}
-          as={Flex}
-          flex={10}
-        >
-          Hostname
-        </Text>
-        <Text
-          fontWeight={500}
-          color={theme.colors.greyscale[500]}
-          fontFamily={"heading"}
-          textTransform={"capitalize"}
-          fontSize={"12px"}
-          textAlign={"center"}
-          p={0}
-          as={Flex}
-          flex={2}
-        >
-          Status
-        </Text>
+      <Flex justify={"space-between"} gap={"1rem"}>
+        <Checkbox
+          id={"select-all-devices"}
+          name={"select-all-devices"}
+          label="Select all"
+          isChecked={false}
+          onChange={(e) => console.log(e)}
+        ></Checkbox>
       </Flex>
-      {devices?.map((device) => (
-        <ChakraAccordionItem
-          key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
-          // backgroundColor={"greyscale.0"}
-          p={"0.5rem 1rem"}
+      <ChakraAccordion
+        allowMultiple
+        as={Flex}
+        flexDir={"column"}
+        borderWidth={"1px"}
+        borderColor={"greyscale.200"}
+        borderRadius={"1rem"}
+        // p={"1rem"}
+        backgroundColor={theme.colors.greyscale[0]}
+      >
+        <Flex
+          backgroundColor={theme.colors.greyscale[100]}
+          justify={"space-between"}
+          p={"1rem"}
+          borderTopRadius={"1rem"}
         >
-          <AccordionItem
-            key={device.mac}
-            device={device}
-            presets={presets}
-            setAlert={setAlert}
-            alert={alert}
-            onOpenAlert={onOpenAlert}
-          />
-        </ChakraAccordionItem>
-      ))}
-    </ChakraAccordion>
+          <Text
+            fontWeight={500}
+            color={theme.colors.greyscale[500]}
+            fontFamily={"heading"}
+            textTransform={"capitalize"}
+            fontSize={"12px"}
+            textAlign={"center"}
+            p={0}
+            as={Flex}
+            flex={10}
+          >
+            Hostname
+          </Text>
+          <Text
+            fontWeight={500}
+            color={theme.colors.greyscale[500]}
+            fontFamily={"heading"}
+            textTransform={"capitalize"}
+            fontSize={"12px"}
+            textAlign={"center"}
+            p={0}
+            as={Flex}
+            flex={2}
+          >
+            Status
+          </Text>
+        </Flex>
+        {devices?.map((device) => (
+          <ChakraAccordionItem
+            key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
+            // backgroundColor={"greyscale.0"}
+            p={"0.5rem 1rem"}
+          >
+            <AccordionItem
+              key={device.mac}
+              device={device}
+              presets={presets}
+              setAlert={setAlert}
+              alert={alert}
+              onOpenAlert={onOpenAlert}
+            />
+          </ChakraAccordionItem>
+        ))}
+      </ChakraAccordion>
+    </Flex>
   );
 };
 

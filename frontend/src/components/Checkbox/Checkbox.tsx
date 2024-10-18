@@ -56,6 +56,12 @@ export const Checkbox: React.FC<CheckboxProps> = ({
             color: theme.colors.greyscale[0], // colore di sfondo (hex)
             boxShadow: "inset 0 0 0 2px white", // spazio bianco tra bordo e riempimento
           },
+          "& .chakra-checkbox__control[data-checked]:hover": {
+            bg: theme.colors.brand.secondary, // colore quando è selezionato (checked)
+            borderColor: theme.colors.greyscale[900], // colore bordo quando è selezionato
+            color: theme.colors.greyscale[0], // colore di sfondo (hex)
+            boxShadow: "inset 0 0 0 2px white", // spazio bianco tra bordo e riempimento
+          },
           "& .chakra-checkbox__control:focus": {
             borderColor: theme.colors.brand.primary, // colore del bordo quando la checkbox è in focus
             boxShadow: `0 0 0 2px ${theme.colors.brand.primary}`, // effetto di ombra quando è in focus
