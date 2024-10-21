@@ -41,9 +41,6 @@ import Button from "../Button/Button";
 import { Checkbox } from "../Checkbox";
 import { AddIcon } from "../icons/AddIcon";
 import { CircularProgressWithDots } from "../ProgressBar/CircularProgressWithDots";
-import { DeviceMonitoringAccordion } from "../Accordion";
-import { DeviceAccordion } from "../Accordion/DeviceAccordion";
-import { DeviceAddAccordion } from "../Accordion/DeviceAddAccordion";
 
 interface RegisterDevicesModalProps {
   isOpen: boolean;

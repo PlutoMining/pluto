@@ -25,7 +25,7 @@ import { AlertInterface, AlertStatus } from "../Alert/interfaces";
 import { DeviceStatusBadge } from "../Badge";
 import Button from "../Button/Button";
 import { Checkbox } from "../Checkbox/Checkbox";
-import { ArrowIcon } from "../icons/ArrowIcon";
+import { ArrowIcon, ArrowRightUpIcon } from "../icons/ArrowIcon";
 import { RestartIcon } from "../icons/RestartIcon";
 import { Input } from "../Input/Input";
 import { RadioButton } from "../RadioButton";
@@ -48,6 +48,8 @@ interface AccordionItemProps {
   alert?: AlertInterface;
   setAlert: React.Dispatch<React.SetStateAction<AlertInterface | undefined>>;
   onOpenAlert: () => void;
+  handleCheckboxChange: (mac: string, isChecked: boolean) => void;
+  checkedItems: { mac: String; value: boolean }[];
 }
 
 enum RadioButtonStatus {
@@ -70,6 +72,26 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 
   const theme = useTheme();
 
+  const [checkedFetchedItems, setCheckedFetchedItems] = useState<{ mac: string; value: boolean }[]>(
+    []
+  );
+
+  const allChecked =
+    checkedFetchedItems.length > 0 && checkedFetchedItems.every((item) => item.value);
+
+  const handleAllCheckbox = useCallback(
+    (value: boolean) => {
+      const newValues = devices
+        ? Array.from({ length: devices.length || 0 }, (_, i) => ({
+            mac: devices[i].mac,
+            value: value,
+          }))
+        : [];
+      setCheckedFetchedItems(newValues);
+    },
+    [devices]
+  );
+
   // Recupera i preset tramite le API
   const fetchPresets = async () => {
     try {
@@ -85,8 +107,70 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
     }
   };
 
+  const handleRestartSelected = useCallback(
+    async (e: { preventDefault: () => void }) => {
+      e.preventDefault();
+
+      const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
+
+      try {
+        if (checkedFetchedItems && checkedFetchedItems.length > 0) {
+          await Promise.all(
+            checkedFetchedItems.filter((d) => d.value).map((d) => handleRestart(d.mac))
+          );
+
+          setAlert({
+            status: AlertStatus.SUCCESS,
+            title: "Restart Successful",
+            message:
+              "All devices have been restarted successfully. The eventual new settings have been applied, and the miners are back online.",
+          });
+
+          onOpenAlert();
+        } else {
+          setAlert({
+            status: AlertStatus.WARNING,
+            title: "No Devices Available",
+            message: "There are no registered devices to restart at this moment.",
+          });
+          onOpenAlert();
+        }
+      } catch (error) {
+        let errorMessage = "An error occurred while attempting to restart the devices.";
+
+        if (axios.isAxiosError(error)) {
+          errorMessage = error.response?.data?.message || error.message;
+        }
+
+        setAlert({
+          status: AlertStatus.ERROR,
+          title: "Restart Failed",
+          message: `${errorMessage} Please try again or contact support if the issue persists.`,
+        });
+        onOpenAlert();
+      }
+    },
+    [checkedFetchedItems, onOpenAlert, setAlert]
+  );
+
   useEffect(() => {
     fetchPresets();
+    console.log("allChecked", allChecked);
+  }, []);
+
+  const handleCheckboxChange = useCallback((mac: string, isChecked: boolean) => {
+    setCheckedFetchedItems((prevItems) => {
+      // Controlla se l'elemento con il MAC esiste già
+      const existingItem = prevItems.find((item) => item.mac === mac);
+
+      if (existingItem) {
+        // Se esiste, aggiorna il valore
+        return prevItems.map((item) => (item.mac === mac ? { ...item, value: isChecked } : item));
+      } else {
+        // Se non esiste, aggiungi un nuovo elemento
+        return [...prevItems, { mac, value: isChecked }];
+      }
+    });
   }, []);
 
   return (
@@ -99,14 +183,30 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
       backgroundColor={theme.colors.greyscale[0]}
       p={"1rem"}
     >
-      <Flex justify={"space-between"} gap={"1rem"}>
+      <Flex justify={"space-between"} gap={"1rem"} alignItems={"center"}>
         <Checkbox
           id={"select-all-devices"}
           name={"select-all-devices"}
           label="Select all"
-          isChecked={false}
-          onChange={(e) => console.log(e)}
+          isChecked={allChecked}
+          onChange={(e) => handleAllCheckbox(e.target.checked)}
         ></Checkbox>
+        <Flex alignItems={"center"} gap={"1rem"}>
+          <Button
+            onClick={handleRestartSelected}
+            variant="text"
+            icon={<ArrowRightUpIcon color={theme.colors.greyscale[500]} />}
+          >
+            Select Pool Preset
+          </Button>
+          <Button
+            onClick={handleRestartSelected}
+            variant="outlined"
+            icon={<RestartIcon color={theme.colors.greyscale[500]} />}
+          >
+            Restart selected devices
+          </Button>
+        </Flex>
       </Flex>
       <ChakraAccordion
         allowMultiple
@@ -164,6 +264,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
               setAlert={setAlert}
               alert={alert}
               onOpenAlert={onOpenAlert}
+              handleCheckboxChange={handleCheckboxChange}
+              checkedItems={checkedFetchedItems}
             />
           </ChakraAccordionItem>
         ))}
@@ -177,6 +279,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   presets,
   setAlert,
   onOpenAlert,
+  handleCheckboxChange,
+  checkedItems,
 }) => {
   const { isOpen: isAccordionOpen } = useAccordionItemState(); // Hook per sapere se l'accordion è aperto o chiuso
   const [device, setDevice] = useState<Device>({
@@ -537,30 +641,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     setIsRestartModalOpen(false);
   }, []);
 
-  const [checkedFetchedItems, setCheckedFetchedItems] = useState<{ mac: String; value: boolean }[]>(
-    []
-  );
-  const allChecked = checkedFetchedItems.every(Boolean);
-
-  // const handleAllCheckbox = (value: boolean) => {
-  //   setCheckedFetchedItems(Array.from({ length: checkedFetchedItems.length }, () => value));
-  // };
-
-  const handleCheckboxChange = (mac: string, isChecked: boolean) => {
-    setCheckedFetchedItems((prevItems) => {
-      // Controlla se l'elemento con il MAC esiste già
-      const existingItem = prevItems.find((item) => item.mac === mac);
-
-      if (existingItem) {
-        // Se esiste, aggiorna il valore
-        return prevItems.map((item) => (item.mac === mac ? { ...item, value: isChecked } : item));
-      } else {
-        // Se non esiste, aggiungi un nuovo elemento
-        return [...prevItems, { mac, value: isChecked }];
-      }
-    });
-  };
-
   return (
     <>
       <AccordionButton p={0} justifyContent={"space-between"} _hover={{ backgroundColor: "none" }}>
@@ -570,7 +650,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               <Checkbox
                 id={device.mac}
                 name={device.mac}
-                isChecked={checkedFetchedItems.find((d) => d.mac === device.mac)?.value}
+                isChecked={checkedItems.find((d) => d.mac === device.mac)?.value}
                 onChange={(e) => handleCheckboxChange(device.mac, e.target.checked)}
               ></Checkbox>
               <AccordionIcon />
