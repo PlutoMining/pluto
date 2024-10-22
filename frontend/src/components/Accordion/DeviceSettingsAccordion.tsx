@@ -185,7 +185,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 
     // Chiudi l'accordion se la checkbox è selezionata
     if (isChecked) {
-      console.log("here");
       setExpandedIndex(undefined); // Chiude l'accordion
     }
   }, []);
@@ -213,7 +212,10 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             onClick={handleRestartSelected}
             variant="text"
             icon={<ArrowRightUpIcon color={theme.colors.greyscale[500]} />}
-            disabled={checkedFetchedItems.length > 0}
+            disabled={
+              checkedFetchedItems.length === 0 ||
+              checkedFetchedItems.every((item) => item.value === false)
+            }
           >
             Select Pool Preset
           </Button>
@@ -221,7 +223,10 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             onClick={handleRestartSelected}
             variant="outlined"
             icon={<RestartIcon color={theme.colors.greyscale[500]} />}
-            disabled={checkedFetchedItems.length > 0}
+            disabled={
+              checkedFetchedItems.length === 0 ||
+              checkedFetchedItems.every((item) => item.value === false)
+            }
           >
             Restart selected devices
           </Button>

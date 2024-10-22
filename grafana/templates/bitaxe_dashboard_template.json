@@ -76,7 +76,91 @@
                     },
                     "unit": "GH/s"
                 },
-                "overrides": []
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Hashrate"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.drawStyle",
+                                "value": "line"
+                            },
+                            {
+                                "id": "thresholds",
+                                "value": {
+                                    "mode": "absolute",
+                                    "steps": [
+                                        {
+                                            "color": "#3d0066",
+                                            "value": null
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 0
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#7bcffe",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.pointSize",
+                                "value": 6
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Average hashrate"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 0
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 0
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "fill": "solid"
+                                }
+                            },
+                            {
+                                "id": "custom.transform"
+                            },
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#7b00cc",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.pointSize",
+                                "value": 6
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
                 "h": 11,
@@ -134,7 +218,6 @@
                     "useBackend": false
                 }
             ],
-            "transparent": true,
             "type": "timeseries"
         },
         {
@@ -319,7 +402,8 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "palette-classic"
+                        "fixedColor": "#7b00cc",
+                        "mode": "fixed"
                     },
                     "custom": {
                         "axisBorderShow": false,
@@ -329,7 +413,7 @@
                         "axisPlacement": "auto",
                         "barAlignment": 0,
                         "drawStyle": "line",
-                        "fillOpacity": 25,
+                        "fillOpacity": 0,
                         "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
@@ -338,8 +422,8 @@
                         },
                         "insertNulls": false,
                         "lineInterpolation": "smooth",
-                        "lineWidth": 1,
-                        "pointSize": 5,
+                        "lineWidth": 2,
+                        "pointSize": 6,
                         "scaleDistribution": {
                             "type": "linear"
                         },
@@ -411,7 +495,6 @@
                 }
             ],
             "title": "Power Info",
-            "transparent": true,
             "type": "timeseries"
         },
         {
@@ -419,6 +502,7 @@
                 "type": "prometheus",
                 "uid": "PBFA97CFB590B2093"
             },
+            "description": "",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -441,8 +525,8 @@
                         },
                         "insertNulls": false,
                         "lineInterpolation": "smooth",
-                        "lineWidth": 1,
-                        "pointSize": 5,
+                        "lineWidth": 2,
+                        "pointSize": 7,
                         "scaleDistribution": {
                             "type": "linear"
                         },
@@ -456,6 +540,7 @@
                             "mode": "off"
                         }
                     },
+                    "fieldMinMax": false,
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
@@ -472,7 +557,53 @@
                     },
                     "unit": "volt"
                 },
-                "overrides": []
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Core Actual Voltage"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#7b00cc",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Core Voltage"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#7bcffe",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Voltage"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8f8d91",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
                 "h": 8,
@@ -483,10 +614,12 @@
             "id": 1,
             "options": {
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "hidden",
-                    "placement": "right",
-                    "showLegend": false
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
                 },
                 "tooltip": {
                     "mode": "single",
@@ -523,14 +656,30 @@
                     "hide": false,
                     "includeNullMetadata": true,
                     "instant": false,
-                    "legendFormat": "__auto",
+                    "legendFormat": "Core Voltage",
                     "range": true,
                     "refId": "B",
                     "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "@@hostname@@_voltage_volts",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "Voltage",
+                    "range": true,
+                    "refId": "C",
+                    "useBackend": false
                 }
             ],
-            "title": "Voltage Lorem Ipsum",
-            "transparent": true,
+            "title": "Core Voltage",
             "type": "timeseries"
         },
         {
@@ -594,18 +743,26 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "continuous-GrYlRd"
+                        "mode": "thresholds"
                     },
                     "mappings": [],
                     "thresholds": {
-                        "mode": "absolute",
+                        "mode": "percentage",
                         "steps": [
                             {
-                                "color": "green",
+                                "color": "#00cc14",
                                 "value": null
                             },
                             {
-                                "color": "red",
+                                "color": "#ffd500",
+                                "value": 40
+                            },
+                            {
+                                "color": "#fdc500",
+                                "value": 60
+                            },
+                            {
+                                "color": "#ff6464",
                                 "value": 80
                             }
                         ]
@@ -659,7 +816,6 @@
                 }
             ],
             "title": "Temperature",
-            "transparent": true,
             "type": "bargauge"
         },
         {
@@ -671,18 +827,26 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "continuous-GrYlRd"
+                        "mode": "thresholds"
                     },
                     "mappings": [],
                     "thresholds": {
-                        "mode": "absolute",
+                        "mode": "percentage",
                         "steps": [
                             {
-                                "color": "green",
+                                "color": "#00cc14",
                                 "value": null
                             },
                             {
-                                "color": "red",
+                                "color": "#ffd500",
+                                "value": 40
+                            },
+                            {
+                                "color": "#fdc500",
+                                "value": 60
+                            },
+                            {
+                                "color": "#ff6464",
                                 "value": 80
                             }
                         ]
@@ -736,7 +900,6 @@
                 }
             ],
             "title": "Fan Speed",
-            "transparent": true,
             "type": "bargauge"
         },
         {
@@ -747,7 +910,8 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "thresholds"
+                        "fixedColor": "transparent",
+                        "mode": "fixed"
                     },
                     "mappings": [],
                     "thresholds": {
@@ -810,7 +974,6 @@
                     "useBackend": false
                 }
             ],
-            "transparent": true,
             "type": "stat"
         },
         {
@@ -822,7 +985,8 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "palette-classic"
+                        "fixedColor": "#7b00cc",
+                        "mode": "shades"
                     },
                     "custom": {
                         "axisBorderShow": false,
@@ -840,9 +1004,9 @@
                             "viz": false
                         },
                         "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 6,
                         "scaleDistribution": {
                             "type": "linear"
                         },
@@ -861,7 +1025,7 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "#f0edf2",
+                                "color": "green",
                                 "value": null
                             }
                         ]
@@ -876,15 +1040,13 @@
                 "x": 12,
                 "y": 25
             },
-            "id": 13,
+            "id": 17,
             "options": {
                 "legend": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
+                    "calcs": [],
+                    "displayMode": "hidden",
+                    "placement": "right",
+                    "showLegend": false
                 },
                 "tooltip": {
                     "mode": "single",
@@ -900,18 +1062,17 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "mockaxe2_efficiency",
+                    "expr": "@@hostname@@_efficiency",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
-                    "legendFormat": "Efficiency",
+                    "legendFormat": "Average efficiency",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
                 }
             ],
             "title": "Efficiency",
-            "transparent": true,
             "type": "timeseries"
         }
     ],
@@ -928,7 +1089,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "@@hostname@@",
-    "uid": "t8bdih0n0ocrma",
+    "uid": "45orbh2gq3qd7b",
     "version": 1,
     "weekStart": ""
 }

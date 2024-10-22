@@ -1,11 +1,12 @@
 "use client";
+import { DeviceStatusBadge } from "@/components/Badge";
 import Link from "@/components/Link/Link";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import { ArrowLeftIcon } from "@/components/icons/ArrowIcon";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatTime } from "@/utils/formatTime";
 import { Box, Container, Flex, Heading, Text, useTheme } from "@chakra-ui/react";
-import { Device } from "@pluto/interfaces";
+import { Device, Preset } from "@pluto/interfaces";
 import axios from "axios";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -17,6 +18,8 @@ const MonitoringPage: React.FC = () => {
 
   const [dashboardPublicUrl, setDashboardPublicUrl] = useState<string>();
   const iframeRef = useRef<HTMLIFrameElement>(null); // Inizializziamo la ref
+
+  const [preset, setPreset] = useState<Partial<Preset> | undefined>(undefined);
 
   useEffect(() => {
     fetchDevicesAndDashboardsAndUpdate();
@@ -58,8 +61,19 @@ const MonitoringPage: React.FC = () => {
       const imprintedDevices: Device[] = response.data.data;
 
       const device = imprintedDevices?.find((d) => d.info.hostname === id);
-
       setDevice(device);
+
+      if (device?.presetUuid) {
+        const response = await fetch("/api/presets");
+        if (response.ok) {
+          const data: { data: Preset[] } = await response.json();
+          const newData = data.data.find((p) => p.uuid === device.presetUuid);
+          if (newData) {
+            setPreset(newData);
+          }
+        }
+      }
+
       return device;
     } catch (error) {
       console.error("Error discovering devices:", error);
@@ -71,7 +85,7 @@ const MonitoringPage: React.FC = () => {
       <Flex
         p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}
         flexDirection={"column"}
-        gap={"0.5rem"}
+        gap={"1rem"}
       >
         <Link
           href={"/monitoring"}
@@ -83,6 +97,46 @@ const MonitoringPage: React.FC = () => {
         </Heading>
         {dashboardPublicUrl ? (
           <Flex flexDirection={"column"} gap={"1rem"}>
+            <Flex
+              backgroundColor={theme.colors.greyscale[0]}
+              borderRadius={"1rem"}
+              p={"1rem"}
+              flexDir={"column"}
+              gap={"1rem"}
+            >
+              <Heading fontSize={"1rem"} fontWeight={500}>
+                General Info
+              </Heading>
+              <Flex gap={"1rem"}>
+                <Flex
+                  flex={1}
+                  backgroundColor={theme.colors.greyscale[100]}
+                  borderRadius={"0.5rem"}
+                  justify={"space-between"}
+                  p={"1rem"}
+                >
+                  <Heading fontSize={"1rem"} fontWeight={700}>
+                    Device Status
+                  </Heading>
+                  <DeviceStatusBadge status={device?.tracing ? "online" : "offline"} />
+                </Flex>
+                <Flex
+                  flex={1}
+                  backgroundColor={theme.colors.greyscale[100]}
+                  borderRadius={"0.5rem"}
+                  justify={"space-between"}
+                  p={"1rem"}
+                >
+                  <Heading fontSize={"1rem"} fontWeight={700}>
+                    Pool Info
+                  </Heading>
+                  <Heading fontSize={"1rem"} fontWeight={500}>
+                    {preset ? preset.name : "Custom"}
+                  </Heading>
+                </Flex>
+              </Flex>
+            </Flex>
+
             <Box backgroundColor={theme.colors.greyscale[0]} borderRadius={"1rem"} p={"1rem"}>
               <Flex
                 backgroundColor={theme.colors.brand.secondary}
@@ -180,13 +234,21 @@ const MonitoringPage: React.FC = () => {
               backgroundColor={theme.colors.greyscale[0]}
               borderRadius={"1rem"}
               p={"1rem"}
-              h={{ base: "2350px", tablet: "1300px" }}
+              h={{ base: "2385px", tablet: "1340px" }}
             >
-              <iframe
-                ref={iframeRef} // Applichiamo la ref qui
-                src={`${dashboardPublicUrl}&kiosk=1&theme=light`}
-                style={{ width: "100%", height: "100%", border: "none" }}
-              ></iframe>
+              <Box
+                backgroundColor={"#f2f3f3"}
+                p={"1rem"}
+                borderRadius={"1rem"}
+                h={"100%"}
+                w={"100%"}
+              >
+                <iframe
+                  ref={iframeRef} // Applichiamo la ref qui
+                  src={`${dashboardPublicUrl}&kiosk=1&theme=light`}
+                  style={{ width: "100%", height: "100%", border: "none" }}
+                ></iframe>
+              </Box>
             </Box>
           </Flex>
         ) : (
