@@ -18,6 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
+    "id": 2,
     "links": [],
     "panels": [
         {
@@ -54,8 +55,8 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#00cc144d",
-                        "mode": "shades"
+                        "fixedColor": "#7b00cc",
+                        "mode": "fixed"
                     },
                     "custom": {
                         "axisBorderShow": false,
@@ -65,8 +66,8 @@
                         "axisPlacement": "auto",
                         "barAlignment": 0,
                         "drawStyle": "line",
-                        "fillOpacity": 25,
-                        "gradientMode": "hue",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -77,8 +78,8 @@
                         "lineStyle": {
                             "fill": "solid"
                         },
-                        "lineWidth": 1,
-                        "pointSize": 5,
+                        "lineWidth": 2,
+                        "pointSize": 6,
                         "scaleDistribution": {
                             "type": "linear"
                         },
@@ -105,7 +106,8 @@
                                 "value": 80
                             }
                         ]
-                    }
+                    },
+                    "unit": "watt"
                 },
                 "overrides": []
             },
@@ -118,10 +120,12 @@
             "id": 7,
             "options": {
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "hidden",
-                    "placement": "right",
-                    "showLegend": false
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
                 },
                 "tooltip": {
                     "mode": "single",
@@ -148,8 +152,7 @@
                     "useBackend": false
                 }
             ],
-            "title": "Total Power (W)",
-            "transparent": true,
+            "title": "Total Power",
             "type": "timeseries"
         },
         {
@@ -160,8 +163,8 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#ff64644d",
-                        "mode": "shades"
+                        "fixedColor": "#7b00cc",
+                        "mode": "fixed"
                     },
                     "custom": {
                         "axisBorderShow": false,
@@ -171,7 +174,7 @@
                         "axisPlacement": "auto",
                         "barAlignment": 0,
                         "drawStyle": "line",
-                        "fillOpacity": 25,
+                        "fillOpacity": 0,
                         "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
@@ -180,8 +183,8 @@
                         },
                         "insertNulls": false,
                         "lineInterpolation": "smooth",
-                        "lineWidth": 1,
-                        "pointSize": 5,
+                        "lineWidth": 2,
+                        "pointSize": 6,
                         "scaleDistribution": {
                             "type": "linear"
                         },
@@ -208,7 +211,8 @@
                                 "value": 80
                             }
                         ]
-                    }
+                    },
+                    "unit": "H/kW"
                 },
                 "overrides": []
             },
@@ -221,10 +225,12 @@
             "id": 13,
             "options": {
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "hidden",
-                    "placement": "right",
-                    "showLegend": false
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
                 },
                 "tooltip": {
                     "mode": "single",
@@ -250,8 +256,7 @@
                     "useBackend": false
                 }
             ],
-            "title": "Average Efficiency (W/TH)",
-            "transparent": true,
+            "title": "Average Efficiency",
             "type": "timeseries"
         },
         {
@@ -538,6 +543,7 @@
                         "axisBorderShow": false,
                         "axisCenteredZero": false,
                         "axisColorMode": "text",
+                        "axisLabel": "",
                         "axisPlacement": "auto",
                         "barAlignment": 0,
                         "drawStyle": "line",
@@ -550,8 +556,8 @@
                         },
                         "insertNulls": false,
                         "lineInterpolation": "smooth",
-                        "lineWidth": 1,
-                        "pointSize": 5,
+                        "lineWidth": 2,
+                        "pointSize": 6,
                         "scaleDistribution": {
                             "type": "linear"
                         },
@@ -610,7 +616,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#00cc14",
+                                    "fixedColor": "#7bcffe",
                                     "mode": "fixed"
                                 }
                             }
@@ -632,9 +638,6 @@
                     "placement": "right",
                     "showLegend": false
                 },
-                "timezone": [
-                    "utc"
-                ],
                 "tooltip": {
                     "mode": "single",
                     "sort": "none"
@@ -678,7 +681,6 @@
                 }
             ],
             "title": "Timeline & Average Hashrate",
-            "transparent": true,
             "type": "timeseries"
         },
         {
@@ -786,7 +788,8 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "thresholds"
+                        "fixedColor": "#7b00cc",
+                        "mode": "shades"
                     },
                     "mappings": [],
                     "thresholds": {
@@ -859,7 +862,6 @@
                 }
             ],
             "title": "Firmware Fragmentation",
-            "transparent": true,
             "type": "marcusolsson-treemap-panel"
         }
     ],
@@ -876,7 +878,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "Overview",
-    "uid": "ed46qjmr9gvhxj",
+    "uid": "l71mnqowdebw8x",
     "version": 1,
     "weekStart": ""
 }

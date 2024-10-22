@@ -107,7 +107,7 @@ const MonitoringPage: React.FC = () => {
               <Heading fontSize={"1rem"} fontWeight={500}>
                 General Info
               </Heading>
-              <Flex gap={"1rem"}>
+              <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
                 <Flex
                   flex={1}
                   backgroundColor={theme.colors.greyscale[100]}
@@ -137,104 +137,108 @@ const MonitoringPage: React.FC = () => {
               </Flex>
             </Flex>
 
-            <Box backgroundColor={theme.colors.greyscale[0]} borderRadius={"1rem"} p={"1rem"}>
+            <Flex
+              backgroundColor={theme.colors.brand.secondary}
+              p={"1rem"}
+              borderRadius={"1rem"}
+              justify={"space-between"}
+              gap={"1rem"}
+              flexDirection={{ base: "column", tablet: "row" }}
+              flexWrap={{ base: "nowrap", tablet: "wrap" }}
+            >
               <Flex
-                backgroundColor={theme.colors.brand.secondary}
-                p={"1rem"}
-                borderRadius={"1rem"}
-                justify={"space-between"}
-                gap={"1rem"}
-                flexDirection={{ mobile: "column", tablet: "row" }}
-                flexWrap={{ mobile: "nowrap", tablet: "wrap" }}
+                flex={1}
+                flexDir={"column"}
+                gap={"0.5rem"}
+                borderRight={"1px solid rgba(#fff, 0.25)"}
+                borderRightWidth={{ base: 0, tablet: "1px" }}
+                borderColor={theme.colors.greyscale[0]}
+                marginRight={{ base: 0, tablet: "1rem" }}
+                borderBottomWidth={{ base: "1px", tablet: 0 }}
+                paddingBottom={{ base: "1rem", tablet: 0 }}
               >
-                <Flex
-                  flex={1}
-                  flexDir={"column"}
-                  gap={"0.5rem"}
-                  borderRight={"1px solid rgba(#fff, 0.25)"}
-                  borderRightWidth={"1px"}
-                  borderColor={theme.colors.greyscale[0]}
-                  marginRight={"1rem"}
-                >
-                  <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
-                    Hash Rate
-                  </Heading>
-                  <Heading color={theme.colors.greyscale[0]} fontSize={"2rem"} fontWeight={700}>
-                    {device?.info.hashRate.toFixed(2)} GH/s
-                  </Heading>
-                </Flex>
-
-                <Flex
-                  flex={1}
-                  flexDir={"column"}
-                  gap={"0.5rem"}
-                  borderRight={"1px solid rgba(#fff, 0.25)"}
-                  borderRightWidth={"1px"}
-                  borderColor={theme.colors.greyscale[0]}
-                  marginRight={"1rem"}
-                >
-                  <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
-                    Shares
-                  </Heading>
-                  <Heading color={theme.colors.greyscale[0]} fontSize={"2rem"} fontWeight={700}>
-                    {device?.info.sharesAccepted}
-                  </Heading>
-                  <Text
-                    fontSize={"14px"}
-                    fontWeight={400}
-                    opacity={"0.75"}
-                    color={theme.colors.greyscale[0]}
-                  >
-                    Rejected {device?.info.sharesRejected}
-                  </Text>
-                </Flex>
-
-                <Flex
-                  flex={1}
-                  flexDir={"column"}
-                  gap={"0.5rem"}
-                  borderRight={"1px solid rgba(#fff, 0.25)"}
-                  borderRightWidth={"1px"}
-                  borderColor={theme.colors.greyscale[0]}
-                  marginRight={"1rem"}
-                >
-                  <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
-                    Uptime
-                  </Heading>
-                  <Heading color={theme.colors.greyscale[0]} fontSize={"2rem"} fontWeight={700}>
-                    {formatTime(device?.info.uptimeSeconds || 0)}
-                  </Heading>
-                </Flex>
-
-                <Flex flex={1} flexDir={"column"} gap={"0.5rem"}>
-                  <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
-                    Best difficulty
-                  </Heading>
-                  <Flex gap={"0.5rem"} alignItems={"baseline"}>
-                    <Heading color={theme.colors.greyscale[0]} fontSize={"2rem"} fontWeight={700}>
-                      {device?.info.bestDiff}
-                    </Heading>
-                    <Heading color={theme.colors.greyscale[0]} fontSize={"1rem"}>
-                      all time best
-                    </Heading>
-                  </Flex>
-                  <Text
-                    fontSize={"14px"}
-                    fontWeight={400}
-                    opacity={"0.75"}
-                    color={theme.colors.greyscale[0]}
-                  >
-                    Since system boot: {device?.info.bestSessionDiff}
-                  </Text>
-                </Flex>
+                <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
+                  Hash Rate
+                </Heading>
+                <Heading color={theme.colors.greyscale[0]} fontSize={"2rem"} fontWeight={700}>
+                  {device?.info.hashRate.toFixed(2)} GH/s
+                </Heading>
               </Flex>
-            </Box>
+
+              <Flex
+                flex={1}
+                flexDir={"column"}
+                gap={"0.5rem"}
+                borderRight={"1px solid rgba(#fff, 0.25)"}
+                borderRightWidth={{ base: 0, tablet: "1px" }}
+                borderColor={theme.colors.greyscale[0]}
+                marginRight={{ base: 0, tablet: "1rem" }}
+                borderBottomWidth={{ base: "1px", tablet: 0 }}
+                paddingBottom={{ base: "1rem", tablet: 0 }}
+              >
+                <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
+                  Shares
+                </Heading>
+                <Heading color={theme.colors.greyscale[0]} fontSize={"2rem"} fontWeight={700}>
+                  {device?.info.sharesAccepted}
+                </Heading>
+                <Text
+                  fontSize={"14px"}
+                  fontWeight={400}
+                  opacity={"0.75"}
+                  color={theme.colors.greyscale[0]}
+                >
+                  Rejected {device?.info.sharesRejected}
+                </Text>
+              </Flex>
+
+              <Flex
+                flex={1}
+                flexDir={"column"}
+                gap={"0.5rem"}
+                borderRight={"1px solid rgba(#fff, 0.25)"}
+                borderRightWidth={{ base: 0, tablet: "1px" }}
+                borderColor={theme.colors.greyscale[0]}
+                marginRight={{ base: 0, tablet: "1rem" }}
+                borderBottomWidth={{ base: "1px", tablet: 0 }}
+                paddingBottom={{ base: "1rem", tablet: 0 }}
+              >
+                <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
+                  Uptime
+                </Heading>
+                <Heading color={theme.colors.greyscale[0]} fontSize={"2rem"} fontWeight={700}>
+                  {formatTime(device?.info.uptimeSeconds || 0)}
+                </Heading>
+              </Flex>
+
+              <Flex flex={1} flexDir={"column"} gap={"0.5rem"}>
+                <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
+                  Best difficulty
+                </Heading>
+                <Flex gap={"0.5rem"} alignItems={"baseline"}>
+                  <Heading color={theme.colors.greyscale[0]} fontSize={"2rem"} fontWeight={700}>
+                    {device?.info.bestDiff}
+                  </Heading>
+                  <Heading color={theme.colors.greyscale[0]} fontSize={"1rem"}>
+                    all time best
+                  </Heading>
+                </Flex>
+                <Text
+                  fontSize={"14px"}
+                  fontWeight={400}
+                  opacity={"0.75"}
+                  color={theme.colors.greyscale[0]}
+                >
+                  Since system boot: {device?.info.bestSessionDiff}
+                </Text>
+              </Flex>
+            </Flex>
 
             <Box
               backgroundColor={theme.colors.greyscale[0]}
               borderRadius={"1rem"}
               p={"1rem"}
-              h={{ base: "2385px", tablet: "1340px" }}
+              h={{ base: "2135px", tablet: "1200px" }}
             >
               <Box
                 backgroundColor={"#f2f3f3"}
