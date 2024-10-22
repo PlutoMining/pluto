@@ -7,6 +7,7 @@ import {
   Accordion as ChakraAccordion,
   AccordionItem as ChakraAccordionItem,
   Divider,
+  ExpandedIndex,
   Flex,
   Grid,
   Heading,
@@ -75,6 +76,17 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   const [checkedFetchedItems, setCheckedFetchedItems] = useState<{ mac: string; value: boolean }[]>(
     []
   );
+
+  const [expandedIndex, setExpandedIndex] = useState<number | undefined>(undefined);
+
+  const handleAccordionChange = useCallback((index: number) => {
+    console.log("handleAccordionChange", index);
+    if (typeof index === "number") {
+      setExpandedIndex(index);
+    } else {
+      setExpandedIndex(undefined);
+    }
+  }, []);
 
   const allChecked =
     checkedFetchedItems.length > 0 && checkedFetchedItems.every((item) => item.value);
@@ -155,7 +167,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 
   useEffect(() => {
     fetchPresets();
-    console.log("allChecked", allChecked);
   }, []);
 
   const handleCheckboxChange = useCallback((mac: string, isChecked: boolean) => {
@@ -171,6 +182,12 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
         return [...prevItems, { mac, value: isChecked }];
       }
     });
+
+    // Chiudi l'accordion se la checkbox è selezionata
+    if (isChecked) {
+      console.log("here");
+      setExpandedIndex(undefined); // Chiude l'accordion
+    }
   }, []);
 
   return (
@@ -196,6 +213,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             onClick={handleRestartSelected}
             variant="text"
             icon={<ArrowRightUpIcon color={theme.colors.greyscale[500]} />}
+            disabled={checkedFetchedItems.length > 0}
           >
             Select Pool Preset
           </Button>
@@ -203,6 +221,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             onClick={handleRestartSelected}
             variant="outlined"
             icon={<RestartIcon color={theme.colors.greyscale[500]} />}
+            disabled={checkedFetchedItems.length > 0}
           >
             Restart selected devices
           </Button>
@@ -217,6 +236,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
         borderRadius={"1rem"}
         // p={"1rem"}
         backgroundColor={theme.colors.greyscale[0]}
+        index={expandedIndex}
+        onChange={handleAccordionChange}
       >
         <Flex
           backgroundColor={theme.colors.greyscale[100]}
@@ -295,8 +316,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     workerName: "",
     fanspeed: "",
   });
-  const [isSaving, setIsSaving] = useState(false);
-  const [isRestartLoading, setIsRestartLoading] = useState(false);
 
   const [isSaveAndRestartModalOpen, setIsSaveAndRestartModalOpen] = useState(false);
   const [isRestartModalOpen, setIsRestartModalOpen] = useState(false);
@@ -337,7 +356,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const handleSaveOrSaveAndRestartDeviceSettings = useCallback(
     async (shouldRestart: boolean) => {
       try {
-        setIsSaving(true);
         const deviceToUpdate = {
           ...device,
           info: {
@@ -389,8 +407,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           message: `${errorMessage} Please try again.`,
         });
         onOpenAlert(); // Aprire l'alert per mostrare il messaggio di errore
-      } finally {
-        setIsSaving(false);
       }
     },
     [device, setAlert, onOpenAlert]
@@ -512,8 +528,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   );
 
   const handleRestartDevice = useCallback(async () => {
-    setIsRestartLoading(true);
-
     const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
 
     try {
@@ -541,8 +555,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
       });
       onOpenAlert();
       setIsRestartModalOpen(false);
-    } finally {
-      setIsRestartLoading(false);
     }
   }, [device.mac, onOpenAlert, setAlert]);
 

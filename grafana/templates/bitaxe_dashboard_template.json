@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 3,
+    "id": 1,
     "links": [],
     "panels": [
         {
@@ -565,7 +565,7 @@
                 "uid": "PBFA97CFB590B2093"
             },
             "gridPos": {
-                "h": 3,
+                "h": 1,
                 "w": 12,
                 "x": 12,
                 "y": 22
@@ -581,7 +581,7 @@
                 "mode": "markdown"
             },
             "pluginVersion": "11.1.2",
-            "title": "Lorem Ipsum",
+            "title": "Performance",
             "transparent": true,
             "type": "text"
         },
@@ -767,7 +767,7 @@
                 "h": 2,
                 "w": 12,
                 "x": 12,
-                "y": 25
+                "y": 23
             },
             "id": 3,
             "options": {
@@ -818,10 +818,43 @@
                 "type": "prometheus",
                 "uid": "PBFA97CFB590B2093"
             },
+            "description": "",
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "thresholds"
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
                     },
                     "mappings": [],
                     "thresholds": {
@@ -833,37 +866,30 @@
                             }
                         ]
                     },
-                    "unit": "amp"
+                    "unit": "H/kW"
                 },
                 "overrides": []
             },
             "gridPos": {
-                "h": 3,
+                "h": 5,
                 "w": 12,
                 "x": 12,
-                "y": 27
+                "y": 25
             },
             "id": 13,
             "options": {
-                "colorMode": "background_solid",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "horizontal",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
+                "legend": {
                     "calcs": [
                         "lastNotNull"
                     ],
-                    "fields": "",
-                    "values": false
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
                 },
-                "showPercentChange": false,
-                "text": {
-                    "titleSize": 15,
-                    "valueSize": 25
-                },
-                "textMode": "value_and_name",
-                "wideLayout": true
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
             },
             "pluginVersion": "11.1.2",
             "targets": [
@@ -874,19 +900,19 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "@@hostname@@_current_amps",
+                    "expr": "mockaxe2_efficiency",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
-                    "legendFormat": "Core Current",
+                    "legendFormat": "Efficiency",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
                 }
             ],
-            "title": "Efficiency Lorem Ipsum",
+            "title": "Efficiency",
             "transparent": true,
-            "type": "stat"
+            "type": "timeseries"
         }
     ],
     "refresh": "",
@@ -902,7 +928,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "@@hostname@@",
-    "uid": "k7e6hxpc5ylxpc",
+    "uid": "t8bdih0n0ocrma",
     "version": 1,
     "weekStart": ""
 }
