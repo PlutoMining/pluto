@@ -11,11 +11,18 @@ import {
   Flex,
   Grid,
   Heading,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   RadioGroup,
   SimpleGrid,
   Stack,
   Text,
   useAccordionItemState,
+  useDisclosure,
   useTheme,
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
@@ -35,6 +42,7 @@ import Link from "../Link/Link";
 import { SaveAndRestartModal } from "../Modal";
 import { RadioButtonValues } from "../Modal/SaveAndRestartModal";
 import { RestartModal } from "../Modal/RestartModal";
+import { CloseIcon } from "../icons/CloseIcon";
 
 interface DeviceSettingsAccordionProps {
   devices: Device[] | undefined;
@@ -69,6 +77,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   setAlert,
   onOpenAlert,
 }) => {
+  const { isOpen: isOpenModal, onOpen: onOpenModal, onClose: onCloseModal } = useDisclosure();
+
   const [presets, setPresets] = useState<Preset[]>([]);
 
   const theme = useTheme();
@@ -122,6 +132,9 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   const handleRestartSelected = useCallback(
     async (e: { preventDefault: () => void }) => {
       e.preventDefault();
+      onCloseModal();
+
+      // setCheckedFetchedItems([]);
 
       const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
 
@@ -190,113 +203,152 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   }, []);
 
   return (
-    <Flex
-      flexDirection={"column"}
-      gap={"1rem"}
-      borderWidth={"1px"}
-      borderColor={"greyscale.200"}
-      borderRadius={"1rem"}
-      backgroundColor={theme.colors.greyscale[0]}
-      p={"1rem"}
-    >
-      <Flex justify={"space-between"} gap={"1rem"} alignItems={"center"}>
-        <Checkbox
-          id={"select-all-devices"}
-          name={"select-all-devices"}
-          label="Select all"
-          isChecked={allChecked}
-          onChange={(e) => handleAllCheckbox(e.target.checked)}
-        ></Checkbox>
-        <Flex alignItems={"center"} gap={"1rem"}>
-          <Button
-            onClick={handleRestartSelected}
-            variant="text"
-            icon={<ArrowRightUpIcon color={theme.colors.greyscale[500]} />}
-            disabled={
-              checkedFetchedItems.length <= 1 ||
-              checkedFetchedItems.filter((item) => item.value === true).length <= 1
-            }
-          >
-            Select Pool Preset
-          </Button>
-          <Button
-            onClick={handleRestartSelected}
-            variant="outlined"
-            icon={<RestartIcon color={theme.colors.greyscale[500]} />}
-            disabled={
-              checkedFetchedItems.length <= 1 ||
-              checkedFetchedItems.filter((item) => item.value === true).length <= 1
-            }
-          >
-            Restart selected devices
-          </Button>
-        </Flex>
-      </Flex>
-      <ChakraAccordion
-        allowMultiple
-        as={Flex}
-        flexDir={"column"}
+    <>
+      <Flex
+        flexDirection={"column"}
+        gap={"1rem"}
         borderWidth={"1px"}
         borderColor={"greyscale.200"}
         borderRadius={"1rem"}
-        // p={"1rem"}
         backgroundColor={theme.colors.greyscale[0]}
-        index={expandedIndex}
-        onChange={handleAccordionChange}
+        p={"1rem"}
       >
-        <Flex
-          backgroundColor={theme.colors.greyscale[100]}
-          justify={"space-between"}
-          p={"1rem"}
-          borderTopRadius={"1rem"}
-        >
-          <Text
-            fontWeight={500}
-            color={theme.colors.greyscale[500]}
-            fontFamily={"heading"}
-            textTransform={"capitalize"}
-            fontSize={"12px"}
-            textAlign={"center"}
-            p={0}
-            as={Flex}
-            flex={10}
-          >
-            Hostname
-          </Text>
-          <Text
-            fontWeight={500}
-            color={theme.colors.greyscale[500]}
-            fontFamily={"heading"}
-            textTransform={"capitalize"}
-            fontSize={"12px"}
-            textAlign={"center"}
-            p={0}
-            as={Flex}
-            flex={2}
-          >
-            Status
-          </Text>
+        <Flex justify={"space-between"} gap={"1rem"} alignItems={"center"}>
+          <Checkbox
+            id={"select-all-devices"}
+            name={"select-all-devices"}
+            label="Select all"
+            isChecked={allChecked}
+            onChange={(e) => handleAllCheckbox(e.target.checked)}
+          ></Checkbox>
+          <Flex alignItems={"center"} gap={"1rem"}>
+            <Button
+              onClick={handleRestartSelected}
+              variant="text"
+              icon={<ArrowRightUpIcon color={theme.colors.greyscale[500]} />}
+              disabled={
+                checkedFetchedItems.length <= 1 ||
+                checkedFetchedItems.filter((item) => item.value === true).length <= 1
+              }
+            >
+              Select Pool Preset
+            </Button>
+            <Button
+              onClick={onOpenModal}
+              variant="outlined"
+              icon={<RestartIcon color={theme.colors.greyscale[500]} />}
+              disabled={
+                checkedFetchedItems.length <= 1 ||
+                checkedFetchedItems.filter((item) => item.value === true).length <= 1
+              }
+            >
+              Restart selected devices
+            </Button>
+          </Flex>
         </Flex>
-        {devices?.map((device) => (
-          <ChakraAccordionItem
-            key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
-            // backgroundColor={"greyscale.0"}
-            p={"0.5rem 1rem"}
+        <ChakraAccordion
+          allowMultiple
+          as={Flex}
+          flexDir={"column"}
+          borderWidth={"1px"}
+          borderColor={"greyscale.200"}
+          borderRadius={"1rem"}
+          // p={"1rem"}
+          backgroundColor={theme.colors.greyscale[0]}
+          index={expandedIndex}
+          onChange={handleAccordionChange}
+        >
+          <Flex
+            backgroundColor={theme.colors.greyscale[100]}
+            justify={"space-between"}
+            p={"1rem"}
+            borderTopRadius={"1rem"}
           >
-            <AccordionItem
-              key={device.mac}
-              device={device}
-              presets={presets}
-              setAlert={setAlert}
-              alert={alert}
-              onOpenAlert={onOpenAlert}
-              handleCheckboxChange={handleCheckboxChange}
-              checkedItems={checkedFetchedItems}
-            />
-          </ChakraAccordionItem>
-        ))}
-      </ChakraAccordion>
-    </Flex>
+            <Text
+              fontWeight={500}
+              color={theme.colors.greyscale[500]}
+              fontFamily={"heading"}
+              textTransform={"capitalize"}
+              fontSize={"12px"}
+              textAlign={"center"}
+              p={0}
+              as={Flex}
+              flex={10}
+            >
+              Hostname
+            </Text>
+            <Text
+              fontWeight={500}
+              color={theme.colors.greyscale[500]}
+              fontFamily={"heading"}
+              textTransform={"capitalize"}
+              fontSize={"12px"}
+              textAlign={"center"}
+              p={0}
+              as={Flex}
+              flex={2}
+            >
+              Status
+            </Text>
+          </Flex>
+          {devices?.map((device) => (
+            <ChakraAccordionItem
+              key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
+              // backgroundColor={"greyscale.0"}
+              p={"0.5rem 1rem"}
+            >
+              <AccordionItem
+                key={device.mac}
+                device={device}
+                presets={presets}
+                setAlert={setAlert}
+                alert={alert}
+                onOpenAlert={onOpenAlert}
+                handleCheckboxChange={handleCheckboxChange}
+                checkedItems={checkedFetchedItems}
+              />
+            </ChakraAccordionItem>
+          ))}
+        </ChakraAccordion>
+      </Flex>
+      <Modal
+        isCentered
+        onClose={onCloseModal}
+        isOpen={isOpenModal}
+        motionPreset="slideInBottom"
+        blockScrollOnMount={false}
+        returnFocusOnClose={false}
+      >
+        <ModalOverlay bg="none" backdropFilter="auto" backdropBlur="3px" />
+        <ModalContent
+          bg={"#fff"}
+          borderColor={"#E1DEE3"}
+          borderWidth={"1px"}
+          borderRadius={"1rem"}
+          p={"1rem"}
+          color={"greyscale.900"}
+        >
+          <ModalHeader>Restart the selected devices?</ModalHeader>
+          <Box pos={"absolute"} top={"1rem"} right={"1rem"} cursor={"pointer"}>
+            <CloseIcon color={"greyscale.900"} onClick={onCloseModal} />
+          </Box>
+          <ModalBody>
+            <Text>
+              Keep in mind that restarting devices may result in the loss of an entire block of
+              transactions.
+            </Text>
+          </ModalBody>
+          <ModalFooter gap={"1.5rem"}>
+            <Button variant="secondary" onClick={onCloseModal}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primaryPurple" onClick={handleRestartSelected}>
+              Restart
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
   );
 };
 

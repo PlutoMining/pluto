@@ -37,7 +37,6 @@ const SettingsPage = () => {
   } = useDisclosure({ defaultIsOpen: false });
 
   const [alert, setAlert] = useState<AlertInterface>();
-  const [isRestartAllLoading, setIsRestartAllLoading] = useState<boolean>(false);
 
   const theme = useTheme();
 
@@ -63,7 +62,6 @@ const SettingsPage = () => {
     async (e: { preventDefault: () => void }) => {
       e.preventDefault();
 
-      setIsRestartAllLoading(true);
       onCloseModal();
 
       const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
@@ -101,7 +99,6 @@ const SettingsPage = () => {
           errorMessage = error.response?.data?.message || error.message;
         }
 
-        setIsRestartAllLoading(false);
         setAlert({
           status: AlertStatus.ERROR,
           title: "Restart Failed",
@@ -213,21 +210,22 @@ const SettingsPage = () => {
           p={"1rem"}
           color={"greyscale.900"}
         >
-          <ModalHeader>Do you want to save the new settings and restart?</ModalHeader>
+          <ModalHeader>Restart all devices?</ModalHeader>
           <Box pos={"absolute"} top={"1rem"} right={"1rem"} cursor={"pointer"}>
             <CloseIcon color={"greyscale.900"} onClick={onCloseModal} />
           </Box>
           <ModalBody>
             <Text>
-              To apply the new settings, the miners needs to restart. Do you want to proceed?
+              Keep in mind that restarting the device may result in the loss of an entire block of
+              transactions.
             </Text>
           </ModalBody>
           <ModalFooter gap={"1.5rem"}>
             <Button variant="secondary" onClick={onCloseModal}>
-              Go back
+              Cancel
             </Button>
             <Button type="submit" variant="primaryPurple" onClick={handleRestartAll}>
-              Confirm
+              Restart
             </Button>
           </ModalFooter>
         </ModalContent>
