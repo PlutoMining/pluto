@@ -1,5 +1,5 @@
 "use client";
-import { Box, Container, Heading, useMediaQuery, VStack } from "@chakra-ui/react";
+import { Box, Container, Flex, Heading, useMediaQuery, useTheme, VStack } from "@chakra-ui/react";
 import { Device } from "@pluto/interfaces";
 import axios from "axios";
 import { useEffect, useState, useRef } from "react";
@@ -7,6 +7,7 @@ import { useEffect, useState, useRef } from "react";
 const OverviewPage: React.FC = () => {
   const [dashboardPublicUrl, setDashboardPublicUrl] = useState<string>();
   const iframeRef = useRef<HTMLIFrameElement>(null); // Inizializziamo la ref
+  const theme = useTheme();
 
   useEffect(() => {
     fetchDevicesAndDashboardsAndUpdate();
@@ -25,26 +26,36 @@ const OverviewPage: React.FC = () => {
 
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
-      <Box p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}>
+      <Flex
+        p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}
+        flexDirection={"column"}
+        gap={"1rem"}
+      >
         <Heading fontSize={"4xl"} fontWeight={400}>
           Overview Dashboard
         </Heading>
         {dashboardPublicUrl && (
-          <Box position={"relative"} height={"100vh"}>
-            <iframe
-              ref={iframeRef} // Applichiamo la ref qui
-              src={`${dashboardPublicUrl}&theme=light&transparent=true`}
-              style={{
-                width: "100%",
-                height: "100%",
-                border: "none",
-                position: "absolute",
-                backgroundColor: "transparent",
-              }} // Opzionale: stile per rimuovere il bordo
-            ></iframe>
+          <Box
+            backgroundColor={theme.colors.greyscale[0]}
+            borderRadius={"1rem"}
+            p={"1rem"}
+            h={{ base: "1755px", tablet: "1130px" }}
+          >
+            <Box backgroundColor={"#f2f3f3"} p={"1rem"} borderRadius={"1rem"} h={"100%"} w={"100%"}>
+              <iframe
+                ref={iframeRef} // Applichiamo la ref qui
+                src={`${dashboardPublicUrl}&theme=light&transparent=true`}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  border: "none",
+                  backgroundColor: "transparent",
+                }} // Opzionale: stile per rimuovere il bordo
+              ></iframe>
+            </Box>
           </Box>
         )}
-      </Box>
+      </Flex>
     </Container>
   );
 };
