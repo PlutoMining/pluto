@@ -32,9 +32,20 @@ export const AddNewPresetModal: React.FC<AddNewPresetModalProps> = ({
       <ModalContent
         bg={theme.colors.greyscale[0]}
         borderRadius={"1rem"}
-        height={"calc(100% - 8rem)"}
+        height={{
+          base: "calc(100vh - 7.25rem)",
+          tablet: "calc(100vh - 9.5rem)",
+          tabletL: "calc(100vh - 8.5rem)",
+        }}
       >
-        <Box maxW="container.desktop" margin={"0 auto"} p={"2rem"}>
+        <Box
+          maxW="container.desktop"
+          margin={"0 auto"}
+          p={"2rem"}
+          w={"100%"}
+          h={"100%"}
+          overflow={"hidden"}
+        >
           <ModalHeader p={0} fontFamily={"heading"} fontWeight={400} fontSize={"2rem"}>
             Add a new preset
           </ModalHeader>

@@ -51,7 +51,6 @@ const SettingsPage = () => {
       const response = await axios.get<{ data: Device[] }>("/api/devices/imprint");
       const imprintedDevices = response.data.data;
 
-      console.log(imprintedDevices[0].info.hashRate / 1000 / imprintedDevices[0].info.power);
       setImprintedDevices(imprintedDevices);
     } catch (error) {
       console.error("Error discovering devices:", error);

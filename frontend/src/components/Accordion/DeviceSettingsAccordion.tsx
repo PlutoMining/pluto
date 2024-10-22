@@ -43,6 +43,7 @@ import { SaveAndRestartModal } from "../Modal";
 import { RadioButtonValues } from "../Modal/SaveAndRestartModal";
 import { RestartModal } from "../Modal/RestartModal";
 import { CloseIcon } from "../icons/CloseIcon";
+import { SelectPresetModal } from "../Modal/SelectPresetModal";
 
 interface DeviceSettingsAccordionProps {
   devices: Device[] | undefined;
@@ -79,6 +80,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 }) => {
   const { isOpen: isOpenModal, onOpen: onOpenModal, onClose: onCloseModal } = useDisclosure();
 
+  const [isSelectPoolPresetOpen, setIsSelectPoolPresetModalOpen] = useState(false);
+
   const [presets, setPresets] = useState<Preset[]>([]);
 
   const theme = useTheme();
@@ -90,7 +93,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   const [expandedIndex, setExpandedIndex] = useState<number | undefined>(undefined);
 
   const handleAccordionChange = useCallback((index: number) => {
-    console.log("handleAccordionChange", index);
     if (typeof index === "number") {
       setExpandedIndex(index);
     } else {
@@ -178,6 +180,47 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
     [checkedFetchedItems, onOpenAlert, setAlert]
   );
 
+  const handleCloseSuccessfully = async (uuid: string) => {
+    setIsSelectPoolPresetModalOpen(false);
+
+    const handleSavePreset = (mac: string, d: Device) =>
+      axios.patch<{ message: string; data: Device }>(`/api/devices/${mac}/system`, d);
+
+    try {
+      if (devices) {
+        await Promise.all(
+          devices
+            .filter((device) =>
+              checkedFetchedItems.some((item) => item.mac === device.mac && item.value === true)
+            )
+            .map((d) => {
+              handleSavePreset(d.mac, { ...d, presetUuid: uuid });
+            })
+        );
+      }
+
+      setAlert({
+        status: AlertStatus.SUCCESS,
+        title: "Save Successful",
+        message: "All the selected devices have been successfully saved.",
+      });
+      onOpenAlert(); // Aprire l'alert per mostrare il messaggio di successo
+    } catch (error) {
+      let errorMessage = "An error occurred while saving the device settings.";
+
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || error.message;
+      }
+
+      setAlert({
+        status: AlertStatus.ERROR,
+        title: "Save Failed",
+        message: `${errorMessage} Please try again.`,
+      });
+      onOpenAlert(); // Aprire l'alert per mostrare il messaggio di errore
+    }
+  };
+
   useEffect(() => {
     fetchPresets();
   }, []);
@@ -223,7 +266,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           ></Checkbox>
           <Flex alignItems={"center"} gap={"1rem"}>
             <Button
-              onClick={handleRestartSelected}
+              onClick={() => setIsSelectPoolPresetModalOpen(true)}
               variant="text"
               icon={<ArrowRightUpIcon color={theme.colors.greyscale[500]} />}
               disabled={
@@ -348,6 +391,19 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           </ModalFooter>
         </ModalContent>
       </Modal>
+      <SelectPresetModal
+        isOpen={isSelectPoolPresetOpen}
+        onClose={() => setIsSelectPoolPresetModalOpen(false)}
+        devices={
+          (devices &&
+            devices.filter((device) =>
+              checkedFetchedItems.some((item) => item.mac === device.mac && item.value === true)
+            )) ||
+          []
+        }
+        presets={presets}
+        onCloseSuccessfully={handleCloseSuccessfully}
+      />
     </>
   );
 };
