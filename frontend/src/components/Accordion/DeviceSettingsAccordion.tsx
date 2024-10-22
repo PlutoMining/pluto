@@ -213,8 +213,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             variant="text"
             icon={<ArrowRightUpIcon color={theme.colors.greyscale[500]} />}
             disabled={
-              checkedFetchedItems.length === 0 ||
-              checkedFetchedItems.every((item) => item.value === false)
+              checkedFetchedItems.length <= 1 ||
+              checkedFetchedItems.filter((item) => item.value === true).length <= 1
             }
           >
             Select Pool Preset
@@ -224,8 +224,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             variant="outlined"
             icon={<RestartIcon color={theme.colors.greyscale[500]} />}
             disabled={
-              checkedFetchedItems.length === 0 ||
-              checkedFetchedItems.every((item) => item.value === false)
+              checkedFetchedItems.length <= 1 ||
+              checkedFetchedItems.filter((item) => item.value === true).length <= 1
             }
           >
             Restart selected devices
