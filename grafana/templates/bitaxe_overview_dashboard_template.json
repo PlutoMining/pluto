@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 2,
+    "id": 3,
     "links": [],
     "panels": [
         {
@@ -112,7 +112,7 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
+                "h": 7,
                 "w": 9,
                 "x": 6,
                 "y": 0
@@ -217,7 +217,7 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
+                "h": 7,
                 "w": 9,
                 "x": 15,
                 "y": 0
@@ -355,7 +355,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#00cc14",
+                        "fixedColor": "#7bcffe",
                         "mode": "fixed"
                     },
                     "mappings": [
@@ -628,7 +628,7 @@
                 "h": 8,
                 "w": 24,
                 "x": 0,
-                "y": 8
+                "y": 7
             },
             "id": 5,
             "options": {
@@ -691,103 +691,6 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#f0edf2",
-                        "mode": "fixed"
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    },
-                    "unit": "short"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 3,
-                "w": 24,
-                "x": 0,
-                "y": 16
-            },
-            "id": 12,
-            "options": {
-                "colorMode": "background_solid",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
-                "showPercentChange": false,
-                "text": {
-                    "titleSize": 15,
-                    "valueSize": 30
-                },
-                "textMode": "auto",
-                "wideLayout": true
-            },
-            "pluginVersion": "11.1.2",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
-                    },
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "shares_by_pool_accepted",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "instant": false,
-                    "legendFormat": "{{pool}} Accepted",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
-                    },
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "shares_by_pool_rejected",
-                    "fullMetaSearch": false,
-                    "hide": false,
-                    "includeNullMetadata": true,
-                    "instant": false,
-                    "legendFormat": "{{pool}} Rejected",
-                    "range": true,
-                    "refId": "B",
-                    "useBackend": false
-                }
-            ],
-            "title": "Shares by Pool",
-            "transparent": true,
-            "type": "stat"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
                         "fixedColor": "#7b00cc",
                         "mode": "shades"
                     },
@@ -832,7 +735,7 @@
                 "h": 6,
                 "w": 24,
                 "x": 0,
-                "y": 19
+                "y": 15
             },
             "id": 11,
             "options": {
@@ -878,7 +781,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "Overview",
-    "uid": "l71mnqowdebw8x",
+    "uid": "uuhirwaa8vl7v0",
     "version": 1,
     "weekStart": ""
 }
