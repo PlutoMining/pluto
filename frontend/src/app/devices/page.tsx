@@ -1,6 +1,5 @@
 "use client";
 import { DeviceAccordion } from "@/components/Accordion/DeviceAccordion";
-import { DeviceStatusBadge } from "@/components/Badge";
 import Button from "@/components/Button/Button";
 import { DeviceTable } from "@/components/Table/DeviceTable";
 import { AddIcon } from "@/components/icons/AddIcon";
@@ -13,15 +12,7 @@ import {
   Container,
   Flex,
   Heading,
-  Link,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
   Text,
-  Th,
-  Thead,
-  Tr,
   useDisclosure,
   useTheme,
   VStack,
@@ -39,11 +30,7 @@ const DevicePage: React.FC = () => {
     onClose: onConfirmationModalClose,
   } = useDisclosure();
 
-  // const [checkedItems, setCheckedItems] = React.useState<boolean[]>([]);
   const [deviceIdToRemove, setDeviceIdToRemove] = useState<string | null>(null); // Nuovo stato per memorizzare l'ID del dispositivo da eliminare
-
-  // const allChecked = checkedItems.every(Boolean);
-  // const isIndeterminate = checkedItems.some(Boolean) && !allChecked;
 
   const theme = useTheme();
 
@@ -94,7 +81,6 @@ const DevicePage: React.FC = () => {
       let imprintedDevices: Device[] = response.data.data;
 
       setRegisteredDevices([...imprintedDevices]);
-      // setCheckedItems(Array.from({ length: imprintedDevices.length }, () => false));
       return imprintedDevices;
     } catch (error) {
       console.error("Error discovering devices:", error);

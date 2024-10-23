@@ -139,19 +139,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
           </Heading>
           <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
         </Flex>
-        {/* <Link
-          href={`monitoring/${device.info.hostname}`}
-          fontWeight={500}
-          textDecoration={"underline"}
-          opacity={!device?.publicDashboardUrl ? "0.3" : "1"}
-          pointerEvents={!device?.publicDashboardUrl ? "none" : "auto"}
-          as={Flex}
-          alignItems={"center"}
-          gap={"0.25rem"}
-        >
-          <Text display={{ base: "none", mobileL: "inherit" }}>Dashboard</Text>
-          <ArrowLeftSmallIcon color="#000" />
-        </Link> */}
 
         {/* Pass the device ID to the removeRegisteredDevice function */}
         <Link

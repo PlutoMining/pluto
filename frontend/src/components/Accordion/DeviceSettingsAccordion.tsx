@@ -88,15 +88,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
     []
   );
 
-  const [expandedIndex, setExpandedIndex] = useState<number | undefined>(undefined);
-
-  const handleAccordionChange = useCallback((index: number) => {
-    if (typeof index === "number") {
-      setExpandedIndex(index);
-    } else {
-      setExpandedIndex(undefined);
-    }
-  }, []);
+  const [activeIndex, setActiveIndex] = useState<number | number[]>([]);
 
   const allChecked =
     checkedFetchedItems.length > 0 && checkedFetchedItems.every((item) => item.value);
@@ -239,7 +231,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 
     // Chiudi l'accordion se la checkbox è selezionata
     if (isChecked) {
-      setExpandedIndex(undefined); // Chiude l'accordion
+      setActiveIndex([]); // Chiude l'accordion
     }
   }, []);
 
@@ -294,8 +286,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           borderRadius={"1rem"}
           // p={"1rem"}
           backgroundColor={theme.colors.greyscale[0]}
-          index={expandedIndex}
-          onChange={handleAccordionChange}
+          index={activeIndex}
+          onChange={setActiveIndex}
         >
           <Flex
             backgroundColor={theme.colors.greyscale[100]}
@@ -930,7 +922,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                     type="number"
                     defaultValue={device.info.fanspeed || 0}
                     onChange={handleChange}
-                    isDisabled={!(device.info.autofanspeed === 0)}
+                    isDisabled={device.info.autofanspeed === 1}
                     rightAddon={"%"}
                     error={deviceError.fanspeed}
                   />
