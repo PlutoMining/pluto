@@ -68,6 +68,7 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
         bg={theme.colors.greyscale[0]}
         borderRadius={"1rem"}
         height={"calc(100% - 8rem)"}
+        overflow={"scroll"}
       >
         <Box
           maxW="container.desktop"

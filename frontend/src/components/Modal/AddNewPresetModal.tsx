@@ -44,7 +44,7 @@ export const AddNewPresetModal: React.FC<AddNewPresetModalProps> = ({
           p={"2rem"}
           w={"100%"}
           h={"100%"}
-          overflow={"hidden"}
+          overflow={"scroll"}
         >
           <ModalHeader p={0} fontFamily={"heading"} fontWeight={400} fontSize={"2rem"}>
             Add a new preset
