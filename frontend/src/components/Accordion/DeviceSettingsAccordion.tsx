@@ -227,20 +227,27 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
         backgroundColor={theme.colors.greyscale[0]}
         p={"1rem"}
       >
-        <Flex justify={"space-between"} gap={"1rem"} alignItems={"center"}>
-          <Checkbox
-            id={"select-all-devices"}
-            name={"select-all-devices"}
-            label={
-              checkedFetchedItems.filter((d) => d.value === true).length === 0
-                ? `Select all`
-                : `${checkedFetchedItems.filter((d) => d.value === true).length} of ${
-                    devices?.length
-                  } selected`
-            }
-            isChecked={allChecked}
-            onChange={(e) => handleAllCheckbox(e.target.checked)}
-          ></Checkbox>
+        <Flex
+          justify={{ base: "flex-end", tablet: "space-between" }}
+          alignItems={{ base: "flex-end", tablet: "center" }}
+          gap={"1rem"}
+          flexDir={{ base: "column", tablet: "row" }}
+        >
+          <Flex>
+            <Checkbox
+              id={"select-all-devices"}
+              name={"select-all-devices"}
+              label={
+                checkedFetchedItems.filter((d) => d.value === true).length === 0
+                  ? `Select all`
+                  : `${checkedFetchedItems.filter((d) => d.value === true).length} of ${
+                      devices?.length
+                    } selected`
+              }
+              isChecked={allChecked}
+              onChange={(e) => handleAllCheckbox(e.target.checked)}
+            ></Checkbox>
+          </Flex>
           <Flex alignItems={"center"} gap={"1rem"}>
             <Button
               onClick={() => setIsSelectPoolPresetModalOpen(true)}
@@ -281,6 +288,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             justify={"space-between"}
             p={"1rem"}
             borderTopRadius={"1rem"}
+            display={{ base: "none", tablet: "flex" }}
           >
             <Text
               fontWeight={500}
@@ -304,16 +312,18 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
               textAlign={"center"}
               p={0}
               as={Flex}
-              flex={2}
+              flex={3}
+              paddingLeft={"2rem"}
             >
               Status
             </Text>
           </Flex>
-          {devices?.map((device) => (
+          {devices?.map((device, index) => (
             <ChakraAccordionItem
               key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
-              // backgroundColor={"greyscale.0"}
-              p={"0.5rem 1rem"}
+              p={{ base: "1rem", tablet: "0.5rem 1rem" }}
+              borderTopWidth={index === 0 ? "none" : "1px"}
+              borderBottomWidth={"0px!important"}
             >
               <AccordionItem
                 key={device.mac}
@@ -762,31 +772,44 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         <Flex gap={"1rem"} alignItems={"center"} justify={"space-between"} w={"100%"}>
           <Flex alignItems={"center"} gap={"0.25rem"} flex={10}>
             <Flex alignItems={"center"} gap={"0.5rem"} fontFamily={"heading"}>
-              <Checkbox
-                id={device.mac}
-                name={device.mac}
-                isChecked={checkedItems.find((d) => d.mac === device.mac)?.value}
-                onChange={(e) => handleCheckboxChange(device.mac, e.target.checked)}
-              ></Checkbox>
+              <Flex display={{ base: "none", tablet: "flex" }}>
+                <Checkbox
+                  id={device.mac}
+                  name={device.mac}
+                  isChecked={checkedItems.find((d) => d.mac === device.mac)?.value}
+                  onChange={(e) => handleCheckboxChange(device.mac, e.target.checked)}
+                ></Checkbox>
+              </Flex>
               <AccordionIcon />
             </Flex>
-            <Text fontSize={"md"} fontWeight={400} textTransform={"capitalize"}>
-              {device.info.hostname}
-            </Text>
-            {" - "}
-            <Link
-              href={`http://${device.ip}`}
-              isExternal={true}
-              label={device.ip}
-              fontSize={"md"}
-              fontWeight={400}
-              textDecoration="underline"
-              isDisabled={device.tracing ? false : true}
-            />
+            <Flex alignItems={"center"} gap={"0.5rem"}>
+              <Text fontSize={"md"} fontWeight={400} textTransform={"capitalize"}>
+                {device.info.hostname}
+              </Text>
+              <Text
+                fontSize={"md"}
+                fontWeight={400}
+                textTransform={"capitalize"}
+                display={{ base: "none", tablet: "block" }}
+              >
+                -
+              </Text>
+              <Flex display={{ base: "none", tablet: "flex" }}>
+                <Link
+                  href={`http://${device.ip}`}
+                  isExternal={true}
+                  label={device.ip}
+                  fontSize={"md"}
+                  fontWeight={400}
+                  textDecoration="underline"
+                  isDisabled={device.tracing ? false : true}
+                />
+              </Flex>
+            </Flex>
           </Flex>
-          <Flex alignItems={"center"} gap={"1rem"} flex={2}>
+          <Flex alignItems={"center"} gap={"1rem"} flex={3} justify={{ base: "flex-end" }}>
             <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
-            <Flex alignItems={"center"}>
+            <Flex alignItems={"center"} display={{ base: "none", tablet: "flex" }}>
               <Flex
                 onClick={handleRestartOpenModal}
                 alignItems={"center"}
@@ -811,6 +834,14 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 <RestartIcon color={theme.colors.greyscale[900]} />
                 Restart
               </Flex>
+            </Flex>
+            <Flex display={{ base: "flex", tablet: "none" }} marginLeft={"1rem"}>
+              <Checkbox
+                id={device.mac}
+                name={device.mac}
+                isChecked={checkedItems.find((d) => d.mac === device.mac)?.value}
+                onChange={(e) => handleCheckboxChange(device.mac, e.target.checked)}
+              ></Checkbox>
             </Flex>
           </Flex>
         </Flex>
@@ -1072,6 +1103,56 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           ></Button>
         </Flex>
       </AccordionPanel>
+      <Flex
+        alignItems={"center"}
+        display={{ base: "flex", tablet: "none" }}
+        justify={"space-between"}
+        margin={"1rem 0 0 0"}
+        padding={"0.25rem 0 0 0"}
+        borderTop={`1px solid ${theme.colors.greyscale[100]}`}
+      >
+        <Flex gap={"0.5rem"} alignItems={"center"}>
+          <Text fontSize={"md"} fontWeight={500}>
+            IP
+          </Text>
+          <Text fontSize={"md"} fontWeight={500}>
+            -
+          </Text>
+          <Link
+            href={`http://${device.ip}`}
+            isExternal={true}
+            label={device.ip}
+            fontSize={"md"}
+            fontWeight={400}
+            textDecoration="underline"
+            isDisabled={device.tracing ? false : true}
+          />
+        </Flex>
+        <Flex
+          onClick={handleRestartOpenModal}
+          alignItems={"center"}
+          gap={"0.5rem"}
+          cursor="pointer"
+          background="none"
+          color={theme.colors.greyscale[900]}
+          fontSize={"13px"}
+          lineHeight="1.5rem"
+          fontWeight={400}
+          fontFamily={theme.fonts.heading}
+          padding={"0.5rem 1rem"}
+          borderRadius="6px"
+          _hover={{ backgroundColor: "#5C009940" }}
+          _focus={{
+            bg: "#5C009966",
+          }}
+          _disabled={{
+            opacity: 0.3,
+          }}
+        >
+          <RestartIcon color={theme.colors.greyscale[900]} />
+          Restart
+        </Flex>
+      </Flex>
       <RestartModal isOpen={isRestartModalOpen} onClose={handleRestartModalClose} />
       <SaveAndRestartModal
         isOpen={isSaveAndRestartModalOpen}
