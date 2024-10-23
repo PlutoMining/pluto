@@ -231,7 +231,13 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           <Checkbox
             id={"select-all-devices"}
             name={"select-all-devices"}
-            label="Select all"
+            label={
+              checkedFetchedItems.filter((d) => d.value === true).length === 0
+                ? `Select all`
+                : `${checkedFetchedItems.filter((d) => d.value === true).length} of ${
+                    devices?.length
+                  } selected`
+            }
             isChecked={allChecked}
             onChange={(e) => handleAllCheckbox(e.target.checked)}
           ></Checkbox>
@@ -960,7 +966,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 optionValues={presets.map((preset) => ({ value: preset.uuid, label: preset.name }))}
               />
               {selectedPreset && (
-                <Flex gap={"1rem"}>
+                <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
                   <Flex flex={1}>
                     <Input
                       isDisabled={true}

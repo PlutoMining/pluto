@@ -95,8 +95,7 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
                 ))}
               </Flex>
               <Text fontSize={"13px"} fontWeight={400} fontFamily={"heading"}>
-                Lorem ipsum informare l’utente che il pool preset che verrà selezionato sarà
-                applicato a tutti i device selezionati
+                The selected Pool Preset will be applied to all the selected devices.
               </Text>
 
               <Select
