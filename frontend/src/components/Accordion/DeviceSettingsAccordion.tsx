@@ -45,6 +45,7 @@ import { SelectPresetModal } from "../Modal/SelectPresetModal";
 
 interface DeviceSettingsAccordionProps {
   devices: Device[] | undefined;
+  presets: Preset[];
   alert?: AlertInterface;
   setAlert: React.Dispatch<React.SetStateAction<AlertInterface | undefined>>;
   onOpenAlert: () => void;
@@ -72,6 +73,7 @@ interface StratumUser {
 
 export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = ({
   devices,
+  presets,
   alert,
   setAlert,
   onOpenAlert,
@@ -79,8 +81,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   const { isOpen: isOpenModal, onOpen: onOpenModal, onClose: onCloseModal } = useDisclosure();
 
   const [isSelectPoolPresetOpen, setIsSelectPoolPresetModalOpen] = useState(false);
-
-  const [presets, setPresets] = useState<Preset[]>([]);
 
   const theme = useTheme();
 
@@ -105,21 +105,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
     },
     [devices]
   );
-
-  // Recupera i preset tramite le API
-  const fetchPresets = async () => {
-    try {
-      const response = await fetch("/api/presets");
-      if (response.ok) {
-        const data: { data: Preset[] } = await response.json();
-        setPresets(data.data);
-      } else {
-        console.error("Failed to fetch presets");
-      }
-    } catch (error) {
-      console.error("Error fetching presets", error);
-    }
-  };
 
   const handleRestartSelected = useCallback(
     async (e: { preventDefault: () => void }) => {
@@ -210,10 +195,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
       onOpenAlert(); // Aprire l'alert per mostrare il messaggio di errore
     }
   };
-
-  useEffect(() => {
-    fetchPresets();
-  }, []);
 
   const handleCheckboxChange = useCallback((mac: string, isChecked: boolean) => {
     setCheckedFetchedItems((prevItems) => {
@@ -422,8 +403,10 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const [isSaveAndRestartModalOpen, setIsSaveAndRestartModalOpen] = useState(false);
   const [isRestartModalOpen, setIsRestartModalOpen] = useState(false);
 
-  const [selectedPreset, setSelectedPreset] = useState<Preset>(
-    (presets.length > 0 && presets.find((d) => d.uuid === deviceInfo?.presetUuid)) || presets[0]
+  const [selectedPreset, setSelectedPreset] = useState<Preset | undefined>(
+    (presets.length > 0 && presets.find((d) => d.uuid === deviceInfo?.presetUuid)) ||
+      presets[0] ||
+      undefined
   );
   const [isPresetRadioButtonSelected, setIsPresetRadioButtonSelected] = useState<boolean>(
     deviceInfo?.presetUuid ? true : false
@@ -458,13 +441,15 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const handleSaveOrSaveAndRestartDeviceSettings = useCallback(
     async (shouldRestart: boolean) => {
       try {
-        const deviceToUpdate = {
-          ...device,
-          info: {
-            ...device.info,
-            stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
-          },
-        };
+        const deviceToUpdate = selectedPreset
+          ? {
+              ...device,
+              info: {
+                ...device.info,
+                stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
+              },
+            }
+          : device;
 
         const {
           data: { data: updatedDestDevice },
@@ -493,7 +478,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
 
           // Se il salvataggio è andato a buon fine e serve il restart, esegui subito il restart
           if (shouldRestart) {
-            handleRestartDevice();
+            handleRestartDevice(true);
           }
         }
       } catch (error) {
@@ -613,7 +598,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         };
 
         setDevice(updatedDevice);
-      } else if (value === RadioButtonStatus.PRESET) {
+      } else if (value === RadioButtonStatus.PRESET && selectedPreset) {
         const updatedDevice = {
           ...device,
           presetUuid: selectedPreset?.uuid || presets[0].uuid,
@@ -629,36 +614,44 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     [selectedPreset, device, presets]
   );
 
-  const handleRestartDevice = useCallback(async () => {
-    const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
+  const handleRestartDevice = useCallback(
+    async (hasSaveBeenPerformedAlso: boolean) => {
+      const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
 
-    try {
-      await handleRestart(device.mac);
+      try {
+        await handleRestart(device.mac);
 
-      setAlert({
-        status: AlertStatus.SUCCESS,
-        title: "Save and Restart went successfully",
-        message:
-          "The device has been saved and restarted successfully. The new settings have been applied, and the miner is back online.",
-      });
+        setAlert({
+          status: AlertStatus.SUCCESS,
+          title: `${hasSaveBeenPerformedAlso ? "Save and " : ""}Restart went successfully`,
+          message: `The device has been ${
+            hasSaveBeenPerformedAlso ? "saved and " : ""
+          }restarted successfully. ${
+            hasSaveBeenPerformedAlso
+              ? "The new settings have been applied, and the miner is back online."
+              : ""
+          }`,
+        });
 
-      onOpenAlert();
-    } catch (error) {
-      let errorMessage = "An error occurred while attempting to restart the device.";
+        onOpenAlert();
+      } catch (error) {
+        let errorMessage = "An error occurred while attempting to restart the device.";
 
-      if (axios.isAxiosError(error)) {
-        errorMessage = error.response?.data?.message || error.message;
+        if (axios.isAxiosError(error)) {
+          errorMessage = error.response?.data?.message || error.message;
+        }
+
+        setAlert({
+          status: AlertStatus.ERROR,
+          title: "Restart Failed",
+          message: `${errorMessage} Please try again or contact support if the issue persists.`,
+        });
+        onOpenAlert();
+        setIsRestartModalOpen(false);
       }
-
-      setAlert({
-        status: AlertStatus.ERROR,
-        title: "Restart Failed",
-        message: `${errorMessage} Please try again or contact support if the issue persists.`,
-      });
-      onOpenAlert();
-      setIsRestartModalOpen(false);
-    }
-  }, [device.mac, onOpenAlert, setAlert]);
+    },
+    [device.mac, onOpenAlert, setAlert]
+  );
 
   const handleChangeOnSelectPreset = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
@@ -688,10 +681,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
 
         // Solo aggiorna i dati se l'accordion è aperto
         if (isAccordionOpen) {
-          // console.log("device partially updated: ", device);
           return { ...prevDevice, tracing: e.tracing }; // Esegui solo l'aggiornamento della proprietà di interesse
         }
-        // console.log("device updated: ", device);
         return e;
       });
     };
@@ -750,11 +741,15 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const handleRestartModalClose = useCallback(async (value: boolean) => {
     // Funzione di callback per gestire il valore restituito dalla modale
     if (value) {
-      handleRestartDevice();
+      handleRestartDevice(false);
     }
     setIsRestartModalOpen(false);
   }, []);
 
+  const handleRestartOpenModal = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setIsRestartModalOpen(true);
+  };
   return (
     <>
       <AccordionButton p={0} justifyContent={"space-between"} _hover={{ backgroundColor: "none" }}>
@@ -787,7 +782,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
             <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
             <Flex alignItems={"center"}>
               <Flex
-                onClick={() => setIsRestartModalOpen(true)}
+                onClick={handleRestartOpenModal}
                 alignItems={"center"}
                 gap={"0.5rem"}
                 cursor="pointer"

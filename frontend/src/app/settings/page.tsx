@@ -24,7 +24,7 @@ import {
   useTheme,
   VStack,
 } from "@chakra-ui/react";
-import { Device } from "@pluto/interfaces";
+import { Device, Preset } from "@pluto/interfaces";
 import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 
@@ -41,9 +41,11 @@ const SettingsPage = () => {
   const theme = useTheme();
 
   const [imprintedDevices, setImprintedDevices] = useState<Device[] | undefined>();
+  const [presets, setPresets] = useState<Preset[]>([]);
 
   useEffect(() => {
     fetchImprintedDevices();
+    fetchPresets();
   }, []);
 
   const fetchImprintedDevices = async () => {
@@ -54,6 +56,21 @@ const SettingsPage = () => {
       setImprintedDevices(imprintedDevices);
     } catch (error) {
       console.error("Error discovering devices:", error);
+    }
+  };
+
+  // Recupera i preset tramite le API
+  const fetchPresets = async () => {
+    try {
+      const response = await fetch("/api/presets");
+      if (response.ok) {
+        const data: { data: Preset[] } = await response.json();
+        setPresets(data.data);
+      } else {
+        console.error("Failed to fetch presets");
+      }
+    } catch (error) {
+      console.error("Error fetching presets", error);
     }
   };
 
@@ -177,6 +194,7 @@ const SettingsPage = () => {
             {imprintedDevices ? (
               <DeviceSettingsAccordion
                 devices={imprintedDevices}
+                presets={presets}
                 setAlert={setAlert}
                 alert={alert}
                 onOpenAlert={onOpenAlert}
