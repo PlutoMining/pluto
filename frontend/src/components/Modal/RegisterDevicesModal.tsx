@@ -235,7 +235,7 @@ function ModalBodyContent({
   }, [errors, ipAndMacAddress]);
 
   return (
-    <Box p={0} pt={"1rem"}>
+    <Box p={0} pt={"1rem"} height={"100%"}>
       <Flex
         flexDir={"column"}
         gap={"2rem"}
@@ -244,7 +244,6 @@ function ModalBodyContent({
         borderWidth={"1px"}
         borderColor={theme.colors.greyscale[200]}
         h={"100%"}
-        overflow={"scroll"}
       >
         <VStack spacing={4} align="stretch" h={"100%"}>
           <Tabs onChange={(index) => setTabIndex(index)} variant="unstyled" h={"100%"}>
@@ -295,7 +294,7 @@ function ModalBodyContent({
               </Tab>
             </TabList>
 
-            <TabPanels>
+            <TabPanels height={"calc(100% - 2.5rem)"}>
               <TabPanel>
                 <VStack alignItems={"start"} spacing={"1rem"}>
                   <Flex w={"100%"} gap={"1rem"} flexDirection={{ base: "column", mobileL: "row" }}>
@@ -612,7 +611,7 @@ function ModalBodyContent({
                   </Box>
                 </VStack>
               </TabPanel>
-              <TabPanel>
+              <TabPanel height={"100%"}>
                 {isLoadingData ? (
                   <Flex
                     w={"100%"}
@@ -663,8 +662,12 @@ function ModalBodyContent({
                           </ChakraCheckbox>
                         </Flex>
 
-                        <TableContainer h={"100%"} display={{ base: "none", tablet: "block" }}>
-                          <Table variant="simple" h={"100%"} overflow={"scroll"}>
+                        <TableContainer
+                          h={"calc(100% - 100px)"}
+                          overflowY={"scroll"}
+                          display={{ base: "none", tablet: "block" }}
+                        >
+                          <Table variant="simple" h={"100%"}>
                             <Thead>
                               <Tr>
                                 <Th borderColor={theme.colors.greyscale[100]}>
@@ -1002,7 +1005,7 @@ export const RegisterDevicesModal: React.FC<RegisterDevicesModalProps> = ({
             Add a new Device
           </ModalHeader>
           <ModalCloseButton />
-          <ModalBody overflow={"scroll"} p={0} height={"calc(100% - 8rem)"}>
+          <ModalBody p={0} height={"calc(100% - 5rem)"}>
             <ModalBodyContent
               onClose={onClose}
               theme={theme}
