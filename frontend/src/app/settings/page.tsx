@@ -168,9 +168,8 @@ const SettingsPage = () => {
                     variant="primaryBlack"
                     icon={<RestartIcon color={theme.colors.greyscale[0]} />}
                     onClick={onOpenModal}
-                  >
-                    Restart all
-                  </Button>
+                    label="Restart all"
+                  ></Button>
                 </Box>
               </Flex>
             </Flex>
@@ -220,12 +219,13 @@ const SettingsPage = () => {
             </Text>
           </ModalBody>
           <ModalFooter gap={"1.5rem"}>
-            <Button variant="secondary" onClick={onCloseModal}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primaryPurple" onClick={handleRestartAll}>
-              Restart
-            </Button>
+            <Button variant="secondary" onClick={onCloseModal} label="Cancel"></Button>
+            <Button
+              type="submit"
+              variant="primaryPurple"
+              onClick={handleRestartAll}
+              label="Restart"
+            ></Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

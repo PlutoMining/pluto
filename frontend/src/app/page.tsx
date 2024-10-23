@@ -62,29 +62,7 @@ const OverviewPage: React.FC = () => {
 
         return acc;
       }, []); // Inizialmente l'accumulatore è un array vuoto
-      console.log(result);
-      setPoolPreset([
-        {
-          sharesAccepted: 16,
-          sharesRejected: 15,
-          stratumURL: "solo.ckpool.org",
-        } as DeviceInfo,
-        {
-          sharesAccepted: 16,
-          sharesRejected: 15,
-          stratumURL: "Lorem Ipsum 1",
-        } as DeviceInfo,
-        {
-          sharesAccepted: 16,
-          sharesRejected: 15,
-          stratumURL: "Lorem Ipsum 2",
-        } as DeviceInfo,
-        {
-          sharesAccepted: 16,
-          sharesRejected: 15,
-          stratumURL: "Lorem Ipsum 3",
-        } as DeviceInfo,
-      ]);
+      setPoolPreset(result);
     } catch (error) {
       console.error("Error discovering devices:", error);
     }

@@ -332,9 +332,8 @@ function ModalBodyContent({
                       onClick={searchDevice}
                       isLoading={isLoadingData}
                       disabled={areManuallySearchFieldsValid()}
-                    >
-                      Search
-                    </Button>
+                      label="Search"
+                    ></Button>
                   </Flex>
                   <Box w={"100%"}>
                     {discoveredDevices && (
@@ -590,17 +589,18 @@ function ModalBodyContent({
                             </Box>
                             <Flex align={"start"}>
                               <Flex gap={"1rem"}>
-                                <Button variant="secondary" onClick={onClose}>
-                                  Cancel
-                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  onClick={onClose}
+                                  label="Cancel"
+                                ></Button>
                                 <Button
                                   variant="primaryPurple"
                                   onClick={() => registerDevice()}
                                   rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
                                   disabled={discoveredDevices.length !== 1}
-                                >
-                                  Add device
-                                </Button>
+                                  label="Add device"
+                                ></Button>
                               </Flex>
                             </Flex>
                           </Flex>
@@ -941,9 +941,7 @@ function ModalBodyContent({
                         </Box>
                         <Flex align={"start"}>
                           <Flex gap={"1rem"}>
-                            <Button variant="secondary" onClick={onClose}>
-                              Cancel
-                            </Button>
+                            <Button variant="secondary" onClick={onClose} label="Cancel"></Button>
                             <Button
                               variant="primaryPurple"
                               onClick={() => registerDevices()}
@@ -951,13 +949,12 @@ function ModalBodyContent({
                               disabled={
                                 checkedFetchedItems.filter((el) => el === true).length === 0
                               }
-                            >
-                              Add{" "}
-                              {checkedFetchedItems.filter((el) => el === true).length > 0
-                                ? checkedFetchedItems.filter((el) => el === true).length
-                                : ""}{" "}
-                              device
-                            </Button>
+                              label={`Add ${
+                                checkedFetchedItems.filter((el) => el === true).length > 0
+                                  ? checkedFetchedItems.filter((el) => el === true).length
+                                  : ""
+                              } device`}
+                            ></Button>
                           </Flex>
                         </Flex>
                       </Box>

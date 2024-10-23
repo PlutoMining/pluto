@@ -176,10 +176,8 @@ const PresetsListingPage: React.FC = () => {
               <Button
                 variant="primaryPurple"
                 onClick={handleNewPreset()}
-                // disabled={presets.length >= maxNumberOfPresets}
-              >
-                Add a New Preset
-              </Button>
+                label="Add a New Preset"
+              ></Button>
             </Flex>
           )}
         </Flex>
@@ -210,9 +208,11 @@ const PresetsListingPage: React.FC = () => {
                   You can add up to 7 Preset.
                 </Text>
                 <Flex>
-                  <Button variant="primaryPurple" onClick={onNewPresetModalOpen}>
-                    Add a Pool Preset
-                  </Button>
+                  <Button
+                    variant="primaryPurple"
+                    onClick={onNewPresetModalOpen}
+                    label="Add a Pool Preset"
+                  ></Button>
                 </Flex>
               </VStack>
             )}

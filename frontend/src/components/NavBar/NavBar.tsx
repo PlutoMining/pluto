@@ -22,7 +22,6 @@ import { DiscordLogo, GitLabLogo, MetaLogo, RedditLogo } from "../icons/FooterIc
 export const NavBar = () => {
   const { isOpen, onOpen, onClose, onToggle } = useDisclosure();
   const pathname = usePathname();
-  console.log(pathname);
   const theme = useTheme();
 
   const [alert, setAlert] = useState<AlertInterface>();

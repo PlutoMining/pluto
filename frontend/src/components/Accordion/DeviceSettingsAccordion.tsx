@@ -7,10 +7,8 @@ import {
   Accordion as ChakraAccordion,
   AccordionItem as ChakraAccordionItem,
   Divider,
-  ExpandedIndex,
   Flex,
   Grid,
-  Heading,
   Modal,
   ModalBody,
   ModalContent,
@@ -273,9 +271,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
                 checkedFetchedItems.length <= 1 ||
                 checkedFetchedItems.filter((item) => item.value === true).length <= 1
               }
-            >
-              Select Pool Preset
-            </Button>
+              label="Select Pool Preset"
+            ></Button>
             <Button
               onClick={onOpenModal}
               variant="outlined"
@@ -284,9 +281,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
                 checkedFetchedItems.length <= 1 ||
                 checkedFetchedItems.filter((item) => item.value === true).length <= 1
               }
-            >
-              Restart selected devices
-            </Button>
+              label="Restart selected devices"
+            ></Button>
           </Flex>
         </Flex>
         <ChakraAccordion
@@ -382,12 +378,13 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             </Text>
           </ModalBody>
           <ModalFooter gap={"1.5rem"}>
-            <Button variant="secondary" onClick={onCloseModal}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primaryPurple" onClick={handleRestartSelected}>
-              Restart
-            </Button>
+            <Button variant="secondary" onClick={onCloseModal} label="Cancel"></Button>
+            <Button
+              type="submit"
+              variant="primaryPurple"
+              onClick={handleRestartSelected}
+              label="Restart"
+            ></Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -797,13 +794,30 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           <Flex alignItems={"center"} gap={"1rem"} flex={2}>
             <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
             <Flex alignItems={"center"}>
-              <Button
-                variant="text"
-                icon={<RestartIcon color={theme.colors.greyscale[500]} />}
+              <Flex
                 onClick={() => setIsRestartModalOpen(true)}
+                alignItems={"center"}
+                gap={"0.5rem"}
+                cursor="pointer"
+                background="none"
+                color={theme.colors.greyscale[900]}
+                fontSize={"13px"}
+                lineHeight="1.5rem"
+                fontWeight={400}
+                fontFamily={theme.fonts.heading}
+                padding={"0.5rem 1rem"}
+                borderRadius="6px"
+                _hover={{ backgroundColor: "#5C009940" }}
+                _focus={{
+                  bg: "#5C009966",
+                }}
+                _disabled={{
+                  opacity: 0.3,
+                }}
               >
+                <RestartIcon color={theme.colors.greyscale[900]} />
                 Restart
-              </Button>
+              </Flex>
             </Flex>
           </Flex>
         </Flex>
@@ -1061,9 +1075,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
             rightIcon={<ArrowIcon color="#fff" />}
             onClick={() => setIsSaveAndRestartModalOpen(true)}
             disabled={isPresetValid()}
-          >
-            Save
-          </Button>
+            label="Save"
+          ></Button>
         </Flex>
       </AccordionPanel>
       <RestartModal isOpen={isRestartModalOpen} onClose={handleRestartModalClose} />

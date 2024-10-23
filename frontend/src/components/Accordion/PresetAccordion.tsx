@@ -135,17 +135,15 @@ export const PresetAccordion: React.FC<PresetProps> = ({
           onClick={onDuplicate(preset.uuid)}
           icon={<DuplicateIcon h={"18"} color={theme.colors.greyscale[500]} />}
           disabled={isDuplicateDisabled}
-        >
-          Duplicate
-        </Button>
+          label="Duplicate"
+        ></Button>
         <Button
           variant="text"
           onClick={() => onDelete(preset.uuid)}
           disabled={preset.associatedDevices && preset.associatedDevices.length > 0}
           icon={<DeleteIcon h={"18"} color={theme.colors.greyscale[500]} />}
-        >
-          Delete
-        </Button>
+          label="Delete"
+        ></Button>
       </Flex>
     </AccordionItem>
   );

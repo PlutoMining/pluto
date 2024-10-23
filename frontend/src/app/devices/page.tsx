@@ -160,9 +160,8 @@ const DevicePage: React.FC = () => {
                 variant={"primaryBlack"}
                 onClick={onOpen}
                 rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
-              >
-                Add a new device
-              </Button>
+                label="Add a new device"
+              ></Button>
             </Flex>
             {registeredDevices ? (
               <>
@@ -200,9 +199,11 @@ const DevicePage: React.FC = () => {
                   <VStack>
                     <Text>Looks like you haven&lsquo;t added any devices yet!</Text>
                     <Text>To get started with monitoring, please add your first device.</Text>
-                    <Button variant={"primaryPurple"} onClick={onOpen}>
-                      Add a new device
-                    </Button>
+                    <Button
+                      variant={"primaryPurple"}
+                      onClick={onOpen}
+                      label="Add a new device"
+                    ></Button>
                   </VStack>
                 )}
               </>
