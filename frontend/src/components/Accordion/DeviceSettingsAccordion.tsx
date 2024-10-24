@@ -552,7 +552,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         return !value.includes(".");
       case "fanspeed":
         return validatePercentage(value);
-      case "workername":
+      case "workerName":
         const regex = /^[a-zA-Z0-9]+$/;
         return regex.test(value);
       default:
