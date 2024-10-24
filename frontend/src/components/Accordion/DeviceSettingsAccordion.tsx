@@ -343,16 +343,18 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
               borderTopWidth={index === 0 ? "none" : "1px"}
               borderBottomWidth={"0px!important"}
             >
-              <AccordionItem
-                key={device.mac}
-                device={device}
-                presets={presets}
-                setAlert={setAlert}
-                alert={alert}
-                onOpenAlert={onOpenAlert}
-                handleCheckboxChange={handleCheckboxChange}
-                checkedItems={checkedFetchedItems}
-              />
+              {device && presets && (
+                <AccordionItem
+                  key={device.mac}
+                  device={device}
+                  presets={presets}
+                  setAlert={setAlert}
+                  alert={alert}
+                  onOpenAlert={onOpenAlert}
+                  handleCheckboxChange={handleCheckboxChange}
+                  checkedItems={checkedFetchedItems}
+                />
+              )}
             </ChakraAccordionItem>
           ))}
         </ChakraAccordion>
@@ -439,11 +441,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const [isSaveAndRestartModalOpen, setIsSaveAndRestartModalOpen] = useState(false);
   const [isRestartModalOpen, setIsRestartModalOpen] = useState(false);
 
-  const [selectedPreset, setSelectedPreset] = useState<Preset | undefined>(
-    (presets.length > 0 && presets.find((d) => d.uuid === deviceInfo?.presetUuid)) ||
-      presets[0] ||
-      undefined
-  );
+  const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
+
   const [isPresetRadioButtonSelected, setIsPresetRadioButtonSelected] = useState<boolean>(
     deviceInfo?.presetUuid ? true : false
   );
@@ -456,16 +455,11 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const { isConnected, socket } = useSocket();
 
   useEffect(() => {
-    if (device.info.hostname === "mockaxe2") {
-      console.log(device);
+    if (presets && deviceInfo) {
+      let foundPreset = presets.find((p) => p.uuid === deviceInfo?.presetUuid);
+      setSelectedPreset(foundPreset || null);
     }
-  }, [deviceError]);
-
-  useEffect(() => {
-    if (presets && isAccordionOpen && isPresetRadioButtonSelected && !selectedPreset) {
-      setSelectedPreset(presets[0]);
-    }
-  }, [isAccordionOpen, presets, isPresetRadioButtonSelected, selectedPreset]);
+  }, [presets, deviceInfo]);
 
   useEffect(() => {
     if (device) {
@@ -488,7 +482,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const handleSaveOrSaveAndRestartDeviceSettings = useCallback(
     async (shouldRestart: boolean) => {
       try {
-        console.log(device);
         const deviceToUpdate = selectedPreset
           ? {
               ...device,
@@ -544,7 +537,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         onOpenAlert(); // Aprire l'alert per mostrare il messaggio di errore
       }
     },
-    [device, selectedPreset, stratumUser.workerName]
+    [device, stratumUser.workerName]
   );
 
   const validateFieldByName = useCallback((name: string, value: string) => {
@@ -650,7 +643,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
       } else if (value === RadioButtonStatus.PRESET && selectedPreset) {
         return {
           ...prevDevice,
-          presetUuid: selectedPreset?.uuid || presets[0].uuid,
+          presetUuid: selectedPreset?.uuid, // || presets[0].uuid,
           info: {
             ...prevDevice.info,
             stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
@@ -1020,51 +1013,53 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           </RadioGroup>
           {isPresetRadioButtonSelected ? (
             <Flex flexDir={"column"} gap={"1rem"}>
-              <Select
-                id={`${device.mac}-preset`}
-                label="Select preset"
-                name="preset"
-                onChange={(val) => handleChangeOnSelectPreset(val)}
-                value={device?.presetUuid || undefined}
-                optionValues={presets.map((preset) => ({
-                  value: preset.uuid,
-                  label: preset.name,
-                }))}
-              />
               {selectedPreset && (
-                <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
-                  <Flex flex={1}>
-                    <Input
-                      isDisabled={true}
-                      type="text"
-                      label="Stratum URL"
-                      name="stratumURL"
-                      id={`${selectedPreset.uuid}-stratumUrl`}
-                      defaultValue={selectedPreset.configuration.stratumURL}
-                    />
+                <>
+                  <Select
+                    id={`${device.mac}-preset`}
+                    label="Select preset"
+                    name="preset"
+                    onChange={(val) => handleChangeOnSelectPreset(val)}
+                    value={selectedPreset?.uuid || ""}
+                    optionValues={presets.map((preset) => ({
+                      value: preset.uuid,
+                      label: preset.name,
+                    }))}
+                  />
+                  <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
+                    <Flex flex={1}>
+                      <Input
+                        isDisabled={true}
+                        type="text"
+                        label="Stratum URL"
+                        name="stratumURL"
+                        id={`${selectedPreset.uuid}-stratumUrl`}
+                        defaultValue={selectedPreset.configuration.stratumURL}
+                      />
+                    </Flex>
+                    <Flex flex={1}>
+                      <Input
+                        isDisabled={true}
+                        type="number"
+                        label="Stratum Port"
+                        name="stratumPort"
+                        id={`${selectedPreset.uuid}-stratumPort`}
+                        defaultValue={selectedPreset.configuration.stratumPort}
+                      />
+                    </Flex>
+                    <Flex flex={2}>
+                      <Input
+                        isDisabled={true}
+                        type="text"
+                        label="Stratum User"
+                        name="stratumUser"
+                        id={`${selectedPreset.uuid}-stratumUser`}
+                        defaultValue={selectedPreset.configuration.stratumUser}
+                        rightAddon={`.${stratumUser.workerName}`}
+                      />
+                    </Flex>
                   </Flex>
-                  <Flex flex={1}>
-                    <Input
-                      isDisabled={true}
-                      type="number"
-                      label="Stratum Port"
-                      name="stratumPort"
-                      id={`${selectedPreset.uuid}-stratumPort`}
-                      defaultValue={selectedPreset.configuration.stratumPort}
-                    />
-                  </Flex>
-                  <Flex flex={2}>
-                    <Input
-                      isDisabled={true}
-                      type="text"
-                      label="Stratum User"
-                      name="stratumUser"
-                      id={`${selectedPreset.uuid}-stratumUser`}
-                      defaultValue={selectedPreset.configuration.stratumUser}
-                      rightAddon={`.${stratumUser.workerName}`}
-                    />
-                  </Flex>
-                </Flex>
+                </>
               )}
             </Flex>
           ) : (

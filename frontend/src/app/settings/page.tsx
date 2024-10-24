@@ -69,12 +69,6 @@ const SettingsPage = () => {
         if (imprintedDevices && imprintedDevices.length > 0) {
           await Promise.all(imprintedDevices.map((d) => handleRestart(d.mac)));
 
-          window.scrollTo({
-            top: 0,
-            left: 0,
-            behavior: "smooth",
-          });
-
           setAlert({
             status: AlertStatus.SUCCESS,
             title: "Restart Successful",
