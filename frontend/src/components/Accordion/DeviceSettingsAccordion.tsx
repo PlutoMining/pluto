@@ -45,7 +45,6 @@ import { SelectPresetModal } from "../Modal/SelectPresetModal";
 
 interface DeviceSettingsAccordionProps {
   devices: Device[] | undefined;
-  presets: Preset[];
   alert?: AlertInterface;
   setAlert: React.Dispatch<React.SetStateAction<AlertInterface | undefined>>;
   onOpenAlert: () => void;
@@ -73,7 +72,6 @@ interface StratumUser {
 
 export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = ({
   devices,
-  presets,
   alert,
   setAlert,
   onOpenAlert,
@@ -88,10 +86,30 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
     []
   );
 
+  const [presets, setPresets] = useState<Preset[]>([]);
+
   const [activeIndex, setActiveIndex] = useState<number | number[]>([]);
 
   const allChecked =
     checkedFetchedItems.length > 0 && checkedFetchedItems.every((item) => item.value);
+
+  useEffect(() => {
+    fetchPresets();
+  }, []);
+
+  const fetchPresets = async () => {
+    try {
+      const response = await fetch("/api/presets");
+      if (response.ok) {
+        const data: { data: Preset[] } = await response.json();
+        setPresets(data.data);
+      } else {
+        console.error("Failed to fetch presets");
+      }
+    } catch (error) {
+      console.error("Error fetching presets", error);
+    }
+  };
 
   const handleAllCheckbox = useCallback(
     (value: boolean) => {
@@ -407,12 +425,14 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     ...deviceInfo,
     info: deviceInfo.info,
   });
+
   const [deviceError, setDeviceError] = useState<any>({
     hostname: "",
+    workerName: "",
     stratumURL: "",
     stratumPort: "",
     stratumUser: "",
-    workerName: "",
+    stratumPassword: "",
     fanspeed: "",
   });
 
@@ -435,28 +455,40 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const theme = useTheme();
   const { isConnected, socket } = useSocket();
 
-  const parseString = (input: string) => {
-    const dotIndex = input.indexOf(".");
-
-    setStratumUser({
-      workerName: dotIndex === -1 ? device.info.hostname : input.substring(dotIndex + 1),
-      stratumUser: dotIndex === -1 ? input : input.substring(0, dotIndex),
-    });
-  };
+  useEffect(() => {
+    if (device.info.hostname === "mockaxe2") {
+      console.log(device);
+    }
+  }, [deviceError]);
 
   useEffect(() => {
     if (presets && isAccordionOpen && isPresetRadioButtonSelected && !selectedPreset) {
       setSelectedPreset(presets[0]);
     }
-
-    if (device) {
-      parseString(device.info.stratumUser);
-    }
   }, [isAccordionOpen, presets, isPresetRadioButtonSelected, selectedPreset]);
+
+  useEffect(() => {
+    if (device) {
+      const currentDeviceStratumUser = device.info.stratumUser;
+      const dotIndex = currentDeviceStratumUser.indexOf(".");
+
+      setStratumUser({
+        workerName:
+          dotIndex === -1 || currentDeviceStratumUser.substring(dotIndex + 1).length === 0
+            ? device.info.hostname
+            : currentDeviceStratumUser.substring(dotIndex + 1),
+        stratumUser:
+          dotIndex === -1
+            ? currentDeviceStratumUser
+            : currentDeviceStratumUser.substring(0, dotIndex),
+      });
+    }
+  }, []);
 
   const handleSaveOrSaveAndRestartDeviceSettings = useCallback(
     async (shouldRestart: boolean) => {
       try {
+        console.log(device);
         const deviceToUpdate = selectedPreset
           ? {
               ...device,
@@ -512,7 +544,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         onOpenAlert(); // Aprire l'alert per mostrare il messaggio di errore
       }
     },
-    [device, setAlert, onOpenAlert]
+    [device, selectedPreset, stratumUser.workerName]
   );
 
   const validateFieldByName = useCallback((name: string, value: string) => {
@@ -527,6 +559,9 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         return !value.includes(".");
       case "fanspeed":
         return validatePercentage(value);
+      case "workername":
+        const regex = /^[a-zA-Z0-9]+$/;
+        return regex.test(value);
       default:
         return true;
     }
@@ -588,13 +623,14 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
 
       validateField(name, value);
 
-      setStratumUser({ ...stratumUser, [name]: value });
+      const editedStratumUser = { ...stratumUser, [name]: value };
+      setStratumUser(editedStratumUser);
 
       const updatedDevice = {
         ...device,
         info: {
           ...device.info,
-          [name]: name === "workerName" ? value : `${value}.${stratumUser.workerName}`,
+          stratumUser: `${editedStratumUser.stratumUser}.${editedStratumUser.workerName}`,
         },
       };
 
@@ -603,32 +639,27 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     [device, stratumUser]
   );
 
-  const handleRadioButtonChange = useCallback(
-    (value: string) => {
-      setIsPresetRadioButtonSelected(value === RadioButtonStatus.PRESET ? true : false);
-
-      if (value === RadioButtonStatus.CUSTOM && device.presetUuid) {
-        const updatedDevice = {
-          ...device,
+  const handleRadioButtonChange = (value: string) => {
+    setIsPresetRadioButtonSelected(value === RadioButtonStatus.PRESET ? true : false);
+    setDevice((prevDevice) => {
+      if (value === RadioButtonStatus.CUSTOM && prevDevice.presetUuid) {
+        return {
+          ...prevDevice,
           presetUuid: null,
         };
-
-        setDevice(updatedDevice);
       } else if (value === RadioButtonStatus.PRESET && selectedPreset) {
-        const updatedDevice = {
-          ...device,
+        return {
+          ...prevDevice,
           presetUuid: selectedPreset?.uuid || presets[0].uuid,
           info: {
-            ...device.info,
+            ...prevDevice.info,
             stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
           },
         };
-
-        setDevice(updatedDevice);
       }
-    },
-    [selectedPreset, device, presets]
-  );
+      return prevDevice;
+    });
+  };
 
   const handleRestartDevice = useCallback(
     async (hasSaveBeenPerformedAlso: boolean) => {
@@ -741,18 +772,18 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     return false;
   };
 
-  const isPresetValid = useCallback(() => {
+  const isDeviceValid = useCallback(() => {
     return hasEmptyFields(device) || hasErrorFields(deviceError);
   }, [device, deviceError]);
 
-  const handleSaveAndRestartModalClose = useCallback(async (value: string) => {
+  const handleSaveAndRestartModalClose = async (value: string) => {
     // Funzione di callback per gestire il valore restituito dalla modale
     if (value !== "") {
       const shouldRestart = value === RadioButtonValues.SAVE_AND_RESTART ? true : false;
       await handleSaveOrSaveAndRestartDeviceSettings(shouldRestart);
     }
     setIsSaveAndRestartModalOpen(false);
-  }, []);
+  };
 
   const handleRestartModalClose = useCallback(async (value: boolean) => {
     // Funzione di callback per gestire il valore restituito dalla modale
@@ -766,6 +797,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     event.stopPropagation();
     setIsRestartModalOpen(true);
   };
+
   return (
     <>
       <AccordionButton p={0} justifyContent={"space-between"} _hover={{ backgroundColor: "none" }}>
@@ -994,7 +1026,10 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 name="preset"
                 onChange={(val) => handleChangeOnSelectPreset(val)}
                 value={device?.presetUuid || undefined}
-                optionValues={presets.map((preset) => ({ value: preset.uuid, label: preset.name }))}
+                optionValues={presets.map((preset) => ({
+                  value: preset.uuid,
+                  label: preset.name,
+                }))}
               />
               {selectedPreset && (
                 <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
@@ -1098,7 +1133,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
             variant="primaryPurple"
             rightIcon={<ArrowIcon color="#fff" />}
             onClick={() => setIsSaveAndRestartModalOpen(true)}
-            disabled={isPresetValid()}
+            disabled={isDeviceValid()}
             label="Save"
           ></Button>
         </Flex>
