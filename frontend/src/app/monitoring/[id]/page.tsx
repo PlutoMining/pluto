@@ -148,7 +148,9 @@ const MonitoringPage: React.FC = () => {
             >
               <Flex
                 flex={1}
-                flexDir={"column"}
+                flexDir={{ base: "row", tablet: "column" }}
+                justify={{ base: "space-between", tablet: "flex-start" }}
+                alignItems={{ base: "center", tablet: "flex-start" }}
                 gap={"0.5rem"}
                 borderRight={"1px solid rgba(#fff, 0.25)"}
                 borderRightWidth={{ base: 0, tablet: "1px" }}
@@ -160,28 +162,42 @@ const MonitoringPage: React.FC = () => {
                 <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
                   Hash Rate
                 </Heading>
-                <Heading color={theme.colors.greyscale[0]} fontSize={"2rem"} fontWeight={700}>
+                <Heading
+                  color={theme.colors.greyscale[0]}
+                  fontSize={{ base: "20px", tablet: "28px" }}
+                  fontWeight={700}
+                >
                   {device?.info.hashRate.toFixed(2)} GH/s
                 </Heading>
               </Flex>
 
               <Flex
-                flex={1}
                 flexDir={"column"}
-                gap={"0.5rem"}
                 borderRight={"1px solid rgba(#fff, 0.25)"}
                 borderRightWidth={{ base: 0, tablet: "1px" }}
                 borderColor={theme.colors.greyscale[0]}
                 marginRight={{ base: 0, tablet: "1rem" }}
                 borderBottomWidth={{ base: "1px", tablet: 0 }}
                 paddingBottom={{ base: "1rem", tablet: 0 }}
+                flex={1}
               >
-                <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
-                  Shares
-                </Heading>
-                <Heading color={theme.colors.greyscale[0]} fontSize={"2rem"} fontWeight={700}>
-                  {device?.info.sharesAccepted}
-                </Heading>
+                <Flex
+                  flexDir={{ base: "row", tablet: "column" }}
+                  justify={{ base: "space-between", tablet: "flex-start" }}
+                  alignItems={{ base: "center", tablet: "flex-start" }}
+                  gap={"0.5rem"}
+                >
+                  <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
+                    Shares
+                  </Heading>
+                  <Heading
+                    color={theme.colors.greyscale[0]}
+                    fontSize={{ base: "20px", tablet: "28px" }}
+                    fontWeight={700}
+                  >
+                    {device?.info.sharesAccepted}
+                  </Heading>
+                </Flex>
                 <Text
                   fontSize={"14px"}
                   fontWeight={400}
@@ -194,7 +210,9 @@ const MonitoringPage: React.FC = () => {
 
               <Flex
                 flex={1}
-                flexDir={"column"}
+                flexDir={{ base: "row", tablet: "column" }}
+                justify={{ base: "space-between", tablet: "flex-start" }}
+                alignItems={{ base: "center", tablet: "flex-start" }}
                 gap={"0.5rem"}
                 borderRight={"1px solid rgba(#fff, 0.25)"}
                 borderRightWidth={{ base: 0, tablet: "1px" }}
@@ -206,22 +224,37 @@ const MonitoringPage: React.FC = () => {
                 <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
                   Uptime
                 </Heading>
-                <Heading color={theme.colors.greyscale[0]} fontSize={"2rem"} fontWeight={700}>
+                <Heading
+                  color={theme.colors.greyscale[0]}
+                  fontSize={{ base: "20px", tablet: "28px" }}
+                  fontWeight={700}
+                >
                   {formatTime(device?.info.uptimeSeconds || 0)}
                 </Heading>
               </Flex>
 
-              <Flex flex={1} flexDir={"column"} gap={"0.5rem"}>
-                <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
-                  Best difficulty
-                </Heading>
-                <Flex gap={"0.5rem"} alignItems={"baseline"}>
-                  <Heading color={theme.colors.greyscale[0]} fontSize={"2rem"} fontWeight={700}>
-                    {device?.info.bestDiff}
+              <Flex flexDir={"column"} flex={1}>
+                <Flex
+                  gap={"0.5rem"}
+                  flexDir={{ base: "row", tablet: "column" }}
+                  justify={{ base: "space-between", tablet: "flex-start" }}
+                  alignItems={{ base: "center", tablet: "flex-start" }}
+                >
+                  <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
+                    Best difficulty
                   </Heading>
-                  <Heading color={theme.colors.greyscale[0]} fontSize={"1rem"}>
-                    all time best
-                  </Heading>
+                  <Flex gap={"0.5rem"} alignItems={"baseline"}>
+                    <Heading
+                      color={theme.colors.greyscale[0]}
+                      fontSize={{ base: "20px", tablet: "28px" }}
+                      fontWeight={700}
+                    >
+                      {device?.info.bestDiff}
+                    </Heading>
+                    <Heading color={theme.colors.greyscale[0]} fontSize={"1rem"}>
+                      all time best
+                    </Heading>
+                  </Flex>
                 </Flex>
                 <Text
                   fontSize={"14px"}

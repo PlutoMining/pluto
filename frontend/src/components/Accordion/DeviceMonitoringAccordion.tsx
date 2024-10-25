@@ -140,7 +140,10 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
             <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
           </Flex>
         </Flex>
-        <ChakraLink href={`monitoring/${device.info.hostname}`}>
+        <ChakraLink
+          href={`monitoring/${device.info.hostname}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           <ArrowLeftSmallIcon color="#000" />
         </ChakraLink>
       </AccordionButton>
