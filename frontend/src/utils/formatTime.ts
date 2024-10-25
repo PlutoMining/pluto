@@ -31,3 +31,36 @@ export function convertIsoTomMdDYy(isoDate: string): string {
   // Restituire la data formattata
   return `${month}/${day}/${year}`;
 }
+
+export function formatDetailedTime(seconds: number): string {
+  const timeUnits = {
+    y: Math.floor(seconds / (60 * 60 * 24 * 365)),
+    w: Math.floor((seconds % (60 * 60 * 24 * 365)) / (60 * 60 * 24 * 7)),
+    d: Math.floor((seconds % (60 * 60 * 24 * 7)) / (60 * 60 * 24)),
+    h: Math.floor((seconds % (60 * 60 * 24)) / (60 * 60)),
+    m: Math.floor((seconds % (60 * 60)) / 60),
+  };
+
+  const parts: string[] = [];
+
+  if (timeUnits.y > 0) {
+    parts.push(`${timeUnits.y}y`);
+    if (timeUnits.w > 0) parts.push(`${timeUnits.w}w`);
+    if (timeUnits.d > 0) parts.push(`${timeUnits.d}d`);
+  } else if (timeUnits.w > 0) {
+    parts.push(`${timeUnits.w}w`);
+    if (timeUnits.d > 0) parts.push(`${timeUnits.d}d`);
+    if (timeUnits.h > 0) parts.push(`${timeUnits.h}h`);
+  } else if (timeUnits.d > 0) {
+    parts.push(`${timeUnits.d}d`);
+    if (timeUnits.h > 0) parts.push(`${timeUnits.h}h`);
+    if (timeUnits.m > 0) parts.push(`${timeUnits.m}m`);
+  } else if (timeUnits.h > 0) {
+    parts.push(`${timeUnits.h}h`);
+    if (timeUnits.m > 0) parts.push(`${timeUnits.m}m`);
+  } else {
+    parts.push(`${timeUnits.m}m`);
+  }
+
+  return parts.slice(0, 3).join(" ");
+}

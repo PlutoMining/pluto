@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 import { DeviceStatusBadge } from "../Badge";
 import { ArrowLeftSmallIcon } from "../icons/ArrowIcon";
 import Link from "../Link/Link";
+import { formatDetailedTime } from "@/utils/formatTime";
 
 interface DeviceMonitoringAccordionProps {
   devices: Device[] | undefined;
@@ -101,27 +102,6 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
 
 const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
   const theme = useTheme();
-
-  const formatTime = (seconds: number) => {
-    const oneDayInSeconds = 86400;
-    const oneHourInSeconds = 3600;
-    const oneMinuteInSeconds = 60;
-
-    if (seconds === 0) {
-      return "-";
-    } else if (seconds >= oneDayInSeconds) {
-      const days = Math.floor(seconds / oneDayInSeconds);
-      return `${days} d`;
-    } else if (seconds >= oneHourInSeconds) {
-      const hours = Math.floor(seconds / oneHourInSeconds);
-      return `${hours} h`;
-    } else if (seconds >= oneMinuteInSeconds) {
-      const minutes = Math.floor(seconds / oneMinuteInSeconds);
-      return `${minutes} min`;
-    } else {
-      return "< 1 min"; // Se il tempo è inferiore a un minuto, mostra "meno di 1 minuto"
-    }
-  };
 
   return (
     <>
@@ -229,7 +209,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
               Uptime
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
-              {formatTime(device.info.uptimeSeconds)}
+              {formatDetailedTime(device.info.uptimeSeconds)}
             </Text>
           </Flex>
         </Flex>

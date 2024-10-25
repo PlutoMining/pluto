@@ -16,6 +16,7 @@ import {
   Container,
   Flex,
   Accordion as ChakraAccordion,
+  Tooltip,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { Dashboard, Device } from "@pluto/interfaces";
@@ -25,7 +26,7 @@ import { SearchInput } from "@/components/Input";
 import { DeviceMonitoringAccordion } from "@/components/Accordion";
 import { ArrowLeftSmallIcon } from "@/components/icons/ArrowIcon";
 import Link from "@/components/Link/Link";
-import { formatTime } from "@/utils/formatTime";
+import { formatDetailedTime, formatTime } from "@/utils/formatTime";
 
 const MonitoringTablePage: React.FC = () => {
   const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
@@ -155,88 +156,88 @@ const MonitoringTablePage: React.FC = () => {
                   <Tr>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"left"}
                       >
                         Name
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Hashrate
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Shares
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Power
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Temp
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Best difficulty
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Uptime
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Status
                       </Text>
@@ -247,34 +248,75 @@ const MonitoringTablePage: React.FC = () => {
                 <Tbody>
                   {registeredDevices.map((device) => (
                     <Tr key={device.mac}>
-                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"left"}
+                      >
                         {device.info.hostname}
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
                         {device.info.hashRate.toFixed(2)} GH/s
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
                         {device.info.sharesAccepted}|
                         <Text as={"label"} color={theme.colors.brand.secondary}>
                           {device.info.sharesRejected}
                         </Text>
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
                         {device.info.power.toFixed(2)} W
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
                         {device.info.temp} °C
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
                         {device.info.bestDiff}
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
-                        {formatTime(device.info.uptimeSeconds)}
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
+                        <Tooltip
+                          label={formatDetailedTime(device.info.uptimeSeconds)}
+                          aria-label="A tooltip"
+                        >
+                          {formatTime(device.info.uptimeSeconds)}
+                        </Tooltip>
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
                         <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]} fontSize={"14px"}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
                         <Link
                           href={`monitoring/${device.info.hostname}`}
                           label="Dashboard"
