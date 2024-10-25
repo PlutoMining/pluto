@@ -73,7 +73,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: whirmill/pluto-backend:0.5.0 # Docker image with specific version
+    image: whirmill/pluto-backend:0.5.1 # Docker image with specific version
     ports:
       - "7776:7776" # Map port 7776 on the host to port 7776 on the container
     pid: host
@@ -157,7 +157,7 @@ services:
     # build:
     #   context: grafana
     #   dockerfile: Dockerfile
-    image: whirmill/pluto-grafana:0.1.2
+    image: whirmill/pluto-grafana:0.1.3
     # ports:
     #   - "7778:3000"
     pid: host
