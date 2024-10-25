@@ -120,9 +120,9 @@ export const createMetricsForDevice = (hostname: string) => {
       if (data.coreVoltageActual) coreVoltageActualGauge.set(data.coreVoltageActual / 1000); // Assume voltage in millivolts
       if (data.frequency) frequencyGauge.set(data.frequency);
 
-      // efficiency (TH / Wh) = hashrate (GH) / (power (W) * uptimeSeconds (s) / 3600 )
+      // efficiency (GH / Wh) = hashrate (GH) / (power (W) * uptimeSeconds (s) / 3600 )
       if (data.efficiency)
-        efficiencyGauge.set(data.hashRate / 1000 / ((data.power * data.uptimeSeconds) / 3600));
+        efficiencyGauge.set(data.hashRate / ((data.power * data.uptimeSeconds) / 3600));
     },
     register: globalRegister, // Return the registry for further usage
   };
@@ -226,7 +226,7 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   const totalPower = devicesData.reduce((acc, device) => acc + device.power, 0);
   const sharesAccepted = devicesData.reduce((acc, device) => acc + device.sharesAccepted, 0);
   const sharesRejected = devicesData.reduce((acc, device) => acc + device.sharesRejected, 0);
-  const efficiency = totalHashrate / 1000 / totalPower;
+  const efficiency = totalHashrate / totalPower;
 
   // Aggiorna le metriche aggregate
   totalHardwareGauge.set(totalDevices);

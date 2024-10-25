@@ -84,7 +84,7 @@
                             "type": "linear"
                         },
                         "showPoints": "auto",
-                        "spanNulls": false,
+                        "spanNulls": true,
                         "stacking": {
                             "group": "A",
                             "mode": "none"
@@ -121,7 +121,7 @@
             "options": {
                 "legend": {
                     "calcs": [
-                        "lastNotNull"
+                        "last"
                     ],
                     "displayMode": "list",
                     "placement": "bottom",
@@ -189,7 +189,7 @@
                             "type": "linear"
                         },
                         "showPoints": "auto",
-                        "spanNulls": false,
+                        "spanNulls": true,
                         "stacking": {
                             "group": "A",
                             "mode": "none"
@@ -212,7 +212,7 @@
                             }
                         ]
                     },
-                    "unit": "H/kW"
+                    "unit": "GH/W"
                 },
                 "overrides": []
             },
@@ -256,7 +256,7 @@
                     "useBackend": false
                 }
             ],
-            "title": "Average Efficiency",
+            "title": "Efficiency",
             "type": "timeseries"
         },
         {
@@ -562,7 +562,7 @@
                             "type": "linear"
                         },
                         "showPoints": "auto",
-                        "spanNulls": false,
+                        "spanNulls": true,
                         "stacking": {
                             "group": "A",
                             "mode": "normal"
@@ -660,24 +660,6 @@
                     "range": true,
                     "refId": "A",
                     "useBackend": false
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
-                    },
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "average_hashrate",
-                    "format": "time_series",
-                    "fullMetaSearch": false,
-                    "hide": false,
-                    "includeNullMetadata": true,
-                    "instant": false,
-                    "legendFormat": "Average hashrate",
-                    "range": true,
-                    "refId": "B",
-                    "useBackend": false
                 }
             ],
             "title": "Timeline & Average Hashrate",
@@ -696,35 +678,23 @@
                     },
                     "mappings": [],
                     "thresholds": {
-                        "mode": "absolute",
+                        "mode": "percentage",
                         "steps": [
                             {
                                 "color": "#f0edf2",
                                 "value": null
                             },
                             {
-                                "color": "#ffd500",
-                                "value": 1
+                                "color": "#7b00cc",
+                                "value": 0
                             },
                             {
-                                "color": "#00cc14",
+                                "color": "#7b00cce6",
                                 "value": 2
                             },
                             {
                                 "color": "#7b00cc",
                                 "value": 5
-                            },
-                            {
-                                "color": "blue",
-                                "value": 10
-                            },
-                            {
-                                "color": "light-orange",
-                                "value": 20
-                            },
-                            {
-                                "color": "red",
-                                "value": 50
                             }
                         ]
                     }
@@ -781,7 +751,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "Overview",
-    "uid": "kv70kg7p4jpb0j",
+    "uid": "hbthfgg22ccj0l",
     "version": 1,
     "weekStart": ""
 }
