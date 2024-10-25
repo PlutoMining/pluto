@@ -487,26 +487,11 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const theme = useTheme();
   const { isConnected, socket } = useSocket();
 
-  // const updateStateTwice = (foundPreset: Preset) => {
-  //   setSelectedPreset(null);
-
-  //   return new Promise((resolve) => {
-  //     setTimeout(resolve, 500);
-  //   }).then(() => {
-  //     setSelectedPreset(foundPreset);
-  //   });
-  // };
-
   useEffect(() => {
     if (presets && deviceInfo) {
-      console.log("useeffect called", deviceInfo.info.hostname);
-
       let foundPreset = presets.find((p) => p.uuid === deviceInfo?.presetUuid);
 
       setSelectedPreset(foundPreset || presets[0]);
-      // updateStateTwice(foundPreset || presets[0]);
-
-      // console.log("Updated selectedPreset:", foundPreset || presets[0]);
     }
   }, [presets, deviceInfo]);
 

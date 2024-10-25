@@ -89,7 +89,7 @@ const OverviewPage: React.FC = () => {
             <Box backgroundColor={"#f2f3f3"} p={"1rem"} borderRadius={"1rem"} h={"100%"} w={"100%"}>
               <iframe
                 ref={iframeRef} // Applichiamo la ref qui
-                src={`${dashboardPublicUrl}&theme=light&transparent=true`}
+                src={`${dashboardPublicUrl}&theme=light&transparent=true&refresh=5s`}
                 style={{
                   width: "100%",
                   height: "100%",

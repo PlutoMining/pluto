@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 3,
+    "id": 5,
     "links": [],
     "panels": [
         {
@@ -55,7 +55,7 @@
                             "type": "linear"
                         },
                         "showPoints": "auto",
-                        "spanNulls": false,
+                        "spanNulls": true,
                         "stacking": {
                             "group": "A",
                             "mode": "none"
@@ -172,7 +172,7 @@
             "options": {
                 "legend": {
                     "calcs": [
-                        "lastNotNull"
+                        "last"
                     ],
                     "displayMode": "list",
                     "placement": "bottom",
@@ -206,8 +206,8 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "average_hashrate",
+                    "editorMode": "code",
+                    "expr": "avg_over_time(@@hostname@@_hashrate_ghs[$__interval])",
                     "fullMetaSearch": false,
                     "hide": false,
                     "includeNullMetadata": true,
@@ -254,7 +254,7 @@
                             "type": "linear"
                         },
                         "showPoints": "auto",
-                        "spanNulls": false,
+                        "spanNulls": true,
                         "stacking": {
                             "group": "A",
                             "mode": "none"
@@ -291,7 +291,7 @@
             "options": {
                 "legend": {
                     "calcs": [
-                        "lastNotNull"
+                        "last"
                     ],
                     "displayMode": "list",
                     "placement": "bottom",
@@ -332,7 +332,8 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "palette-classic"
+                        "fixedColor": "#7b00cc",
+                        "mode": "shades"
                     },
                     "custom": {
                         "axisBorderShow": false,
@@ -352,12 +353,12 @@
                         "insertNulls": false,
                         "lineInterpolation": "smooth",
                         "lineWidth": 2,
-                        "pointSize": 7,
+                        "pointSize": 6,
                         "scaleDistribution": {
                             "type": "linear"
                         },
                         "showPoints": "auto",
-                        "spanNulls": false,
+                        "spanNulls": true,
                         "stacking": {
                             "group": "A",
                             "mode": "none"
@@ -366,7 +367,6 @@
                             "mode": "off"
                         }
                     },
-                    "fieldMinMax": false,
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
@@ -374,62 +374,12 @@
                             {
                                 "color": "green",
                                 "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
                             }
                         ]
                     },
-                    "unit": "volt"
+                    "unit": "TH/Wh"
                 },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Core Actual Voltage"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#7b00cc",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Core Voltage"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#7bcffe",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Voltage"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#8f8d91",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
+                "overrides": []
             },
             "gridPos": {
                 "h": 8,
@@ -437,11 +387,11 @@
                 "x": 12,
                 "y": 11
             },
-            "id": 1,
+            "id": 17,
             "options": {
                 "legend": {
                     "calcs": [
-                        "lastNotNull"
+                        "last"
                     ],
                     "displayMode": "list",
                     "placement": "bottom",
@@ -460,52 +410,18 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "@@hostname@@_core_voltage_actual_volts",
+                    "editorMode": "code",
+                    "expr": "@@hostname@@_hashrate_ghs/1000/@@hostname@@_power_watts/@@hostname@@_uptime_seconds*3600",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
-                    "legendFormat": "Core Actual Voltage",
+                    "legendFormat": "Average efficiency",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
-                    },
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "@@hostname@@_core_voltage_volts",
-                    "fullMetaSearch": false,
-                    "hide": false,
-                    "includeNullMetadata": true,
-                    "instant": false,
-                    "legendFormat": "Core Voltage",
-                    "range": true,
-                    "refId": "B",
-                    "useBackend": false
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
-                    },
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "@@hostname@@_voltage_volts",
-                    "fullMetaSearch": false,
-                    "hide": false,
-                    "includeNullMetadata": true,
-                    "instant": false,
-                    "legendFormat": "Voltage",
-                    "range": true,
-                    "refId": "C",
-                    "useBackend": false
                 }
             ],
-            "title": "Core Voltage",
+            "title": "Efficiency",
             "type": "timeseries"
         },
         {
@@ -545,7 +461,7 @@
                 "x": 12,
                 "y": 19
             },
-            "id": 12,
+            "id": 19,
             "options": {
                 "code": {
                     "language": "plaintext",
@@ -556,7 +472,7 @@
                 "mode": "markdown"
             },
             "pluginVersion": "11.1.2",
-            "title": "Performance",
+            "title": "Core Voltage",
             "transparent": true,
             "type": "text"
         },
@@ -733,86 +649,11 @@
                 "type": "prometheus",
                 "uid": "PBFA97CFB590B2093"
             },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "fixedColor": "transparent",
-                        "mode": "fixed"
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "#f0edf2",
-                                "value": null
-                            }
-                        ]
-                    },
-                    "unit": "amp"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 2,
-                "w": 12,
-                "x": 12,
-                "y": 20
-            },
-            "id": 3,
-            "options": {
-                "colorMode": "background_solid",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "horizontal",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
-                "showPercentChange": false,
-                "text": {
-                    "titleSize": 15,
-                    "valueSize": 25
-                },
-                "textMode": "value_and_name",
-                "wideLayout": true
-            },
-            "pluginVersion": "11.1.2",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
-                    },
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "@@hostname@@_current_amps",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "instant": false,
-                    "legendFormat": "Core Current",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "type": "stat"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-            },
             "description": "",
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#7b00cc",
-                        "mode": "shades"
+                        "mode": "palette-classic"
                     },
                     "custom": {
                         "axisBorderShow": false,
@@ -832,12 +673,12 @@
                         "insertNulls": false,
                         "lineInterpolation": "smooth",
                         "lineWidth": 2,
-                        "pointSize": 6,
+                        "pointSize": 7,
                         "scaleDistribution": {
                             "type": "linear"
                         },
                         "showPoints": "auto",
-                        "spanNulls": false,
+                        "spanNulls": true,
                         "stacking": {
                             "group": "A",
                             "mode": "none"
@@ -846,6 +687,7 @@
                             "mode": "off"
                         }
                     },
+                    "fieldMinMax": false,
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
@@ -853,26 +695,78 @@
                             {
                                 "color": "green",
                                 "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
                             }
                         ]
                     },
-                    "unit": "H/kW"
+                    "unit": "volt"
                 },
-                "overrides": []
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Core Actual Voltage"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#7b00cc",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Core Voltage"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#7bcffe",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Voltage"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8f8d91",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
-                "h": 5,
+                "h": 7,
                 "w": 12,
                 "x": 12,
-                "y": 22
+                "y": 20
             },
-            "id": 17,
+            "id": 1,
             "options": {
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "hidden",
-                    "placement": "right",
-                    "showLegend": false
+                    "calcs": [
+                        "last"
+                    ],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
                 },
                 "tooltip": {
                     "mode": "single",
@@ -888,17 +782,50 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "@@hostname@@_efficiency",
+                    "expr": "@@hostname@@_core_voltage_actual_volts",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
-                    "legendFormat": "Average efficiency",
+                    "legendFormat": "Core Actual Voltage",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "@@hostname@@_core_voltage_volts",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "Core Voltage",
+                    "range": true,
+                    "refId": "B",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "@@hostname@@_voltage_volts",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "Voltage",
+                    "range": true,
+                    "refId": "C",
+                    "useBackend": false
                 }
             ],
-            "title": "Efficiency",
             "type": "timeseries"
         }
     ],
@@ -909,13 +836,13 @@
         "list": []
     },
     "time": {
-        "from": "now-5m",
+        "from": "now-1h",
         "to": "now"
     },
     "timepicker": {},
     "timezone": "browser",
     "title": "@@hostname@@",
-    "uid": "dq1xavt037wagn",
+    "uid": "quv7d11ic4aedv",
     "version": 1,
     "weekStart": ""
 }

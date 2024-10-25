@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 3,
+    "id": 1,
     "links": [],
     "panels": [
         {
@@ -775,13 +775,13 @@
         "list": []
     },
     "time": {
-        "from": "2024-10-16T14:48:50.509Z",
-        "to": "2024-10-16T14:49:22.595Z"
+        "from": "now-1h",
+        "to": "now"
     },
     "timepicker": {},
     "timezone": "browser",
     "title": "Overview",
-    "uid": "uuhirwaa8vl7v0",
+    "uid": "kv70kg7p4jpb0j",
     "version": 1,
     "weekStart": ""
 }

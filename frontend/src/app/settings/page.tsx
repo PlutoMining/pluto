@@ -126,9 +126,7 @@ const SettingsPage = () => {
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
       {alert && (
-        <Fade in={isOpenAlert}>
-          <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
-        </Fade>
+        <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
       )}
 
       <Box p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}>

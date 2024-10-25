@@ -63,6 +63,16 @@ const MonitoringPage: React.FC = () => {
       const device = imprintedDevices?.find((d) => d.info.hostname === id);
       setDevice(device);
 
+      if (device) {
+        console.log(
+          device.info.hashRate / ((device.info.power * device.info.uptimeSeconds) / 3600)
+        );
+
+        console.log(
+          device.info.hashRate / 1000 / ((device.info.power * device.info.uptimeSeconds) / 3600)
+        );
+      }
+
       if (device?.presetUuid) {
         const response = await fetch("/api/presets");
         if (response.ok) {
@@ -282,7 +292,7 @@ const MonitoringPage: React.FC = () => {
               >
                 <iframe
                   ref={iframeRef} // Applichiamo la ref qui
-                  src={`${dashboardPublicUrl}&kiosk=1&theme=light`}
+                  src={`${dashboardPublicUrl}&kiosk=1&theme=light&refresh=5s`}
                   style={{ width: "100%", height: "100%", border: "none" }}
                 ></iframe>
               </Box>
