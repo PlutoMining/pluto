@@ -1,4 +1,3 @@
-import { useSocket } from "@/providers/SocketProvider";
 import {
   AccordionButton,
   AccordionIcon,
@@ -13,12 +12,11 @@ import {
   useTheme,
 } from "@chakra-ui/react";
 import { Device } from "@pluto/interfaces";
-import { useEffect, useState } from "react";
 import { DeviceStatusBadge } from "../Badge";
 import { getMinerName } from "@/utils/minerMap";
 
 interface DeviceAccordionProps {
-  devices: Device[] | undefined;
+  devices: Device[];
   removeFunction: (deviceId: string) => void;
 }
 
@@ -27,49 +25,7 @@ interface AccordionItemProps {
   removeFunction: (deviceId: string) => void;
 }
 
-export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({
-  devices: deviceList,
-  removeFunction,
-}) => {
-  const [devices, setDevices] = useState<Device[]>(deviceList || []);
-
-  const { isConnected, socket } = useSocket();
-
-  useEffect(() => {
-    const listener = (e: Device) => {
-      setDevices((prevDevices) => {
-        if (!prevDevices) return prevDevices;
-
-        // Trova l'indice del dispositivo da aggiornare
-        const deviceIndex = prevDevices.findIndex((device) => device.mac === e.mac);
-
-        if (deviceIndex === -1) {
-          // Se il dispositivo non è trovato, opzionalmente puoi aggiungerlo
-          return prevDevices;
-        }
-
-        // Crea una nuova lista di dispositivi con l'aggiornamento
-        const updatedDevices = [...prevDevices];
-        updatedDevices[deviceIndex] = {
-          ...updatedDevices[deviceIndex], // Mantieni i dati esistenti
-          ...e, // Aggiorna con i nuovi dati da e
-        };
-
-        return updatedDevices;
-      });
-    };
-
-    if (isConnected) {
-      socket.on("stat_update", listener);
-      socket.on("error", listener);
-
-      return () => {
-        socket.off("stat_update", listener);
-        socket.off("error", listener);
-      };
-    }
-  }, [isConnected, socket, devices]);
-
+export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({ devices, removeFunction }) => {
   return (
     <>
       {devices && devices.length > 0 ? (

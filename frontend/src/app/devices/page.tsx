@@ -10,6 +10,7 @@ import { useSocket } from "@/providers/SocketProvider";
 import {
   Box,
   Container,
+  Fade,
   Flex,
   Heading,
   Text,
@@ -20,6 +21,8 @@ import {
 import { Device } from "@pluto/interfaces";
 import axios from "axios";
 import React, { useCallback, useEffect, useState } from "react";
+import { AlertInterface, AlertStatus } from "@/components/Alert/interfaces";
+import Alert from "@/components/Alert/Alert";
 
 const DevicePage: React.FC = () => {
   const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
@@ -31,6 +34,13 @@ const DevicePage: React.FC = () => {
   } = useDisclosure();
 
   const [deviceIdToRemove, setDeviceIdToRemove] = useState<string | null>(null); // Nuovo stato per memorizzare l'ID del dispositivo da eliminare
+
+  const [alert, setAlert] = useState<AlertInterface>();
+  const {
+    isOpen: isOpenAlert,
+    onOpen: onOpenAlert,
+    onClose: onCloseAlert,
+  } = useDisclosure({ defaultIsOpen: false });
 
   const theme = useTheme();
 
@@ -119,11 +129,27 @@ const DevicePage: React.FC = () => {
         // Ora esegui il delete del dispositivo
         await axios.delete(`/api/devices/imprint/${deviceIdToRemove}`);
 
+        setAlert({
+          status: AlertStatus.SUCCESS,
+          title: "Save Successful",
+          message: `Device ${
+            imprintedDevices!.filter((d) => d.mac === deviceIdToRemove)[0].mac
+          } has been correctly removed.`,
+        });
+
         setRegisteredDevices(imprintedDevices!.filter((d) => d.mac !== deviceIdToRemove));
+
+        onOpenAlert(); // Aprire l'alert per mostrare il messaggio di successo
 
         onConfirmationModalClose();
       } catch (error) {
         console.error("Error deleting device:", error);
+        setAlert({
+          status: AlertStatus.ERROR,
+          title: "Remove failed.",
+          message: `${error} Please try again.`,
+        });
+        onOpenAlert(); // Aprire l'alert per mostrare il messaggio di errore
       }
     }
   }, [deviceIdToRemove, registeredDevices]);
@@ -133,8 +159,18 @@ const DevicePage: React.FC = () => {
     await putListenDevices(imprintedDevices);
   };
 
+  const closeAlert = useCallback(() => {
+    setAlert(undefined);
+    onCloseAlert();
+  }, [onCloseAlert]);
+
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
+      {alert && (
+        <Fade in={isOpenAlert}>
+          <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
+        </Fade>
+      )}
       <Box p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}>
         <Flex as="form" flexDir={"column"} gap={"2rem"}>
           <VStack spacing={4} align="stretch">
