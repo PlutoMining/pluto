@@ -300,7 +300,7 @@ const MonitoringTablePage: React.FC = () => {
                       >
                         <Tooltip
                           label={formatDetailedTime(device.info.uptimeSeconds)}
-                          aria-label="A tooltip"
+                          aria-label={formatDetailedTime(device.info.uptimeSeconds)}
                         >
                           {formatTime(device.info.uptimeSeconds)}
                         </Tooltip>

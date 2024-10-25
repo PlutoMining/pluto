@@ -14,6 +14,7 @@ import {
 import { Device } from "@pluto/interfaces";
 import { DeviceStatusBadge } from "../Badge";
 import { getMinerName } from "@/utils/minerMap";
+import { formatDetailedTime } from "@/utils/formatTime";
 
 interface DeviceAccordionProps {
   devices: Device[];
@@ -186,7 +187,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
               Uptime
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
-              {formatTime(device.info.uptimeSeconds)}
+              {formatDetailedTime(device.info.uptimeSeconds)}
             </Text>
           </Flex>
         </Flex>

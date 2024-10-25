@@ -8,6 +8,7 @@ import {
   Text,
   Th,
   Thead,
+  Tooltip,
   Tr,
   useTheme,
 } from "@chakra-ui/react";
@@ -15,7 +16,7 @@ import { Device } from "@pluto/interfaces";
 import { DeviceStatusBadge } from "../Badge";
 import { getMinerName } from "@/utils/minerMap";
 import { DeleteIcon } from "../icons/DeleteIcon";
-import { convertIsoTomMdDYy, formatTime } from "@/utils/formatTime";
+import { convertIsoTomMdDYy, formatDetailedTime, formatTime } from "@/utils/formatTime";
 
 interface DeviceTableProps {
   devices: Device[];
@@ -227,7 +228,12 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 textAlign={"center"}
                 p={"12px 8px"}
               >
-                {formatTime(device.info.uptimeSeconds)}
+                <Tooltip
+                  label={formatDetailedTime(device.info.uptimeSeconds)}
+                  aria-label={formatDetailedTime(device.info.uptimeSeconds)}
+                >
+                  {formatTime(device.info.uptimeSeconds)}
+                </Tooltip>
               </Td>
               <Td
                 borderTopWidth={"1px"}
