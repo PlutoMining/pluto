@@ -19,7 +19,7 @@ export const Badge: React.FC<DeviceStatusBadgeProps> = ({ title, label, color, b
       borderRadius={"6px"}
       padding={"4px 6px"}
     >
-      <Flex gap={"0.25rem"} alignItems={"center"}>
+      <Flex gap={"0.25rem"} alignItems={"center"} wrap={"wrap"}>
         {title && (
           <Text fontWeight={500} textTransform={"capitalize"}>
             {title}
