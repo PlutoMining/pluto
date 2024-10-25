@@ -52,7 +52,7 @@ const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
       zIndex={10}
       maxWidth={theme.breakpoints["desktop"]}
       margin={"0 auto"}
-      p={"1rem 3rem"}
+      p={{ base: "1rem", tablet: "1rem 2rem" }}
     >
       <Box
         bg={theme.colors.greyscale[0]}
