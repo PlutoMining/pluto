@@ -33,6 +33,7 @@ export interface DeviceInfo {
   invertfanpolarity: number;
   autofanspeed: number;
   fanspeed: number;
+  efficiency: number;
 }
 
 export interface ExtendedDeviceInfo extends DeviceInfo {

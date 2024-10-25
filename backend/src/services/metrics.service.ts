@@ -98,6 +98,12 @@ export const createMetricsForDevice = (hostname: string) => {
     registers: [globalRegister],
   });
 
+  const efficiencyGauge = new client.Gauge({
+    name: `${prefix}efficiency`,
+    help: "Current device efficiency",
+    registers: [globalRegister],
+  });
+
   return {
     updatePrometheusMetrics: (data: DeviceInfo) => {
       if (data.power) powerGauge.set(data.power);
@@ -113,6 +119,7 @@ export const createMetricsForDevice = (hostname: string) => {
       if (data.coreVoltage) coreVoltageGauge.set(data.coreVoltage / 1000); // Assume voltage in millivolts
       if (data.coreVoltageActual) coreVoltageActualGauge.set(data.coreVoltageActual / 1000); // Assume voltage in millivolts
       if (data.frequency) frequencyGauge.set(data.frequency);
+      if (data.efficiency) efficiencyGauge.set(data.hashRate / (1000 * data.power));
     },
     register: globalRegister, // Return the registry for further usage
   };

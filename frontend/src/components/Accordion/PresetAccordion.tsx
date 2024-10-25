@@ -8,6 +8,7 @@ import {
   Heading,
   Text,
   useTheme,
+  Badge as ChakraBadge,
 } from "@chakra-ui/react";
 import { Preset } from "@pluto/interfaces";
 import { MouseEvent } from "react";
@@ -15,6 +16,7 @@ import { Badge } from "../Badge";
 import Button from "../Button/Button";
 import { DeleteIcon } from "../icons/DeleteIcon";
 import { DuplicateIcon } from "../icons/DuplicateIcon";
+import Link from "../Link/Link";
 
 interface PresetProps {
   preset: Preset;
@@ -64,7 +66,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
             Settings
           </Text>
 
-          <Flex gap={"1rem"}>
+          <Flex gap={"1rem"} flexWrap={"wrap"}>
             <Badge
               title={"Stratum URL:"}
               label={preset.configuration.stratumURL}
@@ -92,14 +94,31 @@ export const PresetAccordion: React.FC<PresetProps> = ({
           </Text>
 
           {preset.associatedDevices && preset.associatedDevices.length > 0 ? (
-            <Flex gap={"1rem"}>
+            <Flex gap={"1rem"} flexWrap={"wrap"}>
               {preset.associatedDevices?.map((device) => (
-                <Badge
+                <ChakraBadge
                   key={device.mac}
-                  label={device.ip}
-                  color={theme.colors.greyscale[0]}
-                  bg={theme.colors.brand.secondaryDark}
-                />
+                  bg={theme.colors.greyscale[200]}
+                  color={theme.colors.greyscale[500]}
+                  fontSize={"13px"}
+                  borderRadius={"6px"}
+                  padding={"4px 6px"}
+                >
+                  <Flex alignItems={"center"} gap={"0.25rem"} p={"5px 8px"} height={"21.5px"}>
+                    <Text fontWeight={500} textTransform={"capitalize"}>
+                      {device.info.hostname}
+                    </Text>
+                    {" - "}
+                    <Link
+                      href={device.ip}
+                      label={device.ip}
+                      fontFamily="body"
+                      fontWeight={400}
+                      textDecoration="underline"
+                      isDisabled={device.tracing ? false : true}
+                    />
+                  </Flex>
+                </ChakraBadge>
               ))}
             </Flex>
           ) : (
@@ -116,17 +135,15 @@ export const PresetAccordion: React.FC<PresetProps> = ({
           onClick={onDuplicate(preset.uuid)}
           icon={<DuplicateIcon h={"18"} color={theme.colors.greyscale[500]} />}
           disabled={isDuplicateDisabled}
-        >
-          Duplicate
-        </Button>
+          label="Duplicate"
+        ></Button>
         <Button
           variant="text"
           onClick={() => onDelete(preset.uuid)}
           disabled={preset.associatedDevices && preset.associatedDevices.length > 0}
           icon={<DeleteIcon h={"18"} color={theme.colors.greyscale[500]} />}
-        >
-          Delete
-        </Button>
+          label="Delete"
+        ></Button>
       </Flex>
     </AccordionItem>
   );

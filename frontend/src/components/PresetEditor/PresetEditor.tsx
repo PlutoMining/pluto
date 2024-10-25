@@ -90,7 +90,7 @@ export const PresetEditor = ({
         return validateDomain(value, { allowIP: true });
       case "stratumPort":
         const numericRegex = /^\d+$/;
-        return validateTCPPort(numericRegex.test(value) ? parseInt(value) : -1);
+        return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
       case "stratumUser":
         // return validateBitcoinAddress(value);
         return !value.includes(".");
@@ -128,7 +128,7 @@ export const PresetEditor = ({
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
 
     validateField(name, value);
 
@@ -153,11 +153,9 @@ export const PresetEditor = ({
     const updatedPreset = {
       ...preset,
       uuid,
-      configuration: {
-        ...preset.configuration,
-        stratumPort: parseInt(preset.configuration?.stratumPort),
-      },
     };
+
+    console.log(updatedPreset);
 
     const promise = axios.post("/api/presets", updatedPreset);
 
@@ -233,7 +231,7 @@ export const PresetEditor = ({
               <Text fontFamily={"heading"} fontWeight={500} fontSize={"14px"}>
                 Settings
               </Text>
-              <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8}>
+              <SimpleGrid columns={{ mobile: 1, tablet: 2, desktop: 4 }} spacing={8}>
                 <Input
                   label="Stratum URL"
                   name="stratumURL"

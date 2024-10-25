@@ -6,9 +6,11 @@ import Button from "@/components/Button/Button";
 import { CloseIcon } from "@/components/icons/CloseIcon";
 import { RestartIcon } from "@/components/icons/RestartIcon";
 import { SearchInput } from "@/components/Input";
+import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import {
   Box,
   Container,
+  Fade,
   Flex,
   Heading,
   Modal,
@@ -17,13 +19,12 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  Spinner,
   Text,
   useDisclosure,
   useTheme,
   VStack,
 } from "@chakra-ui/react";
-import { Device } from "@pluto/interfaces";
+import { Device, Preset } from "@pluto/interfaces";
 import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 
@@ -36,7 +37,6 @@ const SettingsPage = () => {
   } = useDisclosure({ defaultIsOpen: false });
 
   const [alert, setAlert] = useState<AlertInterface>();
-  const [isRestartAllLoading, setIsRestartAllLoading] = useState<boolean>(false);
 
   const theme = useTheme();
 
@@ -50,6 +50,7 @@ const SettingsPage = () => {
     try {
       const response = await axios.get<{ data: Device[] }>("/api/devices/imprint");
       const imprintedDevices = response.data.data;
+
       setImprintedDevices(imprintedDevices);
     } catch (error) {
       console.error("Error discovering devices:", error);
@@ -60,7 +61,6 @@ const SettingsPage = () => {
     async (e: { preventDefault: () => void }) => {
       e.preventDefault();
 
-      setIsRestartAllLoading(true);
       onCloseModal();
 
       const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
@@ -68,12 +68,6 @@ const SettingsPage = () => {
       try {
         if (imprintedDevices && imprintedDevices.length > 0) {
           await Promise.all(imprintedDevices.map((d) => handleRestart(d.mac)));
-
-          window.scrollTo({
-            top: 0,
-            left: 0,
-            behavior: "smooth",
-          });
 
           setAlert({
             status: AlertStatus.SUCCESS,
@@ -98,7 +92,6 @@ const SettingsPage = () => {
           errorMessage = error.response?.data?.message || error.message;
         }
 
-        setIsRestartAllLoading(false);
         setAlert({
           status: AlertStatus.ERROR,
           title: "Restart Failed",
@@ -125,47 +118,68 @@ const SettingsPage = () => {
     }
   };
 
-  const closeAlert = () => {
+  const closeAlert = useCallback(() => {
     setAlert(undefined);
     onCloseAlert();
-  };
+  }, [onCloseAlert]);
 
   return (
-    <Container flex="1" maxW="container.2xl" h={"100%"}>
+    <Container flex="1" maxW="container.desktop" h={"100%"}>
       {alert && (
-        <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
+        <Fade in={isOpenAlert}>
+          <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
+        </Fade>
       )}
 
-      <Box p={8}>
+      <Box p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}>
         <Flex as="form" flexDir={"column"} gap={"2rem"}>
           <VStack spacing={4} align="stretch">
-            <Flex justify={"space-between"} alignItems={"center"}>
-              <Heading>Device settings</Heading>
-              <Flex gap={"1rem"} alignItems={"center"}>
+            <Flex
+              justify={{
+                mobile: "flex-start",
+                tablet: "space-between",
+                desktop: "space-between",
+              }}
+              alignItems={{ mobile: "start", tablet: "center", desktop: "center" }}
+              flexDir={{ mobile: "column", tablet: "row", desktop: "row" }}
+              gap={"1rem"}
+            >
+              <Heading fontSize={"4xl"} fontWeight={400}>
+                Device settings
+              </Heading>
+              <Flex
+                gap={"1rem"}
+                alignItems={"center"}
+                w={{ mobile: "100%", tablet: "unset", desktop: "unset" }}
+              >
                 <SearchInput
                   label="Search device"
                   onChange={handleSearch}
                   placeholder="Search device"
                 />
-                <Button
-                  variant="text"
-                  icon={<RestartIcon color={theme.colors.greyscale[900]} />}
-                  onClick={onOpenModal}
-                >
-                  Restart all
-                </Button>
+                <Box>
+                  <Button
+                    variant="primaryBlack"
+                    icon={<RestartIcon color={theme.colors.greyscale[0]} />}
+                    onClick={onOpenModal}
+                    label="Restart all"
+                  ></Button>
+                </Box>
               </Flex>
             </Flex>
 
             {imprintedDevices ? (
               <DeviceSettingsAccordion
-                devices={imprintedDevices}
+                fetchedDevices={imprintedDevices}
                 setAlert={setAlert}
                 alert={alert}
                 onOpenAlert={onOpenAlert}
               />
             ) : (
-              <Spinner />
+              // <DeviceSettingsTable devices={imprintedDevices}></DeviceSettingsTable>
+              <Flex w={"100%"} alignItems={"center"} flexDirection={"column"} m={"2rem auto"}>
+                <CircularProgressWithDots />
+              </Flex>
             )}
           </VStack>
         </Flex>
@@ -188,22 +202,24 @@ const SettingsPage = () => {
           p={"1rem"}
           color={"greyscale.900"}
         >
-          <ModalHeader>Do you want to save the new settings and restart?</ModalHeader>
+          <ModalHeader>Restart all devices?</ModalHeader>
           <Box pos={"absolute"} top={"1rem"} right={"1rem"} cursor={"pointer"}>
             <CloseIcon color={"greyscale.900"} onClick={onCloseModal} />
           </Box>
           <ModalBody>
             <Text>
-              To apply the new settings, the miners needs to restart. Do you want to proceed?
+              Keep in mind that restarting the device may result in the loss of an entire block of
+              transactions.
             </Text>
           </ModalBody>
           <ModalFooter gap={"1.5rem"}>
-            <Button variant="secondary" onClick={onCloseModal}>
-              Go back
-            </Button>
-            <Button type="submit" variant="primaryPurple" onClick={handleRestartAll}>
-              Confirm
-            </Button>
+            <Button variant="secondary" onClick={onCloseModal} label="Cancel"></Button>
+            <Button
+              type="submit"
+              variant="primaryPurple"
+              onClick={handleRestartAll}
+              label="Restart"
+            ></Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

@@ -41,7 +41,7 @@ const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
       default:
         break;
     }
-  }, []);
+  }, [content.status]);
 
   return (
     <Box
@@ -50,9 +50,9 @@ const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
       left={0}
       right={0}
       zIndex={10}
-      maxWidth={theme.breakpoints["2xl"]}
+      maxWidth={theme.breakpoints["desktop"]}
       margin={"0 auto"}
-      p={"1rem 3rem"}
+      p={{ base: "1rem", tablet: "1rem 2rem" }}
     >
       <Box
         bg={theme.colors.greyscale[0]}

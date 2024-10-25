@@ -21,8 +21,29 @@ export default function RootLayout({
         <Providers>
           <Box height={"100vh"} bg={"brand.purple0"}>
             <NavBar />
-            <Box style={{ height: "calc(100vh - 7rem)" }}>
-              <Box h={"100%"} borderRadius={"1rem"} bg={"greyscale.100"} overflow={"scroll"}>
+            <Box
+              height={{
+                base: "calc(100vh - 7.25rem)",
+                tablet: "calc(100vh - 9.5rem)",
+                tabletL: "calc(100vh - 8.5rem)",
+              }}
+            >
+              <Box
+                h={"100%"}
+                borderRadius={"1rem"}
+                bg={"greyscale.100"}
+                overflowY={"scroll"}
+                sx={{
+                  scrollbarWidth: {
+                    tablet: "none",
+                  },
+                  "&::-webkit-scrollbar": {
+                    display: {
+                      tablet: "none",
+                    },
+                  },
+                }}
+              >
                 {children}
               </Box>
             </Box>

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import {
   Box,
   Heading,
@@ -13,13 +13,20 @@ import {
   Tr,
   useTheme,
   VStack,
-  Link,
   Container,
+  Flex,
+  Accordion as ChakraAccordion,
+  Tooltip,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { Dashboard, Device } from "@pluto/interfaces";
 import { useSocket } from "@/providers/SocketProvider";
 import { DeviceStatusBadge } from "@/components/Badge";
+import { SearchInput } from "@/components/Input";
+import { DeviceMonitoringAccordion } from "@/components/Accordion";
+import { ArrowLeftSmallIcon } from "@/components/icons/ArrowIcon";
+import Link from "@/components/Link/Link";
+import { formatDetailedTime, formatTime } from "@/utils/formatTime";
 
 const MonitoringTablePage: React.FC = () => {
   const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
@@ -90,31 +97,46 @@ const MonitoringTablePage: React.FC = () => {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const oneDayInSeconds = 86400;
-    const oneHourInSeconds = 3600;
-    const oneMinuteInSeconds = 60;
+  const handleSearch = async (e: ChangeEvent<HTMLInputElement>) => {
+    try {
+      const response = await axios.get<{ data: Device[] }>("/api/devices/imprint", {
+        params: {
+          q: e.target.value,
+        },
+      });
 
-    if (seconds === 0) {
-      return "-";
-    } else if (seconds >= oneDayInSeconds) {
-      const days = Math.floor(seconds / oneDayInSeconds);
-      return `${days} ${days > 1 ? "days" : "day"}`;
-    } else if (seconds >= oneHourInSeconds) {
-      const hours = Math.floor(seconds / oneHourInSeconds);
-      return `${hours} ${hours > 1 ? "hours" : "hour"}`;
-    } else if (seconds >= oneMinuteInSeconds) {
-      const minutes = Math.floor(seconds / oneMinuteInSeconds);
-      return `${minutes} ${minutes > 1 ? "minutes" : "minute"}`;
-    } else {
-      return "< 1 minute"; // Se il tempo è inferiore a un minuto, mostra "meno di 1 minuto"
+      const discoveredDevices = response.data;
+      setRegisteredDevices(discoveredDevices.data);
+    } catch (error) {
+      console.error("Error searching devices:", error);
     }
   };
 
   return (
-    <Container flex="1" maxW="container.2xl" h={"100%"}>
-      <VStack p={8} spacing={4} align="stretch">
-        <Heading>Dashboards</Heading>
+    <Container flex="1" maxW="container.desktop" h={"100%"}>
+      <VStack p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }} spacing={4} align="stretch">
+        <Flex
+          justify={{
+            base: "flex-start",
+            tablet: "space-between",
+            desktop: "space-between",
+          }}
+          alignItems={{ base: "start", tablet: "center", desktop: "center" }}
+          flexDir={{ base: "column", tablet: "row", desktop: "row" }}
+          gap={"1rem"}
+        >
+          <Heading fontSize={"4xl"} fontWeight={400}>
+            Monitoring
+          </Heading>
+          <Box w={{ base: "100%", tablet: "unset" }}>
+            <SearchInput
+              label="Search device"
+              onChange={handleSearch}
+              placeholder="Search device"
+            />
+          </Box>
+        </Flex>
+
         {registeredDevices ? (
           <Box
             backgroundColor={theme.colors.greyscale[0]}
@@ -127,94 +149,95 @@ const MonitoringTablePage: React.FC = () => {
               borderRadius={"1rem"}
               borderWidth={"1px"}
               borderColor={theme.colors.greyscale[200]}
+              display={{ base: "none", tablet: "block" }}
             >
               <Table variant="simple">
                 <Thead backgroundColor={theme.colors.greyscale[100]}>
                   <Tr>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"left"}
                       >
                         Name
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Hashrate
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Shares
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Power
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Temp
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Best difficulty
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Uptime
                       </Text>
                     </Th>
                     <Th borderColor={theme.colors.greyscale[100]}>
                       <Text
-                        pl={"0.5rem"}
                         color={theme.colors.greyscale[500]}
                         fontFamily={"heading"}
                         textTransform={"capitalize"}
                         fontSize={"12px"}
+                        textAlign={"center"}
                       >
                         Status
                       </Text>
@@ -225,43 +248,92 @@ const MonitoringTablePage: React.FC = () => {
                 <Tbody>
                   {registeredDevices.map((device) => (
                     <Tr key={device.mac}>
-                      <Td borderColor={theme.colors.greyscale[100]}>{device.info.hostname}</Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"left"}
+                      >
+                        {device.info.hostname}
+                      </Td>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
                         {device.info.hashRate.toFixed(2)} GH/s
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
                         {device.info.sharesAccepted}|
                         <Text as={"label"} color={theme.colors.brand.secondary}>
                           {device.info.sharesRejected}
                         </Text>
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
                         {device.info.power.toFixed(2)} W
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>{device.info.temp} °C</Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>{device.info.bestDiff}</Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>
-                        {formatTime(device.info.uptimeSeconds)}
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
+                        {device.info.temp} °C
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
+                        {device.info.bestDiff}
+                      </Td>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
+                        <Tooltip
+                          label={formatDetailedTime(device.info.uptimeSeconds)}
+                          aria-label={formatDetailedTime(device.info.uptimeSeconds)}
+                        >
+                          {formatTime(device.info.uptimeSeconds)}
+                        </Tooltip>
+                      </Td>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
                         <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
                       </Td>
-                      <Td borderColor={theme.colors.greyscale[100]}>
+                      <Td
+                        borderColor={theme.colors.greyscale[100]}
+                        fontSize={"14px"}
+                        textAlign={"center"}
+                      >
                         <Link
                           href={`monitoring/${device.info.hostname}`}
+                          label="Dashboard"
                           fontWeight={500}
-                          textDecoration={"underline"}
-                          opacity={!device?.publicDashboardUrl ? "0.3" : "1"}
-                          pointerEvents={!device?.publicDashboardUrl ? "none" : "auto"}
-                        >
-                          {device.info.hostname}
-                        </Link>
+                          rightIcon={<ArrowLeftSmallIcon color="#000" />}
+                          isDisabled={!device?.publicDashboardUrl}
+                        />
                       </Td>
                     </Tr>
                   ))}
                 </Tbody>
               </Table>
             </TableContainer>
+
+            <Box display={{ base: "block", tablet: "none" }}>
+              <DeviceMonitoringAccordion devices={registeredDevices}></DeviceMonitoringAccordion>
+            </Box>
           </Box>
         ) : (
           <Text>No dashboards available.</Text>

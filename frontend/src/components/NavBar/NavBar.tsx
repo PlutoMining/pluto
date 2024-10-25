@@ -1,24 +1,26 @@
 "use client";
-import { CloseIcon, HamburgerIcon } from "@chakra-ui/icons";
 import {
   Box,
   Flex,
   HStack,
-  IconButton,
+  Link,
+  Slide,
   Stack,
-  StackDivider,
+  Text,
   useDisclosure,
   useTheme,
 } from "@chakra-ui/react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Alert from "../Alert/Alert";
 import { AlertInterface } from "../Alert/interfaces";
 import { Logo } from "../icons/Logo";
+import { HamburgerIcon } from "../icons/HamburgerIcon";
+import { CrossIcon } from "../icons/CrossIcon";
+import { DiscordLogo, GitLabLogo, MetaLogo, RedditLogo } from "../icons/FooterIcons";
 
 export const NavBar = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onOpen, onClose, onToggle } = useDisclosure();
   const pathname = usePathname();
   const theme = useTheme();
 
@@ -64,12 +66,15 @@ export const NavBar = () => {
       component: (pathname?: string | null) => (
         <Box
           color={"#fff"}
-          fontWeight={pathname === "/monitoring" ? "700" : "400"}
+          fontWeight={
+            pathname === "/monitoring" || /^\/monitoring/.test(pathname || "") ? "700" : "400"
+          }
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
           _after={{
-            display: pathname === "/monitoring" ? "block" : "none",
+            display:
+              pathname === "/monitoring" || /^\/monitoring/.test(pathname || "") ? "block" : "none",
             content: '""',
             width: "32px",
             height: "2px",
@@ -170,17 +175,10 @@ export const NavBar = () => {
 
   return (
     <>
-      <Box position={"sticky"} top={0} zIndex={"10"} bg={"brand.purple0"}>
-        <Flex px={"2rem"} alignItems="center" maxW="container.2xl" margin={"0 auto"}>
+      <Box position={"sticky"} top={0} zIndex={isOpen ? "20" : "10"} bg={"brand.purple0"}>
+        <Flex px={"2rem"} alignItems="center" maxW="container.desktop" margin={"0 auto"}>
           <Flex h={16} alignItems="center" gap={"1rem"} justifyContent="space-between" w={"100%"}>
             <Flex alignItems="center" gap={"1rem"} justify={"space-between"} w={"100%"}>
-              <IconButton
-                size="md"
-                icon={isOpen ? <CloseIcon /> : <HamburgerIcon />}
-                aria-label="Open Menu"
-                display={{ md: "none" }}
-                onClick={isOpen ? onClose : onOpen}
-              />
               <Box marginRight={"auto"}>
                 <Link key={`md-nav-link-logo`} href={"/"}>
                   <Logo />
@@ -189,7 +187,7 @@ export const NavBar = () => {
               <HStack
                 as="nav"
                 spacing={4}
-                display={{ base: "none", md: "flex" }}
+                display={{ base: "none", tablet: "flex" }}
                 backgroundColor={"rgba(255, 255, 255, 0.10)"}
                 p={"0.75rem"}
                 borderRadius={"8px"}
@@ -200,9 +198,15 @@ export const NavBar = () => {
                 position={"absolute"}
                 left={"50%"}
                 transform={"translateX(-50%)"}
+                height={"34px"}
               >
                 {links.map((link) => (
-                  <Link key={`md-nav-link-${link.key}`} href={link.href}>
+                  <Link
+                    key={`md-nav-link-${link.key}`}
+                    href={link.href}
+                    whiteSpace={"nowrap"}
+                    _hover={{ textDecoration: "none" }}
+                  >
                     {link.component(pathname)}
                   </Link>
                 ))}
@@ -215,19 +219,85 @@ export const NavBar = () => {
                   Profile
                 </Text> */}
               </Flex>
+
+              <Box aria-label="Open Menu" display={{ tablet: "none" }} cursor={"pointer"}>
+                {isOpen ? (
+                  <CrossIcon w={"32"} h={"32"} onClick={onToggle} />
+                ) : (
+                  <HamburgerIcon w={"32"} h={"32"} onClick={onToggle} />
+                )}
+              </Box>
             </Flex>
           </Flex>
         </Flex>
         {isOpen ? (
-          <Box p={"2rem"} display={{ md: "none" }}>
-            <Stack divider={<StackDivider />} alignItems={"start"} as="nav" spacing={"2rem"}>
-              {links.map((link) => (
-                <Link key={`sm-nav-link-${link.key}`} href={link.href}>
-                  {link.component(pathname)}
-                </Link>
-              ))}
-            </Stack>
-          </Box>
+          <Slide
+            direction="right"
+            in={isOpen}
+            style={{
+              position: "fixed",
+              top: "4rem",
+              right: 0,
+              width: "calc(50% + 160px)",
+              maxWidth: "100vw",
+            }}
+          >
+            <Box
+              bgColor="rgb(71, 25, 107)"
+              borderTopLeftRadius="1rem"
+              borderBottomLeftRadius="1rem"
+              p={"2rem"}
+              display={{ tablet: "none" }}
+              height={{
+                base: "calc(100vh - 7.25rem)",
+                tablet: "calc(100vh - 9.5rem)",
+                tabletL: "calc(100vh - 8.5rem)",
+              }}
+            >
+              <Flex flexDir={"column"} justify={"space-between"} height={"100%"}>
+                <Stack alignItems={"start"} as="nav" spacing={"2rem"}>
+                  {links.map((link) => (
+                    <Link
+                      key={`sm-nav-link-${link.key}`}
+                      href={link.href}
+                      cursor={"pointer"}
+                      _hover={{ textDecoration: "none" }}
+                    >
+                      {link.component(pathname)}
+                    </Link>
+                  ))}
+                </Stack>
+                <Flex flexDir={"column"} gap={"1rem"}>
+                  <Flex
+                    gap={"1rem"}
+                    justify={"flex-start"}
+                    borderBottomWidth={"0.5px"}
+                    borderBottomColor={"greyscale.200"}
+                    paddingBottom={"1rem"}
+                  >
+                    {/* <MetaLogo /> */}
+                    <GitLabLogo url="https://gitlab.com/bemindinteractive/umbrel-community-app-store" />
+                    {/* <DiscordLogo /> */}
+                    {/* <RedditLogo /> */}
+                  </Flex>
+                  <Link
+                    fontFamily={"heading"}
+                    fontSize={"xs"}
+                    color={"greyscale.200"}
+                    fontWeight={500}
+                    textDecoration={"underline"}
+                  >
+                    Terms & Conditions
+                  </Link>
+
+                  <Text fontSize={"xs"} fontWeight={300} color={"greyscale.200"}>
+                    © 2024 Pluto. All rights reserved. This open-source application software is
+                    licensed under the Lorem Ipsum License.
+                  </Text>
+                </Flex>
+              </Flex>
+            </Box>
+          </Slide>
         ) : null}
       </Box>
       {alert && (

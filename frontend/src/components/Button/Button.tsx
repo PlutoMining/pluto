@@ -131,7 +131,6 @@ interface ButtonProps {
   disabled?: boolean;
   type?: "button" | "submit" | "reset" | undefined;
   isLoading?: boolean;
-  children?: ReactNode;
   borderColor?: string;
   icon?: ReactElement;
   rightIcon?: ReactElement;
@@ -140,7 +139,6 @@ interface ButtonProps {
 const Button: React.FC<ButtonProps> = ({
   variant,
   label,
-  children,
   onClick,
   disabled,
   type,
@@ -159,7 +157,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       fontFamily={"heading"}
     >
-      {children || label}
+      {label}
     </ChakraButton>
   );
 };

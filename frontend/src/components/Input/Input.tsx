@@ -12,7 +12,7 @@ import {
 import React from "react";
 
 interface InputProps {
-  label: string;
+  label?: string;
   name: string;
   id: string;
   type?: "text" | "number" | "password";
@@ -25,7 +25,7 @@ interface InputProps {
   onChange?: ChangeEventHandler<HTMLInputElement>;
   leftAddon?: string;
   rightAddon?: string;
-  disabled?: boolean;
+  isDisabled?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -41,15 +41,17 @@ export const Input: React.FC<InputProps> = ({
   error,
   leftAddon,
   rightAddon,
-  disabled,
+  isDisabled,
 }) => {
   const theme = useTheme();
 
   return (
     <FormControl>
-      <FormLabel htmlFor={name} fontWeight={400} fontSize={"13px"} margin={"4px 0"}>
-        {label}
-      </FormLabel>
+      {label && (
+        <FormLabel htmlFor={name} fontWeight={400} fontSize={"13px"} margin={"4px 0"}>
+          {label}
+        </FormLabel>
+      )}
       <InputGroup>
         {leftAddon && <InputLeftAddon>{leftAddon}</InputLeftAddon>}
         <ChakraInput
@@ -88,22 +90,27 @@ export const Input: React.FC<InputProps> = ({
             borderColor: theme.colors.alert.error,
             borderWidth: "1px",
           }}
-          disabled={disabled}
+          isDisabled={isDisabled}
         />
         {rightAddon && (
           <InputRightAddon
             padding="1rem"
             height="2rem"
-            borderColor={theme.colors.greyscale[500]}
+            borderColor={error ? theme.colors.alert.error : theme.colors.greyscale[500]}
             borderLeft={"none"}
             backgroundColor={theme.colors.greyscale[100]}
-            opacity={disabled ? 0.5 : 1}
+            opacity={isDisabled ? 0.5 : 1}
           >
             {rightAddon}
           </InputRightAddon>
         )}
       </InputGroup>
-      <FormLabel pt={"4px"} fontSize={"11px"} color={theme.colors.alert.error}>
+      <FormLabel
+        pt={"4px"}
+        fontSize={"11px"}
+        color={theme.colors.alert.error}
+        opacity={isDisabled ? 0.5 : 1}
+      >
         {error}
       </FormLabel>
     </FormControl>

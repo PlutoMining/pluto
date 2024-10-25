@@ -4,13 +4,13 @@ import Alert from "@/components/Alert/Alert";
 import { AlertInterface, AlertStatus } from "@/components/Alert/interfaces";
 import Button from "@/components/Button/Button";
 import { AddNewPresetModal, BasicModal } from "@/components/Modal";
+import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import {
   Accordion,
   Box,
   Container,
   Flex,
   Heading,
-  Spinner,
   Text,
   useDisclosure,
   VStack,
@@ -21,7 +21,6 @@ import React, { MouseEvent, useCallback, useEffect, useState } from "react";
 
 const PresetsListingPage: React.FC = () => {
   const [presets, setPresets] = useState<Preset[] | null>(null);
-  const maxNumberOfPresets = 7;
 
   const [alert, setAlert] = useState<AlertInterface>();
   const {
@@ -42,7 +41,7 @@ const PresetsListingPage: React.FC = () => {
     onClose: onDeletePresetModalClose,
   } = useDisclosure();
 
-  const [selectedPresetUuid, setSelectedPresetUuid] = useState<string>("");
+  const [selectedPresetUuid, setSelectedPresetUuid] = useState<string | undefined>(undefined);
 
   // Recupera i preset tramite le API
   const fetchPresets = async () => {
@@ -106,33 +105,37 @@ const PresetsListingPage: React.FC = () => {
   const handleDeletePreset = useCallback(async () => {
     onDeletePresetModalClose();
     closeAlert();
-    try {
-      await axios.delete(`/api/presets/${encodeURIComponent(selectedPresetUuid)}`);
 
-      const devices = presets?.find((p) => p.uuid === selectedPresetUuid)?.associatedDevices;
-      if (devices) {
-        devices.forEach(async (d) => {
-          await axios.patch(`/api/devices/imprint/${d.mac}`, {
-            device: {
-              presetUuid: null,
-            },
+    if (selectedPresetUuid) {
+      try {
+        await axios.delete(`/api/presets/${encodeURIComponent(selectedPresetUuid)}`);
+
+        const devices = presets?.find((p) => p.uuid === selectedPresetUuid)?.associatedDevices;
+        if (devices) {
+          devices.forEach(async (d) => {
+            await axios.patch(`/api/devices/imprint/${d.mac}`, {
+              device: {
+                ...d,
+                presetUuid: null,
+              },
+            });
           });
-        });
-      }
+        }
 
-      setAlert({
-        status: AlertStatus.SUCCESS,
-        title: "Preset Deleted Successfully!",
-        message: `Your preset has been correctly deleted.`,
-      });
-      onOpenAlert();
-    } catch (error) {
-      setAlert({
-        status: AlertStatus.ERROR,
-        title: "Error deleting preset",
-        message: `An error occured while deleting the preset.`,
-      });
-      onOpenAlert();
+        setAlert({
+          status: AlertStatus.SUCCESS,
+          title: "Preset Deleted Successfully!",
+          message: `Your preset has been correctly deleted.`,
+        });
+        onOpenAlert();
+      } catch (error) {
+        setAlert({
+          status: AlertStatus.ERROR,
+          title: "Error deleting preset",
+          message: `An error occured while deleting the preset.`,
+        });
+        onOpenAlert();
+      }
     }
   }, [closeAlert, onDeletePresetModalClose, onOpenAlert, selectedPresetUuid]);
 
@@ -141,7 +144,7 @@ const PresetsListingPage: React.FC = () => {
       e.preventDefault();
       if (presetUuid) {
         setSelectedPresetUuid(presetUuid);
-      }
+      } else setSelectedPresetUuid(undefined);
       onNewPresetModalOpen();
     },
     []
@@ -159,22 +162,22 @@ const PresetsListingPage: React.FC = () => {
   };
 
   return (
-    <Container flex="1" maxW="container.2xl" h={"100%"}>
+    <Container flex="1" maxW="container.desktop" h={"100%"}>
       {alert && (
         <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
       )}
-      <Box p={8}>
+      <Box p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}>
         <Flex justify="space-between" align="center" mb={8}>
-          <Heading>Pool Presets</Heading>
+          <Heading fontSize={"4xl"} fontWeight={400}>
+            Pool Presets
+          </Heading>
           {presets && presets.length > 0 && (
             <Flex>
               <Button
                 variant="primaryPurple"
                 onClick={handleNewPreset()}
-                disabled={presets.length >= maxNumberOfPresets}
-              >
-                Add a New Preset
-              </Button>
+                label="Add a New Preset"
+              ></Button>
             </Flex>
           )}
         </Flex>
@@ -190,7 +193,10 @@ const PresetsListingPage: React.FC = () => {
                     preset={preset}
                     onDuplicate={handleNewPreset}
                     onDelete={openDeleteConfirmationModal}
-                    isDuplicateDisabled={presets.length >= maxNumberOfPresets}
+                    isDuplicateDisabled={
+                      false
+                      // presets.length >= maxNumberOfPresets
+                    }
                   />
                 ))}
               </Accordion>
@@ -202,15 +208,19 @@ const PresetsListingPage: React.FC = () => {
                   You can add up to 7 Preset.
                 </Text>
                 <Flex>
-                  <Button variant="primaryPurple" onClick={onNewPresetModalOpen}>
-                    Add a Pool Preset
-                  </Button>
+                  <Button
+                    variant="primaryPurple"
+                    onClick={onNewPresetModalOpen}
+                    label="Add a Pool Preset"
+                  ></Button>
                 </Flex>
               </VStack>
             )}
           </>
         ) : (
-          <Spinner />
+          <Flex w={"100%"} alignItems={"center"} flexDirection={"column"} m={"2rem auto"}>
+            <CircularProgressWithDots />
+          </Flex>
         )}
 
         <AddNewPresetModal

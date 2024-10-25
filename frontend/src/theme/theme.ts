@@ -4,12 +4,12 @@ import { fonts, fontSizes, fontWeights } from "./typography";
 import { colors as themeColors } from "./colors";
 
 const breakpoints = {
-  base: "0em",
-  sm: "30em",
-  md: "48em",
-  lg: "62em",
-  xl: "80em",
-  "2xl": "96em",
+  base: "0",
+  mobile: "375px",
+  mobileL: "570px",
+  tablet: "834px",
+  tabletL: "935px",
+  desktop: "1440px",
 };
 
 const sizes = {
@@ -65,16 +65,9 @@ const sizes = {
   "8xl": "90rem",
   prose: "60ch",
   container: {
-    // sm: "640px",
-    // md: "768px",
-    // lg: "1024px",
-    // xl: "1280px",
-    // "2xl": "1440px",
-    sm: breakpoints.sm,
-    md: breakpoints.md,
-    lg: breakpoints.lg,
-    xl: breakpoints.xl,
-    "2xl": breakpoints["2xl"],
+    mobile: breakpoints.mobile,
+    tablet: breakpoints.tablet,
+    desktop: breakpoints.desktop,
   },
 };
 
