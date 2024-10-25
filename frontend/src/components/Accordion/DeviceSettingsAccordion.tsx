@@ -189,27 +189,35 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
     try {
       if (devices) {
         await Promise.all(
-          devices
-            .filter((device) =>
-              checkedFetchedItems.some((item) => item.mac === device.mac && item.value === true)
-            )
-            .map(async (d) => {
-              const {
-                data: { data: updatedDestDevice },
-              } = await handleSavePreset(d.mac, { ...d, presetUuid: uuid });
+          devices.reduce((acc: Array<Promise<any>>, device: Device) => {
+            const isChecked = checkedFetchedItems.some(
+              (item) => item.mac === device.mac && item.value === true
+            );
+            if (isChecked) {
+              acc.push(
+                (async () => {
+                  const {
+                    data: { data: updatedDestDevice },
+                  } = await handleSavePreset(device.mac, { ...device, presetUuid: uuid });
 
-              const {
-                data: { data: updatedDevice },
-              } = await handleChangesOnImprintedDevices(updatedDestDevice.mac, updatedDestDevice);
+                  const {
+                    data: { data: updatedDevice },
+                  } = await handleChangesOnImprintedDevices(
+                    updatedDestDevice.mac,
+                    updatedDestDevice
+                  );
 
-              if (updatedDevice) {
-                const updatedDevices = devices.map((d) => {
-                  return d.mac === updatedDevice.mac ? { ...d, ...updatedDevice } : d;
-                });
-                setDevices(updatedDevices);
-              }
-            })
-        );
+                  return updatedDevice ? { ...device, ...updatedDevice } : device;
+                })()
+              );
+            } else {
+              acc.push(Promise.resolve(device));
+            }
+            return acc;
+          }, [])
+        ).then((updatedDevices) => {
+          setDevices(updatedDevices);
+        });
       }
 
       setAlert({
@@ -474,15 +482,15 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const theme = useTheme();
   const { isConnected, socket } = useSocket();
 
-  const updateStateTwice = (foundPreset: Preset) => {
-    setSelectedPreset(null);
+  // const updateStateTwice = (foundPreset: Preset) => {
+  //   setSelectedPreset(null);
 
-    return new Promise((resolve) => {
-      setTimeout(resolve, 500);
-    }).then(() => {
-      setSelectedPreset(foundPreset);
-    });
-  };
+  //   return new Promise((resolve) => {
+  //     setTimeout(resolve, 500);
+  //   }).then(() => {
+  //     setSelectedPreset(foundPreset);
+  //   });
+  // };
 
   useEffect(() => {
     if (presets && deviceInfo) {
@@ -490,7 +498,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
 
       let foundPreset = presets.find((p) => p.uuid === deviceInfo?.presetUuid);
 
-      updateStateTwice(foundPreset || presets[0]);
+      setSelectedPreset(foundPreset || presets[0]);
+      // updateStateTwice(foundPreset || presets[0]);
 
       // console.log("Updated selectedPreset:", foundPreset || presets[0]);
     }
