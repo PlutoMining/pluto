@@ -294,7 +294,12 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
               onChange={(e) => handleAllCheckbox(e.target.checked)}
             ></Checkbox>
           </Flex>
-          <Flex alignItems={"center"} gap={"1rem"}>
+          <Flex
+            alignItems={"center"}
+            gap={"1rem"}
+            wrap={{ base: "wrap" }}
+            justify={{ base: "center", tablet: "flex-start" }}
+          >
             <Button
               onClick={() => setIsSelectPoolPresetModalOpen(true)}
               variant="text"

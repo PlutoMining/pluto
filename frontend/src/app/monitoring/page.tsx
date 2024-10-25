@@ -113,7 +113,7 @@ const MonitoringTablePage: React.FC = () => {
 
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
-      <VStack p={8} spacing={4} align="stretch">
+      <VStack p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }} spacing={4} align="stretch">
         <Flex
           justify={{
             base: "flex-start",

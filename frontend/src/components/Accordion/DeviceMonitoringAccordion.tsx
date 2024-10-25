@@ -126,28 +126,26 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
   return (
     <>
       <AccordionButton p={0} justifyContent={"space-between"} _hover={{ backgroundColor: "none" }}>
-        <Flex gap={"1rem"} alignItems={"center"}>
-          <AccordionIcon />
-          <Heading
-            fontSize={"sm"}
-            fontWeight={600}
-            textTransform={"capitalize"}
-            fontFamily={"body"}
-          >
-            {device.info.hostname}
-          </Heading>
-          <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
+        <Flex>
+          <Flex gap={"1rem"} alignItems={"center"}>
+            <AccordionIcon />
+            <Heading
+              fontSize={"sm"}
+              fontWeight={600}
+              textTransform={"capitalize"}
+              fontFamily={"body"}
+            >
+              {device.info.hostname}
+            </Heading>
+            <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
+          </Flex>
         </Flex>
-        {/* <Link
+        <ChakraLink
           href={`monitoring/${device.info.hostname}`}
-          fontWeight={500}
-          textDecoration={"underline"}
-          // opacity={!device?.publicDashboardUrl ? "0.3" : "1"}
-          // pointerEvents={!device?.publicDashboardUrl ? "none" : "auto"}
-          label="Dashboard"
-          rightIcon={<ArrowLeftSmallIcon color="#000" />}
-        ></Link> */}
-        <ChakraLink href={`monitoring/${device.info.hostname}`}></ChakraLink>
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ArrowLeftSmallIcon color="#000" />
+        </ChakraLink>
       </AccordionButton>
       <AccordionPanel p={0} pb={4} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
         <Divider mb={"1rem"} mt={"1rem"} borderColor={theme.colors.greyscale[200]} />

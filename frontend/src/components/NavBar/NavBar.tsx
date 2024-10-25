@@ -187,7 +187,7 @@ export const NavBar = () => {
               <HStack
                 as="nav"
                 spacing={4}
-                display={{ mobile: "none", tablet: "flex" }}
+                display={{ base: "none", tablet: "flex" }}
                 backgroundColor={"rgba(255, 255, 255, 0.10)"}
                 p={"0.75rem"}
                 borderRadius={"8px"}
