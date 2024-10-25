@@ -1,10 +1,5 @@
 import { ChangeEventHandler } from "react";
-import {
-  FormControl,
-  FormLabel,
-  Select as ChakraSelect,
-  useTheme,
-} from "@chakra-ui/react";
+import { FormControl, FormLabel, Select as ChakraSelect, useTheme } from "@chakra-ui/react";
 import React from "react";
 
 interface SelectProps {
@@ -12,6 +7,7 @@ interface SelectProps {
   name: string;
   id: string;
   value?: string | number;
+  defaultValue?: string | number;
   optionValues: Array<{ value: string | number; label: string }>;
   onChange: ChangeEventHandler<HTMLSelectElement>;
 }
@@ -21,6 +17,7 @@ export const Select: React.FC<SelectProps> = ({
   name,
   id,
   value,
+  defaultValue,
   optionValues,
   onChange,
 }) => {
@@ -28,16 +25,15 @@ export const Select: React.FC<SelectProps> = ({
 
   return (
     <FormControl>
-      <FormLabel 
-        htmlFor={name}
-        fontWeight={400}
-        fontSize={'13px'}
-      >{label}</FormLabel>
+      <FormLabel htmlFor={name} fontWeight={400} fontSize={"13px"}>
+        {label}
+      </FormLabel>
       <ChakraSelect
         id={id}
         name={name}
         onChange={onChange}
-        defaultValue={value}
+        value={value}
+        defaultValue={defaultValue}
         outline={"none"}
         backgroundColor={theme.colors.greyscale[0]}
         borderWidth={"1px"}

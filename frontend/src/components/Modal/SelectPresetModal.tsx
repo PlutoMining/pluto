@@ -104,7 +104,7 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
                 label="Select Pool Preset"
                 name="preset"
                 onChange={(val) => handleChangeOnSelectPreset(val)}
-                value={selectedPreset?.name || undefined}
+                defaultValue={selectedPreset?.name || undefined}
                 optionValues={presets.map((preset) => ({ value: preset.uuid, label: preset.name }))}
               />
 

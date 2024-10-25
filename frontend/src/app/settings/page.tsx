@@ -170,7 +170,7 @@ const SettingsPage = () => {
 
             {imprintedDevices ? (
               <DeviceSettingsAccordion
-                devices={imprintedDevices}
+                fetchedDevices={imprintedDevices}
                 setAlert={setAlert}
                 alert={alert}
                 onOpenAlert={onOpenAlert}

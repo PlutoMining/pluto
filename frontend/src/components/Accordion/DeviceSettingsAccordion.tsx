@@ -44,7 +44,7 @@ import { CloseIcon } from "../icons/CloseIcon";
 import { SelectPresetModal } from "../Modal/SelectPresetModal";
 
 interface DeviceSettingsAccordionProps {
-  devices: Device[] | undefined;
+  fetchedDevices: Device[] | undefined;
   alert?: AlertInterface;
   setAlert: React.Dispatch<React.SetStateAction<AlertInterface | undefined>>;
   onOpenAlert: () => void;
@@ -71,7 +71,7 @@ interface StratumUser {
 }
 
 export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = ({
-  devices,
+  fetchedDevices,
   alert,
   setAlert,
   onOpenAlert,
@@ -81,6 +81,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   const [isSelectPoolPresetOpen, setIsSelectPoolPresetModalOpen] = useState(false);
 
   const theme = useTheme();
+
+  const [devices, setDevices] = useState<Device[]>(fetchedDevices || []);
 
   const [checkedFetchedItems, setCheckedFetchedItems] = useState<{ mac: string; value: boolean }[]>(
     []
@@ -179,6 +181,11 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
     const handleSavePreset = (mac: string, d: Device) =>
       axios.patch<{ message: string; data: Device }>(`/api/devices/${mac}/system`, d);
 
+    const handleChangesOnImprintedDevices = (mac: string, d: Device) =>
+      axios.patch<{ message: string; data: Device }>(`/api/devices/imprint/${mac}`, {
+        device: d,
+      });
+
     try {
       if (devices) {
         await Promise.all(
@@ -186,8 +193,21 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             .filter((device) =>
               checkedFetchedItems.some((item) => item.mac === device.mac && item.value === true)
             )
-            .map((d) => {
-              handleSavePreset(d.mac, { ...d, presetUuid: uuid });
+            .map(async (d) => {
+              const {
+                data: { data: updatedDestDevice },
+              } = await handleSavePreset(d.mac, { ...d, presetUuid: uuid });
+
+              const {
+                data: { data: updatedDevice },
+              } = await handleChangesOnImprintedDevices(updatedDestDevice.mac, updatedDestDevice);
+
+              if (updatedDevice) {
+                const updatedDevices = devices.map((d) => {
+                  return d.mac === updatedDevice.mac ? { ...d, ...updatedDevice } : d;
+                });
+                setDevices(updatedDevices);
+              }
             })
         );
       }
@@ -199,7 +219,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
       });
       onOpenAlert(); // Aprire l'alert per mostrare il messaggio di successo
     } catch (error) {
-      let errorMessage = "An error occurred while saving the device settings.";
+      let errorMessage = "An error occurred while saving devices.";
 
       if (axios.isAxiosError(error)) {
         errorMessage = error.response?.data?.message || error.message;
@@ -454,10 +474,25 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const theme = useTheme();
   const { isConnected, socket } = useSocket();
 
+  const updateStateTwice = (foundPreset: Preset) => {
+    setSelectedPreset(null);
+
+    return new Promise((resolve) => {
+      setTimeout(resolve, 500);
+    }).then(() => {
+      setSelectedPreset(foundPreset);
+    });
+  };
+
   useEffect(() => {
     if (presets && deviceInfo) {
+      console.log("useeffect called", deviceInfo.info.hostname);
+
       let foundPreset = presets.find((p) => p.uuid === deviceInfo?.presetUuid);
-      setSelectedPreset(foundPreset || null);
+
+      updateStateTwice(foundPreset || presets[0]);
+
+      // console.log("Updated selectedPreset:", foundPreset || presets[0]);
     }
   }, [presets, deviceInfo]);
 
@@ -718,7 +753,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     const listener = (e: Device) => {
       setDevice((prevDevice) => {
         if (!prevDevice || prevDevice.mac !== e.mac) return prevDevice;
-
         // Solo aggiorna i dati se l'accordion è aperto
         if (isAccordionOpen) {
           return { ...prevDevice, tracing: e.tracing }; // Esegui solo l'aggiornamento della proprietà di interesse
@@ -910,7 +944,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 label="Frequency"
                 name="frequency"
                 onChange={handleChange}
-                value={device.info.frequency}
+                defaultValue={device.info.frequency}
                 optionValues={[
                   { value: 400, label: "400" },
                   { value: 425, label: "425" },
@@ -928,7 +962,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 label="Core Voltage"
                 name="coreVoltage"
                 onChange={handleChange}
-                value={device.info.coreVoltage}
+                defaultValue={device.info.coreVoltage}
                 optionValues={[
                   { value: 1100, label: "1100" },
                   { value: 1150, label: "1150" },
@@ -1020,7 +1054,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                     label="Select preset"
                     name="preset"
                     onChange={(val) => handleChangeOnSelectPreset(val)}
-                    value={selectedPreset?.uuid || ""}
+                    value={selectedPreset.uuid}
                     optionValues={presets.map((preset) => ({
                       value: preset.uuid,
                       label: preset.name,
