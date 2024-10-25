@@ -73,7 +73,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: whirmill/pluto-backend:0.4.8 # Docker image with specific version
+    image: whirmill/pluto-backend:0.5.0 # Docker image with specific version
     ports:
       - "7776:7776" # Map port 7776 on the host to port 7776 on the container
     pid: host
@@ -109,7 +109,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: whirmill/pluto-frontend:0.4.8 # Docker image with specific version
+    image: whirmill/pluto-frontend:0.5.0 # Docker image with specific version
     ports:
       - "7777:7777" # Map port 7777 on the host to port 7777 on the container
     # Use the host's PID namespace to allow container processes to be visible on the host
@@ -157,7 +157,7 @@ services:
     # build:
     #   context: grafana
     #   dockerfile: Dockerfile
-    image: whirmill/pluto-grafana:0.1.1
+    image: whirmill/pluto-grafana:0.1.2
     # ports:
     #   - "7778:3000"
     pid: host
