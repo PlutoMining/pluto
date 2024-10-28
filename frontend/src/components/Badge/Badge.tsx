@@ -2,13 +2,20 @@ import { Flex, Text, useTheme } from "@chakra-ui/react";
 import { Badge as ChakraBadge } from "@chakra-ui/react";
 
 export interface DeviceStatusBadgeProps {
-  title?: string;
-  label?: string;
+  title?: string | number;
+  label?: string | number;
   color?: string;
   bg?: string;
+  fontWeight?: string;
 }
 
-export const Badge: React.FC<DeviceStatusBadgeProps> = ({ title, label, color, bg }) => {
+export const Badge: React.FC<DeviceStatusBadgeProps> = ({
+  title,
+  label,
+  color,
+  bg,
+  fontWeight = 400,
+}) => {
   const theme = useTheme();
 
   return (
@@ -26,7 +33,7 @@ export const Badge: React.FC<DeviceStatusBadgeProps> = ({ title, label, color, b
           </Text>
         )}
         {label && (
-          <Text fontWeight={400} textTransform={"none"}>
+          <Text fontWeight={fontWeight} textTransform={"none"}>
             {label}
           </Text>
         )}

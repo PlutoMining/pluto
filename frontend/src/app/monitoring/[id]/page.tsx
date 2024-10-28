@@ -178,7 +178,7 @@ const MonitoringPage: React.FC = () => {
                 </Heading>
                 <Heading
                   color={theme.colors.greyscale[0]}
-                  fontSize={{ base: "20px", tablet: "28px" }}
+                  fontSize={{ base: "20px", tablet: "32px" }}
                   fontWeight={700}
                 >
                   {device?.info.hashRate.toFixed(2)} GH/s
@@ -206,20 +206,23 @@ const MonitoringPage: React.FC = () => {
                   </Heading>
                   <Heading
                     color={theme.colors.greyscale[0]}
-                    fontSize={{ base: "20px", tablet: "28px" }}
+                    fontSize={{ base: "20px", tablet: "32px" }}
                     fontWeight={700}
                   >
                     {device?.info.sharesAccepted}
                   </Heading>
                 </Flex>
-                <Text
-                  fontSize={"14px"}
-                  fontWeight={400}
-                  opacity={"0.75"}
-                  color={theme.colors.greyscale[0]}
-                >
-                  Rejected {device?.info.sharesRejected}
-                </Text>
+                <Flex alignItems={"center"} gap={"0.5rem"}>
+                  <Text fontSize={"14px"} fontWeight={400} color={theme.colors.greyscale[0]}>
+                    Rejected:
+                  </Text>
+                  <Badge
+                    bg="white"
+                    color={theme.colors.alert.error}
+                    label={device?.info.sharesRejected}
+                    fontWeight="700"
+                  ></Badge>
+                </Flex>
               </Flex>
 
               <Flex
@@ -240,7 +243,7 @@ const MonitoringPage: React.FC = () => {
                 </Heading>
                 <Heading
                   color={theme.colors.greyscale[0]}
-                  fontSize={{ base: "20px", tablet: "28px" }}
+                  fontSize={{ base: "20px", tablet: "32px" }}
                   fontWeight={700}
                 >
                   {formatTime(device?.info.uptimeSeconds || 0)}
@@ -270,12 +273,7 @@ const MonitoringPage: React.FC = () => {
                     </Heading>
                   </Flex>
                 </Flex>
-                <Text
-                  fontSize={"14px"}
-                  fontWeight={400}
-                  opacity={"0.75"}
-                  color={theme.colors.greyscale[0]}
-                >
+                <Text fontSize={"14px"} fontWeight={400} color={theme.colors.greyscale[0]}>
                   Since system boot: {device?.info.bestSessionDiff}
                 </Text>
               </Flex>
