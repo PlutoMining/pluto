@@ -298,7 +298,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             alignItems={"center"}
             gap={"1rem"}
             wrap={{ base: "wrap" }}
-            justify={{ base: "center", tablet: "flex-start" }}
+            justify={{ base: "flex-start", tablet: "flex-start" }}
+            w={{ base: "100%", tablet: "fit-content" }}
           >
             <Button
               onClick={() => setIsSelectPoolPresetModalOpen(true)}
