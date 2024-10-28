@@ -28,17 +28,22 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
 
   return (
     <TableContainer display={{ base: "none", tablet: "block" }}>
-      <Table variant="simple">
+      <Table
+        variant="simple"
+        // layout="fixed"
+      >
         <Thead>
           <Tr backgroundColor={theme.colors.greyscale[100]} h={"40px"}>
             <Th
               borderColor={theme.colors.greyscale[100]}
               p={"8px 0 8px 12px"}
+              // p={0}
               borderRadius={"7px 0 0 0"}
               color={theme.colors.greyscale[500]}
               fontFamily={"heading"}
               textTransform={"capitalize"}
               fontSize={"12px"}
+              maxW={"140px"}
             >
               Hostname
             </Th>
@@ -158,9 +163,8 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 borderColor={theme.colors.greyscale[100]}
                 fontSize={"14px"}
                 textAlign={"left"}
-                p={"12px 16px"}
-                // width={{ tablet: "200px", desktop: "unset" }}
-                maxWidth={{ tablet: "200px", desktop: "unset" }}
+                p={"12px"}
+                maxW={"140px"}
                 wordBreak={"normal"}
                 whiteSpace={"break-spaces"}
               >
@@ -172,7 +176,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 borderColor={theme.colors.greyscale[100]}
                 fontSize={"14px"}
                 textAlign={"center"}
-                p={"12px 8px"}
+                p={"12px"}
               >
                 {convertIsoTomMdDYy(device.createdAt!)}
               </Td>
@@ -182,7 +186,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 borderColor={theme.colors.greyscale[100]}
                 fontSize={"14px"}
                 textAlign={"center"}
-                p={"12px 8px"}
+                p={"12px"}
               >
                 {device.ip}
               </Td>
@@ -192,7 +196,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 borderColor={theme.colors.greyscale[100]}
                 fontSize={"14px"}
                 textAlign={"center"}
-                p={"12px 8px"}
+                p={"12px"}
               >
                 {device.mac}
               </Td>
@@ -202,7 +206,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 borderColor={theme.colors.greyscale[100]}
                 fontSize={"14px"}
                 textAlign={"center"}
-                p={"12px 8px"}
+                p={"12px"}
                 width={"125px"}
                 maxWidth={"125px"}
                 wordBreak={"normal"}
@@ -226,7 +230,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 borderColor={theme.colors.greyscale[100]}
                 fontSize={"14px"}
                 textAlign={"center"}
-                p={"12px 8px"}
+                p={"12px"}
               >
                 <Tooltip
                   label={formatDetailedTime(device.info.uptimeSeconds)}
@@ -241,7 +245,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 borderColor={theme.colors.greyscale[100]}
                 fontSize={"14px"}
                 textAlign={"center"}
-                p={"12px 8px"}
+                p={"12px"}
               >
                 {device.info.version}
               </Td>
@@ -250,7 +254,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 borderBottomWidth={0}
                 borderColor={theme.colors.greyscale[100]}
                 textAlign={"center"}
-                p={"12px 8px"}
+                p={"12px"}
               >
                 <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
               </Td>
@@ -258,27 +262,16 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 borderTopWidth={"1px"}
                 borderBottomWidth={0}
                 borderColor={theme.colors.greyscale[100]}
-                p={"12px 8px"}
+                p={"12px"}
                 maxWidth={{ tablet: "14px", desktop: "unset" }}
                 width={{ tablet: "14px", desktop: "unset" }}
               >
-                <Box display={{ tablet: "block", desktop: "none" }}>
-                  <DeleteIcon
-                    h={"20"}
-                    w={"14px"}
-                    color={"#000"}
-                    onClick={() => removeDeviceFunction(device.mac)}
-                  />
-                </Box>
-                <Link
-                  display={{ tablet: "none", desktop: "block" }}
+                <DeleteIcon
+                  h={"20"}
+                  w={"14px"}
+                  color={"#000"}
                   onClick={() => removeDeviceFunction(device.mac)}
-                  textDecoration={"underline"}
-                  fontSize={"14px"}
-                  fontWeight={500}
-                >
-                  Remove
-                </Link>
+                />
               </Td>
             </Tr>
           ))}
