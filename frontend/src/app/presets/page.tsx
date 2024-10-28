@@ -193,10 +193,7 @@ const PresetsListingPage: React.FC = () => {
                     preset={preset}
                     onDuplicate={handleNewPreset}
                     onDelete={openDeleteConfirmationModal}
-                    isDuplicateDisabled={
-                      false
-                      // presets.length >= maxNumberOfPresets
-                    }
+                    isDuplicateDisabled={false}
                   />
                 ))}
               </Accordion>
@@ -204,8 +201,6 @@ const PresetsListingPage: React.FC = () => {
               <VStack gap={"1rem"}>
                 <Text textAlign={"center"}>
                   Looks like you haven&apos;t added a preset pool yet!
-                  <br />
-                  You can add up to 7 Preset.
                 </Text>
                 <Flex>
                   <Button

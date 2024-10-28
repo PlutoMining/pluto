@@ -17,6 +17,7 @@ import Button from "../Button/Button";
 import { DeleteIcon } from "../icons/DeleteIcon";
 import { DuplicateIcon } from "../icons/DuplicateIcon";
 import Link from "../Link/Link";
+import { Input } from "../Input";
 
 interface PresetProps {
   preset: Preset;
@@ -61,30 +62,38 @@ export const PresetAccordion: React.FC<PresetProps> = ({
           <Text fontFamily={"heading"} fontWeight={"bold"} textTransform={"capitalize"}>
             Settings
           </Text>
-
-          <Flex gap={"1rem"} flexWrap={"wrap"}>
-            <Badge
-              title={"Stratum URL:"}
-              label={preset.configuration.stratumURL}
-              color={theme.colors.greyscale[200]}
-            ></Badge>
-            <Badge
-              title={"Stratum Port:"}
-              label={preset.configuration.stratumPort}
-              color={theme.colors.greyscale[200]}
-            ></Badge>
-            <Badge
-              title={"Stratum User:"}
-              label={preset.configuration.stratumUser}
-              color={theme.colors.greyscale[200]}
-            ></Badge>
-            {/* <Badge
-              title={"Stratum Password:"}
-              label={preset.configuration.stratumPassword}
-              color={theme.colors.greyscale[200]}
-            ></Badge> */}
+          <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
+            <Flex flex={1}>
+              <Input
+                isDisabled={true}
+                type="text"
+                label="Stratum URL"
+                name="stratumURL"
+                id={`${preset.uuid}-stratumUrl`}
+                defaultValue={preset.configuration.stratumURL}
+              />
+            </Flex>
+            <Flex flex={1}>
+              <Input
+                isDisabled={true}
+                type="number"
+                label="Stratum Port"
+                name="stratumPort"
+                id={`${preset.uuid}-stratumPort`}
+                defaultValue={preset.configuration.stratumPort}
+              />
+            </Flex>
+            <Flex flex={2}>
+              <Input
+                isDisabled={true}
+                type="text"
+                label="Stratum User"
+                name="stratumUser"
+                id={`${preset.uuid}-stratumUser`}
+                defaultValue={preset.configuration.stratumUser}
+              />
+            </Flex>
           </Flex>
-
           <Text fontFamily={"heading"} fontWeight={"bold"} textTransform={"capitalize"}>
             Associated Devices
           </Text>
