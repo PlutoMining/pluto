@@ -1,4 +1,5 @@
 "use client";
+import { restyleIframe } from "@/utils/iframe";
 import {
   Box,
   Container,
@@ -68,6 +69,8 @@ const OverviewPage: React.FC = () => {
     }
   };
 
+  const frameBgColor = "#fff";
+
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
       <Flex
@@ -86,8 +89,15 @@ const OverviewPage: React.FC = () => {
             p={"1rem"}
             h={{ base: "1555px", tablet: "970px" }}
           >
-            <Box backgroundColor={"#f2f3f3"} p={"1rem"} borderRadius={"1rem"} h={"100%"} w={"100%"}>
+            <Box
+              backgroundColor={frameBgColor}
+              p={"1rem"}
+              borderRadius={"1rem"}
+              h={"100%"}
+              w={"100%"}
+            >
               <iframe
+                onLoad={restyleIframe(iframeRef, frameBgColor)}
                 ref={iframeRef} // Applichiamo la ref qui
                 src={`${dashboardPublicUrl}&theme=light&transparent=true&refresh=5s`}
                 style={{

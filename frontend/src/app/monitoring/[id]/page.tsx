@@ -5,6 +5,7 @@ import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgr
 import { ArrowLeftIcon } from "@/components/icons/ArrowIcon";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatTime } from "@/utils/formatTime";
+import { restyleIframe } from "@/utils/iframe";
 import { Box, Container, Flex, Heading, Text, useTheme } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
 import axios from "axios";
@@ -89,6 +90,8 @@ const MonitoringPage: React.FC = () => {
       console.error("Error discovering devices:", error);
     }
   };
+
+  const frameBgColor = "#fff";
 
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
@@ -286,13 +289,14 @@ const MonitoringPage: React.FC = () => {
               h={{ base: "2135px", tablet: "1200px" }}
             >
               <Box
-                backgroundColor={"#f2f3f3"}
+                backgroundColor={frameBgColor}
                 p={"1rem"}
                 borderRadius={"1rem"}
                 h={"100%"}
                 w={"100%"}
               >
                 <iframe
+                  onLoad={restyleIframe(iframeRef, frameBgColor)}
                   ref={iframeRef} // Applichiamo la ref qui
                   src={`${dashboardPublicUrl}&kiosk=1&theme=light&refresh=5s`}
                   style={{ width: "100%", height: "100%", border: "none" }}
