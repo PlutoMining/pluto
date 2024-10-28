@@ -8,6 +8,7 @@ import {
   AccordionItem as ChakraAccordionItem,
   Divider,
   Flex,
+  FormControl,
   Grid,
   Modal,
   ModalBody,
@@ -22,6 +23,7 @@ import {
   useAccordionItemState,
   useDisclosure,
   useTheme,
+  Checkbox as ChakraCheckbox,
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
 import { validateDomain, validateTCPPort } from "@pluto/utils";
@@ -275,29 +277,61 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
       >
         <Flex
           justify={{ base: "flex-end", tablet: "space-between" }}
-          alignItems={{ base: "flex-end", tablet: "center" }}
+          alignItems={{ base: "flex-end", tablet: "flex-start" }}
           gap={"1rem"}
           flexDir={{ base: "column", tablet: "row" }}
         >
-          <Flex>
-            <Checkbox
-              id={"select-all-devices"}
+          <FormControl
+            as={Flex}
+            alignItems="center"
+            flexDir={{ base: "row", tablet: "row-reverse" }}
+            gap={"0.5rem"}
+            justify={{ base: "flex-end" }}
+          >
+            <Text fontSize={"13px"}>
+              {checkedFetchedItems.filter((d) => d.value === true).length === 0
+                ? `Select all`
+                : `${checkedFetchedItems.filter((d) => d.value === true).length} of ${
+                    devices?.length
+                  } selected`}
+            </Text>
+            <ChakraCheckbox
               name={"select-all-devices"}
-              label={
-                checkedFetchedItems.filter((d) => d.value === true).length === 0
-                  ? `Select all`
-                  : `${checkedFetchedItems.filter((d) => d.value === true).length} of ${
-                      devices?.length
-                    } selected`
-              }
-              isChecked={allChecked}
               onChange={(e) => handleAllCheckbox(e.target.checked)}
-            ></Checkbox>
-          </Flex>
+              id={"select-all-devices"}
+              size="lg"
+              isChecked={allChecked}
+              defaultChecked={allChecked}
+              borderColor={theme.colors.greyscale[900]}
+              borderRadius={"3px"}
+              sx={{
+                "& .chakra-checkbox__control": {
+                  bg: theme.colors.greyscale[0],
+                  borderColor: theme.colors.greyscale[900],
+                },
+                "& .chakra-checkbox__control[data-checked]": {
+                  bg: theme.colors.brand.secondary,
+                  borderColor: theme.colors.greyscale[900],
+                  color: theme.colors.greyscale[0],
+                  boxShadow: "inset 0 0 0 2px white",
+                },
+                "& .chakra-checkbox__control[data-checked]:hover": {
+                  bg: theme.colors.brand.secondary,
+                  borderColor: theme.colors.greyscale[900],
+                  color: theme.colors.greyscale[0],
+                  boxShadow: "inset 0 0 0 2px white",
+                },
+                "& .chakra-checkbox__control:focus": {
+                  borderColor: theme.colors.brand.primary,
+                  boxShadow: `0 0 0 2px ${theme.colors.brand.primary}`,
+                },
+              }}
+            />
+          </FormControl>
           <Flex
-            alignItems={"center"}
+            alignItems={{ base: "flex-start", tablet: "center" }}
             gap={"1rem"}
-            wrap={{ base: "wrap" }}
+            flexDir={{ base: "column", tablet: "row" }}
             justify={{ base: "flex-start", tablet: "flex-start" }}
             w={{ base: "100%", tablet: "fit-content" }}
           >
