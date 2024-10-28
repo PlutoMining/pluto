@@ -44,19 +44,15 @@ export const PresetAccordion: React.FC<PresetProps> = ({
       borderRadius={"1rem"}
       p={"1rem"}
     >
-      <AccordionButton p={0} justifyContent={"space-between"} _hover={{ backgroundColor: "none" }}>
+      <AccordionButton p={0} _hover={{ backgroundColor: "none" }}>
         <Flex gap={"0.5rem"} alignItems={"center"}>
+          <AccordionIcon />
           <Heading fontSize={"md"} fontWeight={500} color={theme.colors.greyscale[300]}>
             #{++index}
           </Heading>
           <Heading fontSize={"md"} fontWeight={"bold"}>
             {preset.name}
           </Heading>
-        </Flex>
-
-        <Flex alignItems={"center"} gap={"0.5rem"} fontFamily={"heading"}>
-          View more
-          <AccordionIcon />
         </Flex>
       </AccordionButton>
       <AccordionPanel p={0} pb={4} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
