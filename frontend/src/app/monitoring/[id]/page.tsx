@@ -1,5 +1,5 @@
 "use client";
-import { DeviceStatusBadge } from "@/components/Badge";
+import { Badge, DeviceStatusBadge } from "@/components/Badge";
 import Link from "@/components/Link/Link";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import { ArrowLeftIcon } from "@/components/icons/ArrowIcon";
@@ -120,7 +120,7 @@ const MonitoringPage: React.FC = () => {
               <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
                 <Flex
                   flex={1}
-                  backgroundColor={theme.colors.greyscale[100]}
+                  border={`1px solid ${theme.colors.greyscale[200]}`}
                   borderRadius={"0.5rem"}
                   justify={"space-between"}
                   p={"1rem"}
@@ -132,7 +132,7 @@ const MonitoringPage: React.FC = () => {
                 </Flex>
                 <Flex
                   flex={1}
-                  backgroundColor={theme.colors.greyscale[100]}
+                  border={`1px solid ${theme.colors.greyscale[200]}`}
                   borderRadius={"0.5rem"}
                   justify={"space-between"}
                   p={"1rem"}
@@ -141,7 +141,11 @@ const MonitoringPage: React.FC = () => {
                     Pool Info
                   </Heading>
                   <Heading fontSize={"1rem"} fontWeight={500}>
-                    {preset ? preset.name : "Custom"}
+                    <Badge
+                      color={theme.colors.greyscale[500]}
+                      bg={theme.colors.greyscale[200]}
+                      label={`${preset ? preset.name : "Custom"}`}
+                    ></Badge>
                   </Heading>
                 </Flex>
               </Flex>

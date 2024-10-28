@@ -5,12 +5,14 @@ export interface DeviceStatusBadgeProps {
   status?: "online" | "offline";
   label?: string;
   height?: string;
+  lineHeight?: string;
 }
 
 export const DeviceStatusBadge: React.FC<DeviceStatusBadgeProps> = ({
   status = "online",
   label,
   height = "20px",
+  lineHeight = "20px",
 }) => {
   const theme = useTheme();
 
@@ -22,7 +24,7 @@ export const DeviceStatusBadge: React.FC<DeviceStatusBadgeProps> = ({
       bg={bg}
       color={color}
       fontSize={"13px"}
-      lineHeight={"15.73px"}
+      lineHeight={lineHeight}
       borderRadius={"50px"}
       padding={"0 8px"}
       textTransform={"capitalize"}
