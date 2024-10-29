@@ -31,6 +31,7 @@ const MonitoringPage: React.FC = () => {
 
   useEffect(() => {
     const listener = (e: Device) => {
+      if (e.mac !== device?.mac) return;
       setDevice(e);
     };
 
@@ -63,16 +64,6 @@ const MonitoringPage: React.FC = () => {
 
       const device = imprintedDevices?.find((d) => d.info.hostname === id);
       setDevice(device);
-
-      if (device) {
-        console.log(
-          device.info.hashRate / ((device.info.power * device.info.uptimeSeconds) / 3600)
-        );
-
-        console.log(
-          device.info.hashRate / 1000 / ((device.info.power * device.info.uptimeSeconds) / 3600)
-        );
-      }
 
       if (device?.presetUuid) {
         const response = await fetch("/api/presets");
