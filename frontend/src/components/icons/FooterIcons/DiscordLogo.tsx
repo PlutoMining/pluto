@@ -3,11 +3,12 @@ import React from "react";
 
 interface DiscordLogoProps {
   url?: string;
+  target?: string;
 }
 
-export const DiscordLogo = ({ url }: DiscordLogoProps) => {
+export const DiscordLogo = ({ url, target }: DiscordLogoProps) => {
   return (
-    <Link href={url}>
+    <Link href={url} target={target}>
       <svg
         width="20"
         height="16"

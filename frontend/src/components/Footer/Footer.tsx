@@ -40,8 +40,11 @@ export const Footer = () => {
             </Text>
             <Flex gap={"0.5rem"}>
               {/* <MetaLogo /> */}
-              <GitLabLogo url="https://gitlab.com/bemindinteractive/umbrel-community-app-store" />
-              {/* <DiscordLogo /> */}
+              <GitLabLogo
+                url="https://gitlab.com/bemindinteractive/umbrel-community-app-store"
+                target="blank"
+              />
+              <DiscordLogo url="https://discord.gg/osmu" target="blank" />
               {/* <RedditLogo /> */}
             </Flex>
           </Flex>

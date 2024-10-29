@@ -276,8 +276,11 @@ export const NavBar = () => {
                     paddingBottom={"1rem"}
                   >
                     {/* <MetaLogo /> */}
-                    <GitLabLogo url="https://gitlab.com/bemindinteractive/umbrel-community-app-store" />
-                    {/* <DiscordLogo /> */}
+                    <GitLabLogo
+                      url="https://gitlab.com/bemindinteractive/umbrel-community-app-store"
+                      target="blank"
+                    />
+                    <DiscordLogo url="https://discord.gg/osmu" target="blank" />
                     {/* <RedditLogo /> */}
                   </Flex>
                   <Link

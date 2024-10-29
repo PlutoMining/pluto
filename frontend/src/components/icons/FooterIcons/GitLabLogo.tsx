@@ -3,11 +3,12 @@ import React from "react";
 
 interface GitLabLogoProps {
   url?: string;
+  target?: string;
 }
 
-export const GitLabLogo = ({ url }: GitLabLogoProps) => {
+export const GitLabLogo = ({ url, target }: GitLabLogoProps) => {
   return (
-    <Link href={url}>
+    <Link href={url} target={target}>
       <svg
         width="16"
         height="16"
