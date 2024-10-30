@@ -19,7 +19,7 @@ export default function RootLayout({
     <html lang="en">
       <body style={{ overflow: "initial" }}>
         <Providers>
-          <Box height={"100vh"} bg={"chakra-body-bg"}>
+          <Box height={"100vh"}>
             <NavBar />
             <Box
               height={{
@@ -30,8 +30,7 @@ export default function RootLayout({
             >
               <Box
                 h={"100%"}
-                borderRadius={"1rem"}
-                bg={"greyscale[100]"}
+                bg={"chakra-body-bg"}
                 overflowY={"scroll"}
                 sx={{
                   scrollbarWidth: {

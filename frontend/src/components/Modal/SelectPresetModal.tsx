@@ -111,7 +111,7 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
               <Flex gap={"1rem"}>
                 <Button variant="secondary" onClick={onClose} label="Cancel"></Button>
                 <Button
-                  variant="primaryPurple"
+                  variant="primary"
                   rightIcon={<ArrowIcon color="#fff" />}
                   onClick={handleAction}
                   label="Save"

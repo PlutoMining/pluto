@@ -4,7 +4,6 @@ import {
   FormLabel,
   Input as ChakraInput,
   useTheme,
-  FormErrorMessage,
   InputRightAddon,
   InputLeftAddon,
   InputGroup,
@@ -66,7 +65,7 @@ export const Input: React.FC<InputProps> = ({
           borderWidth={"1px"}
           borderColor={theme.colors.greyscale[500]}
           color={theme.colors.greyscale[900]}
-          borderRadius={"6px"}
+          borderRadius={0}
           padding={"1rem"}
           height={"32px"}
           boxShadow={"none"}

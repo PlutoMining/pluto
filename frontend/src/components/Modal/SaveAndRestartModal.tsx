@@ -85,7 +85,7 @@ export const SaveAndRestartModal: React.FC<SaveAndRestartModalProps> = ({ isOpen
           <ChakraButton variant="secondary" onClick={() => onClose("")}>
             Cancel
           </ChakraButton>
-          <ChakraButton variant="primaryPurple" onClick={handleAction}>
+          <ChakraButton variant="primary" onClick={handleAction}>
             Confirm
           </ChakraButton>
         </ModalFooter>

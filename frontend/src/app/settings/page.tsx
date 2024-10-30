@@ -214,7 +214,7 @@ const SettingsPage = () => {
             <Button variant="secondary" onClick={onCloseModal} label="Cancel"></Button>
             <Button
               type="submit"
-              variant="primaryPurple"
+              variant="primary"
               onClick={handleRestartAll}
               label="Restart"
             ></Button>

@@ -174,7 +174,7 @@ const PresetsListingPage: React.FC = () => {
           {presets && presets.length > 0 && (
             <Flex>
               <Button
-                variant="primaryPurple"
+                variant="primary"
                 onClick={handleNewPreset()}
                 label="Add a New Preset"
               ></Button>
@@ -204,7 +204,7 @@ const PresetsListingPage: React.FC = () => {
                 </Text>
                 <Flex>
                   <Button
-                    variant="primaryPurple"
+                    variant="primary"
                     onClick={onNewPresetModalOpen}
                     label="Add a Pool Preset"
                   ></Button>

@@ -219,11 +219,7 @@ const DevicePage: React.FC = () => {
                   <VStack>
                     <Text>Looks like you haven&lsquo;t added any devices yet!</Text>
                     <Text>To get started with monitoring, please add your first device.</Text>
-                    <Button
-                      variant={"primaryPurple"}
-                      onClick={onOpen}
-                      label="Add a new device"
-                    ></Button>
+                    <Button variant={"primary"} onClick={onOpen} label="Add a new device"></Button>
                   </VStack>
                 )}
               </>

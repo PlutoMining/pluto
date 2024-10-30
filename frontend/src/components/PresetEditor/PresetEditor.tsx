@@ -276,7 +276,7 @@ export const PresetEditor = ({
             {onCloseModal && <Button variant="secondary" onClick={onCloseModal} label="Cancel" />}
             <Button
               isLoading={isSaveLoading}
-              variant="primaryPurple"
+              variant="primary"
               onClick={handleSavePreset}
               label="Save Preset"
               disabled={isPresetValid()}

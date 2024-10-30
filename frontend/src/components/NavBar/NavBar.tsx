@@ -191,7 +191,14 @@ export const NavBar = () => {
 
   return (
     <>
-      <Box position={"sticky"} top={0} zIndex={isOpen ? "20" : "10"} bg={"header-bg"}>
+      <Box
+        position={"sticky"}
+        top={0}
+        zIndex={isOpen ? "20" : "10"}
+        bg={"header-bg"}
+        borderBottomWidth={"1px"}
+        borderBottomColor={"border-color"}
+      >
         <Flex px={"2rem"} alignItems="center" maxW="container.desktop" margin={"0 auto"}>
           <Flex h={16} alignItems="center" gap={"1rem"} justifyContent="space-between" w={"100%"}>
             <Flex alignItems="center" gap={"1rem"} justify={"space-between"} w={"100%"}>

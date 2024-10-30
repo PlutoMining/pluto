@@ -42,7 +42,7 @@ export const RestartModal: React.FC<RestartModalProps> = ({ isOpen, onClose }) =
           <ChakraButton variant="secondary" onClick={() => onClose(false)}>
             Cancel
           </ChakraButton>
-          <ChakraButton variant="primaryPurple" onClick={() => onClose(true)}>
+          <ChakraButton variant="primary" onClick={() => onClose(true)}>
             Restart
           </ChakraButton>
         </ModalFooter>

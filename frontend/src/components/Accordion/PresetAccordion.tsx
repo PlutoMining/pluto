@@ -39,10 +39,10 @@ export const PresetAccordion: React.FC<PresetProps> = ({
   return (
     <AccordionItem
       key={`preset-${preset.uuid}`} // Prefisso specifico per il preset
-      backgroundColor={"greyscale.0"}
+      backgroundColor={"item-bg"}
       borderWidth={"1px"}
-      borderColor={"greyscale.200"}
-      borderRadius={"1rem"}
+      borderColor={"border-color"}
+      // borderRadius={"1rem"}
       p={"1rem"}
     >
       <AccordionButton p={0} _hover={{ backgroundColor: "none" }}>
@@ -138,7 +138,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
         <Button
           variant="text"
           onClick={onDuplicate(preset.uuid)}
-          icon={<DuplicateIcon h={"18"} color={theme.colors.greyscale[500]} />}
+          icon={<DuplicateIcon h={"18"} />}
           disabled={isDuplicateDisabled}
           label="Duplicate"
         ></Button>
@@ -146,7 +146,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
           variant="text"
           onClick={() => onDelete(preset.uuid)}
           disabled={preset.associatedDevices && preset.associatedDevices.length > 0}
-          icon={<DeleteIcon h={"18"} color={theme.colors.greyscale[500]} />}
+          icon={<DeleteIcon h={"18"} />}
           label="Delete"
         ></Button>
       </Flex>

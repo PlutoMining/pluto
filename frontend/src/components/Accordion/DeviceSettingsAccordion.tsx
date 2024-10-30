@@ -458,7 +458,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             <Button variant="secondary" onClick={onCloseModal} label="Cancel"></Button>
             <Button
               type="submit"
-              variant="primaryPurple"
+              variant="primary"
               onClick={handleRestartSelected}
               label="Restart"
             ></Button>
@@ -1193,7 +1193,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         </Flex>
         <Flex justifyContent={"flex-start"}>
           <Button
-            variant="primaryPurple"
+            variant="primary"
             rightIcon={<ArrowIcon color="#fff" />}
             onClick={() => setIsSaveAndRestartModalOpen(true)}
             disabled={isDeviceValid()}

@@ -327,7 +327,7 @@ function ModalBodyContent({
 
                   <Flex align={"start"}>
                     <Button
-                      variant="primaryPurple"
+                      variant="primary"
                       onClick={searchDevice}
                       isLoading={isLoadingData}
                       disabled={areManuallySearchFieldsValid()}
@@ -594,7 +594,7 @@ function ModalBodyContent({
                                   label="Cancel"
                                 ></Button>
                                 <Button
-                                  variant="primaryPurple"
+                                  variant="primary"
                                   onClick={() => registerDevice()}
                                   rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
                                   disabled={discoveredDevices.length !== 1}
@@ -1010,7 +1010,7 @@ function ModalBodyContent({
                           <Flex gap={"1rem"}>
                             <Button variant="secondary" onClick={onClose} label="Cancel"></Button>
                             <Button
-                              variant="primaryPurple"
+                              variant="primary"
                               onClick={() => registerDevices()}
                               rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
                               disabled={

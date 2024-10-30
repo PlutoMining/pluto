@@ -56,11 +56,7 @@ export const BasicModal: React.FC<BasicModalProps> = ({
               label={secondaryActionLabel}
             ></Button>
           )}
-          <Button
-            variant="primaryPurple"
-            onClick={primaryAction}
-            label={primaryActionLabel}
-          ></Button>
+          <Button variant="primary" onClick={primaryAction} label={primaryActionLabel}></Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

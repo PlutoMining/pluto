@@ -27,25 +27,24 @@ const primaryBlack = defineStyle((styles) => {
   };
 });
 
-const primaryPurple = defineStyle((styles) => {
+const primary = defineStyle((styles) => {
   return {
     fontFamily: styles.theme.fonts.heading,
-    background: styles.theme.colors.brand.secondary,
-    color: styles.theme.colors.greyscale[100],
-    borderRadius: "6px",
-    // width: { base: "100%" },
+    background: "cta-bg",
+    color: "cta-color",
+    borderRadius: 0,
     fontWeight: 400,
     padding: "6px 12px",
     fontSize: "13px",
     textAlign: "center",
     _hover: {
-      bg: styles.theme.colors.brand.secondaryLight,
+      bg: "cta-bg-hover",
     },
     _focus: {
-      bg: "#5C0099",
+      bg: "cta-bg-focus",
     },
     _disabled: {
-      bg: styles.theme.colors.brand.secondary,
+      bg: "cta-bg-disabled",
       opacity: 0.2,
       pointerEvents: "none",
     },
@@ -100,7 +99,7 @@ const outlined = defineStyle((styles) => {
 const text = defineStyle((styles) => {
   return {
     background: "none",
-    color: styles.theme.colors.greyscale[900],
+    color: styles.theme.semanticTokens.colors["body-text"],
     fontSize: "13px",
     lineHeight: "1.5rem",
     fontWeight: 400,
@@ -121,11 +120,11 @@ const text = defineStyle((styles) => {
 });
 
 export const buttonTheme = defineStyleConfig({
-  variants: { primaryBlack, primaryPurple, text, outlined, secondary },
+  variants: { primaryBlack, primary, text, outlined, secondary },
 });
 
 interface ButtonProps {
-  variant: "text" | "primaryBlack" | "primaryPurple" | "outlined" | "secondary";
+  variant: "text" | "primaryBlack" | "primary" | "outlined" | "secondary";
   label?: string;
   onClick: MouseEventHandler<HTMLButtonElement>;
   disabled?: boolean;

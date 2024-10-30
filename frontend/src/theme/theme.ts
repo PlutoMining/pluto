@@ -82,6 +82,42 @@ const theme = extendTheme({
         _light: lightThemeColors.brand.purple0,
         _dark: darkThemeColors.greyscale[900],
       },
+      "border-color": {
+        _light: lightThemeColors.greyscale[200],
+        _dark: darkThemeColors.greyscale[500],
+      },
+      "item-bg": {
+        _light: lightThemeColors.greyscale[0],
+        _dark: darkThemeColors.greyscale[900],
+      },
+      "cta-icon-color": {
+        _light: lightThemeColors.greyscale[500],
+        _dark: darkThemeColors.primary[500],
+      },
+      "cta-bg": {
+        _light: lightThemeColors.brand.secondary,
+        _dark: darkThemeColors.primary[500],
+      },
+      "cta-bg-hover": {
+        _light: lightThemeColors.brand.secondaryLight,
+        _dark: darkThemeColors.primary[600],
+      },
+      "cta-bg-focus": {
+        _light: "#5C0099",
+        _dark: darkThemeColors.primary[700],
+      },
+      "cta-bg-disabled": {
+        _light: lightThemeColors.brand.secondary,
+        _dark: darkThemeColors.primary[500],
+      },
+      "cta-color": {
+        _light: lightThemeColors.greyscale[100],
+        _dark: darkThemeColors.greyscale[900],
+      },
+      "body-text": {
+        _light: lightThemeColors.greyscale[900],
+        _dark: lightThemeColors.greyscale[0],
+      },
       "chakra-body-text": {
         _light: lightThemeColors.greyscale[900],
         _dark: lightThemeColors.greyscale[100],
