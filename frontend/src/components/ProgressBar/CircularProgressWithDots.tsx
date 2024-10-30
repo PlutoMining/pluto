@@ -1,40 +1,40 @@
 import React from "react";
-import { Flex, Box, usePrefersReducedMotion, keyframes } from "@chakra-ui/react";
-
-const purple = "#7B00CC";
-
-const styles = {
-  dot1: {
-    position: "relative",
-    width: "24px",
-    height: "24px",
-    borderRadius: "50px",
-    backgroundColor: purple,
-    color: purple,
-    display: "inline-block",
-    margin: "0 2px",
-  },
-  dot2: {
-    width: "24px",
-    height: "24px",
-    borderRadius: "50px",
-    backgroundColor: purple,
-    color: purple,
-    display: "inline-block",
-    margin: "0 2px",
-  },
-
-  dot3: {
-    width: "24px",
-    height: "24px",
-    borderRadius: "50px",
-    backgroundColor: purple,
-    display: "inline-block",
-    margin: "0 2px",
-  },
-};
+import { Flex, Box, usePrefersReducedMotion, keyframes, useToken } from "@chakra-ui/react";
 
 export const CircularProgressWithDots = () => {
+  const [accentColor] = useToken("colors", ["accent-color"]);
+
+  const styles = {
+    dot1: {
+      position: "relative",
+      width: "1rem",
+      height: "1rem",
+      // borderRadius: "50px",
+      backgroundColor: accentColor,
+      color: accentColor,
+      display: "inline-block",
+      margin: "0 2px",
+    },
+    dot2: {
+      width: "1rem",
+      height: "1rem",
+      // borderRadius: "50px",
+      backgroundColor: accentColor,
+      color: accentColor,
+      display: "inline-block",
+      margin: "0 2px",
+    },
+
+    dot3: {
+      width: "1rem",
+      height: "1rem",
+      // borderRadius: "50px",
+      backgroundColor: accentColor,
+      display: "inline-block",
+      margin: "0 2px",
+    },
+  };
+
   const prefersReducedMotion = usePrefersReducedMotion();
   const animation1 = prefersReducedMotion ? undefined : `${keyframe_dot1} infinite 1s linear`;
   const animation2 = prefersReducedMotion ? undefined : `${keyframe_dot2} infinite 1s linear`;

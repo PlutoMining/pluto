@@ -30,6 +30,7 @@ import {
   AccordionIcon,
   AccordionPanel,
   Divider,
+  useToken,
 } from "@chakra-ui/react";
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { Input } from "../Input/Input";
@@ -51,11 +52,9 @@ interface RegisterDevicesModalProps {
 function ModalBodyContent({
   onClose,
   onDevicesChanged,
-  theme,
 }: {
   onClose: () => void;
   onDevicesChanged: () => Promise<void>;
-  theme: any;
 }) {
   const [discoveredDevices, setDiscoveredDevices] = useState<Device[] | null>(null);
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
@@ -234,15 +233,22 @@ function ModalBodyContent({
     return hasErrorFields(errors) || hasEmptyFields(ipAndMacAddress);
   }, [errors, ipAndMacAddress]);
 
+  const [borderColor] = useToken("colors", ["border-color"]);
+  const [bgColor] = useToken("colors", ["input-bg"]);
+  const [textColor] = useToken("colors", ["body-text"]);
+  const [accentColor] = useToken("colors", ["accent-color"]);
+  const [thBg] = useToken("colors", ["th-bg"]);
+  const [thColor] = useToken("colors", ["th-color"]);
+
   return (
     <Box p={0} pt={"1rem"} height={"100%"}>
       <Flex
         flexDir={"column"}
         gap={"2rem"}
-        borderRadius={"1rem"}
+        borderRadius={0}
         p={"1rem"}
         borderWidth={"1px"}
-        borderColor={theme.colors.greyscale[200]}
+        borderColor={"border-color"}
         h={"100%"}
       >
         <VStack spacing={4} align="stretch" h={"100%"}>
@@ -256,7 +262,7 @@ function ModalBodyContent({
                     content: '""',
                     width: "32px",
                     height: "2px",
-                    backgroundColor: theme.colors.brand.secondary,
+                    backgroundColor: "accent-color",
                     display: "block",
                     position: "absolute",
                     bottom: "8px",
@@ -278,7 +284,7 @@ function ModalBodyContent({
                     content: '""',
                     width: "32px",
                     height: "2px",
-                    backgroundColor: theme.colors.brand.secondary,
+                    backgroundColor: "accent-color",
                     display: "block",
                     position: "absolute",
                     bottom: "8px",
@@ -323,7 +329,7 @@ function ModalBodyContent({
                   </Flex>
 
                   {/* Mostra errore di ricerca */}
-                  {searchError && <Text color="red.500">{searchError}</Text>}
+                  {searchError && <Text color="error-color">{searchError}</Text>}
 
                   <Flex align={"start"}>
                     <Button
@@ -340,7 +346,7 @@ function ModalBodyContent({
                         {discoveredDevices.length > 0 ? (
                           <Flex flexDir={"column"} gap={"1rem"} mt={"1rem"}>
                             <Text
-                              color={theme.colors.greyscale[900]}
+                              color={"text-color"}
                               fontFamily={"heading"}
                               fontSize={"sm"}
                               fontWeight={"700"}
@@ -350,97 +356,81 @@ function ModalBodyContent({
                             <Box>
                               <TableContainer display={{ base: "none", tablet: "block" }}>
                                 <Table variant="simple">
-                                  <Thead backgroundColor={theme.colors.greyscale[100]}>
+                                  <Thead backgroundColor={thBg}>
                                     <Tr>
-                                      <Th borderColor={theme.colors.greyscale[100]}>
-                                        <Text
-                                          fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"12px"}
-                                        >
-                                          Hostname
-                                        </Text>
+                                      <Th
+                                        borderColor={borderColor}
+                                        fontWeight={500}
+                                        color={thColor}
+                                        fontFamily={"heading"}
+                                        textTransform={"capitalize"}
+                                        fontSize={"xs"}
+                                      >
+                                        Hostname
                                       </Th>
-                                      <Th borderColor={theme.colors.greyscale[100]}>
-                                        <Text
-                                          fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"12px"}
-                                        >
-                                          IP
-                                        </Text>
+                                      <Th
+                                        borderColor={borderColor}
+                                        fontWeight={500}
+                                        color={thColor}
+                                        fontFamily={"heading"}
+                                        textTransform={"capitalize"}
+                                        fontSize={"xs"}
+                                      >
+                                        IP
                                       </Th>
-                                      <Th borderColor={theme.colors.greyscale[100]}>
-                                        <Text
-                                          fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"12px"}
-                                        >
-                                          Mac Address
-                                        </Text>
+                                      <Th
+                                        borderColor={borderColor}
+                                        fontWeight={500}
+                                        color={thColor}
+                                        fontFamily={"heading"}
+                                        textTransform={"capitalize"}
+                                        fontSize={"xs"}
+                                      >
+                                        Mac Address
                                       </Th>
-                                      <Th borderColor={theme.colors.greyscale[100]}>
-                                        <Text
-                                          fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"12px"}
-                                        >
-                                          Miner
-                                        </Text>
+                                      <Th
+                                        borderColor={borderColor}
+                                        fontWeight={500}
+                                        color={thColor}
+                                        fontFamily={"heading"}
+                                        textTransform={"capitalize"}
+                                        fontSize={"xs"}
+                                      >
+                                        Miner
                                       </Th>
-                                      <Th borderColor={theme.colors.greyscale[100]}>
-                                        <Text
-                                          fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"12px"}
-                                        >
-                                          Asic
-                                        </Text>
+                                      <Th
+                                        borderColor={borderColor}
+                                        fontWeight={500}
+                                        color={thColor}
+                                        fontFamily={"heading"}
+                                        textTransform={"capitalize"}
+                                        fontSize={"xs"}
+                                      >
+                                        Asic
                                       </Th>
-                                      <Th borderColor={theme.colors.greyscale[100]}>
-                                        <Text
-                                          fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"12px"}
-                                        >
-                                          FW v.
-                                        </Text>
+                                      <Th
+                                        borderColor={borderColor}
+                                        fontWeight={500}
+                                        color={thColor}
+                                        fontFamily={"heading"}
+                                        textTransform={"capitalize"}
+                                        fontSize={"xs"}
+                                      >
+                                        FW v.
                                       </Th>
                                     </Tr>
                                   </Thead>
                                   <Tbody>
                                     {discoveredDevices.map((device, index) => (
                                       <Tr key={`tab0-device-${device.ip}`}>
-                                        <Td borderColor={theme.colors.greyscale[100]}>
-                                          {device.info.hostname}
-                                        </Td>
-                                        <Td borderColor={theme.colors.greyscale[100]}>
-                                          {device.ip}
-                                        </Td>
-                                        <Td borderColor={theme.colors.greyscale[100]}>
-                                          {device.mac}
-                                        </Td>
-                                        <Td borderColor={theme.colors.greyscale[100]}>
+                                        <Td borderColor={borderColor}>{device.info.hostname}</Td>
+                                        <Td borderColor={borderColor}>{device.ip}</Td>
+                                        <Td borderColor={borderColor}>{device.mac}</Td>
+                                        <Td borderColor={borderColor}>
                                           {getMinerName(device.info.boardVersion)}
                                         </Td>
-                                        <Td borderColor={theme.colors.greyscale[100]}>
-                                          {device.info.ASICModel}
-                                        </Td>
-                                        <Td borderColor={theme.colors.greyscale[100]}>
-                                          {device.info.version}
-                                        </Td>
+                                        <Td borderColor={borderColor}>{device.info.ASICModel}</Td>
+                                        <Td borderColor={borderColor}>{device.info.version}</Td>
                                       </Tr>
                                     ))}
                                   </Tbody>
@@ -452,9 +442,9 @@ function ModalBodyContent({
                                 allowMultiple
                                 as={Flex}
                                 flexDir={"column"}
-                                backgroundColor={"greyscale.0"}
+                                backgroundColor={"item-bg"}
                                 borderWidth={"1px"}
-                                borderColor={"greyscale.200"}
+                                borderColor={"border-color"}
                                 borderRadius={"1rem"}
                               >
                                 {discoveredDevices?.map((device, index) => (
@@ -491,7 +481,7 @@ function ModalBodyContent({
                                       <Divider
                                         mb={"1rem"}
                                         mt={"1rem"}
-                                        borderColor={theme.colors.greyscale[200]}
+                                        borderColor={"border-color"}
                                       />
 
                                       <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"}>
@@ -589,14 +579,14 @@ function ModalBodyContent({
                             <Flex align={"start"}>
                               <Flex gap={"1rem"}>
                                 <Button
-                                  variant="secondary"
+                                  variant="outlined"
                                   onClick={onClose}
                                   label="Cancel"
                                 ></Button>
                                 <Button
                                   variant="primary"
                                   onClick={() => registerDevice()}
-                                  rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
+                                  rightIcon={<AddIcon color={bgColor} />}
                                   disabled={discoveredDevices.length !== 1}
                                   label="Add device"
                                 ></Button>
@@ -634,32 +624,44 @@ function ModalBodyContent({
                             “{discoveredDevices?.length}” new devices found
                           </Text>
                           <ChakraCheckbox
-                            borderColor={theme.colors.greyscale[900]}
-                            borderRadius={"3px"}
+                            borderRadius={0}
                             display={{ base: "flex", tablet: "none" }}
                             gap={"0.5rem"}
                             flexDirection="row-reverse" // Posiziona il testo a sinistra e la checkbox a destra
                             alignItems="center" // Allinea verticalmente checkbox e testo
+                            borderColor={borderColor}
                             sx={{
+                              height: "20px", // Imposta l'altezza
+                              width: "20px", // Imposta la larghezza
+                              borderRadius: 0,
                               "& .chakra-checkbox__control": {
-                                bg: theme.colors.greyscale[0], // colore di sfondo (hex)
-                                borderColor: theme.colors.greyscale[900], // colore del bordo (hex)
+                                height: "20px", // Altezza del controllo
+                                width: "20px", // Larghezza del controllo
+                                borderRadius: 0,
+                                bg: bgColor, // colore di sfondo (hex)
+                                borderColor: borderColor, // colore del bordo (hex)
                               },
                               "& .chakra-checkbox__control[data-checked]": {
-                                bg: theme.colors.brand.secondary, // colore quando è selezionato (checked)
-                                borderColor: theme.colors.greyscale[900], // colore bordo quando è selezionato
-                                color: theme.colors.greyscale[0], // colore di sfondo (hex)
-                                boxShadow: "inset 0 0 0 2px white", // spazio bianco tra bordo e riempimento
+                                bg: bgColor, // colore quando è selezionato (checked)
+                                borderColor: accentColor, // colore bordo quando è selezionato
+                                color: accentColor, // colore di sfondo (hex)
+                                boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
+                              },
+                              "& .chakra-checkbox__control[data-checked]:hover": {
+                                bg: bgColor, // colore quando è selezionato (checked)
+                                borderColor: accentColor, // colore bordo quando è selezionato
+                                color: accentColor, // colore di sfondo (hex)
+                                boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
                               },
                               "& .chakra-checkbox__control:focus": {
-                                borderColor: theme.colors.brand.primary, // colore del bordo quando la checkbox è in focus
-                                boxShadow: `0 0 0 2px ${theme.colors.brand.primary}`, // effetto di ombra quando è in focus
+                                borderColor: textColor, // colore del bordo quando la checkbox è in focus
+                                boxShadow: `0 0 0 2px ${textColor}`, // effetto di ombra quando è in focus
                               },
                             }}
                             isChecked={allChecked}
                             onChange={(e) => handleAllCheckbox(e.target.checked)}
                           >
-                            <Text fontSize="12px" textDecoration={"underline"}>
+                            <Text fontSize="xs" textDecoration={"underline"}>
                               Select all
                             </Text>
                           </ChakraCheckbox>
@@ -675,32 +677,39 @@ function ModalBodyContent({
                             overflow="auto" // Overflow al contenuto scrollabile
                             paddingBottom="50px" // Spazio per la sfumatura
                           >
-                            <TableContainer
-                              // h={"calc(100% - 100px)"}
-                              overflowY={"scroll"}
-                              // display={{ base: "none", tablet: "block" }}
-                            >
+                            <TableContainer overflowY={"scroll"}>
                               <Table variant="simple" h={"100%"}>
                                 <Thead>
                                   <Tr>
-                                    <Th borderColor={theme.colors.greyscale[100]}>
+                                    <Th borderColor={borderColor}>
                                       <ChakraCheckbox
-                                        borderColor={theme.colors.greyscale[900]}
-                                        borderRadius={"3px"}
+                                        borderColor={borderColor}
                                         sx={{
+                                          height: "20px", // Imposta l'altezza
+                                          width: "20px", // Imposta la larghezza
+                                          borderRadius: 0,
                                           "& .chakra-checkbox__control": {
-                                            bg: theme.colors.greyscale[0], // colore di sfondo (hex)
-                                            borderColor: theme.colors.greyscale[900], // colore del bordo (hex)
+                                            height: "20px", // Altezza del controllo
+                                            width: "20px", // Larghezza del controllo
+                                            borderRadius: 0,
+                                            bg: bgColor, // colore di sfondo (hex)
+                                            borderColor: borderColor, // colore del bordo (hex)
                                           },
                                           "& .chakra-checkbox__control[data-checked]": {
-                                            bg: theme.colors.brand.secondary, // colore quando è selezionato (checked)
-                                            borderColor: theme.colors.greyscale[900], // colore bordo quando è selezionato
-                                            color: theme.colors.greyscale[0], // colore di sfondo (hex)
-                                            boxShadow: "inset 0 0 0 2px white", // spazio bianco tra bordo e riempimento
+                                            bg: bgColor, // colore quando è selezionato (checked)
+                                            borderColor: accentColor, // colore bordo quando è selezionato
+                                            color: accentColor, // colore di sfondo (hex)
+                                            boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
+                                          },
+                                          "& .chakra-checkbox__control[data-checked]:hover": {
+                                            bg: bgColor, // colore quando è selezionato (checked)
+                                            borderColor: accentColor, // colore bordo quando è selezionato
+                                            color: accentColor, // colore di sfondo (hex)
+                                            boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
                                           },
                                           "& .chakra-checkbox__control:focus": {
-                                            borderColor: theme.colors.brand.primary, // colore del bordo quando la checkbox è in focus
-                                            boxShadow: `0 0 0 2px ${theme.colors.brand.primary}`, // effetto di ombra quando è in focus
+                                            borderColor: textColor, // colore del bordo quando la checkbox è in focus
+                                            boxShadow: `0 0 0 2px ${textColor}`, // effetto di ombra quando è in focus
                                           },
                                         }}
                                         isChecked={allChecked}
@@ -709,67 +718,67 @@ function ModalBodyContent({
                                       >
                                         <Text
                                           fontWeight={500}
-                                          color={theme.colors.greyscale[500]}
+                                          color={textColor}
                                           fontFamily={"heading"}
                                           textTransform={"capitalize"}
-                                          fontSize={"12px"}
+                                          fontSize={"xs"}
                                           pl={"0.5rem"}
                                         >
                                           Hostname
                                         </Text>
                                       </ChakraCheckbox>
                                     </Th>
-                                    <Th borderColor={theme.colors.greyscale[100]}>
+                                    <Th borderColor={borderColor}>
                                       <Text
                                         fontWeight={500}
-                                        color={theme.colors.greyscale[500]}
+                                        color={textColor}
                                         fontFamily={"heading"}
                                         textTransform={"capitalize"}
-                                        fontSize={"12px"}
+                                        fontSize={"xs"}
                                       >
                                         IP
                                       </Text>
                                     </Th>
-                                    <Th borderColor={theme.colors.greyscale[100]}>
+                                    <Th borderColor={borderColor}>
                                       <Text
                                         fontWeight={500}
-                                        color={theme.colors.greyscale[500]}
+                                        color={textColor}
                                         fontFamily={"heading"}
                                         textTransform={"capitalize"}
-                                        fontSize={"12px"}
+                                        fontSize={"xs"}
                                       >
                                         Mac Address
                                       </Text>
                                     </Th>
-                                    <Th borderColor={theme.colors.greyscale[100]}>
+                                    <Th borderColor={borderColor}>
                                       <Text
                                         fontWeight={500}
-                                        color={theme.colors.greyscale[500]}
+                                        color={textColor}
                                         fontFamily={"heading"}
                                         textTransform={"capitalize"}
-                                        fontSize={"12px"}
+                                        fontSize={"xs"}
                                       >
                                         Miner
                                       </Text>
                                     </Th>
-                                    <Th borderColor={theme.colors.greyscale[100]}>
+                                    <Th borderColor={borderColor}>
                                       <Text
                                         fontWeight={500}
-                                        color={theme.colors.greyscale[500]}
+                                        color={textColor}
                                         fontFamily={"heading"}
                                         textTransform={"capitalize"}
-                                        fontSize={"12px"}
+                                        fontSize={"xs"}
                                       >
                                         Asic
                                       </Text>
                                     </Th>
-                                    <Th borderColor={theme.colors.greyscale[100]}>
+                                    <Th borderColor={borderColor}>
                                       <Text
                                         fontWeight={500}
-                                        color={theme.colors.greyscale[500]}
+                                        color={textColor}
                                         fontFamily={"heading"}
                                         textTransform={"capitalize"}
-                                        fontSize={"12px"}
+                                        fontSize={"xs"}
                                       >
                                         FW v.
                                       </Text>
@@ -779,7 +788,7 @@ function ModalBodyContent({
                                 <Tbody fontSize={"14px"}>
                                   {discoveredDevices?.map((device, index) => (
                                     <Tr key={`tab1-device-${device.ip}`}>
-                                      <Td borderColor={theme.colors.greyscale[100]}>
+                                      <Td borderColor={borderColor}>
                                         <Checkbox
                                           id={device.mac}
                                           name={device.mac}
@@ -789,34 +798,28 @@ function ModalBodyContent({
                                           size="md"
                                         />
                                       </Td>
-                                      <Td borderColor={theme.colors.greyscale[100]}>{device.ip}</Td>
-                                      <Td borderColor={theme.colors.greyscale[100]}>
-                                        {device.mac}
-                                      </Td>
-                                      <Td borderColor={theme.colors.greyscale[100]}>
+                                      <Td borderColor={borderColor}>{device.ip}</Td>
+                                      <Td borderColor={borderColor}>{device.mac}</Td>
+                                      <Td borderColor={borderColor}>
                                         {getMinerName(device.info.boardVersion)}
                                       </Td>
-                                      <Td borderColor={theme.colors.greyscale[100]}>
-                                        {device.info.ASICModel}
-                                      </Td>
-                                      <Td borderColor={theme.colors.greyscale[100]}>
-                                        {device.info.version}
-                                      </Td>
+                                      <Td borderColor={borderColor}>{device.info.ASICModel}</Td>
+                                      <Td borderColor={borderColor}>{device.info.version}</Td>
                                     </Tr>
                                   ))}
                                 </Tbody>
                               </Table>
                             </TableContainer>
                           </Box>
-                          <Box
+                          {/* <Box
                             position="absolute"
                             bottom="0"
                             left="0"
                             width="100%"
                             height="50px"
-                            background="linear-gradient(to top, white, transparent)"
+                            background={`linear-gradient(to top, ${bgColor}, transparent)`}
                             pointerEvents="none"
-                          />
+                          /> */}
                         </Box>
                         <Box
                           display={{ base: "block", tablet: "none" }}
@@ -864,22 +867,33 @@ function ModalBodyContent({
                                       </Flex>
 
                                       <ChakraCheckbox
-                                        borderColor={theme.colors.greyscale[900]}
-                                        borderRadius={"3px"}
+                                        borderColor={borderColor}
                                         sx={{
+                                          height: "20px", // Imposta l'altezza
+                                          width: "20px", // Imposta la larghezza
+                                          borderRadius: 0,
                                           "& .chakra-checkbox__control": {
-                                            bg: theme.colors.greyscale[0], // colore di sfondo (hex)
-                                            borderColor: theme.colors.greyscale[900], // colore del bordo (hex)
+                                            height: "20px", // Altezza del controllo
+                                            width: "20px", // Larghezza del controllo
+                                            borderRadius: 0,
+                                            bg: bgColor, // colore di sfondo (hex)
+                                            borderColor: borderColor, // colore del bordo (hex)
                                           },
                                           "& .chakra-checkbox__control[data-checked]": {
-                                            bg: theme.colors.brand.secondary, // colore quando è selezionato (checked)
-                                            borderColor: theme.colors.greyscale[900], // colore bordo quando è selezionato
-                                            color: theme.colors.greyscale[0], // colore di sfondo (hex)
-                                            boxShadow: "inset 0 0 0 2px white", // spazio bianco tra bordo e riempimento
+                                            bg: bgColor, // colore quando è selezionato (checked)
+                                            borderColor: accentColor, // colore bordo quando è selezionato
+                                            color: accentColor, // colore di sfondo (hex)
+                                            boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
+                                          },
+                                          "& .chakra-checkbox__control[data-checked]:hover": {
+                                            bg: bgColor, // colore quando è selezionato (checked)
+                                            borderColor: accentColor, // colore bordo quando è selezionato
+                                            color: accentColor, // colore di sfondo (hex)
+                                            boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
                                           },
                                           "& .chakra-checkbox__control:focus": {
-                                            borderColor: theme.colors.brand.primary, // colore del bordo quando la checkbox è in focus
-                                            boxShadow: `0 0 0 2px ${theme.colors.brand.primary}`, // effetto di ombra quando è in focus
+                                            borderColor: textColor, // colore del bordo quando la checkbox è in focus
+                                            boxShadow: `0 0 0 2px ${textColor}`, // effetto di ombra quando è in focus
                                           },
                                         }}
                                         id={device.mac}
@@ -895,11 +909,7 @@ function ModalBodyContent({
                                       flexDir={"column"}
                                       alignItems={"flex-start"}
                                     >
-                                      <Divider
-                                        mb={"1rem"}
-                                        mt={"1rem"}
-                                        borderColor={theme.colors.greyscale[200]}
-                                      />
+                                      <Divider mb={"1rem"} mt={"1rem"} borderColor={borderColor} />
 
                                       <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"}>
                                         <Flex justify={"space-between"}>
@@ -996,23 +1006,23 @@ function ModalBodyContent({
                               <Text textAlign={"center"}>No device found</Text>
                             )}
                           </Box>
-                          <Box
+                          {/* <Box
                             position="absolute"
                             bottom="0"
                             left="0"
                             width="100%"
                             height="50px"
-                            background="linear-gradient(to top, white, transparent)"
+                            background={`linear-gradient(to top, ${bgColor}, transparent)`}
                             pointerEvents="none"
-                          />
+                          /> */}
                         </Box>
                         <Flex align={"start"}>
                           <Flex gap={"1rem"}>
-                            <Button variant="secondary" onClick={onClose} label="Cancel"></Button>
+                            <Button variant="outlined" onClick={onClose} label="Cancel"></Button>
                             <Button
                               variant="primary"
                               onClick={() => registerDevices()}
-                              rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
+                              rightIcon={<AddIcon color={bgColor} />}
                               disabled={
                                 checkedFetchedItems.filter((el) => el === true).length === 0
                               }
@@ -1044,13 +1054,12 @@ export const RegisterDevicesModal: React.FC<RegisterDevicesModalProps> = ({
   onClose,
   onDevicesChanged,
 }) => {
-  const theme = useTheme();
   return (
     <Modal onClose={onClose} size={"full)"} isOpen={isOpen}>
       <ModalOverlay />
       <ModalContent
-        bg={theme.colors.greyscale[0]}
-        borderRadius={"1rem"}
+        bg={"item-bg"}
+        borderRadius={0}
         height={{
           base: "calc(100vh - 7.25rem)",
           tablet: "calc(100vh - 9.5rem)",
@@ -1072,7 +1081,6 @@ export const RegisterDevicesModal: React.FC<RegisterDevicesModalProps> = ({
           <ModalBody p={0} height={"calc(100% - 5rem)"}>
             <ModalBodyContent
               onClose={onClose}
-              theme={theme}
               onDevicesChanged={onDevicesChanged}
             ></ModalBodyContent>
           </ModalBody>

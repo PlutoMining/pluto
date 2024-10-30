@@ -23,7 +23,7 @@ export const Badge: React.FC<DeviceStatusBadgeProps> = ({
       bg={bg || color}
       color={bg ? color : theme.colors.greyscale[500]}
       fontSize={"13px"}
-      borderRadius={"6px"}
+      borderRadius={0}
       padding={"4px 6px"}
     >
       <Flex gap={"0.25rem"} alignItems={"center"} wrap={"wrap"}>

@@ -7,6 +7,7 @@ import {
   ModalBody,
   Text,
   Button as ChakraButton,
+  useToken,
 } from "@chakra-ui/react";
 
 interface RestartModalProps {
@@ -16,6 +17,9 @@ interface RestartModalProps {
 }
 
 export const RestartModal: React.FC<RestartModalProps> = ({ isOpen, onClose }) => {
+  const [borderColor] = useToken("colors", ["border-color"]);
+  const [bgColor] = useToken("colors", ["item-bg"]);
+  const [textColor] = useToken("colors", ["body-text"]);
   return (
     <Modal
       isCentered
@@ -27,19 +31,19 @@ export const RestartModal: React.FC<RestartModalProps> = ({ isOpen, onClose }) =
     >
       <ModalOverlay bg="none" backdropFilter="auto" backdropBlur="3px" />
       <ModalContent
-        bg={"#fff"}
-        borderColor={"#E1DEE3"}
+        bg={bgColor}
+        borderColor={borderColor}
         borderWidth={"1px"}
-        borderRadius={"1rem"}
+        borderRadius={0}
         p={"1rem"}
-        color={"greyscale.900"}
+        color={textColor}
       >
         <ModalHeader>Restart Device</ModalHeader>
         <ModalBody>
           <Text>Do you want to restart this device?</Text>
         </ModalBody>
         <ModalFooter gap={"1.5rem"}>
-          <ChakraButton variant="secondary" onClick={() => onClose(false)}>
+          <ChakraButton variant="outlined" onClick={() => onClose(false)}>
             Cancel
           </ChakraButton>
           <ChakraButton variant="primary" onClick={() => onClose(true)}>

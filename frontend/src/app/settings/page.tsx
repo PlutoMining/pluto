@@ -196,10 +196,10 @@ const SettingsPage = () => {
       >
         <ModalOverlay bg="none" backdropFilter="auto" backdropBlur="3px" />
         <ModalContent
-          bg={"#fff"}
-          borderColor={"#E1DEE3"}
+          bg={"item-bg"}
+          borderColor={"border-color"}
           borderWidth={"1px"}
-          borderRadius={"1rem"}
+          borderRadius={0}
           p={"1rem"}
           color={"body-text"}
         >
@@ -214,7 +214,7 @@ const SettingsPage = () => {
             </Text>
           </ModalBody>
           <ModalFooter gap={"1.5rem"}>
-            <Button variant="secondary" onClick={onCloseModal} label="Cancel"></Button>
+            <Button variant="outlined" onClick={onCloseModal} label="Cancel"></Button>
             <Button
               type="submit"
               variant="primary"

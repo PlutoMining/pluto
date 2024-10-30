@@ -74,6 +74,10 @@ const sizes = {
 const theme = extendTheme({
   semanticTokens: {
     colors: {
+      "bg-color": {
+        _light: lightThemeColors.greyscale[100],
+        _dark: darkThemeColors.greyscale[900],
+      },
       "header-bg": {
         _light: lightThemeColors.brand.purple0,
         _dark: darkThemeColors.greyscale[900],
@@ -124,15 +128,19 @@ const theme = extendTheme({
       },
       "body-text": {
         _light: lightThemeColors.greyscale[900],
-        _dark: lightThemeColors.greyscale[0],
+        _dark: darkThemeColors.greyscale[0],
+      },
+      "logo-color": {
+        _light: lightThemeColors.greyscale[0],
+        _dark: darkThemeColors.greyscale[0],
       },
       "th-color": {
         _light: lightThemeColors.greyscale[500],
-        _dark: lightThemeColors.greyscale[0],
+        _dark: darkThemeColors.greyscale[0],
       },
       "th-bg": {
         _light: lightThemeColors.greyscale[100],
-        _dark: darkThemeColors.greyscale[900],
+        _dark: darkThemeColors.greyscale[700],
       },
       "status-online": {
         _light: darkThemeColors.primary[600], // da modificare con la variante per il light theme
@@ -150,46 +158,13 @@ const theme = extendTheme({
         _light: lightThemeColors.brand.secondary, // da modificare con i valori corretti
         _dark: darkThemeColors.primary[500], // da modificare con i valori corretti
       },
-
-      "chakra-body-text": {
-        _light: lightThemeColors.greyscale[900],
-        _dark: lightThemeColors.greyscale[100],
+      "badge-color": {
+        _light: lightThemeColors.greyscale[200], // da modificare con i valori corretti
+        _dark: darkThemeColors.greyscale[600], // da modificare con i valori corretti
       },
-      "chakra-body-bg": {
-        _light: lightThemeColors.greyscale[100],
-        _dark: darkThemeColors.greyscale[900],
-      },
-      "chakra-border-color": {
-        _light: lightThemeColors.greyscale[200],
-        _dark: lightThemeColors.greyscale[800],
-      },
-      "chakra-inverse-text": {
-        _light: lightThemeColors.greyscale[100],
-        _dark: lightThemeColors.greyscale[900],
-      },
-      "chakra-subtle-bg": {
-        _light: lightThemeColors.greyscale[100],
-        _dark: lightThemeColors.greyscale[900],
-      },
-      "chakra-subtle-text": {
-        _light: lightThemeColors.greyscale[900],
-        _dark: lightThemeColors.greyscale[100],
-      },
-      "chakra-placeholder-color": {
-        _light: lightThemeColors.greyscale[200],
-        _dark: lightThemeColors.greyscale[800],
-      },
-      "chakra-header-bg": {
-        _light: lightThemeColors.greyscale[100],
-        _dark: lightThemeColors.greyscale[900],
-      },
-      "chakra-footer-bg": {
-        _light: lightThemeColors.greyscale[100],
-        _dark: lightThemeColors.greyscale[900],
-      },
-      "chakra-accent": {
-        _light: lightThemeColors.brand.primary,
-        _dark: lightThemeColors.brand.primary,
+      "badge-bg": {
+        _light: lightThemeColors.greyscale[900], // da modificare con i valori corretti
+        _dark: darkThemeColors.greyscale[0], // da modificare con i valori corretti
       },
     },
   },

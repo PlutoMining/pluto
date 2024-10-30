@@ -1,4 +1,4 @@
-import { Radio as ChakraRadio, useTheme } from "@chakra-ui/react";
+import { Radio as ChakraRadio, useTheme, useToken } from "@chakra-ui/react";
 import React from "react";
 
 interface RadioButtonProps {
@@ -8,29 +8,26 @@ interface RadioButtonProps {
   disabled?: boolean;
 }
 
-export const RadioButton: React.FC<RadioButtonProps> = ({
-  label,
-  value,
-  id,
-  disabled
-}) => {
-
-  const theme = useTheme();
+export const RadioButton: React.FC<RadioButtonProps> = ({ label, value, id, disabled }) => {
+  const [bgColor] = useToken("colors", ["item-bg"]);
+  const [borderColor] = useToken("colors", ["border-color"]);
+  const [accentColor] = useToken("colors", ["accent-color"]);
 
   return (
-    <ChakraRadio 
+    <ChakraRadio
       value={value}
       id={id}
       _checked={{
-        bg: theme.colors.brand.secondary,  // colore del riempimento
-        borderColor: theme.colors.greyscale[900],  // colore del bordo
-        boxShadow: 'inset 0 0 0 2px white',  // spazio tra bordo e riempimento
+        bg: accentColor, // colore del riempimento
+        borderColor: borderColor, // colore del bordo
+        boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio tra bordo e riempimento
       }}
       isDisabled={disabled}
       _disabled={{
-        bg: theme.colors.greyscale[0],  // colore del riempimento
-        borderColor: theme.colors.greyscale[200],  // colore del bordo
+        opacity: 0.5,
       }}
-    >{label}</ChakraRadio>
+    >
+      {label}
+    </ChakraRadio>
   );
 };

@@ -9,7 +9,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Text,
-  useTheme,
+  useToken,
 } from "@chakra-ui/react";
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { Badge } from "../Badge";
@@ -33,7 +33,8 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
   presets,
   onCloseSuccessfully,
 }) => {
-  const theme = useTheme();
+  const [bgColor] = useToken("colors", ["item-bg"]);
+  const [textColor] = useToken("colors", ["body-text"]);
 
   const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
 
@@ -64,12 +65,7 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
   return (
     <Modal onClose={onClose} size={"full)"} isOpen={isOpen}>
       <ModalOverlay />
-      <ModalContent
-        bg={theme.colors.greyscale[0]}
-        borderRadius={"1rem"}
-        height={"calc(100% - 8rem)"}
-        overflow={"scroll"}
-      >
+      <ModalContent bg={bgColor} borderRadius={0} height={"calc(100% - 8rem)"} overflow={"scroll"}>
         <Box
           maxW="container.desktop"
           margin={"0 auto"}
@@ -83,7 +79,7 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
           <ModalCloseButton />
           <ModalBody overflow={"scroll"} p={0}>
             <Flex flexDir={"column"} gap={"1rem"}>
-              <Heading fontSize="14px" fontWeight={500}>
+              <Heading fontSize="sm" fontWeight={500}>
                 Selected Devices
               </Heading>
               <Flex gap={"1rem"} flexWrap={"wrap"}>
@@ -91,7 +87,8 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
                   <Badge
                     key={device.mac}
                     title={device.info.hostname}
-                    color={theme.colors.greyscale[200]}
+                    bg={bgColor}
+                    color={textColor}
                   ></Badge>
                 ))}
               </Flex>
@@ -109,10 +106,10 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
               />
 
               <Flex gap={"1rem"}>
-                <Button variant="secondary" onClick={onClose} label="Cancel"></Button>
+                <Button variant="outlined" onClick={onClose} label="Cancel"></Button>
                 <Button
                   variant="primary"
-                  rightIcon={<ArrowIcon color="#fff" />}
+                  rightIcon={<ArrowIcon color={bgColor} />}
                   onClick={handleAction}
                   label="Save"
                 ></Button>

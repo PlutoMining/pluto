@@ -30,7 +30,7 @@ export default function RootLayout({
             >
               <Box
                 h={"100%"}
-                bg={"chakra-body-bg"}
+                bg={"bg-color"}
                 overflowY={"scroll"}
                 sx={{
                   scrollbarWidth: {

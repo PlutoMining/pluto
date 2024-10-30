@@ -13,7 +13,7 @@ import {
   useTheme,
 } from "@chakra-ui/react";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Alert from "../Alert/Alert";
 import { AlertInterface } from "../Alert/interfaces";
 import { Logo } from "../icons/Logo";
@@ -212,9 +212,9 @@ export const NavBar = () => {
                     fontSize={"12px"}
                     opacity={0.8}
                     color={theme.colors.greyscale[100]}
-                    marginBottom={"-3px"}
+                    marginBottom={"1px"}
                   >
-                    V. {version}
+                    V.{version}
                   </Text>
                 )}
               </Flex>

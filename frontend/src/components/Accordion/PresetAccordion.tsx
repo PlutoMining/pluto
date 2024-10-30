@@ -7,12 +7,11 @@ import {
   Flex,
   Heading,
   Text,
-  useTheme,
   Badge as ChakraBadge,
+  useToken,
 } from "@chakra-ui/react";
 import { Preset } from "@pluto/interfaces";
 import { MouseEvent } from "react";
-import { Badge } from "../Badge";
 import Button from "../Button/Button";
 import { DeleteIcon } from "../icons/DeleteIcon";
 import { DuplicateIcon } from "../icons/DuplicateIcon";
@@ -34,21 +33,24 @@ export const PresetAccordion: React.FC<PresetProps> = ({
   index,
   isDuplicateDisabled,
 }) => {
-  const theme = useTheme();
+  const [borderColor] = useToken("colors", ["border-color"]);
+  const [bgColor] = useToken("colors", ["input-bg"]);
+  const [textColor] = useToken("colors", ["body-text"]);
+  const [badgeColor] = useToken("colors", ["badge-color"]);
+  const [badgeBg] = useToken("colors", ["badge-bg"]);
 
   return (
     <AccordionItem
       key={`preset-${preset.uuid}`} // Prefisso specifico per il preset
       backgroundColor={"item-bg"}
       borderWidth={"1px"}
-      borderColor={"border-color"}
-      // borderRadius={"1rem"}
+      borderColor={borderColor}
       p={"1rem"}
     >
       <AccordionButton p={0} _hover={{ backgroundColor: "none" }}>
         <Flex gap={"0.5rem"} alignItems={"center"}>
           <AccordionIcon />
-          <Heading fontSize={"md"} fontWeight={500} color={theme.colors.greyscale[300]}>
+          <Heading fontSize={"md"} fontWeight={500} color={textColor}>
             #{++index}
           </Heading>
           <Heading fontSize={"md"} fontWeight={"bold"}>
@@ -57,7 +59,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
         </Flex>
       </AccordionButton>
       <AccordionPanel p={0} pb={4} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
-        <Divider mb={"1rem"} mt={"1rem"} borderColor={theme.colors.greyscale[200]} />
+        <Divider mb={"1rem"} mt={"1rem"} borderColor={"border-color"} />
         <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"100%"}>
           <Text fontFamily={"heading"} fontWeight={"bold"} textTransform={"capitalize"}>
             Settings
@@ -103,10 +105,11 @@ export const PresetAccordion: React.FC<PresetProps> = ({
               {preset.associatedDevices?.map((device) => (
                 <ChakraBadge
                   key={device.mac}
-                  bg={theme.colors.greyscale[200]}
-                  color={theme.colors.greyscale[500]}
+                  backgroundColor={badgeBg}
+                  color={badgeColor}
+                  border={`1px solid ${badgeColor}`}
                   fontSize={"13px"}
-                  borderRadius={"6px"}
+                  borderRadius={0}
                   padding={"4px 6px"}
                 >
                   <Flex alignItems={"center"} gap={"0.25rem"} p={"5px 8px"} height={"21.5px"}>
@@ -133,7 +136,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
           )}
         </Flex>
       </AccordionPanel>
-      <Divider mb={"1rem"} mt={"1rem"} borderColor={theme.colors.greyscale[200]} />
+      <Divider mb={"1rem"} mt={"1rem"} borderColor={borderColor} />
       <Flex alignItems={"center"}>
         <Button
           variant="text"

@@ -6,7 +6,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
-  useTheme,
+  useToken,
 } from "@chakra-ui/react";
 import React from "react";
 import { PresetEditor } from "../PresetEditor";
@@ -24,14 +24,13 @@ export const AddNewPresetModal: React.FC<AddNewPresetModalProps> = ({
   onCloseSuccessfully,
   presetId,
 }) => {
-  const theme = useTheme();
+  const [bgColor] = useToken("colors", ["item-bg"]);
 
   return (
     <Modal onClose={onClose} size={"full)"} isOpen={isOpen}>
       <ModalOverlay />
       <ModalContent
-        bg={theme.colors.greyscale[0]}
-        borderRadius={"1rem"}
+        bg={bgColor}
         height={{
           base: "calc(100vh - 7.25rem)",
           tablet: "calc(100vh - 9.5rem)",

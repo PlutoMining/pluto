@@ -3,9 +3,9 @@ import Alert from "@/components/Alert/Alert";
 import { AlertInterface, AlertStatus } from "@/components/Alert/interfaces";
 import Button from "@/components/Button/Button";
 import { Input } from "@/components/Input/Input";
-import { Box, Flex, SimpleGrid, Text, useDisclosure, VStack } from "@chakra-ui/react";
+import { Box, Flex, SimpleGrid, Text, useDisclosure, useToken, VStack } from "@chakra-ui/react";
 import { Preset } from "@pluto/interfaces";
-import { validateBitcoinAddress, validateDomain, validateTCPPort } from "@pluto/utils";
+import { validateDomain, validateTCPPort } from "@pluto/utils";
 import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -273,7 +273,7 @@ export const PresetEditor = ({
             </VStack>
           </VStack>
           <Flex gap={"1rem"}>
-            {onCloseModal && <Button variant="secondary" onClick={onCloseModal} label="Cancel" />}
+            {onCloseModal && <Button variant="outlined" onClick={onCloseModal} label="Cancel" />}
             <Button
               isLoading={isSaveLoading}
               variant="primary"

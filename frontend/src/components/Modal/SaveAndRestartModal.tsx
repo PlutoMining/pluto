@@ -11,6 +11,7 @@ import {
   Button as ChakraButton,
   Stack,
   RadioGroup,
+  useToken,
 } from "@chakra-ui/react";
 import { useCallback, useState } from "react";
 import { RadioButton } from "../RadioButton";
@@ -27,8 +28,6 @@ export enum RadioButtonValues {
 }
 
 export const SaveAndRestartModal: React.FC<SaveAndRestartModalProps> = ({ isOpen, onClose }) => {
-  const theme = useTheme();
-
   const [radioButtonValue, setRadioButtonValue] = useState<RadioButtonValues>(
     RadioButtonValues.ONLY_SAVE
   );
@@ -41,6 +40,11 @@ export const SaveAndRestartModal: React.FC<SaveAndRestartModalProps> = ({ isOpen
     onClose(radioButtonValue);
   }, [onClose, radioButtonValue]);
 
+  const [bgColor] = useToken("colors", ["item-bg"]);
+  const [borderColor] = useToken("colors", ["border-color"]);
+  const [textColor] = useToken("colors", ["body-text"]);
+  const [accentColor] = useToken("colors", ["accent-color"]);
+
   return (
     <Modal
       isCentered
@@ -52,12 +56,11 @@ export const SaveAndRestartModal: React.FC<SaveAndRestartModalProps> = ({ isOpen
     >
       <ModalOverlay bg="none" backdropFilter="auto" backdropBlur="3px" />
       <ModalContent
-        bg={"#fff"}
-        borderColor={"#E1DEE3"}
+        bg={bgColor}
+        borderColor={borderColor}
         borderWidth={"1px"}
-        borderRadius={"1rem"}
         p={"1rem"}
-        color={"greyscale.900"}
+        color={textColor}
       >
         <ModalHeader fontFamily={"heading"} fontWeight={400} fontSize={"4xl"}>
           Save or Save&Restart the device?
@@ -82,7 +85,7 @@ export const SaveAndRestartModal: React.FC<SaveAndRestartModalProps> = ({ isOpen
           </RadioGroup>
         </ModalBody>
         <ModalFooter gap={"1.5rem"}>
-          <ChakraButton variant="secondary" onClick={() => onClose("")}>
+          <ChakraButton variant="outlined" onClick={() => onClose("")}>
             Cancel
           </ChakraButton>
           <ChakraButton variant="primary" onClick={handleAction}>

@@ -65,7 +65,7 @@ const secondary = defineStyle((styles) => {
   };
 });
 
-const outlined = defineStyle((styles) => {
+const outlined = defineStyle(() => {
   return {
     background: "item-bg",
     color: "body-text",

@@ -139,110 +139,102 @@ const MonitoringTablePage: React.FC = () => {
 
         {registeredDevices ? (
           <Box
-            backgroundColor={theme.colors.greyscale[0]}
-            borderRadius={"1rem"}
-            p={"1rem"}
-            borderWidth={"1px"}
-            borderColor={theme.colors.greyscale[200]}
+            backgroundColor={"bg-color"}
+            // borderRadius={"1rem"}
+            // p={"1rem"}
+            // borderWidth={"1px"}
+            // borderColor={theme.colors.greyscale[200]}
           >
             <TableContainer
-              borderRadius={"1rem"}
+              borderRadius={0}
               borderWidth={"1px"}
-              borderColor={theme.colors.greyscale[200]}
+              borderColor={"border-color"}
               display={{ base: "none", tablet: "block" }}
             >
               <Table variant="simple">
-                <Thead backgroundColor={theme.colors.greyscale[100]}>
+                <Thead backgroundColor={"th-bg"}>
                   <Tr>
-                    <Th borderColor={theme.colors.greyscale[100]}>
-                      <Text
-                        color={theme.colors.greyscale[500]}
-                        fontFamily={"heading"}
-                        textTransform={"capitalize"}
-                        fontSize={"12px"}
-                        textAlign={"left"}
-                      >
-                        Name
-                      </Text>
+                    <Th
+                      borderColor={"border-color"}
+                      color={"th-color"}
+                      fontFamily={"heading"}
+                      textTransform={"capitalize"}
+                      fontSize={"xs"}
+                      textAlign={"left"}
+                    >
+                      Name
                     </Th>
-                    <Th borderColor={theme.colors.greyscale[100]}>
-                      <Text
-                        color={theme.colors.greyscale[500]}
-                        fontFamily={"heading"}
-                        textTransform={"capitalize"}
-                        fontSize={"12px"}
-                        textAlign={"center"}
-                      >
-                        Hashrate
-                      </Text>
+                    <Th
+                      borderColor={"border-color"}
+                      color={"th-color"}
+                      fontFamily={"heading"}
+                      textTransform={"capitalize"}
+                      fontSize={"xs"}
+                      textAlign={"center"}
+                    >
+                      Hashrate
                     </Th>
-                    <Th borderColor={theme.colors.greyscale[100]}>
-                      <Text
-                        color={theme.colors.greyscale[500]}
-                        fontFamily={"heading"}
-                        textTransform={"capitalize"}
-                        fontSize={"12px"}
-                        textAlign={"center"}
-                      >
-                        Shares
-                      </Text>
+                    <Th
+                      borderColor={"border-color"}
+                      color={"th-color"}
+                      fontFamily={"heading"}
+                      textTransform={"capitalize"}
+                      fontSize={"xs"}
+                      textAlign={"center"}
+                    >
+                      Shares
                     </Th>
-                    <Th borderColor={theme.colors.greyscale[100]}>
-                      <Text
-                        color={theme.colors.greyscale[500]}
-                        fontFamily={"heading"}
-                        textTransform={"capitalize"}
-                        fontSize={"12px"}
-                        textAlign={"center"}
-                      >
-                        Power
-                      </Text>
+                    <Th
+                      borderColor={"border-color"}
+                      color={"th-color"}
+                      fontFamily={"heading"}
+                      textTransform={"capitalize"}
+                      fontSize={"xs"}
+                      textAlign={"center"}
+                    >
+                      Power
                     </Th>
-                    <Th borderColor={theme.colors.greyscale[100]}>
-                      <Text
-                        color={theme.colors.greyscale[500]}
-                        fontFamily={"heading"}
-                        textTransform={"capitalize"}
-                        fontSize={"12px"}
-                        textAlign={"center"}
-                      >
-                        Temp
-                      </Text>
+                    <Th
+                      borderColor={"border-color"}
+                      color={"th-color"}
+                      fontFamily={"heading"}
+                      textTransform={"capitalize"}
+                      fontSize={"xs"}
+                      textAlign={"center"}
+                    >
+                      Temp
                     </Th>
-                    <Th borderColor={theme.colors.greyscale[100]}>
-                      <Text
-                        color={theme.colors.greyscale[500]}
-                        fontFamily={"heading"}
-                        textTransform={"capitalize"}
-                        fontSize={"12px"}
-                        textAlign={"center"}
-                      >
-                        Best difficulty
-                      </Text>
+                    <Th
+                      borderColor={"border-color"}
+                      color={"th-color"}
+                      fontFamily={"heading"}
+                      textTransform={"capitalize"}
+                      fontSize={"xs"}
+                      textAlign={"center"}
+                    >
+                      Best difficulty
                     </Th>
-                    <Th borderColor={theme.colors.greyscale[100]}>
-                      <Text
-                        color={theme.colors.greyscale[500]}
-                        fontFamily={"heading"}
-                        textTransform={"capitalize"}
-                        fontSize={"12px"}
-                        textAlign={"center"}
-                      >
-                        Uptime
-                      </Text>
+                    <Th
+                      borderColor={"border-color"}
+                      color={"th-color"}
+                      fontFamily={"heading"}
+                      textTransform={"capitalize"}
+                      fontSize={"xs"}
+                      textAlign={"center"}
+                    >
+                      Uptime
                     </Th>
-                    <Th borderColor={theme.colors.greyscale[100]}>
-                      <Text
-                        color={theme.colors.greyscale[500]}
-                        fontFamily={"heading"}
-                        textTransform={"capitalize"}
-                        fontSize={"12px"}
-                        textAlign={"center"}
-                      >
-                        Status
-                      </Text>
+                    <Th
+                      borderColor={"border-color"}
+                      color={"th-color"}
+                      fontFamily={"heading"}
+                      textTransform={"capitalize"}
+                      fontSize={"xs"}
+                      textAlign={"center"}
+                    >
+                      Status
                     </Th>
-                    <Th borderColor={theme.colors.greyscale[100]}></Th>
+                    <Th borderColor={"border-color"}></Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -268,7 +260,7 @@ const MonitoringTablePage: React.FC = () => {
                         textAlign={"center"}
                       >
                         {device.info.sharesAccepted}|
-                        <Text as={"label"} color={theme.colors.brand.secondary}>
+                        <Text as={"label"} color={"accent-color"}>
                           {device.info.sharesRejected}
                         </Text>
                       </Td>

@@ -1,12 +1,14 @@
-import { Flex, Heading } from "@chakra-ui/react";
+import { Flex, useToken } from "@chakra-ui/react";
 import { PlutoLogo } from "../PlutoLogo";
 
-interface LogoProps { }
+interface LogoProps {}
 
-export const Logo = ({ }: LogoProps) => {
+export const Logo = ({}: LogoProps) => {
+  const [color] = useToken("colors", ["logo-color"]);
+
   return (
-    <Flex gap={'0.5rem'} alignItems={'center'}>
-      <PlutoLogo />
+    <Flex gap={"0.5rem"} alignItems={"center"}>
+      <PlutoLogo color={color} />
     </Flex>
   );
 };

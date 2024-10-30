@@ -16,6 +16,7 @@ import {
   Text,
   useDisclosure,
   useTheme,
+  useToken,
   VStack,
 } from "@chakra-ui/react";
 import { Device } from "@pluto/interfaces";
@@ -164,6 +165,8 @@ const DevicePage: React.FC = () => {
     onCloseAlert();
   }, [onCloseAlert]);
 
+  const [itemBg] = useToken("colors", ["item-bg"]);
+
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
       {alert && (
@@ -177,45 +180,45 @@ const DevicePage: React.FC = () => {
                 Your devices
               </Heading>
               <Button
-                variant={"primaryBlack"}
+                variant={"primary"}
                 onClick={onOpen}
-                rightIcon={<AddIcon color={theme.colors.greyscale[100]} />}
+                rightIcon={<AddIcon color={itemBg} />}
                 label="Add a new device"
               ></Button>
             </Flex>
             {registeredDevices ? (
               <>
                 {registeredDevices && registeredDevices.length > 0 ? (
+                  // <Box
+                  //   backgroundColor={itemBg}
+                  //   borderRadius={"1rem"}
+                  //   p={"1rem"}
+                  //   borderWidth={"1px"}
+                  //   borderColor={theme.colors.greyscale[200]}
+                  // >
                   <Box
-                    backgroundColor={theme.colors.greyscale[0]}
-                    borderRadius={"1rem"}
-                    p={"1rem"}
+                    backgroundColor={"item-bg"}
+                    borderRadius={0}
                     borderWidth={"1px"}
-                    borderColor={theme.colors.greyscale[200]}
+                    borderColor={"border-color"}
+                    as={Flex}
+                    flexDir={"column"}
+                    gap={"1rem"}
                   >
-                    <Box
-                      backgroundColor={theme.colors.greyscale[0]}
-                      borderRadius={"0.5rem"}
-                      borderWidth={"1px"}
-                      borderColor={theme.colors.greyscale[200]}
-                      as={Flex}
-                      flexDir={"column"}
-                      gap={"1rem"}
-                    >
-                      <DeviceTable
-                        devices={registeredDevices}
-                        removeDeviceFunction={removeRegisteredDevice}
-                      ></DeviceTable>
+                    <DeviceTable
+                      devices={registeredDevices}
+                      removeDeviceFunction={removeRegisteredDevice}
+                    ></DeviceTable>
 
-                      <Box display={{ base: "block", tablet: "none" }}>
-                        <DeviceAccordion
-                          removeFunction={removeRegisteredDevice}
-                          devices={registeredDevices}
-                        ></DeviceAccordion>
-                      </Box>
+                    <Box display={{ base: "block", tablet: "none" }}>
+                      <DeviceAccordion
+                        removeFunction={removeRegisteredDevice}
+                        devices={registeredDevices}
+                      ></DeviceAccordion>
                     </Box>
                   </Box>
                 ) : (
+                  // </Box>
                   <VStack>
                     <Text>Looks like you haven&lsquo;t added any devices yet!</Text>
                     <Text>To get started with monitoring, please add your first device.</Text>

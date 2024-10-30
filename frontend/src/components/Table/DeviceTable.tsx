@@ -33,125 +33,125 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
         // layout="fixed"
       >
         <Thead>
-          <Tr backgroundColor={theme.colors.greyscale[100]} h={"40px"}>
+          <Tr backgroundColor={"th-bg"} h={"40px"}>
             <Th
-              borderColor={theme.colors.greyscale[100]}
+              borderColor={"border-color"}
               p={"8px 0 8px 12px"}
-              // p={0}
-              borderRadius={"7px 0 0 0"}
-              color={theme.colors.greyscale[500]}
+              borderRadius={0}
+              color={"th-color"}
               fontFamily={"heading"}
               textTransform={"capitalize"}
-              fontSize={"12px"}
+              fontSize={"xs"}
               maxW={"140px"}
+              fontWeight={500}
             >
               Hostname
             </Th>
-            <Th borderColor={theme.colors.greyscale[100]}>
-              <Text
-                fontWeight={500}
-                color={theme.colors.greyscale[500]}
-                fontFamily={"heading"}
-                textTransform={"capitalize"}
-                fontSize={"12px"}
-                textAlign={"center"}
-                p={0}
-              >
-                Date added
-              </Text>
+            <Th
+              borderColor={"border-color"}
+              p={0}
+              borderRadius={0}
+              color={"th-color"}
+              fontFamily={"heading"}
+              textTransform={"capitalize"}
+              fontSize={"xs"}
+              textAlign={"center"}
+              fontWeight={500}
+            >
+              Date added
             </Th>
-            <Th borderColor={theme.colors.greyscale[100]}>
-              <Text
-                p={0}
-                fontWeight={500}
-                color={theme.colors.greyscale[500]}
-                fontFamily={"heading"}
-                textTransform={"capitalize"}
-                fontSize={"12px"}
-                textAlign={"center"}
-              >
-                IP
-              </Text>
+            <Th
+              borderColor={"border-color"}
+              p={0}
+              borderRadius={0}
+              color={"th-color"}
+              fontFamily={"heading"}
+              textTransform={"capitalize"}
+              fontSize={"xs"}
+              textAlign={"center"}
+              fontWeight={500}
+            >
+              IP
             </Th>
-            <Th borderColor={theme.colors.greyscale[100]}>
-              <Text
-                p={0}
-                fontWeight={500}
-                color={theme.colors.greyscale[500]}
-                fontFamily={"heading"}
-                textTransform={"capitalize"}
-                fontSize={"12px"}
-                textAlign={"center"}
-              >
-                Mac Address
-              </Text>
+            <Th
+              borderColor={"border-color"}
+              p={0}
+              borderRadius={0}
+              color={"th-color"}
+              fontFamily={"heading"}
+              textTransform={"capitalize"}
+              fontSize={"xs"}
+              textAlign={"center"}
+              fontWeight={500}
+            >
+              Mac Address
             </Th>
-            <Th borderColor={theme.colors.greyscale[100]}>
-              <Text
-                p={0}
-                fontWeight={500}
-                color={theme.colors.greyscale[500]}
-                fontFamily={"heading"}
-                textTransform={"capitalize"}
-                fontSize={"12px"}
-                textAlign={"center"}
-              >
-                Miner
-              </Text>
+            <Th
+              borderColor={"border-color"}
+              p={0}
+              borderRadius={0}
+              color={"th-color"}
+              fontFamily={"heading"}
+              textTransform={"capitalize"}
+              fontSize={"xs"}
+              textAlign={"center"}
+              fontWeight={500}
+            >
+              Miner
             </Th>
-            <Th borderColor={theme.colors.greyscale[100]}>
-              <Text
-                p={0}
-                fontWeight={500}
-                color={theme.colors.greyscale[500]}
-                fontFamily={"heading"}
-                textTransform={"capitalize"}
-                fontSize={"12px"}
-                textAlign={"center"}
-              >
-                ASIC
-              </Text>
+            <Th
+              borderColor={"border-color"}
+              p={0}
+              borderRadius={0}
+              color={"th-color"}
+              fontFamily={"heading"}
+              textTransform={"capitalize"}
+              fontSize={"xs"}
+              textAlign={"center"}
+              fontWeight={500}
+            >
+              ASIC
             </Th>
-            <Th borderColor={theme.colors.greyscale[100]}>
-              <Text
-                p={0}
-                fontWeight={500}
-                color={theme.colors.greyscale[500]}
-                fontFamily={"heading"}
-                textTransform={"capitalize"}
-                fontSize={"12px"}
-                textAlign={"center"}
-              >
-                Uptime
-              </Text>
+            <Th
+              borderColor={"border-color"}
+              p={0}
+              borderRadius={0}
+              color={"th-color"}
+              fontFamily={"heading"}
+              textTransform={"capitalize"}
+              fontSize={"xs"}
+              textAlign={"center"}
+              fontWeight={500}
+            >
+              Uptime
             </Th>
-            <Th borderColor={theme.colors.greyscale[100]}>
-              <Text
-                p={0}
-                fontWeight={500}
-                color={theme.colors.greyscale[500]}
-                fontFamily={"heading"}
-                textTransform={"capitalize"}
-                fontSize={"12px"}
-                textAlign={"center"}
-              >
-                FW v.
-              </Text>
+            <Th
+              borderColor={"border-color"}
+              p={0}
+              borderRadius={0}
+              color={"th-color"}
+              fontFamily={"heading"}
+              textTransform={"capitalize"}
+              fontSize={"xs"}
+              textAlign={"center"}
+              fontWeight={500}
+            >
+              FW v.
             </Th>
-            <Th borderColor={theme.colors.greyscale[100]}>
-              <Text
-                p={0}
-                fontWeight={500}
-                color={theme.colors.greyscale[500]}
-                fontFamily={"heading"}
-                textTransform={"capitalize"}
-                fontSize={"12px"}
-                textAlign={"center"}
-              >
-                Status
-              </Text>
+            <Th
+              borderColor={"border-color"}
+              p={0}
+              borderRadius={0}
+              color={"th-color"}
+              fontFamily={"heading"}
+              textTransform={"capitalize"}
+              fontSize={"xs"}
+              textAlign={"center"}
+              fontWeight={500}
+            >
+              Status
             </Th>
-            <Th borderColor={theme.colors.greyscale[100]} borderRadius={"0 7px 0 0"}></Th>
+            <Th borderColor={"border-color"} borderRadius={0}></Th>
           </Tr>
         </Thead>
         <Tbody>
@@ -160,7 +160,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               <Td
                 borderTopWidth={"1px"}
                 borderBottomWidth={0}
-                borderColor={theme.colors.greyscale[100]}
+                borderColor={"border-color"}
                 fontSize={"14px"}
                 textAlign={"left"}
                 p={"12px"}
@@ -173,7 +173,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               <Td
                 borderTopWidth={"1px"}
                 borderBottomWidth={0}
-                borderColor={theme.colors.greyscale[100]}
+                borderColor={"border-color"}
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px"}
@@ -183,7 +183,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               <Td
                 borderTopWidth={"1px"}
                 borderBottomWidth={0}
-                borderColor={theme.colors.greyscale[100]}
+                borderColor={"border-color"}
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px"}
@@ -193,7 +193,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               <Td
                 borderTopWidth={"1px"}
                 borderBottomWidth={0}
-                borderColor={theme.colors.greyscale[100]}
+                borderColor={"border-color"}
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px"}
@@ -203,7 +203,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               <Td
                 borderTopWidth={"1px"}
                 borderBottomWidth={0}
-                borderColor={theme.colors.greyscale[100]}
+                borderColor={"border-color"}
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px"}
@@ -217,7 +217,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               <Td
                 borderTopWidth={"1px"}
                 borderBottomWidth={0}
-                borderColor={theme.colors.greyscale[100]}
+                borderColor={"border-color"}
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px 8px"}
@@ -227,7 +227,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               <Td
                 borderTopWidth={"1px"}
                 borderBottomWidth={0}
-                borderColor={theme.colors.greyscale[100]}
+                borderColor={"border-color"}
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px"}
@@ -242,7 +242,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               <Td
                 borderTopWidth={"1px"}
                 borderBottomWidth={0}
-                borderColor={theme.colors.greyscale[100]}
+                borderColor={"border-color"}
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px"}
@@ -252,7 +252,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               <Td
                 borderTopWidth={"1px"}
                 borderBottomWidth={0}
-                borderColor={theme.colors.greyscale[100]}
+                borderColor={"border-color"}
                 textAlign={"center"}
                 p={"12px"}
               >
@@ -261,7 +261,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               <Td
                 borderTopWidth={"1px"}
                 borderBottomWidth={0}
-                borderColor={theme.colors.greyscale[100]}
+                borderColor={"border-color"}
                 p={"12px"}
                 maxWidth={{ tablet: "14px", desktop: "unset" }}
                 width={{ tablet: "14px", desktop: "unset" }}

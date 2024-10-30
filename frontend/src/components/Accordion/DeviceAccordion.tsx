@@ -34,9 +34,8 @@ export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({ devices, remov
           allowMultiple
           as={Flex}
           flexDir={"column"}
-          backgroundColor={"greyscale.0"}
-          //   borderWidth={"1px"}
-          borderColor={"greyscale.200"}
+          backgroundColor={"item-bg"}
+          borderColor={"border-color"}
           borderRadius={"1rem"}
         >
           {devices?.map((device, index) => (
@@ -88,7 +87,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
         </Link>
       </AccordionButton>
       <AccordionPanel p={0} pb={4} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
-        <Divider mb={"1rem"} mt={"1rem"} borderColor={theme.colors.greyscale[200]} />
+        <Divider mb={"1rem"} mt={"1rem"} borderColor={"border-color"} />
 
         <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"}>
           <Flex justify={"space-between"}>

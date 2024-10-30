@@ -83,8 +83,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 
   const [isSelectPoolPresetOpen, setIsSelectPoolPresetModalOpen] = useState(false);
 
-  const theme = useTheme();
-
   const [devices, setDevices] = useState<Device[]>(fetchedDevices || []);
 
   const [checkedFetchedItems, setCheckedFetchedItems] = useState<{ mac: string; value: boolean }[]>(
@@ -266,7 +264,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   }, []);
 
   const [borderColor] = useToken("colors", ["border-color"]);
-  const [bgColor] = useToken("colors", ["input-bg"]);
+  const [bgColor] = useToken("colors", ["item-bg"]);
   const [textColor] = useToken("colors", ["body-text"]);
   const [accentColor] = useToken("colors", ["accent-color"]);
 
@@ -307,7 +305,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
               isChecked={allChecked}
               defaultChecked={allChecked}
               borderColor={borderColor}
-              borderRadius={"3px"}
+              borderRadius={"0"}
               sx={{
                 height: "20px", // Imposta l'altezza
                 width: "20px", // Imposta la larghezza
@@ -444,16 +442,16 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
       >
         <ModalOverlay bg="none" backdropFilter="auto" backdropBlur="3px" />
         <ModalContent
-          bg={"#fff"}
-          borderColor={"#E1DEE3"}
+          bg={bgColor}
+          borderColor={borderColor}
           borderWidth={"1px"}
-          borderRadius={"1rem"}
+          borderRadius={0}
           p={"1rem"}
-          color={"greyscale.900"}
+          color={textColor}
         >
           <ModalHeader>Restart the selected devices?</ModalHeader>
           <Box pos={"absolute"} top={"1rem"} right={"1rem"} cursor={"pointer"}>
-            <CloseIcon color={"greyscale.900"} onClick={onCloseModal} />
+            <CloseIcon color={borderColor} onClick={onCloseModal} />
           </Box>
           <ModalBody>
             <Text>
@@ -462,7 +460,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             </Text>
           </ModalBody>
           <ModalFooter gap={"1.5rem"}>
-            <Button variant="secondary" onClick={onCloseModal} label="Cancel"></Button>
+            <Button variant="outlined" onClick={onCloseModal} label="Cancel"></Button>
             <Button
               type="submit"
               variant="primary"
@@ -866,6 +864,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     setIsRestartModalOpen(true);
   };
 
+  const [bgColor] = useToken("colors", ["item-bg"]);
+
   return (
     <>
       <AccordionButton p={0} justifyContent={"space-between"} _hover={{ backgroundColor: "none" }}>
@@ -1200,7 +1200,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         <Flex justifyContent={"flex-start"}>
           <Button
             variant="primary"
-            rightIcon={<ArrowIcon color="#fff" />}
+            rightIcon={<ArrowIcon color={bgColor} />}
             onClick={() => setIsSaveAndRestartModalOpen(true)}
             disabled={isDeviceValid()}
             label="Save"

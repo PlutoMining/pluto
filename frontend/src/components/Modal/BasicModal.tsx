@@ -6,11 +6,10 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton,
-  useTheme,
   Flex,
+  useToken,
 } from "@chakra-ui/react";
 import Button from "../Button/Button";
-import { useEffect } from "react";
 
 interface BasicModalProps {
   isOpen: boolean;
@@ -34,16 +33,19 @@ export const BasicModal: React.FC<BasicModalProps> = ({
   secondaryAction,
   secondaryActionLabel,
 }) => {
-  const theme = useTheme();
+  const [borderColor] = useToken("colors", ["border-color"]);
+  const [bgColor] = useToken("colors", ["item-bg"]);
+  const [textColor] = useToken("colors", ["body-text"]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
       <ModalContent
-        bg={theme.colors.greyscale[0]}
-        borderRadius={"1rem"}
+        bg={bgColor}
+        borderRadius={0}
         borderWidth={"1px"}
-        borderColor={theme.colors.greyscale[200]}
+        borderColor={borderColor}
+        color={textColor}
       >
         <ModalHeader>{title}</ModalHeader>
         <ModalCloseButton />
