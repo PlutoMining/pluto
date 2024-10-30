@@ -1,34 +1,32 @@
-import { useTheme } from "@chakra-ui/react";
+import { useToken } from "@chakra-ui/react";
 import { Badge as ChakraBadge } from "@chakra-ui/react";
 
 export interface DeviceStatusBadgeProps {
   status?: "online" | "offline";
   label?: string;
-  height?: string;
   lineHeight?: string;
 }
 
 export const DeviceStatusBadge: React.FC<DeviceStatusBadgeProps> = ({
   status = "online",
   label,
-  height = "20px",
   lineHeight = "20px",
 }) => {
-  const theme = useTheme();
+  const [onlineColor] = useToken("colors", ["status-online"]);
+  const [offlineColor] = useToken("colors", ["status-offline"]);
 
-  const bg = status === "online" ? theme.colors.generic.blue : theme.colors.greyscale[200];
-  const color = status === "online" ? theme.colors.generic.blueDark : theme.colors.greyscale[600];
+  const color = status === "online" ? onlineColor : offlineColor;
 
   return (
     <ChakraBadge
-      bg={bg}
+      bg={"transparent"}
       color={color}
       fontSize={"13px"}
       lineHeight={lineHeight}
-      borderRadius={"50px"}
+      borderWidth={"1px"}
+      borderColor={color}
       padding={"0 8px"}
-      textTransform={"capitalize"}
-      height={height}
+      textTransform={"uppercase"}
       alignContent={"center"}
     >
       {label ? label : status}

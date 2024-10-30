@@ -22,6 +22,7 @@ import {
   Text,
   useDisclosure,
   useTheme,
+  useToken,
   VStack,
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
@@ -123,6 +124,8 @@ const SettingsPage = () => {
     onCloseAlert();
   }, [onCloseAlert]);
 
+  const [itemBg] = useToken("colors", ["item-bg"]);
+
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
       {alert && (
@@ -157,8 +160,8 @@ const SettingsPage = () => {
                 />
                 <Box>
                   <Button
-                    variant="primaryBlack"
-                    icon={<RestartIcon color={theme.colors.greyscale[0]} />}
+                    variant="primary"
+                    icon={<RestartIcon color={itemBg} />}
                     onClick={onOpenModal}
                     label="Restart all"
                   ></Button>
@@ -198,11 +201,11 @@ const SettingsPage = () => {
           borderWidth={"1px"}
           borderRadius={"1rem"}
           p={"1rem"}
-          color={"greyscale.900"}
+          color={"body-text"}
         >
           <ModalHeader>Restart all devices?</ModalHeader>
           <Box pos={"absolute"} top={"1rem"} right={"1rem"} cursor={"pointer"}>
-            <CloseIcon color={"greyscale.900"} onClick={onCloseModal} />
+            <CloseIcon color={"body-text"} onClick={onCloseModal} />
           </Box>
           <ModalBody>
             <Text>

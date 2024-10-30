@@ -24,6 +24,7 @@ import {
   useDisclosure,
   useTheme,
   Checkbox as ChakraCheckbox,
+  useToken,
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
 import { validateDomain, validateTCPPort } from "@pluto/utils";
@@ -264,15 +265,19 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
     }
   }, []);
 
+  const [borderColor] = useToken("colors", ["border-color"]);
+  const [bgColor] = useToken("colors", ["input-bg"]);
+  const [textColor] = useToken("colors", ["body-text"]);
+  const [accentColor] = useToken("colors", ["accent-color"]);
+
   return (
     <>
       <Flex
         flexDirection={"column"}
         gap={"1rem"}
         borderWidth={"1px"}
-        borderColor={"greyscale.200"}
-        borderRadius={"1rem"}
-        backgroundColor={theme.colors.greyscale[0]}
+        borderColor={"border-color"}
+        backgroundColor={"item-bg"}
         p={"1rem"}
       >
         <Flex
@@ -299,31 +304,36 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
               name={"select-all-devices"}
               onChange={(e) => handleAllCheckbox(e.target.checked)}
               id={"select-all-devices"}
-              size="lg"
               isChecked={allChecked}
               defaultChecked={allChecked}
-              borderColor={theme.colors.greyscale[900]}
+              borderColor={borderColor}
               borderRadius={"3px"}
               sx={{
+                height: "20px", // Imposta l'altezza
+                width: "20px", // Imposta la larghezza
+                borderRadius: 0,
                 "& .chakra-checkbox__control": {
-                  bg: theme.colors.greyscale[0],
-                  borderColor: theme.colors.greyscale[900],
+                  height: "20px", // Altezza del controllo
+                  width: "20px", // Larghezza del controllo
+                  borderRadius: 0,
+                  bg: bgColor, // colore di sfondo (hex)
+                  borderColor: borderColor, // colore del bordo (hex)
                 },
                 "& .chakra-checkbox__control[data-checked]": {
-                  bg: theme.colors.brand.secondary,
-                  borderColor: theme.colors.greyscale[900],
-                  color: theme.colors.greyscale[0],
-                  boxShadow: "inset 0 0 0 2px white",
+                  bg: bgColor, // colore quando è selezionato (checked)
+                  borderColor: accentColor, // colore bordo quando è selezionato
+                  color: accentColor, // colore di sfondo (hex)
+                  boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
                 },
                 "& .chakra-checkbox__control[data-checked]:hover": {
-                  bg: theme.colors.brand.secondary,
-                  borderColor: theme.colors.greyscale[900],
-                  color: theme.colors.greyscale[0],
-                  boxShadow: "inset 0 0 0 2px white",
+                  bg: bgColor, // colore quando è selezionato (checked)
+                  borderColor: accentColor, // colore bordo quando è selezionato
+                  color: accentColor, // colore di sfondo (hex)
+                  boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
                 },
                 "& .chakra-checkbox__control:focus": {
-                  borderColor: theme.colors.brand.primary,
-                  boxShadow: `0 0 0 2px ${theme.colors.brand.primary}`,
+                  borderColor: textColor, // colore del bordo quando la checkbox è in focus
+                  boxShadow: `0 0 0 2px ${textColor}`, // effetto di ombra quando è in focus
                 },
               }}
             />
@@ -338,7 +348,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             <Button
               onClick={() => setIsSelectPoolPresetModalOpen(true)}
               variant="text"
-              icon={<ArrowRightUpIcon color={theme.colors.greyscale[500]} />}
+              icon={<ArrowRightUpIcon color={accentColor} />}
               disabled={
                 checkedFetchedItems.length <= 1 ||
                 checkedFetchedItems.filter((item) => item.value === true).length <= 1
@@ -348,7 +358,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             <Button
               onClick={onOpenModal}
               variant="outlined"
-              icon={<RestartIcon color={theme.colors.greyscale[500]} />}
+              icon={<RestartIcon color={accentColor} />}
               disabled={
                 checkedFetchedItems.length <= 1 ||
                 checkedFetchedItems.filter((item) => item.value === true).length <= 1
@@ -362,23 +372,20 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           as={Flex}
           flexDir={"column"}
           borderWidth={"1px"}
-          borderColor={"greyscale.200"}
-          borderRadius={"1rem"}
-          // p={"1rem"}
-          backgroundColor={theme.colors.greyscale[0]}
+          borderColor={"border-color"}
+          backgroundColor={"item-bg"}
           index={activeIndex}
           onChange={setActiveIndex}
         >
           <Flex
-            backgroundColor={theme.colors.greyscale[100]}
+            backgroundColor={"th-bg"}
             justify={"space-between"}
             p={"1rem"}
-            borderTopRadius={"1rem"}
             display={{ base: "none", tablet: "flex" }}
           >
             <Text
               fontWeight={500}
-              color={theme.colors.greyscale[500]}
+              color={"th-color"}
               fontFamily={"heading"}
               textTransform={"capitalize"}
               fontSize={"12px"}
@@ -391,7 +398,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             </Text>
             <Text
               fontWeight={500}
-              color={theme.colors.greyscale[500]}
+              color={"th-color"}
               fontFamily={"heading"}
               textTransform={"capitalize"}
               fontSize={"12px"}
@@ -909,13 +916,12 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 gap={"0.5rem"}
                 cursor="pointer"
                 background="none"
-                color={theme.colors.greyscale[900]}
+                color={"body-text"}
                 fontSize={"13px"}
                 lineHeight="1.5rem"
                 fontWeight={400}
                 fontFamily={theme.fonts.heading}
                 padding={"0.5rem 1rem"}
-                borderRadius="6px"
                 _hover={{ backgroundColor: "#5C009940" }}
                 _focus={{
                   bg: "#5C009966",
@@ -924,7 +930,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                   opacity: 0.3,
                 }}
               >
-                <RestartIcon color={theme.colors.greyscale[900]} />
+                <RestartIcon color={"body-text"} />
                 Restart
               </Flex>
             </Flex>

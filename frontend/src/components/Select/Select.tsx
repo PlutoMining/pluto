@@ -1,6 +1,7 @@
 import { ChangeEventHandler } from "react";
-import { FormControl, FormLabel, Select as ChakraSelect, useTheme } from "@chakra-ui/react";
+import { FormControl, FormLabel, Select as ChakraSelect, useToken } from "@chakra-ui/react";
 import React from "react";
+import { text } from "d3";
 
 interface SelectProps {
   label: string;
@@ -21,7 +22,9 @@ export const Select: React.FC<SelectProps> = ({
   optionValues,
   onChange,
 }) => {
-  const theme = useTheme();
+  const [borderColor] = useToken("colors", ["border-color"]);
+  const [bgColor] = useToken("colors", ["input-bg"]);
+  const [textColor] = useToken("colors", ["body-text"]);
 
   return (
     <FormControl>
@@ -35,20 +38,20 @@ export const Select: React.FC<SelectProps> = ({
         value={value}
         defaultValue={defaultValue}
         outline={"none"}
-        backgroundColor={theme.colors.greyscale[0]}
+        backgroundColor={bgColor}
         borderWidth={"1px"}
-        borderColor={theme.colors.greyscale[400]}
-        color={theme.colors.greyscale[900]}
-        borderRadius={"6px"}
+        borderColor={borderColor}
+        color={textColor}
+        borderRadius={0}
         height={"32px"}
         boxShadow={"none"}
         _focus={{
           outline: "none",
           boxShadow: "none",
-          border: `2px solid ${theme.colors.greyscale[400]}`,
+          border: `2px solid ${textColor}`,
         }}
         _hover={{
-          border: `2px solid ${theme.colors.greyscale[400]}`,
+          border: `2px solid ${textColor}`,
         }}
       >
         {optionValues.map((elem: { value: string | number; label: string }, index) => {

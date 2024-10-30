@@ -13,6 +13,8 @@ export const Footer = () => {
       fontWeight={400}
       color={"greyscale.200"}
       p={"1rem 0"}
+      borderTopWidth={"1px"}
+      borderTopColor={"border-color"}
     >
       <Flex
         margin={"0 auto"}

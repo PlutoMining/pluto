@@ -90,6 +90,14 @@ const theme = extendTheme({
         _light: lightThemeColors.greyscale[0],
         _dark: darkThemeColors.greyscale[900],
       },
+      "input-bg": {
+        _light: lightThemeColors.greyscale[0],
+        _dark: darkThemeColors.greyscale[700],
+      },
+      "input-right-bg": {
+        _light: lightThemeColors.greyscale[100],
+        _dark: darkThemeColors.greyscale[600],
+      },
       "cta-icon-color": {
         _light: lightThemeColors.greyscale[500],
         _dark: darkThemeColors.primary[500],
@@ -118,6 +126,31 @@ const theme = extendTheme({
         _light: lightThemeColors.greyscale[900],
         _dark: lightThemeColors.greyscale[0],
       },
+      "th-color": {
+        _light: lightThemeColors.greyscale[500],
+        _dark: lightThemeColors.greyscale[0],
+      },
+      "th-bg": {
+        _light: lightThemeColors.greyscale[100],
+        _dark: darkThemeColors.greyscale[900],
+      },
+      "status-online": {
+        _light: darkThemeColors.primary[600], // da modificare con la variante per il light theme
+        _dark: darkThemeColors.primary[600],
+      },
+      "status-offline": {
+        _light: darkThemeColors.greyscale[600], // da modificare con i valori corretti
+        _dark: darkThemeColors.greyscale[600], // da modificare con i valori corretti
+      },
+      "error-color": {
+        _light: darkThemeColors.alert.error, // da modificare con i valori corretti
+        _dark: darkThemeColors.alert.error, // da modificare con i valori corretti
+      },
+      "accent-color": {
+        _light: lightThemeColors.brand.secondary, // da modificare con i valori corretti
+        _dark: darkThemeColors.primary[500], // da modificare con i valori corretti
+      },
+
       "chakra-body-text": {
         _light: lightThemeColors.greyscale[900],
         _dark: lightThemeColors.greyscale[100],

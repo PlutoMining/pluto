@@ -67,31 +67,32 @@ const secondary = defineStyle((styles) => {
 
 const outlined = defineStyle((styles) => {
   return {
-    background: styles.theme.colors.greyscale[0],
-    color: styles.theme.colors.greyscale[500],
-    borderColor: styles.theme.colors.greyscale[200],
+    background: "item-bg",
+    color: "body-text",
+    borderColor: "body-text",
     borderWidth: "1px",
-    borderRadius: "6px",
-    // width: { base: "100%" },
+    borderRadius: 0,
     fontWeight: 400,
     padding: "6px 12px",
     textAlign: "center",
     fontSize: "13px",
 
     _hover: {
-      bg: "#D2CED5",
-      borderColor: "#D2CED5",
-      color: styles.theme.colors.greyscale[500],
+      // bg: "#D2CED5",
+      // borderColor: "#D2CED5",
+      // color: styles.theme.colors.greyscale[500],
     },
     _focus: {
-      background: styles.theme.colors.greyscale[300],
-      color: styles.theme.colors.greyscale[500],
-      borderColor: styles.theme.colors.greyscale[300],
+      // background: styles.theme.colors.greyscale[300],
+      // color: styles.theme.colors.greyscale[500],
+      // borderColor: styles.theme.colors.greyscale[300],
     },
     _disabled: {
-      background: styles.theme.colors.greyscale[0],
-      color: styles.theme.colors.greyscale[500],
-      borderColor: styles.theme.colors.greyscale[200],
+      // background: styles.theme.colors.greyscale[0],
+      // color: styles.theme.colors.greyscale[500],
+      // borderColor: styles.theme.colors.greyscale[200],
+
+      opacity: 0.5,
     },
   };
 });

@@ -1,4 +1,4 @@
-import { Space_Grotesk, Inter } from "next/font/google";
+import { Space_Grotesk, Azeret_Mono } from "next/font/google";
 
 export const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -6,15 +6,15 @@ export const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
-export const inter = Inter({
+export const bodyFont = Azeret_Mono({
   subsets: ["latin"],
   weight: ["200", "300", "400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
 export const fonts = {
-  heading: spaceGrotesk.style.fontFamily,
-  body: inter.style.fontFamily,
+  heading: bodyFont.style.fontFamily,
+  body: bodyFont.style.fontFamily,
 };
 
 export const fontSizes = {

@@ -1,5 +1,5 @@
 import { ChangeEvent } from "react";
-import { FormControl, Checkbox as ChakraCheckbox, useTheme, Text } from "@chakra-ui/react";
+import { FormControl, Checkbox as ChakraCheckbox, Text, useToken } from "@chakra-ui/react";
 import React from "react";
 
 interface CheckboxProps {
@@ -21,7 +21,10 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   defaultChecked,
   size,
 }) => {
-  const theme = useTheme();
+  const [borderColor] = useToken("colors", ["border-color"]);
+  const [bgColor] = useToken("colors", ["input-bg"]);
+  const [textColor] = useToken("colors", ["body-text"]);
+  const [accentColor] = useToken("colors", ["accent-color"]);
 
   const getFontSize = (size: any) => {
     switch (size) {
@@ -37,34 +40,39 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   return (
     <FormControl>
       <ChakraCheckbox
-        size="lg"
         name={name}
         onChange={onChange}
         id={id}
         isChecked={isChecked}
         defaultChecked={defaultChecked}
-        borderColor={theme.colors.greyscale[900]}
-        borderRadius={"3px"}
+        borderColor={borderColor}
+        borderRadius={0}
         sx={{
+          height: "20px", // Imposta l'altezza
+          width: "20px", // Imposta la larghezza
+          borderRadius: 0,
           "& .chakra-checkbox__control": {
-            bg: theme.colors.greyscale[0], // colore di sfondo (hex)
-            borderColor: theme.colors.greyscale[900], // colore del bordo (hex)
+            height: "20px", // Altezza del controllo
+            width: "20px", // Larghezza del controllo
+            borderRadius: 0,
+            bg: bgColor, // colore di sfondo (hex)
+            borderColor: borderColor, // colore del bordo (hex)
           },
           "& .chakra-checkbox__control[data-checked]": {
-            bg: theme.colors.brand.secondary, // colore quando è selezionato (checked)
-            borderColor: theme.colors.greyscale[900], // colore bordo quando è selezionato
-            color: theme.colors.greyscale[0], // colore di sfondo (hex)
-            boxShadow: "inset 0 0 0 2px white", // spazio bianco tra bordo e riempimento
+            bg: bgColor, // colore quando è selezionato (checked)
+            borderColor: accentColor, // colore bordo quando è selezionato
+            color: accentColor, // colore di sfondo (hex)
+            boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
           },
           "& .chakra-checkbox__control[data-checked]:hover": {
-            bg: theme.colors.brand.secondary, // colore quando è selezionato (checked)
-            borderColor: theme.colors.greyscale[900], // colore bordo quando è selezionato
-            color: theme.colors.greyscale[0], // colore di sfondo (hex)
-            boxShadow: "inset 0 0 0 2px white", // spazio bianco tra bordo e riempimento
+            bg: bgColor, // colore quando è selezionato (checked)
+            borderColor: accentColor, // colore bordo quando è selezionato
+            color: accentColor, // colore di sfondo (hex)
+            boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
           },
           "& .chakra-checkbox__control:focus": {
-            borderColor: theme.colors.brand.primary, // colore del bordo quando la checkbox è in focus
-            boxShadow: `0 0 0 2px ${theme.colors.brand.primary}`, // effetto di ombra quando è in focus
+            borderColor: textColor, // colore del bordo quando la checkbox è in focus
+            boxShadow: `0 0 0 2px ${textColor}`, // effetto di ombra quando è in focus
           },
         }}
       >

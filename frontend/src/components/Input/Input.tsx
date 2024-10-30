@@ -7,6 +7,7 @@ import {
   InputRightAddon,
   InputLeftAddon,
   InputGroup,
+  useToken,
 } from "@chakra-ui/react";
 import React from "react";
 
@@ -42,7 +43,11 @@ export const Input: React.FC<InputProps> = ({
   rightAddon,
   isDisabled,
 }) => {
-  const theme = useTheme();
+  const [borderColor] = useToken("colors", ["border-color"]);
+  const [bgColor] = useToken("colors", ["input-bg"]);
+  const [textColor] = useToken("colors", ["body-text"]);
+  const [rightAddonBg] = useToken("colors", ["input-right-bg"]);
+  const [errorColor] = useToken("colors", ["input-right-bg"]);
 
   return (
     <FormControl>
@@ -61,32 +66,32 @@ export const Input: React.FC<InputProps> = ({
           onChange={onChange}
           type={type}
           outline={"none"}
-          backgroundColor={theme.colors.greyscale[0]}
+          backgroundColor={bgColor}
           borderWidth={"1px"}
-          borderColor={theme.colors.greyscale[500]}
-          color={theme.colors.greyscale[900]}
+          borderColor={borderColor}
+          color={textColor}
           borderRadius={0}
           padding={"1rem"}
           height={"32px"}
           boxShadow={"none"}
           pattern={pattern}
           _placeholder={{
-            color: theme.colors.greyscale[500],
+            color: textColor,
             opacity: 0.5,
           }}
           _hover={{
-            borderColor: theme.colors.greyscale[500],
+            borderColor: textColor,
             borderWidth: "1px",
           }}
           _focus={{
             outline: "none",
             boxShadow: "none",
-            borderColor: theme.colors.brand.secondary,
+            borderColor: textColor,
             borderWidth: "1px",
           }}
           isInvalid={!!error}
           _invalid={{
-            borderColor: theme.colors.alert.error,
+            borderColor: textColor,
             borderWidth: "1px",
           }}
           isDisabled={isDisabled}
@@ -95,21 +100,17 @@ export const Input: React.FC<InputProps> = ({
           <InputRightAddon
             padding="1rem"
             height="2rem"
-            borderColor={error ? theme.colors.alert.error : theme.colors.greyscale[500]}
+            borderColor={error ? errorColor : borderColor}
             borderLeft={"none"}
-            backgroundColor={theme.colors.greyscale[100]}
+            backgroundColor={rightAddonBg}
             opacity={isDisabled ? 0.5 : 1}
+            borderRadius={0}
           >
             {rightAddon}
           </InputRightAddon>
         )}
       </InputGroup>
-      <FormLabel
-        pt={"4px"}
-        fontSize={"11px"}
-        color={theme.colors.alert.error}
-        opacity={isDisabled ? 0.5 : 1}
-      >
+      <FormLabel pt={"4px"} fontSize={"11px"} color={errorColor} opacity={isDisabled ? 0.5 : 1}>
         {error}
       </FormLabel>
     </FormControl>

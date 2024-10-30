@@ -4,6 +4,7 @@ import {
   InputGroup,
   InputLeftElement,
   useTheme,
+  useToken,
 } from "@chakra-ui/react";
 import React from "react";
 import { SearchIcon } from "../icons/SearchIcon";
@@ -21,34 +22,37 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   type = "text",
   onChange,
 }) => {
-  const theme = useTheme();
+  const [borderColor] = useToken("colors", ["border-color"]);
+  const [bgColor] = useToken("colors", ["input-bg"]);
+  const [textColor] = useToken("colors", ["body-text"]);
+  const [accentColor] = useToken("colors", ["accent-color"]);
 
   return (
     <InputGroup>
-      <InputLeftElement pointerEvents='none'>
-        <SearchIcon color={theme.colors.greyscale[900]} />
+      <InputLeftElement pointerEvents="none">
+        <SearchIcon color={accentColor} />
       </InputLeftElement>
       <ChakraInput
-        type={type} 
+        type={type}
         placeholder={placeholder}
         onChange={onChange}
         outline={"none"}
-        backgroundColor={theme.colors.greyscale[0]}
+        backgroundColor={bgColor}
         borderWidth={"1px"}
-        borderColor={theme.colors.greyscale[500]}
-        color={theme.colors.greyscale[900]}
-        borderRadius={"4px"}
+        borderColor={borderColor}
+        color={textColor}
+        borderRadius={0}
         boxShadow={"none"}
         _placeholder={{
-          color: theme.colors.greyscale[500],
+          color: textColor,
         }}
         _focus={{
           outline: "none",
           boxShadow: "none",
-          border: `2px solid ${theme.colors.brand.secondary}`,
+          border: `2px solid ${accentColor}`,
         }}
         _hover={{
-          border: `2px solid ${theme.colors.greyscale[500]}`,
+          border: `2px solid ${accentColor}`,
         }}
       />
     </InputGroup>
