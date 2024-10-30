@@ -126,7 +126,8 @@ services:
       - GF_HOST=http://grafana:3000
       - BACKEND_DESTINATION_HOST=http://backend:7776
       - NEXT_PUBLIC_WS_ROOT=ws://localhost:7776
-    # volumes:
+    volumes:
+      - ./umbrel-app.yml:/tmp/umbrel-app.yml:ro
     #   - ./common/utils:/common/utils:ro # Monta il modulo in read-only
     #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
     #   - ./frontend:/app/

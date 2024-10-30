@@ -11,18 +11,30 @@ import {
   useTheme,
 } from "@chakra-ui/react";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Alert from "../Alert/Alert";
 import { AlertInterface } from "../Alert/interfaces";
 import { Logo } from "../icons/Logo";
 import { HamburgerIcon } from "../icons/HamburgerIcon";
 import { CrossIcon } from "../icons/CrossIcon";
 import { DiscordLogo, GitLabLogo, MetaLogo, RedditLogo } from "../icons/FooterIcons";
+import axios from "axios";
 
 export const NavBar = () => {
   const { isOpen, onOpen, onClose, onToggle } = useDisclosure();
   const pathname = usePathname();
   const theme = useTheme();
+
+  const [version, setVersion] = useState("");
+
+  useEffect(() => {
+    const getVersion = async () => {
+      const response = await axios.get("/api/app-version");
+      setVersion(response.data.version);
+    };
+
+    getVersion();
+  }, []);
 
   const [alert, setAlert] = useState<AlertInterface>();
   const { isOpen: isOpenAlert, onOpen: onOpenAlert, onClose: onCloseAlert } = useDisclosure();
@@ -179,11 +191,20 @@ export const NavBar = () => {
         <Flex px={"2rem"} alignItems="center" maxW="container.desktop" margin={"0 auto"}>
           <Flex h={16} alignItems="center" gap={"1rem"} justifyContent="space-between" w={"100%"}>
             <Flex alignItems="center" gap={"1rem"} justify={"space-between"} w={"100%"}>
-              <Box marginRight={"auto"}>
+              <Flex marginRight={"auto"} gap={"1rem"} alignItems={"flex-end"}>
                 <Link key={`md-nav-link-logo`} href={"/"}>
                   <Logo />
                 </Link>
-              </Box>
+                <Text
+                  fontWeight={400}
+                  fontSize={"12px"}
+                  opacity={0.8}
+                  color={theme.colors.greyscale[100]}
+                  marginBottom={"-3px"}
+                >
+                  V. {version}
+                </Text>
+              </Flex>
               <HStack
                 as="nav"
                 spacing={4}

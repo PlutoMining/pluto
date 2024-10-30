@@ -132,6 +132,7 @@ services:
       - ./common/utils:/common/utils:ro # Monta il modulo in read-only
       - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
       - ./frontend:/app/
+      - ./umbrel-app.yml:/tmp/umbrel-app.yml:ro
 
   prometheus:
     build:
