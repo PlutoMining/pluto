@@ -191,24 +191,26 @@ export const NavBar = () => {
         <Flex px={"2rem"} alignItems="center" maxW="container.desktop" margin={"0 auto"}>
           <Flex h={16} alignItems="center" gap={"1rem"} justifyContent="space-between" w={"100%"}>
             <Flex alignItems="center" gap={"1rem"} justify={"space-between"} w={"100%"}>
-              <Flex marginRight={"auto"} gap={"1rem"} alignItems={"flex-end"}>
+              <Flex marginRight={"auto"} gap={"0.5rem"} alignItems={"flex-end"}>
                 <Link key={`md-nav-link-logo`} href={"/"}>
                   <Logo />
                 </Link>
-                <Text
-                  fontWeight={400}
-                  fontSize={"12px"}
-                  opacity={0.8}
-                  color={theme.colors.greyscale[100]}
-                  marginBottom={"-3px"}
-                >
-                  V. {version}
-                </Text>
+                {version && (
+                  <Text
+                    fontWeight={400}
+                    fontSize={"12px"}
+                    opacity={0.8}
+                    color={theme.colors.greyscale[100]}
+                    marginBottom={"-3px"}
+                  >
+                    V. {version}
+                  </Text>
+                )}
               </Flex>
               <HStack
                 as="nav"
                 spacing={4}
-                display={{ base: "none", tablet: "flex" }}
+                display={{ base: "none", tabletL: "flex" }}
                 backgroundColor={"rgba(255, 255, 255, 0.10)"}
                 p={"0.75rem"}
                 borderRadius={"8px"}
@@ -241,7 +243,7 @@ export const NavBar = () => {
                 </Text> */}
               </Flex>
 
-              <Box aria-label="Open Menu" display={{ tablet: "none" }} cursor={"pointer"}>
+              <Box aria-label="Open Menu" display={{ tabletL: "none" }} cursor={"pointer"}>
                 {isOpen ? (
                   <CrossIcon w={"32"} h={"32"} onClick={onToggle} />
                 ) : (
@@ -268,7 +270,7 @@ export const NavBar = () => {
               borderTopLeftRadius="1rem"
               borderBottomLeftRadius="1rem"
               p={"2rem"}
-              display={{ tablet: "none" }}
+              display={{ tabletL: "none" }}
               height={{
                 base: "calc(100vh - 7.25rem)",
                 tablet: "calc(100vh - 9.5rem)",
