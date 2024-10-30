@@ -9,7 +9,7 @@ export const Footer = () => {
       position={"sticky"}
       bottom={0}
       zIndex={"10"}
-      bg={"brand.purple0"}
+      bg={"footer-bg"}
       fontWeight={400}
       color={"greyscale.200"}
       p={"1rem 0"}

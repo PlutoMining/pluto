@@ -1,4 +1,4 @@
-export const colors = {
+export const lightColors = {
   text: {
     light: "whiteAlpha.900",
     dark: "gray.800",
@@ -32,5 +32,38 @@ export const colors = {
     success: "#00CC14",
     error: "#FF6464",
     warning: "#FDC500",
+  },
+};
+
+export const darkColors = {
+  greyscale: {
+    0: "#fff",
+    100: "#F2F2F3",
+    200: "#CBCBCC",
+    300: "#A2A2A6",
+    500: "#415058",
+    600: "#1F292E",
+    700: "#121619",
+    800: "#090B0D",
+    900: "#000000",
+  },
+  primary: {
+    100: "#D1FAF5",
+    500: "#13FFEB", // primary
+    600: "#00CBB8",
+    700: "#009888",
+    800: "#00685B",
+  },
+  secondary: {
+    100: "#A1E6FF",
+    200: "#82C9FF",
+    300: "#62ADFC",
+    400: "#3E91DE",
+    500: "#0077C1", // secondary
+  },
+  alert: {
+    success: "#96E04D",
+    error: "#EE2B34",
+    warning: "#FFBE4D",
   },
 };

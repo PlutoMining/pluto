@@ -1,12 +1,14 @@
 "use client";
 import {
   Box,
+  Button,
   Flex,
   HStack,
   Link,
   Slide,
   Stack,
   Text,
+  useColorMode,
   useDisclosure,
   useTheme,
 } from "@chakra-ui/react";
@@ -24,6 +26,8 @@ export const NavBar = () => {
   const { isOpen, onOpen, onClose, onToggle } = useDisclosure();
   const pathname = usePathname();
   const theme = useTheme();
+
+  const { colorMode, toggleColorMode } = useColorMode();
 
   const [version, setVersion] = useState("");
 
@@ -187,7 +191,7 @@ export const NavBar = () => {
 
   return (
     <>
-      <Box position={"sticky"} top={0} zIndex={isOpen ? "20" : "10"} bg={"brand.purple0"}>
+      <Box position={"sticky"} top={0} zIndex={isOpen ? "20" : "10"} bg={"header-bg"}>
         <Flex px={"2rem"} alignItems="center" maxW="container.desktop" margin={"0 auto"}>
           <Flex h={16} alignItems="center" gap={"1rem"} justifyContent="space-between" w={"100%"}>
             <Flex alignItems="center" gap={"1rem"} justify={"space-between"} w={"100%"}>
@@ -241,6 +245,9 @@ export const NavBar = () => {
                 <Text fontFamily={"heading"} fontSize={"14px"}>
                   Profile
                 </Text> */}
+                <Button onClick={toggleColorMode}>
+                  Passa a {colorMode === "light" ? "Dark" : "Light"} Mode
+                </Button>
               </Flex>
 
               <Box aria-label="Open Menu" display={{ tabletL: "none" }} cursor={"pointer"}>

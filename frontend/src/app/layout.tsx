@@ -1,7 +1,7 @@
 import { Footer } from "@/components/Footer";
 import { NavBar } from "@/components/NavBar";
 import { Providers } from "@/providers";
-import { Box, Container } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -19,7 +19,7 @@ export default function RootLayout({
     <html lang="en">
       <body style={{ overflow: "initial" }}>
         <Providers>
-          <Box height={"100vh"} bg={"brand.purple0"}>
+          <Box height={"100vh"} bg={"chakra-body-bg"}>
             <NavBar />
             <Box
               height={{
@@ -31,7 +31,7 @@ export default function RootLayout({
               <Box
                 h={"100%"}
                 borderRadius={"1rem"}
-                bg={"greyscale.100"}
+                bg={"greyscale[100]"}
                 overflowY={"scroll"}
                 sx={{
                   scrollbarWidth: {

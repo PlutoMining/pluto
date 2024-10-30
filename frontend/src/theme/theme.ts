@@ -1,7 +1,7 @@
 import { buttonTheme } from "@/components/Button/Button";
 import { extendTheme } from "@chakra-ui/react";
 import { fonts, fontSizes, fontWeights } from "./typography";
-import { colors as themeColors } from "./colors";
+import { lightColors as lightThemeColors, darkColors as darkThemeColors } from "./colors";
 
 const breakpoints = {
   base: "0",
@@ -74,37 +74,63 @@ const sizes = {
 const theme = extendTheme({
   semanticTokens: {
     colors: {
-      "chakra-body-text": { _light: themeColors.greyscale[900], _dark: themeColors.greyscale[900] },
-      "chakra-body-bg": { _light: themeColors.greyscale[100], _dark: themeColors.greyscale[900] },
+      "header-bg": {
+        _light: lightThemeColors.brand.purple0,
+        _dark: darkThemeColors.greyscale[900],
+      },
+      "footer-bg": {
+        _light: lightThemeColors.brand.purple0,
+        _dark: darkThemeColors.greyscale[900],
+      },
+      "chakra-body-text": {
+        _light: lightThemeColors.greyscale[900],
+        _dark: lightThemeColors.greyscale[100],
+      },
+      "chakra-body-bg": {
+        _light: lightThemeColors.greyscale[100],
+        _dark: darkThemeColors.greyscale[900],
+      },
       "chakra-border-color": {
-        _light: themeColors.greyscale[200],
-        _dark: themeColors.greyscale[800],
+        _light: lightThemeColors.greyscale[200],
+        _dark: lightThemeColors.greyscale[800],
       },
       "chakra-inverse-text": {
-        _light: themeColors.greyscale[100],
-        _dark: themeColors.greyscale[900],
+        _light: lightThemeColors.greyscale[100],
+        _dark: lightThemeColors.greyscale[900],
       },
-      "chakra-subtle-bg": { _light: themeColors.greyscale[100], _dark: themeColors.greyscale[900] },
+      "chakra-subtle-bg": {
+        _light: lightThemeColors.greyscale[100],
+        _dark: lightThemeColors.greyscale[900],
+      },
       "chakra-subtle-text": {
-        _light: themeColors.greyscale[900],
-        _dark: themeColors.greyscale[100],
+        _light: lightThemeColors.greyscale[900],
+        _dark: lightThemeColors.greyscale[100],
       },
       "chakra-placeholder-color": {
-        _light: themeColors.greyscale[200],
-        _dark: themeColors.greyscale[800],
+        _light: lightThemeColors.greyscale[200],
+        _dark: lightThemeColors.greyscale[800],
       },
-      "chakra-header-bg": { _light: themeColors.greyscale[100], _dark: themeColors.greyscale[900] },
-      "chakra-footer-bg": { _light: themeColors.greyscale[100], _dark: themeColors.greyscale[900] },
-      "chakra-accent": { _light: themeColors.brand.primary, _dark: themeColors.brand.primary },
+      "chakra-header-bg": {
+        _light: lightThemeColors.greyscale[100],
+        _dark: lightThemeColors.greyscale[900],
+      },
+      "chakra-footer-bg": {
+        _light: lightThemeColors.greyscale[100],
+        _dark: lightThemeColors.greyscale[900],
+      },
+      "chakra-accent": {
+        _light: lightThemeColors.brand.primary,
+        _dark: lightThemeColors.brand.primary,
+      },
     },
   },
-  colors: themeColors,
+  colors: lightThemeColors,
   breakpoints,
   sizes,
   fonts,
   fontSizes,
   fontWeights,
-  config: { useSystemColorMode: false, initialColorMode: "light", cssVarPrefix: "chakra" },
+  config: { useSystemColorMode: true, initialColorMode: "light", cssVarPrefix: "chakra" },
   components: {
     Button: buttonTheme,
   },
