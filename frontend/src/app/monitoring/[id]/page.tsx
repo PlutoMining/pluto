@@ -159,7 +159,7 @@ const MonitoringPage: React.FC = () => {
                 flexDir={{ base: "row", tablet: "column" }}
                 justify={{ base: "space-between", tablet: "flex-start" }}
                 alignItems={{ base: "center", tablet: "flex-start" }}
-                gap={"0.5rem"}
+                gap={"1rem"}
                 borderRight={"1px solid rgba(#fff, 0.25)"}
                 borderRightWidth={{ base: 0, tablet: "1px" }}
                 borderColor={theme.colors.greyscale[0]}
@@ -188,12 +188,13 @@ const MonitoringPage: React.FC = () => {
                 borderBottomWidth={{ base: "1px", tablet: 0 }}
                 paddingBottom={{ base: "1rem", tablet: 0 }}
                 flex={1}
+                gap={"1rem"}
               >
                 <Flex
                   flexDir={{ base: "row", tablet: "column" }}
                   justify={{ base: "space-between", tablet: "flex-start" }}
                   alignItems={{ base: "center", tablet: "flex-start" }}
-                  gap={"0.5rem"}
+                  gap={"1rem"}
                 >
                   <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
                     Shares
@@ -207,15 +208,15 @@ const MonitoringPage: React.FC = () => {
                   </Heading>
                 </Flex>
                 <Flex alignItems={"center"} gap={"0.5rem"}>
-                  <Text fontSize={"14px"} fontWeight={400} color={theme.colors.greyscale[0]}>
-                    Rejected:
-                  </Text>
                   <Badge
                     bg="white"
                     color={theme.colors.alert.error}
                     label={device?.info.sharesRejected}
                     fontWeight="700"
                   ></Badge>
+                  <Text fontSize={"12px"} fontWeight={400} color={theme.colors.greyscale[0]}>
+                    rejected
+                  </Text>
                 </Flex>
               </Flex>
 
@@ -224,7 +225,7 @@ const MonitoringPage: React.FC = () => {
                 flexDir={{ base: "row", tablet: "column" }}
                 justify={{ base: "space-between", tablet: "flex-start" }}
                 alignItems={{ base: "center", tablet: "flex-start" }}
-                gap={"0.5rem"}
+                gap={"1rem"}
                 borderRight={"1px solid rgba(#fff, 0.25)"}
                 borderRightWidth={{ base: 0, tablet: "1px" }}
                 borderColor={theme.colors.greyscale[0]}
@@ -244,9 +245,9 @@ const MonitoringPage: React.FC = () => {
                 </Heading>
               </Flex>
 
-              <Flex flexDir={"column"} flex={1}>
+              <Flex flexDir={"column"} flex={1} gap={"1rem"}>
                 <Flex
-                  gap={"0.5rem"}
+                  gap={"1rem"}
                   flexDir={{ base: "row", tablet: "column" }}
                   justify={{ base: "space-between", tablet: "flex-start" }}
                   alignItems={{ base: "center", tablet: "flex-start" }}
@@ -267,9 +268,18 @@ const MonitoringPage: React.FC = () => {
                     </Heading>
                   </Flex>
                 </Flex>
-                <Text fontSize={"14px"} fontWeight={400} color={theme.colors.greyscale[0]}>
-                  Since system boot: {device?.info.bestSessionDiff}
-                </Text>
+
+                <Flex alignItems={"center"} gap={"0.5rem"}>
+                  <Badge
+                    bg="white"
+                    color={theme.colors.brand.secondary}
+                    label={device?.info.sharesRejected}
+                    fontWeight="700"
+                  ></Badge>
+                  <Text fontSize={"12px"} fontWeight={400} color={theme.colors.greyscale[0]}>
+                    since system boot
+                  </Text>
+                </Flex>
               </Flex>
             </Flex>
 
