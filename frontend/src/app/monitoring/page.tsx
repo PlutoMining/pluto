@@ -17,6 +17,7 @@ import {
   Flex,
   Accordion as ChakraAccordion,
   Tooltip,
+  useToken,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { Dashboard, Device } from "@pluto/interfaces";
@@ -112,6 +113,9 @@ const MonitoringTablePage: React.FC = () => {
     }
   };
 
+  const [textColor] = useToken("colors", ["body-text"]);
+  const [borderColor] = useToken("colors", ["border-color"]);
+
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
       <VStack p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }} spacing={4} align="stretch">
@@ -138,13 +142,7 @@ const MonitoringTablePage: React.FC = () => {
         </Flex>
 
         {registeredDevices ? (
-          <Box
-            backgroundColor={"bg-color"}
-            // borderRadius={"1rem"}
-            // p={"1rem"}
-            // borderWidth={"1px"}
-            // borderColor={theme.colors.greyscale[200]}
-          >
+          <Box backgroundColor={"bg-color"}>
             <TableContainer
               borderRadius={0}
               borderWidth={"1px"}
@@ -157,80 +155,88 @@ const MonitoringTablePage: React.FC = () => {
                     <Th
                       borderColor={"border-color"}
                       color={"th-color"}
-                      fontFamily={"heading"}
-                      textTransform={"capitalize"}
+                      fontFamily={"accent"}
+                      textTransform={"uppercase"}
                       fontSize={"xs"}
                       textAlign={"left"}
+                      fontWeight={"400"}
                     >
                       Name
                     </Th>
                     <Th
                       borderColor={"border-color"}
                       color={"th-color"}
-                      fontFamily={"heading"}
-                      textTransform={"capitalize"}
+                      fontFamily={"accent"}
+                      textTransform={"uppercase"}
                       fontSize={"xs"}
                       textAlign={"center"}
+                      fontWeight={"400"}
                     >
                       Hashrate
                     </Th>
                     <Th
                       borderColor={"border-color"}
                       color={"th-color"}
-                      fontFamily={"heading"}
-                      textTransform={"capitalize"}
+                      fontFamily={"accent"}
+                      textTransform={"uppercase"}
                       fontSize={"xs"}
                       textAlign={"center"}
+                      fontWeight={"400"}
                     >
                       Shares
                     </Th>
                     <Th
                       borderColor={"border-color"}
                       color={"th-color"}
-                      fontFamily={"heading"}
-                      textTransform={"capitalize"}
+                      fontFamily={"accent"}
+                      textTransform={"uppercase"}
                       fontSize={"xs"}
                       textAlign={"center"}
+                      fontWeight={"400"}
                     >
                       Power
                     </Th>
                     <Th
                       borderColor={"border-color"}
                       color={"th-color"}
-                      fontFamily={"heading"}
-                      textTransform={"capitalize"}
+                      fontFamily={"accent"}
+                      textTransform={"uppercase"}
                       fontSize={"xs"}
                       textAlign={"center"}
+                      fontWeight={"400"}
                     >
                       Temp
                     </Th>
                     <Th
                       borderColor={"border-color"}
                       color={"th-color"}
-                      fontFamily={"heading"}
-                      textTransform={"capitalize"}
+                      fontFamily={"accent"}
+                      textTransform={"uppercase"}
                       fontSize={"xs"}
                       textAlign={"center"}
+                      fontWeight={"400"}
                     >
                       Best difficulty
                     </Th>
                     <Th
                       borderColor={"border-color"}
                       color={"th-color"}
-                      fontFamily={"heading"}
-                      textTransform={"capitalize"}
+                      fontFamily={"accent"}
+                      textTransform={"uppercase"}
                       fontSize={"xs"}
                       textAlign={"center"}
+                      fontWeight={"400"}
                     >
                       Uptime
                     </Th>
                     <Th
                       borderColor={"border-color"}
                       color={"th-color"}
-                      fontFamily={"heading"}
-                      textTransform={"capitalize"}
+                      fontFamily={"accent"}
+                      textTransform={"uppercase"}
                       fontSize={"xs"}
                       textAlign={"center"}
+                      fontWeight={"400"}
                     >
                       Status
                     </Th>
@@ -241,54 +247,68 @@ const MonitoringTablePage: React.FC = () => {
                   {registeredDevices.map((device) => (
                     <Tr key={device.mac}>
                       <Td
-                        borderColor={theme.colors.greyscale[100]}
-                        fontSize={"14px"}
+                        borderColor={borderColor}
+                        bg={"td-bg"}
+                        fontSize={"sm"}
                         textAlign={"left"}
+                        fontWeight={"500"}
                       >
                         {device.info.hostname}
                       </Td>
                       <Td
-                        borderColor={theme.colors.greyscale[100]}
-                        fontSize={"14px"}
+                        borderColor={borderColor}
+                        bg={"td-bg"}
+                        fontSize={"sm"}
                         textAlign={"center"}
+                        fontWeight={"500"}
                       >
                         {device.info.hashRate.toFixed(2)} GH/s
                       </Td>
                       <Td
-                        borderColor={theme.colors.greyscale[100]}
-                        fontSize={"14px"}
+                        borderColor={borderColor}
+                        bg={"td-bg"}
+                        fontSize={"sm"}
                         textAlign={"center"}
+                        fontWeight={"500"}
                       >
-                        {device.info.sharesAccepted}|
+                        {device.info.sharesAccepted} |{" "}
                         <Text as={"label"} color={"accent-color"}>
                           {device.info.sharesRejected}
                         </Text>
                       </Td>
                       <Td
-                        borderColor={theme.colors.greyscale[100]}
-                        fontSize={"14px"}
+                        borderColor={borderColor}
+                        bg={"td-bg"}
+                        fontSize={"sm"}
                         textAlign={"center"}
+                        fontWeight={"500"}
                       >
                         {device.info.power.toFixed(2)} W
                       </Td>
                       <Td
-                        borderColor={theme.colors.greyscale[100]}
-                        fontSize={"14px"}
+                        borderColor={borderColor}
+                        bg={"td-bg"}
+                        fontSize={"sm"}
                         textAlign={"center"}
+                        fontWeight={"500"}
                       >
                         {device.info.temp} °C
                       </Td>
                       <Td
-                        borderColor={theme.colors.greyscale[100]}
-                        fontSize={"14px"}
+                        borderColor={borderColor}
+                        bg={"td-bg"}
+                        fontSize={"sm"}
                         textAlign={"center"}
+                        fontWeight={"500"}
                       >
                         {device.info.bestDiff}
                       </Td>
                       <Td
-                        borderColor={theme.colors.greyscale[100]}
-                        fontSize={"14px"}
+                        borderColor={borderColor}
+                        bg={"td-bg"}
+                        fontSize={"sm"}
                         textAlign={"center"}
+                        fontWeight={"500"}
                       >
                         <Tooltip
                           label={formatDetailedTime(device.info.uptimeSeconds)}
@@ -298,22 +318,25 @@ const MonitoringTablePage: React.FC = () => {
                         </Tooltip>
                       </Td>
                       <Td
-                        borderColor={theme.colors.greyscale[100]}
-                        fontSize={"14px"}
+                        borderColor={borderColor}
+                        bg={"td-bg"}
+                        fontSize={"sm"}
                         textAlign={"center"}
                       >
                         <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
                       </Td>
                       <Td
-                        borderColor={theme.colors.greyscale[100]}
-                        fontSize={"14px"}
+                        borderColor={borderColor}
+                        bg={"td-bg"}
+                        fontSize={"sm"}
                         textAlign={"center"}
+                        fontWeight={"500"}
                       >
                         <Link
                           href={`monitoring/${device.info.hostname}`}
                           label="Dashboard"
                           fontWeight={500}
-                          rightIcon={<ArrowLeftSmallIcon color="#000" />}
+                          rightIcon={<ArrowLeftSmallIcon color={textColor} />}
                           isDisabled={!device?.publicDashboardUrl}
                         />
                       </Td>
