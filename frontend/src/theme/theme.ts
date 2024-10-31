@@ -94,6 +94,7 @@ const theme = extendTheme({
         _light: lightThemeColors.greyscale[0],
         _dark: darkThemeColors.greyscale[900],
       },
+      // Input
       "input-bg": {
         _light: lightThemeColors.greyscale[0],
         _dark: darkThemeColors.greyscale[600],
@@ -109,6 +110,18 @@ const theme = extendTheme({
       "input-placeholder-color": {
         _light: lightThemeColors.greyscale[700],
         _dark: darkThemeColors.greyscale[200],
+      },
+      "input-disabled-color": {
+        _light: lightThemeColors.greyscale[500],
+        _dark: darkThemeColors.greyscale[500],
+      },
+      "input-disabled-bg": {
+        _light: lightThemeColors.greyscale[700],
+        _dark: darkThemeColors.greyscale[700],
+      },
+      "input-disabled-hint-color": {
+        _light: lightThemeColors.greyscale[600],
+        _dark: darkThemeColors.greyscale[300],
       },
       "cta-icon-color": {
         _light: lightThemeColors.greyscale[500],

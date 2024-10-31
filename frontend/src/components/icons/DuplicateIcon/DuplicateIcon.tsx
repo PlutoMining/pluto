@@ -15,11 +15,11 @@ export const DuplicateIcon = ({
   const [strokeColor] = useToken("colors", [color]);
 
   return (
-    <svg width={w} height={h} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width={w} height={h} viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
-        d="M6 6V3H15V12H12M3 6H12V15H3V6Z"
+        d="M10 6.29688V3.29688H21V14.2969H18M4 10.2969H15V21.2969H4V10.2969Z"
         stroke={strokeColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
