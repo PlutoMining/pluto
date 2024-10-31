@@ -9,6 +9,7 @@ interface CheckboxProps {
   isChecked?: boolean;
   defaultChecked?: boolean;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  flexDir?: any;
 }
 
 export const Checkbox: React.FC<CheckboxProps> = ({
@@ -18,15 +19,11 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   isChecked,
   onChange,
   defaultChecked,
+  flexDir = "row",
 }) => {
   const [borderColor] = useToken("colors", ["border-color"]);
-  const [inputColor] = useToken("colors", ["input-bg"]);
-
-  const [bgColor] = useToken("colors", ["td-bg"]);
-
   const [textColor] = useToken("colors", ["body-text"]);
   const [accentColor] = useToken("colors", ["cta-bg"]);
-  const [accentColorHover] = useToken("colors", ["cta-bg-hover"]);
 
   return (
     <FormControl>
@@ -41,6 +38,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         sx={{
           display: "flex",
           alignItems: "center",
+          flexDir: flexDir,
           width: "100%",
           "& .chakra-checkbox__control": {
             height: "1rem",
@@ -64,7 +62,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
           },
         }}
       >
-        <Text fontSize="md" color={textColor} flexGrow={1}>
+        <Text fontSize="md" color={textColor} flexGrow={1} mr="0.5rem">
           {label}
         </Text>
       </ChakraCheckbox>

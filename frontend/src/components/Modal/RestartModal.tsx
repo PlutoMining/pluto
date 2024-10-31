@@ -6,9 +6,9 @@ import {
   ModalFooter,
   ModalBody,
   Text,
-  Button as ChakraButton,
   useToken,
 } from "@chakra-ui/react";
+import Button from "../Button/Button";
 
 interface RestartModalProps {
   isOpen: boolean;
@@ -43,12 +43,8 @@ export const RestartModal: React.FC<RestartModalProps> = ({ isOpen, onClose }) =
           <Text>Do you want to restart this device?</Text>
         </ModalBody>
         <ModalFooter gap={"1.5rem"}>
-          <ChakraButton variant="outlined" onClick={() => onClose(false)}>
-            Cancel
-          </ChakraButton>
-          <ChakraButton variant="primary" onClick={() => onClose(true)}>
-            Restart
-          </ChakraButton>
+          <Button label="Cancel" variant="outlined" onClick={() => onClose(false)} />
+          <Button label="Restart" variant="primary" onClick={() => onClose(true)} />
         </ModalFooter>
       </ModalContent>
     </Modal>

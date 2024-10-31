@@ -280,62 +280,25 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
       >
         <Flex
           justify={{ base: "flex-end", tablet: "space-between" }}
-          alignItems={{ base: "flex-end", tablet: "flex-start" }}
+          alignItems={{ base: "flex-end", tablet: "center" }}
           gap={"1rem"}
           flexDir={{ base: "column", tablet: "row" }}
         >
-          <FormControl
-            as={Flex}
-            alignItems="center"
-            flexDir={{ base: "row", tablet: "row-reverse" }}
-            gap={"0.5rem"}
-            justify={{ base: "flex-end" }}
-          >
-            <Text fontSize={"13px"}>
-              {checkedFetchedItems.filter((d) => d.value === true).length === 0
+          <Checkbox
+            id={"select-all-devices"}
+            name={"select-all-devices"}
+            label={
+              checkedFetchedItems.filter((d) => d.value === true).length === 0
                 ? `Select all`
                 : `${checkedFetchedItems.filter((d) => d.value === true).length} of ${
                     devices?.length
-                  } selected`}
-            </Text>
-            <ChakraCheckbox
-              name={"select-all-devices"}
-              onChange={(e) => handleAllCheckbox(e.target.checked)}
-              id={"select-all-devices"}
-              isChecked={allChecked}
-              defaultChecked={allChecked}
-              borderColor={borderColor}
-              borderRadius={"0"}
-              sx={{
-                height: "20px", // Imposta l'altezza
-                width: "20px", // Imposta la larghezza
-                borderRadius: 0,
-                "& .chakra-checkbox__control": {
-                  height: "20px", // Altezza del controllo
-                  width: "20px", // Larghezza del controllo
-                  borderRadius: 0,
-                  bg: bgColor, // colore di sfondo (hex)
-                  borderColor: borderColor, // colore del bordo (hex)
-                },
-                "& .chakra-checkbox__control[data-checked]": {
-                  bg: bgColor, // colore quando è selezionato (checked)
-                  borderColor: accentColor, // colore bordo quando è selezionato
-                  color: accentColor, // colore di sfondo (hex)
-                  boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
-                },
-                "& .chakra-checkbox__control[data-checked]:hover": {
-                  bg: bgColor, // colore quando è selezionato (checked)
-                  borderColor: accentColor, // colore bordo quando è selezionato
-                  color: accentColor, // colore di sfondo (hex)
-                  boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
-                },
-                "& .chakra-checkbox__control:focus": {
-                  borderColor: textColor, // colore del bordo quando la checkbox è in focus
-                  boxShadow: `0 0 0 2px ${textColor}`, // effetto di ombra quando è in focus
-                },
-              }}
-            />
-          </FormControl>
+                  } selected`
+            }
+            defaultChecked={allChecked}
+            isChecked={allChecked}
+            onChange={(e) => handleAllCheckbox(e.target.checked)}
+            flexDir={{ base: "row-reverse", tablet: "row" }}
+          />
           <Flex
             alignItems={{ base: "flex-start", tablet: "center" }}
             gap={"1rem"}
@@ -386,9 +349,9 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             <Text
               fontWeight={600}
               color={"th-color"}
-              fontFamily={"body"}
+              fontFamily={"accent"}
               textTransform={"uppercase"}
-              fontSize={"md"}
+              fontSize={"sm"}
               textAlign={"center"}
               p={0}
               as={Flex}
@@ -396,13 +359,13 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             >
               Hostname
             </Text>
-            <Box as={Flex} flex={3}>
+            <Box as={Flex} flex={3} gap={"1.75rem"} justify={"flex-end"}>
               <Text
                 fontWeight={600}
                 color={"th-color"}
-                fontFamily={"body"}
+                fontFamily={"accent"}
                 textTransform={"uppercase"}
-                fontSize={"md"}
+                fontSize={"sm"}
                 textAlign={"center"}
                 p={0}
                 minW={"70px"}
@@ -888,7 +851,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                   onChange={(e) => handleCheckboxChange(device.mac, e.target.checked)}
                 ></Checkbox>
               </Flex>
-              <AccordionIcon />
+              <AccordionIcon color={"primary-color"} />
             </Flex>
             <Flex alignItems={"center"} gap={"0.5rem"}>
               <Text fontSize={"md"} fontWeight={400} textTransform={"capitalize"}>
@@ -1230,9 +1193,10 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         alignItems={"center"}
         display={{ base: "flex", tablet: "none" }}
         justify={"space-between"}
-        margin={"1rem 0 0 0"}
-        padding={"0.25rem 0 0 0"}
-        borderTop={`1px solid ${theme.colors.greyscale[100]}`}
+        padding={"0.15rem 1rem"}
+        borderTopWidth={"1px"}
+        borderWidth={"border-color"}
+        backgroundColor={"td-bg"}
       >
         <Flex gap={"0.5rem"} alignItems={"center"}>
           <Text fontSize={"md"} fontWeight={500}>
@@ -1264,15 +1228,22 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           fontFamily={"accent"}
           textTransform={"uppercase"}
           padding={"0.5rem 1rem"}
-          _hover={{ backgroundColor: "#5C009940" }}
+          _hover={{ color: "cta-text-hover", iconColor: "cta-bg-hover" }}
           _focus={{
-            bg: "#5C009966",
+            color: "cta-text-focus",
+            iconColor: "cta-bg-focus",
           }}
           _disabled={{
-            opacity: 0.3,
+            color: "cta-text-disabled",
+            iconColor: "cta-color-disabled",
+
+            _hover: {
+              color: "cta-text-disabled",
+              iconColor: "cta-color-disabled",
+            },
           }}
         >
-          <RestartIcon color={theme.colors.greyscale[900]} />
+          <RestartIcon color={"body-text"} />
           Restart
         </Flex>
       </Flex>
