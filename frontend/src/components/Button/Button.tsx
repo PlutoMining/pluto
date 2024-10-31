@@ -150,6 +150,7 @@ const Button: React.FC<ButtonProps> = ({
   return (
     <ChakraButton
       fontFamily={"accent"}
+      textTransform={"uppercase"}
       leftIcon={icon}
       rightIcon={rightIcon}
       isLoading={isLoading}

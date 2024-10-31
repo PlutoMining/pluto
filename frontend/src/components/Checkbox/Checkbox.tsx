@@ -1,5 +1,5 @@
 import { ChangeEvent } from "react";
-import { FormControl, Checkbox as ChakraCheckbox, Text, useToken } from "@chakra-ui/react";
+import { FormControl, Checkbox as ChakraCheckbox, Text, useToken, Flex } from "@chakra-ui/react";
 import React from "react";
 
 interface CheckboxProps {
@@ -48,35 +48,37 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         borderColor={borderColor}
         borderRadius={0}
         sx={{
-          height: "20px", // Imposta l'altezza
-          width: "20px", // Imposta la larghezza
-          borderRadius: 0,
+          display: "flex",
+          alignItems: "center",
+          width: "100%",
           "& .chakra-checkbox__control": {
-            height: "20px", // Altezza del controllo
-            width: "20px", // Larghezza del controllo
+            height: "20px",
+            width: "20px",
             borderRadius: 0,
-            bg: bgColor, // colore di sfondo (hex)
-            borderColor: borderColor, // colore del bordo (hex)
+            bg: bgColor,
+            borderColor: borderColor,
           },
           "& .chakra-checkbox__control[data-checked]": {
-            bg: bgColor, // colore quando è selezionato (checked)
-            borderColor: accentColor, // colore bordo quando è selezionato
-            color: accentColor, // colore di sfondo (hex)
-            boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
+            bg: bgColor,
+            borderColor: accentColor,
+            color: accentColor,
+            boxShadow: `inset 0 0 0 2px ${bgColor}`,
           },
           "& .chakra-checkbox__control[data-checked]:hover": {
-            bg: bgColor, // colore quando è selezionato (checked)
-            borderColor: accentColor, // colore bordo quando è selezionato
-            color: accentColor, // colore di sfondo (hex)
-            boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
+            bg: bgColor,
+            borderColor: accentColor,
+            color: accentColor,
+            boxShadow: `inset 0 0 0 2px ${bgColor}`,
           },
           "& .chakra-checkbox__control:focus": {
-            borderColor: textColor, // colore del bordo quando la checkbox è in focus
-            boxShadow: `0 0 0 2px ${textColor}`, // effetto di ombra quando è in focus
+            borderColor: textColor,
+            boxShadow: `0 0 0 2px ${textColor}`,
           },
         }}
       >
-        <Text fontSize={getFontSize(size)}>{label}</Text>
+        <Text fontSize="md" color={textColor} flexGrow={1}>
+          {label}
+        </Text>
       </ChakraCheckbox>
     </FormControl>
   );

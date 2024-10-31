@@ -384,8 +384,8 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             <Text
               fontWeight={500}
               color={"th-color"}
-              fontFamily={"heading"}
-              textTransform={"capitalize"}
+              fontFamily={"accent"}
+              textTransform={"uppercase"}
               fontSize={"12px"}
               textAlign={"center"}
               p={0}
@@ -394,20 +394,21 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             >
               Hostname
             </Text>
-            <Text
-              fontWeight={500}
-              color={"th-color"}
-              fontFamily={"heading"}
-              textTransform={"capitalize"}
-              fontSize={"12px"}
-              textAlign={"center"}
-              p={0}
-              as={Flex}
-              flex={3}
-              paddingLeft={"2rem"}
-            >
-              Status
-            </Text>
+            <Box as={Flex} flex={3}>
+              <Text
+                fontWeight={500}
+                color={"th-color"}
+                fontFamily={"accent"}
+                textTransform={"uppercase"}
+                fontSize={"12px"}
+                textAlign={"center"}
+                p={0}
+                minW={"70px"}
+              >
+                Status
+              </Text>
+              <Text width={"100px"}></Text>
+            </Box>
           </Flex>
           {devices?.map((device, index) => (
             <ChakraAccordionItem
@@ -916,11 +917,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 gap={"0.5rem"}
                 cursor="pointer"
                 background="none"
-                color={"body-text"}
-                fontSize={"13px"}
-                lineHeight="1.5rem"
-                fontWeight={400}
-                fontFamily={theme.fonts.heading}
                 padding={"0.5rem 1rem"}
                 _hover={{ backgroundColor: "#5C009940" }}
                 _focus={{
@@ -931,7 +927,16 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 }}
               >
                 <RestartIcon color={"body-text"} />
-                Restart
+                <Text
+                  fontWeight={400}
+                  fontFamily={"accent"}
+                  textTransform={"uppercase"}
+                  color={"body-text"}
+                  lineHeight="1.5rem"
+                  fontSize={"13px"}
+                >
+                  Restart
+                </Text>
               </Flex>
             </Flex>
             <Flex display={{ base: "flex", tablet: "none" }} marginLeft={"1rem"}>
@@ -946,9 +951,9 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         </Flex>
       </AccordionButton>
       <AccordionPanel p={0} pb={4} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
-        <Divider mb={"1rem"} mt={"1rem"} borderColor={theme.colors.greyscale[200]} />
+        <Divider mb={"1rem"} mt={"1rem"} borderColor={"border-color"} />
         <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"100%"}>
-          <Text fontWeight={"bold"} textTransform={"uppercase"}>
+          <Text fontWeight={"bold"} textTransform={"uppercase"} fontFamily={"accent"}>
             General
           </Text>
           <SimpleGrid columns={{ mobile: 1, tablet: 2, desktop: 2 }} spacing={"1rem"}>
@@ -974,7 +979,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         </Flex>
 
         <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"100%"}>
-          <Text fontWeight={"bold"} textTransform={"uppercase"}>
+          <Text fontWeight={"bold"} textTransform={"uppercase"} fontFamily={"accent"}>
             Hardware settings
           </Text>
           <Flex flexDir={{ mobile: "column", tablet: "column", desktop: "row" }} gap={"1rem"}>
@@ -1015,7 +1020,12 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
             </Flex>
 
             <Flex flex={3} flexDirection={"column"} justify={"space-between"} gap={"0.25rem"}>
-              <Text fontWeight={400} fontSize={"13px"}>
+              <Text
+                fontWeight={400}
+                fontSize={"13px"}
+                fontFamily={"accent"}
+                textTransform={"uppercase"}
+              >
                 Advanced Hardware Settings
               </Text>
               <Flex
@@ -1238,13 +1248,13 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           gap={"0.5rem"}
           cursor="pointer"
           background="none"
-          color={theme.colors.greyscale[900]}
+          color={"body-text"}
           fontSize={"13px"}
           lineHeight="1.5rem"
           fontWeight={400}
-          fontFamily={theme.fonts.heading}
+          fontFamily={"accent"}
+          textTransform={"uppercase"}
           padding={"0.5rem 1rem"}
-          borderRadius="6px"
           _hover={{ backgroundColor: "#5C009940" }}
           _focus={{
             bg: "#5C009966",

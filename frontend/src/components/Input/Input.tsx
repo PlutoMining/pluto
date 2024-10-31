@@ -52,7 +52,14 @@ export const Input: React.FC<InputProps> = ({
   return (
     <FormControl>
       {label && (
-        <FormLabel htmlFor={name} fontWeight={400} fontSize={"13px"} margin={"4px 0"}>
+        <FormLabel
+          htmlFor={name}
+          fontWeight={400}
+          fontSize={"13px"}
+          margin={"4px 0"}
+          fontFamily={"accent"}
+          textTransform={"uppercase"}
+        >
           {label}
         </FormLabel>
       )}

@@ -34,7 +34,6 @@ export const PresetAccordion: React.FC<PresetProps> = ({
   isDuplicateDisabled,
 }) => {
   const [borderColor] = useToken("colors", ["border-color"]);
-  const [bgColor] = useToken("colors", ["input-bg"]);
   const [textColor] = useToken("colors", ["body-text"]);
   const [badgeColor] = useToken("colors", ["badge-color"]);
   const [badgeBg] = useToken("colors", ["badge-bg"]);

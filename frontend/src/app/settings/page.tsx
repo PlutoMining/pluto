@@ -132,7 +132,7 @@ const SettingsPage = () => {
         <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
       )}
 
-      <Box p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}>
+      <Box p={{ mobile: "1rem 0", tablet: "1.5rem" }}>
         <Flex as="form" flexDir={"column"} gap={"2rem"}>
           <VStack spacing={4} align="stretch">
             <Flex
@@ -143,9 +143,9 @@ const SettingsPage = () => {
               }}
               alignItems={{ mobile: "start", tablet: "center", desktop: "center" }}
               flexDir={{ mobile: "column", tablet: "row", desktop: "row" }}
-              gap={"1rem"}
+              gap={"1.5rem"}
             >
-              <Heading fontSize={"4xl"} fontWeight={400}>
+              <Heading fontSize={"4xl"} fontWeight={"700"} textTransform={"uppercase"}>
                 Device settings
               </Heading>
               <Flex

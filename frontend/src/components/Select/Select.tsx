@@ -28,7 +28,13 @@ export const Select: React.FC<SelectProps> = ({
 
   return (
     <FormControl>
-      <FormLabel htmlFor={name} fontWeight={400} fontSize={"13px"}>
+      <FormLabel
+        htmlFor={name}
+        fontWeight={400}
+        fontSize={"13px"}
+        fontFamily={"accent"}
+        textTransform={"uppercase"}
+      >
         {label}
       </FormLabel>
       <ChakraSelect
