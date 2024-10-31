@@ -9,7 +9,6 @@ import {
   Heading,
   Link,
   Text,
-  useTheme,
 } from "@chakra-ui/react";
 import { Device } from "@pluto/interfaces";
 import { DeviceStatusBadge } from "../Badge";
@@ -55,8 +54,6 @@ export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({ devices, remov
 };
 
 const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction }) => {
-  const theme = useTheme();
-
   return (
     <>
       <AccordionButton
@@ -102,7 +99,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
             >
               Data added
             </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
+            <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
               {new Date(device.createdAt!).toLocaleDateString()}
             </Text>
           </Flex>
@@ -115,7 +112,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
             >
               IP
             </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
+            <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
               {device.ip}
             </Text>
           </Flex>
@@ -128,7 +125,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
             >
               Miner
             </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
+            <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
               {getMinerName(device.info.boardVersion)}
             </Text>
           </Flex>
@@ -141,7 +138,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
             >
               ASIC
             </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
+            <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
               {device.info.ASICModel}
             </Text>
           </Flex>
@@ -154,7 +151,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
             >
               FW v.
             </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
+            <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
               {device.info.version}
             </Text>
           </Flex>
@@ -167,7 +164,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
             >
               Uptime
             </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
+            <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
               {formatDetailedTime(device.info.uptimeSeconds)}
             </Text>
           </Flex>

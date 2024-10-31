@@ -5,16 +5,15 @@ import {
   ModalHeader,
   ModalFooter,
   ModalBody,
-  useTheme,
   Flex,
   Text,
-  Button as ChakraButton,
   Stack,
   RadioGroup,
   useToken,
 } from "@chakra-ui/react";
 import { useCallback, useState } from "react";
 import { RadioButton } from "../RadioButton";
+import Button from "../Button/Button";
 
 interface SaveAndRestartModalProps {
   isOpen: boolean;
@@ -85,12 +84,8 @@ export const SaveAndRestartModal: React.FC<SaveAndRestartModalProps> = ({ isOpen
           </RadioGroup>
         </ModalBody>
         <ModalFooter gap={"1.5rem"}>
-          <ChakraButton variant="outlined" onClick={() => onClose("")}>
-            Cancel
-          </ChakraButton>
-          <ChakraButton variant="primary" onClick={handleAction}>
-            Confirm
-          </ChakraButton>
+          <Button label="Cancel" variant="outlined" onClick={() => onClose("")} />
+          <Button label="Confirm" variant="primary" onClick={handleAction} />
         </ModalFooter>
       </ModalContent>
     </Modal>

@@ -165,6 +165,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 wordBreak={"normal"}
                 whiteSpace={"break-spaces"}
                 fontWeight="500"
+                fontFamily={"accent"}
               >
                 {device.info.hostname}
               </Td>
@@ -176,6 +177,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 textAlign={"center"}
                 p={"12px"}
                 fontWeight="500"
+                fontFamily={"accent"}
               >
                 {convertIsoTomMdDYy(device.createdAt!)}
               </Td>
@@ -187,6 +189,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 textAlign={"center"}
                 p={"12px"}
                 fontWeight="500"
+                fontFamily={"accent"}
               >
                 {device.ip}
               </Td>
@@ -198,6 +201,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 textAlign={"center"}
                 p={"12px"}
                 fontWeight="500"
+                fontFamily={"accent"}
               >
                 {device.mac}
               </Td>
@@ -213,6 +217,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 wordBreak={"normal"}
                 whiteSpace={"break-spaces"}
                 fontWeight="500"
+                fontFamily={"accent"}
               >
                 {getMinerName(device.info.boardVersion)}
               </Td>
@@ -224,6 +229,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 textAlign={"center"}
                 p={"12px 8px"}
                 fontWeight="500"
+                fontFamily={"accent"}
               >
                 {device.info.ASICModel}
               </Td>
@@ -235,6 +241,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 textAlign={"center"}
                 p={"12px"}
                 fontWeight="500"
+                fontFamily={"accent"}
               >
                 <Tooltip
                   label={formatDetailedTime(device.info.uptimeSeconds)}
@@ -251,6 +258,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 textAlign={"center"}
                 p={"12px"}
                 fontWeight="500"
+                fontFamily={"accent"}
               >
                 {device.info.version}
               </Td>

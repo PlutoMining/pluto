@@ -10,7 +10,7 @@ import {
   Text,
   useColorMode,
   useDisclosure,
-  useTheme,
+  useToken,
 } from "@chakra-ui/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -25,7 +25,6 @@ import axios from "axios";
 export const NavBar = () => {
   const { isOpen, onOpen, onClose, onToggle } = useDisclosure();
   const pathname = usePathname();
-  const theme = useTheme();
 
   const { colorMode, toggleColorMode } = useColorMode();
 
@@ -55,7 +54,7 @@ export const NavBar = () => {
       component: (pathname?: string | null) => (
         <Box
           color={"#fff"}
-          fontWeight={pathname === "/" ? "700" : "400"}
+          fontWeight={pathname === "/" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
@@ -65,7 +64,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: theme.colors.greyscale[0],
+            backgroundColor: "primary-color",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -83,7 +82,7 @@ export const NavBar = () => {
         <Box
           color={"#fff"}
           fontWeight={
-            pathname === "/monitoring" || /^\/monitoring/.test(pathname || "") ? "700" : "400"
+            pathname === "/monitoring" || /^\/monitoring/.test(pathname || "") ? "700" : "500"
           }
           fontFamily={"heading"}
           fontSize={"sm"}
@@ -95,7 +94,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: theme.colors.greyscale[0],
+            backgroundColor: "primary-color",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -112,7 +111,7 @@ export const NavBar = () => {
       component: (pathname?: string | null) => (
         <Box
           color={"#fff"}
-          fontWeight={pathname === "/settings" ? "700" : "400"}
+          fontWeight={pathname === "/settings" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
@@ -122,7 +121,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: theme.colors.greyscale[0],
+            backgroundColor: "primary-color",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -139,7 +138,7 @@ export const NavBar = () => {
       component: (pathname?: string | null) => (
         <Box
           color={"#fff"}
-          fontWeight={pathname === "/presets" ? "700" : "400"}
+          fontWeight={pathname === "/presets" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
@@ -149,7 +148,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: theme.colors.greyscale[0],
+            backgroundColor: "primary-color",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -166,7 +165,7 @@ export const NavBar = () => {
       component: (pathname?: string | null) => (
         <Box
           color={"#fff"}
-          fontWeight={pathname === "/devices" ? "700" : "400"}
+          fontWeight={pathname === "/devices" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
@@ -176,7 +175,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: theme.colors.greyscale[0],
+            backgroundColor: "primary-color",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -188,6 +187,8 @@ export const NavBar = () => {
       ),
     },
   ];
+
+  const [primaryColor] = useToken("colors", ["primary-color"]);
 
   return (
     <>
@@ -216,7 +217,7 @@ export const NavBar = () => {
                     fontWeight={400}
                     fontSize={"12px"}
                     opacity={0.8}
-                    color={theme.colors.greyscale[100]}
+                    color={"body-text"}
                     marginBottom={"1px"}
                   >
                     V.{version}
@@ -285,10 +286,11 @@ export const NavBar = () => {
             }}
           >
             <Box
-              bgColor="rgb(71, 25, 107)"
-              borderTopLeftRadius="1rem"
-              borderBottomLeftRadius="1rem"
+              bgColor="bg-color"
               p={"2rem"}
+              borderLeftWidth={"1px"}
+              borderTopWidth={"1px"}
+              borderColor={"border-color"}
               display={{ tabletL: "none" }}
               height={{
                 base: "calc(100vh - 7.25rem)",
@@ -304,6 +306,9 @@ export const NavBar = () => {
                       href={link.href}
                       cursor={"pointer"}
                       _hover={{ textDecoration: "none" }}
+                      fontWeight={500}
+                      fontFamily={"body"}
+                      textTransform={"uppercase"}
                     >
                       {link.component(pathname)}
                     </Link>
@@ -321,8 +326,13 @@ export const NavBar = () => {
                     <GitLabLogo
                       url="https://gitlab.com/bemindinteractive/umbrel-community-app-store"
                       target="blank"
+                      color={primaryColor}
                     />
-                    <DiscordLogo url="https://discord.gg/osmu" target="blank" />
+                    <DiscordLogo
+                      url="https://discord.gg/osmu"
+                      target="blank"
+                      color={primaryColor}
+                    />
                     {/* <RedditLogo /> */}
                   </Flex>
                   <Link

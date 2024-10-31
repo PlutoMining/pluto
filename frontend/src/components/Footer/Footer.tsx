@@ -1,8 +1,9 @@
-import { Flex, Text } from "@chakra-ui/react";
+import { Flex, Text, useToken } from "@chakra-ui/react";
 import { BemindLogo } from "../icons/BemindLogo";
 import { DiscordLogo, GitLabLogo, MetaLogo, RedditLogo } from "../icons/FooterIcons";
 
 export const Footer = () => {
+  // const [primaryColor] = useToken("colors", ["primary-color"]);
   return (
     <Flex
       alignItems={"center"}
@@ -45,8 +46,9 @@ export const Footer = () => {
               <GitLabLogo
                 url="https://gitlab.com/bemindinteractive/umbrel-community-app-store"
                 target="blank"
+                color={"white"}
               />
-              <DiscordLogo url="https://discord.gg/osmu" target="blank" />
+              <DiscordLogo url="https://discord.gg/osmu" target="blank" color={"white"} />
               {/* <RedditLogo /> */}
             </Flex>
           </Flex>

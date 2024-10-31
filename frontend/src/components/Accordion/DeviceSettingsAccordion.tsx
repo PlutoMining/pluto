@@ -887,26 +887,30 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 gap={"0.5rem"}
                 cursor="pointer"
                 background="none"
+                color={"body-text"}
+                fontSize={"13px"}
+                lineHeight="1.5rem"
+                fontWeight={400}
+                fontFamily={"accent"}
+                textTransform={"uppercase"}
                 padding={"0.5rem 1rem"}
-                _hover={{ backgroundColor: "#5C009940" }}
+                _hover={{ color: "cta-text-hover", iconColor: "cta-bg-hover" }}
                 _focus={{
-                  bg: "#5C009966",
+                  color: "cta-text-focus",
+                  iconColor: "cta-bg-focus",
                 }}
                 _disabled={{
-                  opacity: 0.3,
+                  color: "cta-text-disabled",
+                  iconColor: "cta-color-disabled",
+
+                  _hover: {
+                    color: "cta-text-disabled",
+                    iconColor: "cta-color-disabled",
+                  },
                 }}
               >
                 <RestartIcon color={"body-text"} />
-                <Text
-                  fontWeight={400}
-                  fontFamily={"accent"}
-                  textTransform={"uppercase"}
-                  color={"body-text"}
-                  lineHeight="1.5rem"
-                  fontSize={"13px"}
-                >
-                  Restart
-                </Text>
+                Restart
               </Flex>
             </Flex>
             <Flex display={{ base: "flex", tablet: "none" }} marginLeft={"1rem"}>
