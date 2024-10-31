@@ -42,12 +42,11 @@ export const PresetAccordion: React.FC<PresetProps> = ({
   return (
     <AccordionItem
       key={`preset-${preset.uuid}`} // Prefisso specifico per il preset
-      backgroundColor={"item-bg"}
+      backgroundColor={"td-bg"}
       borderWidth={"1px"}
       borderColor={borderColor}
-      p={"1rem"}
     >
-      <AccordionButton p={0} _hover={{ backgroundColor: "none" }}>
+      <AccordionButton p={"1rem"} _hover={{ backgroundColor: "none" }} bg={"th-bg"}>
         <Flex gap={"0.5rem"} alignItems={"center"}>
           <AccordionIcon />
           <Heading fontSize={"md"} fontWeight={500} color={textColor}>
@@ -58,9 +57,9 @@ export const PresetAccordion: React.FC<PresetProps> = ({
           </Heading>
         </Flex>
       </AccordionButton>
-      <AccordionPanel p={0} pb={4} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
-        <Divider mb={"1rem"} mt={"1rem"} borderColor={"border-color"} />
-        <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"100%"}>
+      <AccordionPanel p={0} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
+        <Divider borderColor={"border-color"} />
+        <Flex flexDirection={"column"} gap={"1rem"} p={"1rem"} w={"100%"}>
           <Text fontFamily={"heading"} fontWeight={"bold"} textTransform={"capitalize"}>
             Settings
           </Text>
@@ -136,8 +135,8 @@ export const PresetAccordion: React.FC<PresetProps> = ({
           )}
         </Flex>
       </AccordionPanel>
-      <Divider mb={"1rem"} mt={"1rem"} borderColor={borderColor} />
-      <Flex alignItems={"center"}>
+      <Divider borderColor={borderColor} />
+      <Flex alignItems={"center"} p={"0.5rem 1rem"}>
         <Button
           variant="text"
           onClick={onDuplicate(preset.uuid)}

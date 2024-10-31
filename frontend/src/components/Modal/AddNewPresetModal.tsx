@@ -45,7 +45,13 @@ export const AddNewPresetModal: React.FC<AddNewPresetModalProps> = ({
           h={"100%"}
           overflow={"scroll"}
         >
-          <ModalHeader p={0} fontFamily={"heading"} fontWeight={400} fontSize={"2rem"}>
+          <ModalHeader
+            fontSize={"4xl"}
+            fontWeight={"700"}
+            textTransform={"uppercase"}
+            fontFamily={"heading"}
+            p={0}
+          >
             Add a new preset
           </ModalHeader>
           <ModalCloseButton />

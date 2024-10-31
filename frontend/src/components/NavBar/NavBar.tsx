@@ -199,7 +199,12 @@ export const NavBar = () => {
         borderBottomWidth={"1px"}
         borderBottomColor={"border-color"}
       >
-        <Flex px={"2rem"} alignItems="center" maxW="container.desktop" margin={"0 auto"}>
+        <Flex
+          px={{ base: "1rem", tablet: "2rem" }}
+          alignItems="center"
+          maxW="container.desktop"
+          margin={"0 auto"}
+        >
           <Flex h={16} alignItems="center" gap={"1rem"} justifyContent="space-between" w={"100%"}>
             <Flex alignItems="center" gap={"1rem"} justify={"space-between"} w={"100%"}>
               <Flex marginRight={"auto"} gap={"0.5rem"} alignItems={"flex-end"}>
@@ -253,7 +258,7 @@ export const NavBar = () => {
                   Profile
                 </Text> */}
                 <Button onClick={toggleColorMode}>
-                  Passa a {colorMode === "light" ? "Dark" : "Light"} Mode
+                  {colorMode === "light" ? "Dark" : "Light"} Mode
                 </Button>
               </Flex>
 

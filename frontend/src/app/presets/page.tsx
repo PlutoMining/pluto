@@ -166,9 +166,9 @@ const PresetsListingPage: React.FC = () => {
       {alert && (
         <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
       )}
-      <Box p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}>
+      <Box p={{ mobile: "1rem 0", tablet: "1.5rem" }}>
         <Flex justify="space-between" align="center" mb={8}>
-          <Heading fontSize={"4xl"} fontWeight={400}>
+          <Heading fontSize={"4xl"} fontWeight={"700"} textTransform={"uppercase"}>
             Pool Presets
           </Heading>
           {presets && presets.length > 0 && (

@@ -28,11 +28,11 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
 
   return (
     <TableContainer display={{ base: "none", tablet: "block" }}>
-      <Table variant="simple">
+      <Table variant="simple" sx={{ borderCollapse: "collapse", width: "100%" }}>
         <Thead>
           <Tr backgroundColor={"th-bg"} h={"40px"}>
             <Th
-              borderColor={"border-color"}
+              borderBottomColor={"border-color"}
               p={"8px 0 8px 12px"}
               borderRadius={0}
               color={"th-color"}

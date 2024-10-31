@@ -34,16 +34,14 @@ export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({ devices, remov
           allowMultiple
           as={Flex}
           flexDir={"column"}
-          backgroundColor={"item-bg"}
+          backgroundColor={"td-bg"}
           borderColor={"border-color"}
-          borderRadius={"1rem"}
         >
           {devices?.map((device, index) => (
             <ChakraAccordionItem
               key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
               borderTopWidth={index > 0 ? "1px" : "0"}
               borderBottomWidth={"0!important"}
-              padding={"1rem"}
             >
               <AccordionItem key={device.mac} device={device} removeFunction={removeFunction} />
             </ChakraAccordionItem>
@@ -61,7 +59,12 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
 
   return (
     <>
-      <AccordionButton p={0} justifyContent={"space-between"} _hover={{ backgroundColor: "none" }}>
+      <AccordionButton
+        p={"1rem"}
+        justifyContent={"space-between"}
+        _hover={{ backgroundColor: "none" }}
+        bg={"th-bg"}
+      >
         <Flex gap={"1rem"} alignItems={"center"}>
           <AccordionIcon />
           <Heading
@@ -77,25 +80,25 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
 
         {/* Pass the device ID to the removeRegisteredDevice function */}
         <Link
-          fontFamily={"heading"}
+          fontFamily={"accent"}
           fontWeight={500}
           textDecoration={"underline"}
+          textTransform={"uppercase"}
           fontSize={"14px"}
           onClick={() => removeFunction(device.mac)}
         >
           Remove
         </Link>
       </AccordionButton>
-      <AccordionPanel p={0} pb={4} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
-        <Divider mb={"1rem"} mt={"1rem"} borderColor={"border-color"} />
-
-        <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"}>
+      <AccordionPanel p={0} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
+        <Divider borderColor={"border-color"} />
+        <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"} p={"1rem"}>
           <Flex justify={"space-between"}>
             <Text
               fontWeight={500}
               textTransform={"capitalize"}
               fontSize={"sm"}
-              fontFamily={"heading"}
+              fontFamily={"accent"}
             >
               Data added
             </Text>
@@ -108,7 +111,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
               fontWeight={500}
               textTransform={"capitalize"}
               fontSize={"sm"}
-              fontFamily={"heading"}
+              fontFamily={"accent"}
             >
               IP
             </Text>
@@ -121,7 +124,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
               fontWeight={500}
               textTransform={"capitalize"}
               fontSize={"sm"}
-              fontFamily={"heading"}
+              fontFamily={"accent"}
             >
               Miner
             </Text>
@@ -134,7 +137,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
               fontWeight={500}
               textTransform={"capitalize"}
               fontSize={"sm"}
-              fontFamily={"heading"}
+              fontFamily={"accent"}
             >
               ASIC
             </Text>
@@ -147,7 +150,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
               fontWeight={500}
               textTransform={"capitalize"}
               fontSize={"sm"}
-              fontFamily={"heading"}
+              fontFamily={"accent"}
             >
               FW v.
             </Text>
@@ -160,7 +163,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
               fontWeight={500}
               textTransform={"capitalize"}
               fontSize={"sm"}
-              fontFamily={"heading"}
+              fontFamily={"accent"}
             >
               Uptime
             </Text>
