@@ -172,30 +172,23 @@ const DevicePage: React.FC = () => {
       {alert && (
         <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
       )}
-      <Box p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }}>
+      <Box p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1.5rem" }}>
         <Flex as="form" flexDir={"column"} gap={"2rem"}>
-          <VStack spacing={4} align="stretch">
+          <VStack spacing={"1.5rem"} align="stretch">
             <Flex alignItems={"center"} justify={"space-between"} gap={"1rem"}>
-              <Heading fontSize={"4xl"} fontWeight={400}>
+              <Heading fontSize={"4xl"} fontWeight={"700"} textTransform={"uppercase"}>
                 Your devices
               </Heading>
               <Button
                 variant={"primary"}
                 onClick={onOpen}
                 rightIcon={<AddIcon color={itemBg} />}
-                label="Add a new device"
+                label="Add device"
               ></Button>
             </Flex>
             {registeredDevices ? (
               <>
                 {registeredDevices && registeredDevices.length > 0 ? (
-                  // <Box
-                  //   backgroundColor={itemBg}
-                  //   borderRadius={"1rem"}
-                  //   p={"1rem"}
-                  //   borderWidth={"1px"}
-                  //   borderColor={theme.colors.greyscale[200]}
-                  // >
                   <Box
                     backgroundColor={"item-bg"}
                     borderRadius={0}
@@ -218,7 +211,6 @@ const DevicePage: React.FC = () => {
                     </Box>
                   </Box>
                 ) : (
-                  // </Box>
                   <VStack>
                     <Text>Looks like you haven&lsquo;t added any devices yet!</Text>
                     <Text>To get started with monitoring, please add your first device.</Text>

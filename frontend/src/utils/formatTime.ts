@@ -7,15 +7,15 @@ export function formatTime(seconds: number) {
     return "-";
   } else if (seconds >= oneDayInSeconds) {
     const days = Math.floor(seconds / oneDayInSeconds);
-    return `${days} ${days > 1 ? "days" : "day"}`;
+    return `${days} d`;
   } else if (seconds >= oneHourInSeconds) {
     const hours = Math.floor(seconds / oneHourInSeconds);
-    return `${hours} ${hours > 1 ? "hours" : "hour"}`;
+    return `${hours} h`;
   } else if (seconds >= oneMinuteInSeconds) {
     const minutes = Math.floor(seconds / oneMinuteInSeconds);
-    return `${minutes} ${minutes > 1 ? "minutes" : "minute"}`;
+    return `${minutes} m`;
   } else {
-    return "< 1 minute"; // Se il tempo è inferiore a un minuto, mostra "meno di 1 minuto"
+    return "< 1 m"; // Se il tempo è inferiore a un minuto, mostra "meno di 1 minuto"
   }
 }
 

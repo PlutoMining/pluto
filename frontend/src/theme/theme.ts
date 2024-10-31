@@ -139,6 +139,10 @@ const theme = extendTheme({
         _dark: darkThemeColors.greyscale[0],
       },
       "th-bg": {
+        _light: lightThemeColors.greyscale[200],
+        _dark: darkThemeColors.greyscale[600],
+      },
+      "td-bg": {
         _light: lightThemeColors.greyscale[100],
         _dark: darkThemeColors.greyscale[700],
       },
@@ -159,12 +163,12 @@ const theme = extendTheme({
         _dark: darkThemeColors.primary[500], // da modificare con i valori corretti
       },
       "badge-color": {
-        _light: lightThemeColors.greyscale[200], // da modificare con i valori corretti
-        _dark: darkThemeColors.greyscale[600], // da modificare con i valori corretti
+        _light: lightThemeColors.greyscale[900], // da modificare con i valori corretti
+        _dark: darkThemeColors.greyscale[200], // da modificare con i valori corretti
       },
       "badge-bg": {
-        _light: lightThemeColors.greyscale[900], // da modificare con i valori corretti
-        _dark: darkThemeColors.greyscale[0], // da modificare con i valori corretti
+        _light: lightThemeColors.greyscale[200], // da modificare con i valori corretti
+        _dark: darkThemeColors.greyscale[800], // da modificare con i valori corretti
       },
     },
   },

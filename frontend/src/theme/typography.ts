@@ -1,20 +1,15 @@
-import { Space_Grotesk, Azeret_Mono } from "next/font/google";
+import { Azeret_Mono } from "next/font/google";
 
-export const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-export const bodyFont = Azeret_Mono({
+export const accentFont = Azeret_Mono({
   subsets: ["latin"],
   weight: ["200", "300", "400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
 export const fonts = {
-  heading: bodyFont.style.fontFamily,
-  body: bodyFont.style.fontFamily,
+  heading: "Clash_Display",
+  body: "Clash_Display",
+  accent: accentFont.style.fontFamily as "Azaret_Mono",
 };
 
 export const fontSizes = {
@@ -25,7 +20,7 @@ export const fontSizes = {
   xl: "1.25rem",
   "2xl": "1.5rem",
   "3xl": "1.875rem",
-  "4xl": "2rem",
+  "4xl": "2.5rem",
   "5xl": "3rem",
   "6xl": "4rem",
   "7xl": "4.5rem",
@@ -35,7 +30,10 @@ export const fontSizes = {
 };
 
 export const fontWeights = {
+  "100": 100,
+  "200": 200,
   "400": 400,
+  "500": 500,
   "600": 600,
   "700": 700,
   "800": 800,

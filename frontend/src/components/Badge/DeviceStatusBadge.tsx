@@ -19,6 +19,8 @@ export const DeviceStatusBadge: React.FC<DeviceStatusBadgeProps> = ({
 
   return (
     <ChakraBadge
+      fontFamily={"accent"}
+      fontWeight={"500"}
       bg={"transparent"}
       color={color}
       fontSize={"13px"}

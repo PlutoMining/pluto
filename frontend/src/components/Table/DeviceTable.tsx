@@ -28,10 +28,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
 
   return (
     <TableContainer display={{ base: "none", tablet: "block" }}>
-      <Table
-        variant="simple"
-        // layout="fixed"
-      >
+      <Table variant="simple">
         <Thead>
           <Tr backgroundColor={"th-bg"} h={"40px"}>
             <Th
@@ -39,11 +36,11 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               p={"8px 0 8px 12px"}
               borderRadius={0}
               color={"th-color"}
-              fontFamily={"heading"}
               textTransform={"capitalize"}
               fontSize={"xs"}
               maxW={"140px"}
-              fontWeight={500}
+              fontFamily={"accent"}
+              fontWeight={400}
             >
               Hostname
             </Th>
@@ -52,11 +49,11 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               p={0}
               borderRadius={0}
               color={"th-color"}
-              fontFamily={"heading"}
               textTransform={"capitalize"}
               fontSize={"xs"}
               textAlign={"center"}
-              fontWeight={500}
+              fontFamily={"accent"}
+              fontWeight={400}
             >
               Date added
             </Th>
@@ -65,11 +62,11 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               p={0}
               borderRadius={0}
               color={"th-color"}
-              fontFamily={"heading"}
               textTransform={"capitalize"}
               fontSize={"xs"}
               textAlign={"center"}
-              fontWeight={500}
+              fontFamily={"accent"}
+              fontWeight={400}
             >
               IP
             </Th>
@@ -78,11 +75,11 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               p={0}
               borderRadius={0}
               color={"th-color"}
-              fontFamily={"heading"}
               textTransform={"capitalize"}
               fontSize={"xs"}
               textAlign={"center"}
-              fontWeight={500}
+              fontFamily={"accent"}
+              fontWeight={400}
             >
               Mac Address
             </Th>
@@ -91,11 +88,11 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               p={0}
               borderRadius={0}
               color={"th-color"}
-              fontFamily={"heading"}
               textTransform={"capitalize"}
               fontSize={"xs"}
               textAlign={"center"}
-              fontWeight={500}
+              fontFamily={"accent"}
+              fontWeight={400}
             >
               Miner
             </Th>
@@ -104,11 +101,11 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               p={0}
               borderRadius={0}
               color={"th-color"}
-              fontFamily={"heading"}
               textTransform={"capitalize"}
               fontSize={"xs"}
               textAlign={"center"}
-              fontWeight={500}
+              fontFamily={"accent"}
+              fontWeight={400}
             >
               ASIC
             </Th>
@@ -117,11 +114,11 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               p={0}
               borderRadius={0}
               color={"th-color"}
-              fontFamily={"heading"}
               textTransform={"capitalize"}
               fontSize={"xs"}
               textAlign={"center"}
-              fontWeight={500}
+              fontFamily={"accent"}
+              fontWeight={400}
             >
               Uptime
             </Th>
@@ -130,11 +127,11 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               p={0}
               borderRadius={0}
               color={"th-color"}
-              fontFamily={"heading"}
               textTransform={"capitalize"}
               fontSize={"xs"}
               textAlign={"center"}
-              fontWeight={500}
+              fontFamily={"accent"}
+              fontWeight={400}
             >
               FW v.
             </Th>
@@ -143,11 +140,11 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               p={0}
               borderRadius={0}
               color={"th-color"}
-              fontFamily={"heading"}
               textTransform={"capitalize"}
               fontSize={"xs"}
               textAlign={"center"}
-              fontWeight={500}
+              fontFamily={"accent"}
+              fontWeight={400}
             >
               Status
             </Th>
@@ -156,7 +153,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
         </Thead>
         <Tbody>
           {devices.map((device) => (
-            <Tr key={`registered-device-${device.mac}`}>
+            <Tr key={`registered-device-${device.mac}`} backgroundColor={"td-bg"}>
               <Td
                 borderTopWidth={"1px"}
                 borderBottomWidth={0}
@@ -167,6 +164,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 maxW={"140px"}
                 wordBreak={"normal"}
                 whiteSpace={"break-spaces"}
+                fontWeight="500"
               >
                 {device.info.hostname}
               </Td>
@@ -177,6 +175,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px"}
+                fontWeight="500"
               >
                 {convertIsoTomMdDYy(device.createdAt!)}
               </Td>
@@ -187,6 +186,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px"}
+                fontWeight="500"
               >
                 {device.ip}
               </Td>
@@ -197,6 +197,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px"}
+                fontWeight="500"
               >
                 {device.mac}
               </Td>
@@ -211,6 +212,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 maxWidth={"125px"}
                 wordBreak={"normal"}
                 whiteSpace={"break-spaces"}
+                fontWeight="500"
               >
                 {getMinerName(device.info.boardVersion)}
               </Td>
@@ -221,6 +223,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px 8px"}
+                fontWeight="500"
               >
                 {device.info.ASICModel}
               </Td>
@@ -231,6 +234,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px"}
+                fontWeight="500"
               >
                 <Tooltip
                   label={formatDetailedTime(device.info.uptimeSeconds)}
@@ -246,6 +250,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 fontSize={"14px"}
                 textAlign={"center"}
                 p={"12px"}
+                fontWeight="500"
               >
                 {device.info.version}
               </Td>
@@ -265,11 +270,12 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 p={"12px"}
                 maxWidth={{ tablet: "14px", desktop: "unset" }}
                 width={{ tablet: "14px", desktop: "unset" }}
+                fontWeight="500"
               >
                 <DeleteIcon
                   h={"20"}
                   w={"14px"}
-                  color={"#000"}
+                  color={"body-text"}
                   onClick={() => removeDeviceFunction(device.mac)}
                 />
               </Td>

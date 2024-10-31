@@ -1,11 +1,10 @@
-import { MouseEventHandler, ReactElement, ReactNode } from "react";
+import { MouseEventHandler, ReactElement } from "react";
 import { Button as ChakraButton } from "@chakra-ui/react";
 import { defineStyle, defineStyleConfig } from "@chakra-ui/react";
 import React from "react";
 
 const primaryBlack = defineStyle((styles) => {
   return {
-    fontFamily: styles.theme.fonts.heading,
     background: styles.theme.colors.greyscale[700],
     color: styles.theme.colors.greyscale[100],
     borderRadius: "6px",
@@ -29,14 +28,16 @@ const primaryBlack = defineStyle((styles) => {
 
 const primary = defineStyle((styles) => {
   return {
-    fontFamily: styles.theme.fonts.heading,
+    fontFamily: "Azaret_Mono",
     background: "cta-bg",
     color: "cta-color",
     borderRadius: 0,
-    fontWeight: 400,
+    fontWeight: 500,
     padding: "6px 12px",
     fontSize: "13px",
+    lineHeight: "15.17px",
     textAlign: "center",
+    textTransform: "uppercase",
     _hover: {
       bg: "cta-bg-hover",
     },
@@ -148,6 +149,7 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   return (
     <ChakraButton
+      fontFamily={"accent"}
       leftIcon={icon}
       rightIcon={rightIcon}
       isLoading={isLoading}
@@ -155,7 +157,6 @@ const Button: React.FC<ButtonProps> = ({
       variant={variant}
       onClick={onClick}
       type={type}
-      fontFamily={"heading"}
     >
       {label}
     </ChakraButton>
