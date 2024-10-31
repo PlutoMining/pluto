@@ -12,6 +12,7 @@ import {
   Link as ChakraLink,
   useAccordionItemState,
   useTheme,
+  useToken,
 } from "@chakra-ui/react";
 import { Device } from "@pluto/interfaces";
 import { useEffect, useState } from "react";
@@ -77,17 +78,15 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
           allowMultiple
           as={Flex}
           flexDir={"column"}
-          backgroundColor={"greyscale.0"}
+          backgroundColor={"td-bg"}
           borderWidth={"1px"}
-          borderColor={"greyscale.200"}
-          borderRadius={"1rem"}
+          borderColor={"border-color"}
         >
           {devices?.map((device, index) => (
             <ChakraAccordionItem
               key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
               borderTopWidth={index > 0 ? "1px" : "0"}
               borderBottomWidth={"0!important"}
-              padding={"1rem"}
             >
               <AccordionItem key={device.mac} device={device} />
             </ChakraAccordionItem>
@@ -101,11 +100,16 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
 };
 
 const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
-  const theme = useTheme();
-
+  const [textColor] = useToken("colors", ["body-text"]);
+  const [headerBg] = useToken("colors", ["th-bg"]);
   return (
     <>
-      <AccordionButton p={0} justifyContent={"space-between"} _hover={{ backgroundColor: "none" }}>
+      <AccordionButton
+        p={"1rem"}
+        justifyContent={"space-between"}
+        _hover={{ backgroundColor: "none" }}
+        backgroundColor={headerBg}
+      >
         <Flex>
           <Flex gap={"1rem"} alignItems={"center"}>
             <AccordionIcon />
@@ -124,13 +128,13 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
           href={`monitoring/${device.info.hostname}`}
           onClick={(e) => e.stopPropagation()}
         >
-          <ArrowLeftSmallIcon color="#000" />
+          <ArrowLeftSmallIcon color={textColor} />
         </ChakraLink>
       </AccordionButton>
       <AccordionPanel p={0} pb={4} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
-        <Divider mb={"1rem"} mt={"1rem"} borderColor={theme.colors.greyscale[200]} />
+        <Divider borderColor={"border-color"} />
 
-        <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"}>
+        <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"} p={"1rem"}>
           <Flex justify={"space-between"}>
             <Text
               fontWeight={500}
@@ -154,8 +158,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
               Shares
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
-              {device.info.sharesAccepted}|
-              <Text as={"label"} color={theme.colors.brand.secondary}>
+              {device.info.sharesAccepted} |{" "}
+              <Text as={"label"} color={"accent-color"}>
                 {device.info.sharesRejected}
               </Text>
             </Text>

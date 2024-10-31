@@ -118,7 +118,7 @@ const MonitoringTablePage: React.FC = () => {
 
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
-      <VStack p={{ mobile: "1rem 0", tablet: "1rem", desktop: "1rem" }} spacing={4} align="stretch">
+      <VStack p={{ mobile: "1rem 0", tablet: "1.5rem" }} spacing={"1.5rem"} align="stretch">
         <Flex
           justify={{
             base: "flex-start",
@@ -129,7 +129,7 @@ const MonitoringTablePage: React.FC = () => {
           flexDir={{ base: "column", tablet: "row", desktop: "row" }}
           gap={"1rem"}
         >
-          <Heading fontSize={"4xl"} fontWeight={400}>
+          <Heading fontSize={"4xl"} fontWeight={"700"} textTransform={"uppercase"}>
             Monitoring
           </Heading>
           <Box w={{ base: "100%", tablet: "unset" }}>

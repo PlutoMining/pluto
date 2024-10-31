@@ -3,7 +3,6 @@ import {
   FormControl,
   FormLabel,
   Input as ChakraInput,
-  useTheme,
   InputRightAddon,
   InputLeftAddon,
   InputGroup,
@@ -47,18 +46,25 @@ export const Input: React.FC<InputProps> = ({
   const [bgColor] = useToken("colors", ["input-bg"]);
   const [textColor] = useToken("colors", ["body-text"]);
   const [rightAddonBg] = useToken("colors", ["input-right-bg"]);
-  const [errorColor] = useToken("colors", ["input-right-bg"]);
+  const [errorColor] = useToken("colors", ["error-color"]);
+  const [inputLabelColor] = useToken("colors", ["input-label-color"]);
+  const [inputPlaceholderColor] = useToken("colors", ["input-placeholder-color"]);
+
+  // primaryColor
+  const [primaryColor] = useToken("colors", ["cta-bg"]);
+  const [primaryColorHover] = useToken("colors", ["cta-bg-hover"]);
 
   return (
     <FormControl>
       {label && (
         <FormLabel
           htmlFor={name}
-          fontWeight={400}
-          fontSize={"13px"}
+          fontWeight={600}
+          fontSize={"xs"}
           margin={"4px 0"}
-          fontFamily={"accent"}
+          fontFamily={"body"}
           textTransform={"uppercase"}
+          color={inputLabelColor}
         >
           {label}
         </FormLabel>
@@ -66,6 +72,9 @@ export const Input: React.FC<InputProps> = ({
       <InputGroup>
         {leftAddon && <InputLeftAddon>{leftAddon}</InputLeftAddon>}
         <ChakraInput
+          fontFamily={"accent"}
+          fontWeight={400}
+          fontSize={"13px"}
           id={id}
           name={name}
           placeholder={placeholder}
@@ -79,26 +88,25 @@ export const Input: React.FC<InputProps> = ({
           color={textColor}
           borderRadius={0}
           padding={"1rem"}
-          height={"32px"}
+          height={"40px"}
           boxShadow={"none"}
           pattern={pattern}
           _placeholder={{
-            color: textColor,
-            opacity: 0.5,
+            color: inputPlaceholderColor,
           }}
           _hover={{
-            borderColor: textColor,
+            borderColor: primaryColorHover,
             borderWidth: "1px",
           }}
           _focus={{
             outline: "none",
             boxShadow: "none",
-            borderColor: textColor,
+            borderColor: primaryColor,
             borderWidth: "1px",
           }}
           isInvalid={!!error}
           _invalid={{
-            borderColor: textColor,
+            borderColor: errorColor,
             borderWidth: "1px",
           }}
           isDisabled={isDisabled}
@@ -106,18 +114,27 @@ export const Input: React.FC<InputProps> = ({
         {rightAddon && (
           <InputRightAddon
             padding="1rem"
-            height="2rem"
+            height="40px"
             borderColor={error ? errorColor : borderColor}
             borderLeft={"none"}
             backgroundColor={rightAddonBg}
             opacity={isDisabled ? 0.5 : 1}
             borderRadius={0}
+            fontFamily={"accent"}
+            fontWeight={400}
+            fontSize={"13px"}
           >
             {rightAddon}
           </InputRightAddon>
         )}
       </InputGroup>
-      <FormLabel pt={"4px"} fontSize={"11px"} color={errorColor} opacity={isDisabled ? 0.5 : 1}>
+      <FormLabel
+        fontFamily={"accent"}
+        pt={"4px"}
+        fontSize={"11px"}
+        color={errorColor}
+        opacity={isDisabled ? 0.5 : 1}
+      >
         {error}
       </FormLabel>
     </FormControl>

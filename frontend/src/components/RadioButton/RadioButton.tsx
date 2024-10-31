@@ -9,7 +9,6 @@ interface RadioButtonProps {
 }
 
 export const RadioButton: React.FC<RadioButtonProps> = ({ label, value, id, disabled }) => {
-  const [bgColor] = useToken("colors", ["item-bg"]);
   const [borderColor] = useToken("colors", ["border-color"]);
   const [accentColor] = useToken("colors", ["accent-color"]);
 
@@ -18,9 +17,8 @@ export const RadioButton: React.FC<RadioButtonProps> = ({ label, value, id, disa
       value={value}
       id={id}
       _checked={{
-        bg: accentColor, // colore del riempimento
-        borderColor: borderColor, // colore del bordo
-        boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio tra bordo e riempimento
+        bg: accentColor,
+        borderColor: borderColor,
       }}
       isDisabled={disabled}
       _disabled={{

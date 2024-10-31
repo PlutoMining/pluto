@@ -8,7 +8,6 @@ interface CheckboxProps {
   label?: string;
   isChecked?: boolean;
   defaultChecked?: boolean;
-  size?: "sm" | "md";
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -19,23 +18,15 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   isChecked,
   onChange,
   defaultChecked,
-  size,
 }) => {
   const [borderColor] = useToken("colors", ["border-color"]);
-  const [bgColor] = useToken("colors", ["input-bg"]);
-  const [textColor] = useToken("colors", ["body-text"]);
-  const [accentColor] = useToken("colors", ["accent-color"]);
+  const [inputColor] = useToken("colors", ["input-bg"]);
 
-  const getFontSize = (size: any) => {
-    switch (size) {
-      case "sm":
-        return "13px";
-      case "md":
-        return "14px";
-      default:
-        return "13px";
-    }
-  };
+  const [bgColor] = useToken("colors", ["td-bg"]);
+
+  const [textColor] = useToken("colors", ["body-text"]);
+  const [accentColor] = useToken("colors", ["cta-bg"]);
+  const [accentColorHover] = useToken("colors", ["cta-bg-hover"]);
 
   return (
     <FormControl>
@@ -52,27 +43,24 @@ export const Checkbox: React.FC<CheckboxProps> = ({
           alignItems: "center",
           width: "100%",
           "& .chakra-checkbox__control": {
-            height: "20px",
-            width: "20px",
+            height: "1rem",
+            width: "1rem",
             borderRadius: 0,
-            bg: bgColor,
+            bg: "bgColor",
             borderColor: borderColor,
           },
           "& .chakra-checkbox__control[data-checked]": {
-            bg: bgColor,
-            borderColor: accentColor,
-            color: accentColor,
-            boxShadow: `inset 0 0 0 2px ${bgColor}`,
+            bg: accentColor,
+            borderColor: borderColor,
+            color: borderColor,
           },
           "& .chakra-checkbox__control[data-checked]:hover": {
-            bg: bgColor,
-            borderColor: accentColor,
-            color: accentColor,
-            boxShadow: `inset 0 0 0 2px ${bgColor}`,
+            bg: accentColor,
+            borderColor: borderColor,
+            color: borderColor,
           },
           "& .chakra-checkbox__control:focus": {
-            borderColor: textColor,
-            boxShadow: `0 0 0 2px ${textColor}`,
+            borderColor: borderColor,
           },
         }}
       >

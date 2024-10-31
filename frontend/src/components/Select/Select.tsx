@@ -26,18 +26,25 @@ export const Select: React.FC<SelectProps> = ({
   const [bgColor] = useToken("colors", ["input-bg"]);
   const [textColor] = useToken("colors", ["body-text"]);
 
+  // primaryColor
+  const [primaryColor] = useToken("colors", ["cta-bg"]);
+  const [primaryColorHover] = useToken("colors", ["cta-bg-hover"]);
+
   return (
     <FormControl>
       <FormLabel
         htmlFor={name}
         fontWeight={400}
         fontSize={"13px"}
-        fontFamily={"accent"}
+        fontFamily={"body"}
         textTransform={"uppercase"}
       >
         {label}
       </FormLabel>
       <ChakraSelect
+        fontFamily={"accent"}
+        fontWeight={400}
+        fontSize={"13px"}
         id={id}
         name={name}
         onChange={onChange}
@@ -48,16 +55,19 @@ export const Select: React.FC<SelectProps> = ({
         borderWidth={"1px"}
         borderColor={borderColor}
         color={textColor}
+        iconColor={primaryColor}
         borderRadius={0}
-        height={"32px"}
+        height={"40px"}
         boxShadow={"none"}
         _focus={{
           outline: "none",
           boxShadow: "none",
-          border: `2px solid ${textColor}`,
+          border: `1px solid ${primaryColor}`,
+          iconColor: primaryColor,
         }}
         _hover={{
-          border: `2px solid ${textColor}`,
+          border: `1px solid ${primaryColorHover}`,
+          iconColor: primaryColorHover,
         }}
       >
         {optionValues.map((elem: { value: string | number; label: string }, index) => {

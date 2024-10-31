@@ -3,30 +3,7 @@ import { Button as ChakraButton } from "@chakra-ui/react";
 import { defineStyle, defineStyleConfig } from "@chakra-ui/react";
 import React from "react";
 
-const primaryBlack = defineStyle((styles) => {
-  return {
-    background: styles.theme.colors.greyscale[700],
-    color: styles.theme.colors.greyscale[100],
-    borderRadius: "6px",
-    // width: { base: "100%" },
-    fontWeight: 400,
-    padding: "6px 12px",
-    fontSize: "13px",
-    textAlign: "center",
-    _hover: {
-      bg: styles.theme.colors.greyscale[500],
-    },
-    _focus: {
-      bg: styles.theme.colors.greyscale[900],
-    },
-    _disabled: {
-      bg: styles.theme.colors.greyscale[700],
-      opacity: 0.2,
-    },
-  };
-});
-
-const primary = defineStyle((styles) => {
+const primary = defineStyle(() => {
   return {
     fontFamily: "Azaret_Mono",
     background: "cta-bg",
@@ -46,7 +23,9 @@ const primary = defineStyle((styles) => {
     },
     _disabled: {
       bg: "cta-bg-disabled",
-      opacity: 0.2,
+      color: "cta-color-disabled",
+      borderWidth: "1px",
+      borderColor: "cta-color-disabled",
       pointerEvents: "none",
     },
   };
@@ -79,54 +58,54 @@ const outlined = defineStyle(() => {
     fontSize: "13px",
 
     _hover: {
-      // bg: "#D2CED5",
-      // borderColor: "#D2CED5",
-      // color: styles.theme.colors.greyscale[500],
+      bg: "cta-outlined-hover",
     },
     _focus: {
-      // background: styles.theme.colors.greyscale[300],
-      // color: styles.theme.colors.greyscale[500],
-      // borderColor: styles.theme.colors.greyscale[300],
+      color: "cta-outlined-focus",
+      borderColor: "cta-outlined-focus",
     },
     _disabled: {
-      // background: styles.theme.colors.greyscale[0],
-      // color: styles.theme.colors.greyscale[500],
-      // borderColor: styles.theme.colors.greyscale[200],
-
-      opacity: 0.5,
+      color: "cta-outlined-disabled",
+      borderColor: "cta-outlined-disabled",
     },
   };
 });
 
-const text = defineStyle((styles) => {
+const text = defineStyle(() => {
   return {
     background: "none",
-    color: styles.theme.semanticTokens.colors["body-text"],
+    color: "body-text",
     fontSize: "13px",
     lineHeight: "1.5rem",
     fontWeight: 400,
-    fontFamily: styles.theme.fonts.heading,
-    padding: "1rem",
-    borderRadius: "6px",
-
+    padding: 0,
+    iconColor: "cta-bg",
     _hover: {
-      bg: "#5C009940",
+      color: "cta-text-hover",
+      iconColor: "cta-bg-hover",
     },
     _focus: {
-      bg: "#5C009966",
+      color: "cta-text-focus",
+      iconColor: "cta-bg-focus",
     },
     _disabled: {
-      opacity: 0.3,
+      color: "cta-text-disabled",
+      iconColor: "cta-color-disabled",
+
+      _hover: {
+        color: "cta-text-disabled",
+        iconColor: "cta-color-disabled",
+      },
     },
   };
 });
 
 export const buttonTheme = defineStyleConfig({
-  variants: { primaryBlack, primary, text, outlined, secondary },
+  variants: { primary, text, outlined, secondary },
 });
 
 interface ButtonProps {
-  variant: "text" | "primaryBlack" | "primary" | "outlined" | "secondary";
+  variant: "text" | "primary" | "outlined" | "secondary";
   label?: string;
   onClick: MouseEventHandler<HTMLButtonElement>;
   disabled?: boolean;
@@ -149,7 +128,7 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   return (
     <ChakraButton
-      fontFamily={"accent"}
+      fontFamily={"body"}
       textTransform={"uppercase"}
       leftIcon={icon}
       rightIcon={rightIcon}

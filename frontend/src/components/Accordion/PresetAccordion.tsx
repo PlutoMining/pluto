@@ -36,7 +36,9 @@ export const PresetAccordion: React.FC<PresetProps> = ({
   const [borderColor] = useToken("colors", ["border-color"]);
   const [textColor] = useToken("colors", ["body-text"]);
   const [badgeColor] = useToken("colors", ["badge-color"]);
+  const [badgeIpColor] = useToken("colors", ["badge-ip-color"]);
   const [badgeBg] = useToken("colors", ["badge-bg"]);
+  const [accentColor] = useToken("colors", ["cta-bg"]);
 
   return (
     <AccordionItem
@@ -46,20 +48,22 @@ export const PresetAccordion: React.FC<PresetProps> = ({
       borderColor={borderColor}
     >
       <AccordionButton p={"1rem"} _hover={{ backgroundColor: "none" }} bg={"th-bg"}>
-        <Flex gap={"0.5rem"} alignItems={"center"}>
-          <AccordionIcon />
-          <Heading fontSize={"md"} fontWeight={500} color={textColor}>
-            #{++index}
-          </Heading>
-          <Heading fontSize={"md"} fontWeight={"bold"}>
-            {preset.name}
-          </Heading>
+        <Flex
+          gap={"0.5rem"}
+          alignItems={"center"}
+          fontFamily={"heading"}
+          fontWeight={"600"}
+          color={textColor}
+        >
+          <AccordionIcon color={accentColor} />
+          <Heading fontSize={"md"}>#{++index}</Heading>
+          <Heading fontSize={"md"}>{preset.name}</Heading>
         </Flex>
       </AccordionButton>
       <AccordionPanel p={0} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
         <Divider borderColor={"border-color"} />
         <Flex flexDirection={"column"} gap={"1rem"} p={"1rem"} w={"100%"}>
-          <Text fontFamily={"heading"} fontWeight={"bold"} textTransform={"capitalize"}>
+          <Text fontFamily={"heading"} fontWeight={"600"} textTransform={"uppercase"}>
             Settings
           </Text>
           <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
@@ -94,7 +98,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
               />
             </Flex>
           </Flex>
-          <Text fontFamily={"heading"} fontWeight={"bold"} textTransform={"capitalize"}>
+          <Text fontFamily={"heading"} fontWeight={"600"} textTransform={"uppercase"}>
             Associated Devices
           </Text>
 
@@ -104,22 +108,24 @@ export const PresetAccordion: React.FC<PresetProps> = ({
                 <ChakraBadge
                   key={device.mac}
                   backgroundColor={badgeBg}
-                  color={badgeColor}
-                  border={`1px solid ${badgeColor}`}
-                  fontSize={"13px"}
+                  fontSize={"xs"}
                   borderRadius={0}
                   padding={"4px 6px"}
+                  fontFamily={"body"}
                 >
                   <Flex alignItems={"center"} gap={"0.25rem"} p={"5px 8px"} height={"21.5px"}>
-                    <Text fontWeight={500} textTransform={"capitalize"}>
+                    <Text fontWeight={500} textTransform={"capitalize"} color={badgeColor}>
                       {device.info.hostname}
                     </Text>
-                    {" - "}
+                    <Text fontWeight={500} color={"primary-color"}>
+                      {" - "}
+                    </Text>
                     <Link
                       href={device.ip}
                       label={device.ip}
-                      fontFamily="body"
+                      fontFamily="accent"
                       fontWeight={400}
+                      color={badgeIpColor}
                       textDecoration="underline"
                       isDisabled={device.tracing ? false : true}
                     />
@@ -135,7 +141,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
         </Flex>
       </AccordionPanel>
       <Divider borderColor={borderColor} />
-      <Flex alignItems={"center"} p={"0.5rem 1rem"}>
+      <Flex alignItems={"center"} p={"0.5rem 1rem"} gap={"1rem"}>
         <Button
           variant="text"
           onClick={onDuplicate(preset.uuid)}

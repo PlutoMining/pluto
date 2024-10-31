@@ -275,7 +275,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
         gap={"1rem"}
         borderWidth={"1px"}
         borderColor={"border-color"}
-        backgroundColor={"item-bg"}
+        backgroundColor={"bg-color"}
         p={"1rem"}
       >
         <Flex
@@ -376,17 +376,19 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           onChange={setActiveIndex}
         >
           <Flex
-            backgroundColor={"th-bg"}
-            justify={"space-between"}
+            backgroundColor={"bg-color"}
+            justify={"flex-end"}
             p={"1rem"}
             display={{ base: "none", tablet: "flex" }}
+            borderBottom={`1px solid ${borderColor}`}
+            gap={"2rem"}
           >
             <Text
-              fontWeight={500}
+              fontWeight={600}
               color={"th-color"}
-              fontFamily={"accent"}
+              fontFamily={"body"}
               textTransform={"uppercase"}
-              fontSize={"12px"}
+              fontSize={"md"}
               textAlign={"center"}
               p={0}
               as={Flex}
@@ -396,11 +398,11 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             </Text>
             <Box as={Flex} flex={3}>
               <Text
-                fontWeight={500}
+                fontWeight={600}
                 color={"th-color"}
-                fontFamily={"accent"}
+                fontFamily={"body"}
                 textTransform={"uppercase"}
-                fontSize={"12px"}
+                fontSize={"md"}
                 textAlign={"center"}
                 p={0}
                 minW={"70px"}
@@ -413,7 +415,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           {devices?.map((device, index) => (
             <ChakraAccordionItem
               key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
-              p={{ base: "1rem", tablet: "0.5rem 1rem" }}
+              p={0}
               borderTopWidth={index === 0 ? "none" : "1px"}
               borderBottomWidth={"0px!important"}
             >
@@ -869,7 +871,12 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
 
   return (
     <>
-      <AccordionButton p={0} justifyContent={"space-between"} _hover={{ backgroundColor: "none" }}>
+      <AccordionButton
+        p={"0.5rem 1rem"}
+        justifyContent={"space-between"}
+        _hover={{ backgroundColor: "none" }}
+        bg={"th-bg"}
+      >
         <Flex gap={"1rem"} alignItems={"center"} justify={"space-between"} w={"100%"}>
           <Flex alignItems={"center"} gap={"0.25rem"} flex={10}>
             <Flex alignItems={"center"} gap={"0.5rem"} fontFamily={"heading"}>
@@ -950,271 +957,273 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           </Flex>
         </Flex>
       </AccordionButton>
-      <AccordionPanel p={0} pb={4} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
-        <Divider mb={"1rem"} mt={"1rem"} borderColor={"border-color"} />
-        <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"100%"}>
-          <Text fontWeight={"bold"} textTransform={"uppercase"} fontFamily={"accent"}>
-            General
-          </Text>
-          <SimpleGrid columns={{ mobile: 1, tablet: 2, desktop: 2 }} spacing={"1rem"}>
-            <Input
-              label="Hostname"
-              name="hostname"
-              id={`${device.mac}-hostname`}
-              placeholder="hostname"
-              defaultValue={device.info.hostname}
-              onChange={handleChange}
-              error={deviceError.hostname}
-            />
-            <Input
-              label="Worker Name"
-              name="workerName"
-              id={`${device.mac}-workerName`}
-              placeholder="worker name"
-              defaultValue={stratumUser.workerName}
-              onChange={handleChangeOnStratumUser}
-              error={deviceError.workerName}
-            />
-          </SimpleGrid>
-        </Flex>
-
-        <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"100%"}>
-          <Text fontWeight={"bold"} textTransform={"uppercase"} fontFamily={"accent"}>
-            Hardware settings
-          </Text>
-          <Flex flexDir={{ mobile: "column", tablet: "column", desktop: "row" }} gap={"1rem"}>
-            <Flex flex={2} flexDir={{ mobile: "column", tablet: "row" }} gap={"1rem"}>
-              <Select
-                id={`${device.mac}-frequency`}
-                label="Frequency"
-                name="frequency"
+      <AccordionPanel p={0} as={Flex} flexDir={"column"} alignItems={"flex-start"} bg={"td-bg"}>
+        <Divider borderColor={"border-color"} />
+        <Flex flexDir={"column"} p={"1rem"} w={"100%"}>
+          <Flex flexDirection={"column"} gap={"1rem"} w={"100%"}>
+            <Text fontWeight={"bold"} textTransform={"uppercase"} fontFamily={"accent"}>
+              General
+            </Text>
+            <SimpleGrid columns={{ mobile: 1, tablet: 2, desktop: 2 }} spacing={"1rem"}>
+              <Input
+                label="Hostname"
+                name="hostname"
+                id={`${device.mac}-hostname`}
+                placeholder="hostname"
+                defaultValue={device.info.hostname}
                 onChange={handleChange}
-                defaultValue={device.info.frequency}
-                optionValues={[
-                  { value: 400, label: "400" },
-                  { value: 425, label: "425" },
-                  { value: 450, label: "450" },
-                  { value: 475, label: "475" },
-                  { value: 490, label: "490 (default)" },
-                  { value: 500, label: "500" },
-                  { value: 525, label: "525" },
-                  { value: 550, label: "550" },
-                  { value: 575, label: "575" },
-                ]}
+                error={deviceError.hostname}
               />
-              <Select
-                id={`${device.mac}-coreVoltage`}
-                label="Core Voltage"
-                name="coreVoltage"
-                onChange={handleChange}
-                defaultValue={device.info.coreVoltage}
-                optionValues={[
-                  { value: 1100, label: "1100" },
-                  { value: 1150, label: "1150" },
-                  { value: 1166, label: "1166 (default)" },
-                  { value: 1200, label: "1200" },
-                  { value: 1250, label: "1250" },
-                  { value: 1300, label: "1300" },
-                ]}
+              <Input
+                label="Worker Name"
+                name="workerName"
+                id={`${device.mac}-workerName`}
+                placeholder="worker name"
+                defaultValue={stratumUser.workerName}
+                onChange={handleChangeOnStratumUser}
+                error={deviceError.workerName}
               />
-            </Flex>
+            </SimpleGrid>
+          </Flex>
 
-            <Flex flex={3} flexDirection={"column"} justify={"space-between"} gap={"0.25rem"}>
-              <Text
-                fontWeight={400}
-                fontSize={"13px"}
-                fontFamily={"accent"}
-                textTransform={"uppercase"}
-              >
-                Advanced Hardware Settings
-              </Text>
-              <Flex
-                gap={"0.5rem"}
-                justify={"flex-start"}
-                alignItems={"center"}
-                flexDir={{ mobile: "column", tablet: "row", desktop: "row" }}
-              >
-                <Checkbox
-                  id={`${device.mac}-flipscreen`}
-                  name="flipscreen"
-                  label="Flip Screen"
-                  defaultChecked={device.info.flipscreen === 1}
+          <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"100%"}>
+            <Text fontWeight={"bold"} textTransform={"uppercase"} fontFamily={"accent"}>
+              Hardware settings
+            </Text>
+            <Flex flexDir={{ mobile: "column", tablet: "column", desktop: "row" }} gap={"1rem"}>
+              <Flex flex={2} flexDir={{ mobile: "column", tablet: "row" }} gap={"1rem"}>
+                <Select
+                  id={`${device.mac}-frequency`}
+                  label="Frequency"
+                  name="frequency"
                   onChange={handleChange}
+                  defaultValue={device.info.frequency}
+                  optionValues={[
+                    { value: 400, label: "400" },
+                    { value: 425, label: "425" },
+                    { value: 450, label: "450" },
+                    { value: 475, label: "475" },
+                    { value: 490, label: "490 (default)" },
+                    { value: 500, label: "500" },
+                    { value: 525, label: "525" },
+                    { value: 550, label: "550" },
+                    { value: 575, label: "575" },
+                  ]}
                 />
-                <Checkbox
-                  id={`${device.mac}-invertfanpolarity`}
-                  name="invertfanpolarity"
-                  label="Invert Fan Polarity"
-                  defaultChecked={device.info.invertfanpolarity === 1}
+                <Select
+                  id={`${device.mac}-coreVoltage`}
+                  label="Core Voltage"
+                  name="coreVoltage"
                   onChange={handleChange}
+                  defaultValue={device.info.coreVoltage}
+                  optionValues={[
+                    { value: 1100, label: "1100" },
+                    { value: 1150, label: "1150" },
+                    { value: 1166, label: "1166 (default)" },
+                    { value: 1200, label: "1200" },
+                    { value: 1250, label: "1250" },
+                    { value: 1300, label: "1300" },
+                  ]}
                 />
-                <Checkbox
-                  id={`${device.mac}-autofanspeed`}
-                  name="autofanspeed"
-                  label="Automatic Fan Control"
-                  defaultChecked={device.info.autofanspeed === 1}
-                  onChange={handleChange}
-                />
-                <Box w={"100%"}>
-                  <Input
-                    name="fanspeed"
-                    id={`${device.mac}-fanspeed`}
-                    placeholder=""
-                    type="number"
-                    defaultValue={device.info.fanspeed || 0}
+              </Flex>
+
+              <Flex flex={3} flexDirection={"column"} justify={"space-between"} gap={"0.25rem"}>
+                <Text
+                  fontWeight={400}
+                  fontSize={"13px"}
+                  fontFamily={"accent"}
+                  textTransform={"uppercase"}
+                >
+                  Advanced Hardware Settings
+                </Text>
+                <Flex
+                  gap={"0.5rem"}
+                  justify={"flex-start"}
+                  alignItems={"center"}
+                  flexDir={{ mobile: "column", tablet: "row", desktop: "row" }}
+                >
+                  <Checkbox
+                    id={`${device.mac}-flipscreen`}
+                    name="flipscreen"
+                    label="Flip Screen"
+                    defaultChecked={device.info.flipscreen === 1}
                     onChange={handleChange}
-                    isDisabled={device.info.autofanspeed === 1}
-                    rightAddon={"%"}
-                    error={deviceError.fanspeed}
                   />
-                </Box>
+                  <Checkbox
+                    id={`${device.mac}-invertfanpolarity`}
+                    name="invertfanpolarity"
+                    label="Invert Fan Polarity"
+                    defaultChecked={device.info.invertfanpolarity === 1}
+                    onChange={handleChange}
+                  />
+                  <Checkbox
+                    id={`${device.mac}-autofanspeed`}
+                    name="autofanspeed"
+                    label="Automatic Fan Control"
+                    defaultChecked={device.info.autofanspeed === 1}
+                    onChange={handleChange}
+                  />
+                  <Box w={"100%"}>
+                    <Input
+                      name="fanspeed"
+                      id={`${device.mac}-fanspeed`}
+                      placeholder=""
+                      type="number"
+                      defaultValue={device.info.fanspeed || 0}
+                      onChange={handleChange}
+                      isDisabled={device.info.autofanspeed === 1}
+                      rightAddon={"%"}
+                      error={deviceError.fanspeed}
+                    />
+                  </Box>
+                </Flex>
               </Flex>
             </Flex>
           </Flex>
-        </Flex>
 
-        <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"full"}>
-          <Text fontWeight={"bold"} textTransform={"uppercase"}>
-            Pool settings
-          </Text>
-          <RadioGroup
-            defaultValue={isPresetRadioButtonSelected ? "preset" : "custom"}
-            onChange={(value) => handleRadioButtonChange(value)}
-          >
-            <Stack spacing={"1rem"} direction="row">
-              <RadioButton
-                id={`${device.mac}-${RadioButtonStatus.PRESET}`}
-                value={RadioButtonStatus.PRESET}
-                label="Preset"
-                disabled={presets.length == 0}
-              ></RadioButton>
-              <RadioButton
-                id={`${device.mac}-${RadioButtonStatus.CUSTOM}`}
-                value={RadioButtonStatus.CUSTOM}
-                label="Custom"
-              ></RadioButton>
-            </Stack>
-          </RadioGroup>
-          {isPresetRadioButtonSelected ? (
-            <Flex flexDir={"column"} gap={"1rem"}>
-              {selectedPreset && (
-                <>
-                  <Select
-                    id={`${device.mac}-preset`}
-                    label="Select preset"
-                    name="preset"
-                    onChange={(val) => handleChangeOnSelectPreset(val)}
-                    value={selectedPreset.uuid}
-                    optionValues={presets.map((preset) => ({
-                      value: preset.uuid,
-                      label: preset.name,
-                    }))}
-                  />
-                  <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
-                    <Flex flex={1}>
-                      <Input
-                        isDisabled={true}
-                        type="text"
-                        label="Stratum URL"
-                        name="stratumURL"
-                        id={`${selectedPreset.uuid}-stratumUrl`}
-                        defaultValue={selectedPreset.configuration.stratumURL}
-                      />
-                    </Flex>
-                    <Flex flex={1}>
-                      <Input
-                        isDisabled={true}
-                        type="number"
-                        label="Stratum Port"
-                        name="stratumPort"
-                        id={`${selectedPreset.uuid}-stratumPort`}
-                        defaultValue={selectedPreset.configuration.stratumPort}
-                      />
-                    </Flex>
-                    <Flex flex={2}>
-                      <Input
-                        isDisabled={true}
-                        type="text"
-                        label="Stratum User"
-                        name="stratumUser"
-                        id={`${selectedPreset.uuid}-stratumUser`}
-                        defaultValue={selectedPreset.configuration.stratumUser}
-                        rightAddon={`.${stratumUser.workerName}`}
-                      />
-                    </Flex>
-                  </Flex>
-                </>
-              )}
-            </Flex>
-          ) : (
-            <Grid
-              templateColumns={{
-                mobile: "repeat(1, 1fr)",
-                tablet: "repeat(2, 1fr)",
-                desktop: "repeat(2, 1fr) 2fr repeat(1, 1fr)",
-              }}
-              gap={"1rem"}
+          <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"full"}>
+            <Text fontWeight={"bold"} textTransform={"uppercase"}>
+              Pool settings
+            </Text>
+            <RadioGroup
+              defaultValue={isPresetRadioButtonSelected ? "preset" : "custom"}
+              onChange={(value) => handleRadioButtonChange(value)}
             >
-              <Flex flex={1}>
-                <Input
-                  type="text"
-                  label="Stratum URL"
-                  name="stratumURL"
-                  id={`${device.mac}-stratumUrl`}
-                  placeholder="Add your stratum URL"
-                  defaultValue={device.info.stratumURL}
-                  onChange={handleChange}
-                  error={deviceError.stratumURL}
-                />
+              <Stack spacing={"1rem"} direction="row">
+                <RadioButton
+                  id={`${device.mac}-${RadioButtonStatus.PRESET}`}
+                  value={RadioButtonStatus.PRESET}
+                  label="Preset"
+                  disabled={presets.length == 0}
+                ></RadioButton>
+                <RadioButton
+                  id={`${device.mac}-${RadioButtonStatus.CUSTOM}`}
+                  value={RadioButtonStatus.CUSTOM}
+                  label="Custom"
+                ></RadioButton>
+              </Stack>
+            </RadioGroup>
+            {isPresetRadioButtonSelected ? (
+              <Flex flexDir={"column"} gap={"1rem"}>
+                {selectedPreset && (
+                  <>
+                    <Select
+                      id={`${device.mac}-preset`}
+                      label="Select preset"
+                      name="preset"
+                      onChange={(val) => handleChangeOnSelectPreset(val)}
+                      value={selectedPreset.uuid}
+                      optionValues={presets.map((preset) => ({
+                        value: preset.uuid,
+                        label: preset.name,
+                      }))}
+                    />
+                    <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
+                      <Flex flex={1}>
+                        <Input
+                          isDisabled={true}
+                          type="text"
+                          label="Stratum URL"
+                          name="stratumURL"
+                          id={`${selectedPreset.uuid}-stratumUrl`}
+                          defaultValue={selectedPreset.configuration.stratumURL}
+                        />
+                      </Flex>
+                      <Flex flex={1}>
+                        <Input
+                          isDisabled={true}
+                          type="number"
+                          label="Stratum Port"
+                          name="stratumPort"
+                          id={`${selectedPreset.uuid}-stratumPort`}
+                          defaultValue={selectedPreset.configuration.stratumPort}
+                        />
+                      </Flex>
+                      <Flex flex={2}>
+                        <Input
+                          isDisabled={true}
+                          type="text"
+                          label="Stratum User"
+                          name="stratumUser"
+                          id={`${selectedPreset.uuid}-stratumUser`}
+                          defaultValue={selectedPreset.configuration.stratumUser}
+                          rightAddon={`.${stratumUser.workerName}`}
+                        />
+                      </Flex>
+                    </Flex>
+                  </>
+                )}
               </Flex>
-              <Flex flex={1}>
-                <Input
-                  type="number"
-                  label="Stratum Port"
-                  name="stratumPort"
-                  id={`${device.mac}-stratumPort`}
-                  placeholder="Add your stratum port"
-                  defaultValue={device.info.stratumPort}
-                  onChange={handleChange}
-                  error={deviceError.stratumPort}
-                />
-              </Flex>
-              <Flex flex={2}>
-                <Input
-                  type="text"
-                  label="Stratum User"
-                  name="stratumUser"
-                  id={`${device.mac}-stratumUser`}
-                  placeholder="Add your stratum user"
-                  defaultValue={stratumUser.stratumUser}
-                  onChange={handleChangeOnStratumUser}
-                  rightAddon={`.${stratumUser.workerName}`}
-                  error={deviceError.stratumUser}
-                />
-              </Flex>
-              <Flex flex={1}>
-                <Input
-                  type="password"
-                  label="Stratum Password"
-                  name="stratumPassword"
-                  id={`${device.mac}-stratumPassword`}
-                  placeholder="Add your stratum password"
-                  defaultValue={device.info.stratumPassword}
-                  error={deviceError.stratumPassword}
-                  onChange={handleChange}
-                />
-              </Flex>
-            </Grid>
-          )}
-        </Flex>
-        <Flex justifyContent={"flex-start"}>
-          <Button
-            variant="primary"
-            rightIcon={<ArrowIcon color={bgColor} />}
-            onClick={() => setIsSaveAndRestartModalOpen(true)}
-            disabled={isDeviceValid()}
-            label="Save"
-          ></Button>
+            ) : (
+              <Grid
+                templateColumns={{
+                  mobile: "repeat(1, 1fr)",
+                  tablet: "repeat(2, 1fr)",
+                  desktop: "repeat(2, 1fr) 2fr repeat(1, 1fr)",
+                }}
+                gap={"1rem"}
+              >
+                <Flex flex={1}>
+                  <Input
+                    type="text"
+                    label="Stratum URL"
+                    name="stratumURL"
+                    id={`${device.mac}-stratumUrl`}
+                    placeholder="Add your stratum URL"
+                    defaultValue={device.info.stratumURL}
+                    onChange={handleChange}
+                    error={deviceError.stratumURL}
+                  />
+                </Flex>
+                <Flex flex={1}>
+                  <Input
+                    type="number"
+                    label="Stratum Port"
+                    name="stratumPort"
+                    id={`${device.mac}-stratumPort`}
+                    placeholder="Add your stratum port"
+                    defaultValue={device.info.stratumPort}
+                    onChange={handleChange}
+                    error={deviceError.stratumPort}
+                  />
+                </Flex>
+                <Flex flex={2}>
+                  <Input
+                    type="text"
+                    label="Stratum User"
+                    name="stratumUser"
+                    id={`${device.mac}-stratumUser`}
+                    placeholder="Add your stratum user"
+                    defaultValue={stratumUser.stratumUser}
+                    onChange={handleChangeOnStratumUser}
+                    rightAddon={`.${stratumUser.workerName}`}
+                    error={deviceError.stratumUser}
+                  />
+                </Flex>
+                <Flex flex={1}>
+                  <Input
+                    type="password"
+                    label="Stratum Password"
+                    name="stratumPassword"
+                    id={`${device.mac}-stratumPassword`}
+                    placeholder="Add your stratum password"
+                    defaultValue={device.info.stratumPassword}
+                    error={deviceError.stratumPassword}
+                    onChange={handleChange}
+                  />
+                </Flex>
+              </Grid>
+            )}
+          </Flex>
+          <Flex justifyContent={"flex-start"}>
+            <Button
+              variant="primary"
+              rightIcon={<ArrowIcon color={bgColor} />}
+              onClick={() => setIsSaveAndRestartModalOpen(true)}
+              disabled={isDeviceValid()}
+              label="Save"
+            ></Button>
+          </Flex>
         </Flex>
       </AccordionPanel>
       <Flex

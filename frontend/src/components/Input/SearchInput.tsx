@@ -25,12 +25,15 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   const [borderColor] = useToken("colors", ["border-color"]);
   const [bgColor] = useToken("colors", ["input-bg"]);
   const [textColor] = useToken("colors", ["body-text"]);
-  const [accentColor] = useToken("colors", ["accent-color"]);
+
+  // primaryColor
+  const [primaryColor] = useToken("colors", ["cta-bg"]);
+  const [primaryColorHover] = useToken("colors", ["cta-bg-hover"]);
 
   return (
-    <InputGroup>
+    <InputGroup height={"40px"}>
       <InputLeftElement pointerEvents="none">
-        <SearchIcon color={accentColor} />
+        <SearchIcon color={primaryColor} />
       </InputLeftElement>
       <ChakraInput
         type={type}
@@ -49,10 +52,10 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         _focus={{
           outline: "none",
           boxShadow: "none",
-          border: `2px solid ${accentColor}`,
+          border: `1px solid ${primaryColor}`,
         }}
         _hover={{
-          border: `2px solid ${accentColor}`,
+          border: `1px solid ${primaryColorHover}`,
         }}
       />
     </InputGroup>

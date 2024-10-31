@@ -96,39 +96,75 @@ const theme = extendTheme({
       },
       "input-bg": {
         _light: lightThemeColors.greyscale[0],
-        _dark: darkThemeColors.greyscale[700],
+        _dark: darkThemeColors.greyscale[600],
       },
       "input-right-bg": {
         _light: lightThemeColors.greyscale[100],
         _dark: darkThemeColors.greyscale[600],
+      },
+      "input-label-color": {
+        _light: lightThemeColors.greyscale[600],
+        _dark: darkThemeColors.greyscale[300],
+      },
+      "input-placeholder-color": {
+        _light: lightThemeColors.greyscale[700],
+        _dark: darkThemeColors.greyscale[200],
       },
       "cta-icon-color": {
         _light: lightThemeColors.greyscale[500],
         _dark: darkThemeColors.primary[500],
       },
       "cta-bg": {
-        _light: lightThemeColors.brand.secondary,
+        _light: darkThemeColors.primary[500],
         _dark: darkThemeColors.primary[500],
       },
       "cta-bg-hover": {
-        _light: lightThemeColors.brand.secondaryLight,
+        _light: darkThemeColors.primary[600],
         _dark: darkThemeColors.primary[600],
       },
       "cta-bg-focus": {
-        _light: "#5C0099",
-        _dark: darkThemeColors.primary[700],
+        _light: darkThemeColors.primary[800],
+        _dark: darkThemeColors.primary[800],
       },
       "cta-bg-disabled": {
-        _light: lightThemeColors.brand.secondary,
-        _dark: darkThemeColors.primary[500],
+        _light: darkThemeColors.greyscale[700],
+        _dark: darkThemeColors.greyscale[700],
+      },
+      "cta-color-disabled": {
+        _light: darkThemeColors.greyscale[500],
+        _dark: darkThemeColors.greyscale[500],
       },
       "cta-color": {
         _light: lightThemeColors.greyscale[100],
         _dark: darkThemeColors.greyscale[900],
       },
+      "cta-outlined-focus": {
+        _light: lightThemeColors.greyscale[800],
+        _dark: darkThemeColors.greyscale[200],
+      },
       "body-text": {
         _light: lightThemeColors.greyscale[900],
         _dark: darkThemeColors.greyscale[0],
+      },
+      "cta-outlined-hover": {
+        _light: "rgba(0, 0, 0, 0.15)",
+        _dark: "rgba(255, 255, 255, 0.15)",
+      },
+      "cta-outlined-disabled": {
+        _light: darkThemeColors.greyscale[500],
+        _dark: darkThemeColors.greyscale[500],
+      },
+      "cta-text-hover": {
+        _light: darkThemeColors.greyscale[900],
+        _dark: darkThemeColors.greyscale[100],
+      },
+      "cta-text-focus": {
+        _light: darkThemeColors.greyscale[700],
+        _dark: darkThemeColors.greyscale[300],
+      },
+      "cta-text-disabled": {
+        _light: darkThemeColors.greyscale[500],
+        _dark: darkThemeColors.greyscale[500],
       },
       "logo-color": {
         _light: lightThemeColors.greyscale[0],
@@ -159,16 +195,24 @@ const theme = extendTheme({
         _dark: darkThemeColors.alert.error, // da modificare con i valori corretti
       },
       "accent-color": {
-        _light: lightThemeColors.brand.secondary, // da modificare con i valori corretti
+        _light: darkThemeColors.primary[500], // da modificare con i valori corretti
         _dark: darkThemeColors.primary[500], // da modificare con i valori corretti
       },
       "badge-color": {
-        _light: lightThemeColors.greyscale[900], // da modificare con i valori corretti
-        _dark: darkThemeColors.greyscale[200], // da modificare con i valori corretti
+        _light: darkThemeColors.greyscale[0], // da modificare con i valori corretti
+        _dark: darkThemeColors.greyscale[0],
+      },
+      "badge-ip-color": {
+        _light: darkThemeColors.greyscale[200], // da modificare con i valori corretti
+        _dark: darkThemeColors.greyscale[200],
       },
       "badge-bg": {
-        _light: lightThemeColors.greyscale[200], // da modificare con i valori corretti
-        _dark: darkThemeColors.greyscale[800], // da modificare con i valori corretti
+        _light: darkThemeColors.greyscale[500], // da modificare con i valori corretti
+        _dark: darkThemeColors.greyscale[500],
+      },
+      "primary-color": {
+        _light: darkThemeColors.primary[500],
+        _dark: darkThemeColors.primary[500],
       },
     },
   },

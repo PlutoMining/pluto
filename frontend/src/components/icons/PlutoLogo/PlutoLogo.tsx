@@ -13,7 +13,7 @@ export const PlutoLogo = ({ color }: PlutoLogoProps) => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g clip-path="url(#clip0_2118_25954)">
+      <g clipPath="url(#clip0_2118_25954)">
         <path
           d="M22.1578 31.2305L21.775 31.3153C21.5926 31.3564 21.4025 31.3538 21.2201 31.3102L20.8912 31.2305C20.5701 31.1611 20.2361 31.2639 20.0074 31.5028C19.658 31.8677 19.4191 32.3815 19.1725 33.0058H23.838C23.5837 32.3661 23.3859 31.8394 23.0185 31.4746C22.7924 31.2485 22.4687 31.1637 22.1604 31.2305H22.1578Z"
           fill="#13FFEB"
@@ -68,8 +68,8 @@ export const PlutoLogo = ({ color }: PlutoLogoProps) => {
           fill={color}
         />
         <path
-          fill-rule="evenodd"
-          clip-rule="evenodd"
+          fillRule="evenodd"
+          clipRule="evenodd"
           d="M119.152 15.0614H127.415L131.156 18.5023V27.6521C131.156 30.3155 128.997 32.4758 126.334 32.4758H118.988L115.414 28.7847V18.5023H119.09L119.152 15.0614ZM119.152 28.7847H127.415V18.5023H119.152V28.7847Z"
           fill={color}
         />
