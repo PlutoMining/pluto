@@ -17,6 +17,7 @@ import { DeleteIcon } from "../icons/DeleteIcon";
 import { DuplicateIcon } from "../icons/DuplicateIcon";
 import Link from "../Link/Link";
 import { Input } from "../Input";
+import { HostnameBadge } from "../Badge";
 
 interface PresetProps {
   preset: Preset;
@@ -56,8 +57,12 @@ export const PresetAccordion: React.FC<PresetProps> = ({
           color={textColor}
         >
           <AccordionIcon color={accentColor} />
-          <Heading fontSize={"md"}>#{++index}</Heading>
-          <Heading fontSize={"md"}>{preset.name}</Heading>
+          <Heading fontFamily={"accent"} fontSize={"md"} fontWeight={"400"}>
+            #{++index}
+          </Heading>
+          <Heading fontFamily={"accent"} fontSize={"md"} fontWeight={"400"}>
+            {preset.name}
+          </Heading>
         </Flex>
       </AccordionButton>
       <AccordionPanel p={0} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
@@ -98,39 +103,19 @@ export const PresetAccordion: React.FC<PresetProps> = ({
               />
             </Flex>
           </Flex>
-          <Text fontFamily={"heading"} fontWeight={"600"} textTransform={"uppercase"}>
+          <Text fontFamily={"accent"} fontWeight={"600"} textTransform={"uppercase"}>
             Associated Devices
           </Text>
 
           {preset.associatedDevices && preset.associatedDevices.length > 0 ? (
             <Flex gap={"1rem"} flexWrap={"wrap"}>
               {preset.associatedDevices?.map((device) => (
-                <ChakraBadge
-                  key={device.mac}
-                  backgroundColor={badgeBg}
-                  fontSize={"xs"}
-                  borderRadius={0}
-                  padding={"4px 6px"}
-                  fontFamily={"body"}
-                >
-                  <Flex alignItems={"center"} gap={"0.25rem"} p={"5px 8px"} height={"21.5px"}>
-                    <Text fontWeight={500} textTransform={"capitalize"} color={badgeColor}>
-                      {device.info.hostname}
-                    </Text>
-                    <Text fontWeight={500} color={"primary-color"}>
-                      {" - "}
-                    </Text>
-                    <Link
-                      href={device.ip}
-                      label={device.ip}
-                      fontFamily="accent"
-                      fontWeight={400}
-                      color={badgeIpColor}
-                      textDecoration="underline"
-                      isDisabled={device.tracing ? false : true}
-                    />
-                  </Flex>
-                </ChakraBadge>
+                <HostnameBadge
+                  mac={device.mac}
+                  hostname={device.info.hostname}
+                  ip={device.ip}
+                  tracing={device.tracing || false}
+                />
               ))}
             </Flex>
           ) : (

@@ -1,4 +1,4 @@
-import { Link } from "@chakra-ui/react";
+import { Link, useToken } from "@chakra-ui/react";
 import React from "react";
 
 interface GitLabLogoProps {
@@ -7,7 +7,9 @@ interface GitLabLogoProps {
   color?: string;
 }
 
-export const GitLabLogo = ({ url, target, color = "white" }: GitLabLogoProps) => {
+export const GitLabLogo = ({ url, target, color = "primary-color" }: GitLabLogoProps) => {
+  const [fillColor] = useToken("colors", [color]);
+
   return (
     <Link href={url} target={target}>
       <svg
@@ -20,12 +22,12 @@ export const GitLabLogo = ({ url, target, color = "white" }: GitLabLogoProps) =>
         <g clipPath="url(#clip0_440_780)">
           <path
             d="M15.7343 6.39367L15.7125 6.33742L13.5343 0.65617C13.4906 0.546795 13.4125 0.44992 13.3093 0.38742C13.2343 0.33742 13.15 0.309295 13.0593 0.29992C12.9687 0.290545 12.8812 0.303045 12.7968 0.334295C12.7125 0.365545 12.6375 0.415545 12.575 0.484295C12.5156 0.54992 12.4718 0.628045 12.4468 0.715545L10.9781 5.21554H5.02496L3.55308 0.715545C3.52808 0.628045 3.48433 0.54992 3.42496 0.484295C3.36246 0.41867 3.28746 0.365545 3.20308 0.334295C3.12183 0.303045 3.03121 0.290545 2.94058 0.29992C2.85308 0.309295 2.76558 0.33742 2.69058 0.38742C2.58746 0.44992 2.50933 0.546795 2.46558 0.65617L0.290582 6.33742L0.265582 6.39367C-0.0469183 7.21242 -0.0844183 8.11242 0.156207 8.95617C0.399957 9.79679 0.909332 10.5405 1.60933 11.0687L1.61558 11.0749L1.63433 11.0874L4.94683 13.5718L6.59058 14.8124L7.59058 15.5687C7.70621 15.628 7.84996 15.703 7.99683 15.703C8.14371 15.703 8.28746 15.628 8.40308 15.5687L9.40308 14.8124L11.0468 13.5718L14.3812 11.0749L14.3906 11.0655C15.0906 10.5374 15.6 9.79679 15.8156 8.95617C16.0843 8.11242 16.0468 7.21242 15.7343 6.39367Z"
-            fill={color}
+            fill={fillColor}
           />
         </g>
         <defs>
           <clipPath id="clip0_440_780">
-            <rect width="16" height="16" fill={color} />
+            <rect width="16" height="16" fill={fillColor} />
           </clipPath>
         </defs>
       </svg>

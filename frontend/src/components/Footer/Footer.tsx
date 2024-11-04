@@ -1,9 +1,9 @@
-import { Flex, Text, useToken } from "@chakra-ui/react";
+"use client";
+import { Flex, Text } from "@chakra-ui/react";
 import { BemindLogo } from "../icons/BemindLogo";
 import { DiscordLogo, GitLabLogo, MetaLogo, RedditLogo } from "../icons/FooterIcons";
 
 export const Footer = () => {
-  // const [primaryColor] = useToken("colors", ["primary-color"]);
   return (
     <Flex
       alignItems={"center"}
@@ -12,7 +12,7 @@ export const Footer = () => {
       zIndex={"10"}
       bg={"footer-bg"}
       fontWeight={400}
-      color={"greyscale.200"}
+      color={"footer-text"}
       p={"1rem 0"}
       borderTopWidth={"1px"}
       borderTopColor={"border-color"}
@@ -38,7 +38,7 @@ export const Footer = () => {
             justify={{ mobile: "space-between", tablet: "flex-start", desktop: "flex-start" }}
             w={{ mobile: "100%", tablet: "unset", desktop: "unset" }}
           >
-            <Text fontFamily={"heading"} fontSize={"xs"} color={"greyscale.200"} fontWeight={500}>
+            <Text fontFamily={"heading"} fontSize={"xs"} color={"footer-text"} fontWeight={500}>
               Terms & Conditions
             </Text>
             <Flex gap={"0.5rem"}>
@@ -46,19 +46,18 @@ export const Footer = () => {
               <GitLabLogo
                 url="https://gitlab.com/bemindinteractive/umbrel-community-app-store"
                 target="blank"
-                color={"white"}
               />
-              <DiscordLogo url="https://discord.gg/osmu" target="blank" color={"white"} />
+              <DiscordLogo url="https://discord.gg/osmu" target="blank" />
               {/* <RedditLogo /> */}
             </Flex>
           </Flex>
-          <Text fontSize={"xs"} fontWeight={300} color={"greyscale.200"}>
+          <Text fontSize={"xs"} fontWeight={300} color={"footer-text"}>
             © 2024 Pluto. All rights reserved. This open-source application software is licensed
             under the Lorem Ipsum License.
           </Text>
         </Flex>
         <Flex gap={"0.5rem"} align={"center"}>
-          <Text fontSize={"xs"} fontWeight={300} color={"greyscale.200"}>
+          <Text fontSize={"xs"} fontWeight={300} color={"footer-text"}>
             Designed with love by
           </Text>
           <BemindLogo url="https://www.bemind.me/" />

@@ -12,7 +12,7 @@ import {
   useToken,
 } from "@chakra-ui/react";
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
-import { Badge } from "../Badge";
+import { Badge, HostnameBadge } from "../Badge";
 import { Device, Preset } from "@pluto/interfaces";
 import { Select } from "../Select";
 import Button from "../Button/Button";
@@ -34,7 +34,9 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
   onCloseSuccessfully,
 }) => {
   const [bgColor] = useToken("colors", ["item-bg"]);
+  const [borderColor] = useToken("colors", ["border-color"]);
   const [textColor] = useToken("colors", ["body-text"]);
+  const [primaryColor] = useToken("colors", ["primary-color"]);
 
   const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
 
@@ -64,19 +66,32 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
 
   return (
     <Modal onClose={onClose} size={"full)"} isOpen={isOpen}>
-      <ModalOverlay />
-      <ModalContent bg={bgColor} borderRadius={0} height={"calc(100% - 8rem)"} overflow={"scroll"}>
+      <ModalOverlay boxShadow={"0px -39px 39px 0px #00988817"} />
+      <ModalContent
+        bg={bgColor}
+        borderRadius={0}
+        height={{
+          base: "calc(100% - 8.5rem)",
+          tablet: "calc(100% - 10.5rem)",
+          tabletL: "calc(100% - 9.5rem)",
+        }}
+        top={"1.5rem"}
+        overflow={"scroll"}
+        borderColor={borderColor}
+        borderTopWidth={"1px"}
+        borderBottomWidth={"1px"}
+      >
         <Box
           maxW="container.desktop"
           margin={"0 auto"}
-          p={"2rem"}
+          p={{ base: "1rem", tablet: "2rem" }}
           alignContent={"flex-start"}
           w={"100%"}
         >
           <ModalHeader p={"0 0 1rem 0"} fontFamily={"heading"} fontWeight={400} fontSize={"2rem"}>
             Pool Preset
           </ModalHeader>
-          <ModalCloseButton />
+          <ModalCloseButton color={primaryColor} />
           <ModalBody overflow={"scroll"} p={0}>
             <Flex flexDir={"column"} gap={"1rem"}>
               <Heading fontSize="sm" fontWeight={500}>
@@ -84,12 +99,12 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
               </Heading>
               <Flex gap={"1rem"} flexWrap={"wrap"}>
                 {devices.map((device) => (
-                  <Badge
-                    key={device.mac}
-                    title={device.info.hostname}
-                    bg={bgColor}
-                    color={textColor}
-                  ></Badge>
+                  <HostnameBadge
+                    mac={device.mac}
+                    hostname={device.info.hostname}
+                    ip={device.ip}
+                    tracing={device.tracing || false}
+                  />
                 ))}
               </Flex>
               <Text fontSize={"13px"} fontWeight={400} fontFamily={"heading"}>

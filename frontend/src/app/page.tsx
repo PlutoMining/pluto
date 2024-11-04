@@ -84,7 +84,7 @@ const OverviewPage: React.FC = () => {
 
         {dashboardPublicUrl && (
           <Box
-            backgroundColor={theme.colors.greyscale[0]}
+            backgroundColor={"bg-color"}
             borderRadius={"1rem"}
             p={"1rem"}
             h={{ base: "1555px", tablet: "970px" }}

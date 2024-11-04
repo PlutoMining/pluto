@@ -32,10 +32,11 @@ export const AddNewPresetModal: React.FC<AddNewPresetModalProps> = ({
       <ModalContent
         bg={bgColor}
         height={{
-          base: "calc(100vh - 7.25rem)",
-          tablet: "calc(100vh - 9.5rem)",
-          tabletL: "calc(100vh - 8.5rem)",
+          base: "calc(100% - 8.5rem)",
+          tablet: "calc(100% - 10.5rem)",
+          tabletL: "calc(100% - 9.5rem)",
         }}
+        top={"1.5rem"}
       >
         <Box
           maxW="container.desktop"

@@ -183,6 +183,10 @@ const theme = extendTheme({
         _light: lightThemeColors.greyscale[0],
         _dark: darkThemeColors.greyscale[0],
       },
+      "device-th-color": {
+        _light: lightThemeColors.greyscale[500],
+        _dark: darkThemeColors.greyscale[300],
+      },
       "th-color": {
         _light: lightThemeColors.greyscale[500],
         _dark: darkThemeColors.greyscale[0],
@@ -227,9 +231,13 @@ const theme = extendTheme({
         _light: darkThemeColors.primary[500],
         _dark: darkThemeColors.primary[500],
       },
+      "footer-text": {
+        _light: darkThemeColors.primary[800],
+        _dark: darkThemeColors.primary[100],
+      },
     },
   },
-  colors: lightThemeColors,
+  colors: [lightThemeColors, darkThemeColors],
   breakpoints,
   sizes,
   fonts,

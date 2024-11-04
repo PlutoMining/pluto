@@ -341,17 +341,17 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           <Flex
             backgroundColor={"bg-color"}
             justify={"flex-end"}
-            p={"1rem"}
+            p={"0.5rem 1rem"}
             display={{ base: "none", tablet: "flex" }}
             borderBottom={`1px solid ${borderColor}`}
             gap={"2rem"}
           >
             <Text
               fontWeight={600}
-              color={"th-color"}
+              color={"device-th-color"}
               fontFamily={"accent"}
               textTransform={"uppercase"}
-              fontSize={"sm"}
+              fontSize={"xs"}
               textAlign={"center"}
               p={0}
               as={Flex}
@@ -362,10 +362,10 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             <Box as={Flex} flex={3} gap={"1.75rem"} justify={"flex-end"}>
               <Text
                 fontWeight={600}
-                color={"th-color"}
+                color={"device-th-color"}
                 fontFamily={"accent"}
                 textTransform={"uppercase"}
-                fontSize={"sm"}
+                fontSize={"xs"}
                 textAlign={"center"}
                 p={0}
                 minW={"70px"}
@@ -854,7 +854,12 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               <AccordionIcon color={"primary-color"} />
             </Flex>
             <Flex alignItems={"center"} gap={"0.5rem"}>
-              <Text fontSize={"md"} fontWeight={400} textTransform={"capitalize"}>
+              <Text
+                fontSize={"md"}
+                fontWeight={400}
+                textTransform={"capitalize"}
+                fontFamily={"accent"}
+              >
                 {device.info.hostname}
               </Text>
               <Text

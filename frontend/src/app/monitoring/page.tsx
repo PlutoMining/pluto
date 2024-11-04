@@ -251,7 +251,7 @@ const MonitoringTablePage: React.FC = () => {
                         bg={"td-bg"}
                         fontSize={"sm"}
                         textAlign={"left"}
-                        fontWeight={"500"}
+                        fontWeight={"400"}
                       >
                         {device.info.hostname}
                       </Td>
@@ -260,7 +260,7 @@ const MonitoringTablePage: React.FC = () => {
                         bg={"td-bg"}
                         fontSize={"sm"}
                         textAlign={"center"}
-                        fontWeight={"500"}
+                        fontWeight={"400"}
                       >
                         {device.info.hashRate.toFixed(2)} GH/s
                       </Td>
@@ -269,7 +269,7 @@ const MonitoringTablePage: React.FC = () => {
                         bg={"td-bg"}
                         fontSize={"sm"}
                         textAlign={"center"}
-                        fontWeight={"500"}
+                        fontWeight={"400"}
                       >
                         {device.info.sharesAccepted} |{" "}
                         <Text as={"label"} color={"accent-color"}>
@@ -281,7 +281,7 @@ const MonitoringTablePage: React.FC = () => {
                         bg={"td-bg"}
                         fontSize={"sm"}
                         textAlign={"center"}
-                        fontWeight={"500"}
+                        fontWeight={"400"}
                       >
                         {device.info.power.toFixed(2)} W
                       </Td>
@@ -290,7 +290,7 @@ const MonitoringTablePage: React.FC = () => {
                         bg={"td-bg"}
                         fontSize={"sm"}
                         textAlign={"center"}
-                        fontWeight={"500"}
+                        fontWeight={"400"}
                       >
                         {device.info.temp} °C
                       </Td>
@@ -299,7 +299,7 @@ const MonitoringTablePage: React.FC = () => {
                         bg={"td-bg"}
                         fontSize={"sm"}
                         textAlign={"center"}
-                        fontWeight={"500"}
+                        fontWeight={"400"}
                       >
                         {device.info.bestDiff}
                       </Td>
@@ -308,7 +308,7 @@ const MonitoringTablePage: React.FC = () => {
                         bg={"td-bg"}
                         fontSize={"sm"}
                         textAlign={"center"}
-                        fontWeight={"500"}
+                        fontWeight={"400"}
                       >
                         <Tooltip
                           label={formatDetailedTime(device.info.uptimeSeconds)}
@@ -330,7 +330,7 @@ const MonitoringTablePage: React.FC = () => {
                         bg={"td-bg"}
                         fontSize={"sm"}
                         textAlign={"center"}
-                        fontWeight={"500"}
+                        fontWeight={"400"}
                       >
                         <Link
                           href={`monitoring/${device.info.hostname}`}
