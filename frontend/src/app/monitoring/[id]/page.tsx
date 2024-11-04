@@ -7,7 +7,7 @@ import { useSocket } from "@/providers/SocketProvider";
 import { formatTime } from "@/utils/formatTime";
 import { restyleIframe } from "@/utils/iframe";
 import { Box, Container, Flex, Heading, Text, useTheme } from "@chakra-ui/react";
-import { Device, Preset } from "@pluto/interfaces";
+import { Device, DeviceInfo, Preset } from "@pluto/interfaces";
 import axios from "axios";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -175,7 +175,7 @@ const MonitoringPage: React.FC = () => {
                   fontSize={{ base: "20px", tablet: "32px" }}
                   fontWeight={700}
                 >
-                  {device?.info.hashRate.toFixed(2)} GH/s
+                  {(device?.info.hashRate_10m || device?.info.hashRate)?.toFixed(2)} GH/s
                 </Heading>
               </Flex>
 

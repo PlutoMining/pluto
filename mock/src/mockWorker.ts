@@ -7,6 +7,7 @@ import { generateFakeLog } from "./services/mock.service";
 import systemRoutes from "./routes/system.routes";
 import { config } from "./config/environment";
 import { checkIfRestarting } from "./middlewares/checkIfRestarting";
+import { DeviceApiVersion } from "@pluto/interfaces";
 
 interface ServerInfo {
   port: number;
@@ -14,12 +15,16 @@ interface ServerInfo {
   startTime: Date;
 }
 
-const { port, hostname } = workerData as { port: number; hostname: string };
+const { port, hostname, apiVersion } = workerData as {
+  port: number;
+  hostname: string;
+  apiVersion: DeviceApiVersion;
+};
 
 const activeServers: ServerInfo[] = [];
 
 // Funzione per creare un mock server (HTTP e WebSocket)
-const createMockServer = (port: number, hostname: string): void => {
+const createMockServer = (port: number, hostname: string, apiVersion: DeviceApiVersion): void => {
   const app: Express = express();
   const server = createServer(app);
 
@@ -27,6 +32,7 @@ const createMockServer = (port: number, hostname: string): void => {
 
   // Salva il hostname nell'app Express
   app.locals.hostname = hostname;
+  app.locals.apiVersion = apiVersion;
   app.locals.startTime = startTime;
 
   if (config.logsPubEnabled) {
@@ -81,4 +87,4 @@ const createMockServer = (port: number, hostname: string): void => {
 };
 
 // Creiamo il server utilizzando i dati passati dal main thread
-createMockServer(port, hostname);
+createMockServer(port, hostname, apiVersion);

@@ -109,9 +109,9 @@ export const createMetricsForDevice = (hostname: string) => {
       if (data.power) powerGauge.set(data.power);
       if (data.voltage) voltageGauge.set(data.voltage / 1000); // Assume voltage in millivolts
       if (data.current) currentGauge.set(data.current / 1000); // Assume current in milliamps
-      if (data.fanSpeedRpm) fanSpeedGauge.set(data.fanSpeedRpm);
+      if (data.fanSpeedRpm || data.fanspeed) fanSpeedGauge.set(data.fanSpeedRpm || data.fanspeed);
       if (data.temp) tempGauge.set(data.temp);
-      if (data.hashRate) hashRateGauge.set(data.hashRate);
+      if (data.hashRate || data.hashRate_10m) hashRateGauge.set(data.hashRate || data.hashRate_10m);
       if (data.sharesAccepted) sharesAcceptedGauge.set(data.sharesAccepted);
       if (data.sharesRejected) sharesRejectedGauge.set(data.sharesRejected);
       if (data.uptimeSeconds) uptimeGauge.set(data.uptimeSeconds);
@@ -122,7 +122,9 @@ export const createMetricsForDevice = (hostname: string) => {
 
       // efficiency (GH / Wh) = hashrate (GH) / (power (W) * uptimeSeconds (s) / 3600 )
       if (data.efficiency)
-        efficiencyGauge.set(data.hashRate / ((data.power * data.uptimeSeconds) / 3600));
+        efficiencyGauge.set(
+          (data.hashRate || data.hashRate_10m) / ((data.power * data.uptimeSeconds) / 3600)
+        );
     },
     register: globalRegister, // Return the registry for further usage
   };
@@ -220,7 +222,10 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   const onlineDevices = devicesData.filter((device) => device.tracing).length;
   const offlineDevices = totalDevices - onlineDevices;
 
-  const totalHashrate = devicesData.reduce((acc, device) => acc + device.hashRate, 0);
+  const totalHashrate = devicesData.reduce(
+    (acc, device) => acc + (device.hashRate || device.hashRate_10m),
+    0
+  );
   const averageHashrate = totalHashrate / totalDevices;
 
   const totalPower = devicesData.reduce((acc, device) => acc + device.power, 0);

@@ -1,5 +1,5 @@
 // Importa config
-import { DeviceInfo } from "@pluto/interfaces";
+import { DeviceInfo, DeviceInfoLegacy, DeviceInfoNew } from "@pluto/interfaces";
 import { config } from "../config/environment";
 // Funzione per estrarre la parte numerica dall'hostname
 const extractNumericFromHostname = (hostname: string): number => {
@@ -105,8 +105,8 @@ const getFirmwareVersion = (hostname: string): string => {
 export const generateSystemInfo = (
   hostname: string,
   uptimeSeconds: number,
-  systemInfo: Partial<DeviceInfo> = {}
-) => {
+  systemInfo: Partial<DeviceInfoLegacy> = {}
+): Partial<DeviceInfoLegacy> => {
   const getRandomInt = (min: number, max: number) =>
     Math.floor(Math.random() * (max - min + 1)) + min;
   const getRandomFloat = (min: number, max: number, decimals: number) => {
@@ -117,7 +117,7 @@ export const generateSystemInfo = (
   // Recupera la versione firmware in base all'hostname
   const firmwareVersion = getFirmwareVersion(hostname);
 
-  const defaultSystemInfo: Partial<DeviceInfo> = {
+  const defaultSystemInfo: Partial<DeviceInfoLegacy> = {
     power: getRandomFloat(10, 20, 6),
     voltage: getRandomInt(5000, 6000),
     current: getRandomFloat(2000, 3000, 1),
@@ -148,6 +148,83 @@ export const generateSystemInfo = (
     invertfanpolarity: getRandomInt(0, 1),
     autofanspeed: getRandomInt(0, 1),
     fanspeed: getRandomInt(0, 100),
+  };
+
+  // Sovrascrive i valori casuali con quelli di systemInfo se presenti
+  return {
+    ...defaultSystemInfo, // Valori casuali di default
+    ...systemInfo, // Sovrascrittura con i dati forniti
+  };
+};
+
+// Funzione per generare informazioni di sistema per dispositivi con firmware alternativo
+export const generateSystemInfoAlt = (
+  hostname: string,
+  uptimeSeconds: number,
+  systemInfo: Partial<DeviceInfoNew> = {}
+): Partial<DeviceInfoNew> => {
+  const getRandomInt = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
+  const getRandomFloat = (min: number, max: number, decimals: number) => {
+    const str = (Math.random() * (max - min) + min).toFixed(decimals);
+    return parseFloat(str);
+  };
+
+  // Recupera la versione firmware in base all'hostname
+  const firmwareVersion = getFirmwareVersion(hostname);
+
+  const defaultSystemInfo: Partial<DeviceInfoNew> = {
+    power: getRandomFloat(30, 80, 3),
+    maxPower: 70,
+    minPower: 30,
+    voltage: getRandomFloat(11000, 13000, 2),
+    maxVoltage: 13,
+    minVoltage: 11,
+    current: getRandomFloat(6000, 7000, 1),
+    temp: getRandomInt(30, 80),
+    vrTemp: getRandomFloat(60, 80, 1),
+    hashRateTimestamp: Date.now(),
+    hashRate_10m: getRandomFloat(2900, 3100, 3),
+    hashRate_1h: getRandomFloat(2900, 3100, 3),
+    hashRate_1d: getRandomFloat(2900, 3100, 3),
+    jobInterval: 1200,
+    bestDiff: `${getRandomFloat(400, 500, 1)}M`,
+    bestSessionDiff: `${getRandomFloat(100, 200, 1)}M`,
+    freeHeap: getRandomInt(5000000, 6000000),
+    coreVoltage: getRandomInt(1300, 1400),
+    coreVoltageActual: getRandomInt(1300, 1400),
+    frequency: getRandomInt(400, 600),
+    ssid: "EMN_Guest",
+    hostname,
+    wifiStatus: "Connected!",
+    sharesAccepted: getRandomInt(10000, 20000),
+    sharesRejected: getRandomInt(0, 50),
+    uptimeSeconds,
+    asicCount: getRandomInt(2, 6),
+    smallCoreCount: getRandomInt(1200, 1300),
+    ASICModel: "BM1368",
+    deviceModel: "NerdQAxe+",
+    stratumURL: "solo.ckpool.org",
+    stratumPort: 3333,
+    stratumUser: `bc1asdasdasdasdasasdasdasdasdasdasd.${hostname}`,
+    version: firmwareVersion,
+    runningPartition: "ota_1",
+    flipscreen: getRandomInt(0, 1),
+    overheat_temp: 75,
+    invertscreen: getRandomInt(0, 1),
+    autoscreenoff: getRandomInt(0, 1),
+    invertfanpolarity: getRandomInt(0, 1),
+    autofanspeed: getRandomInt(0, 1),
+    fanspeed: getRandomInt(0, 100),
+    fanrpm: getRandomInt(2000, 3000),
+    lastResetReason: "Power on reset",
+    history: {
+      hashrate_10m: Array.from({ length: 4 }, () => getRandomFloat(290000, 310000, 0)),
+      hashrate_1h: Array.from({ length: 4 }, () => getRandomFloat(300000, 310000, 0)),
+      hashrate_1d: Array.from({ length: 4 }, () => getRandomFloat(310000, 320000, 0)),
+      timestamps: Array.from({ length: 4 }, () => getRandomInt(2000, 5000)),
+      timestampBase: Date.now(),
+    },
   };
 
   // Sovrascrive i valori casuali con quelli di systemInfo se presenti

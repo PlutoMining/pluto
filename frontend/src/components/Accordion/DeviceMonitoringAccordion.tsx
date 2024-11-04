@@ -141,7 +141,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
               Hash rate
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
-              {device.info.hashRate.toFixed(2)} GH/s
+              {(device.info.hashRate_10m || device.info.hashRate)?.toFixed(2)} GH/s
             </Text>
           </Flex>
           <Flex justify={"space-between"}>
