@@ -223,6 +223,18 @@ const theme = extendTheme({
         _light: darkThemeColors.greyscale[200], // da modificare con i valori corretti
         _dark: darkThemeColors.greyscale[200],
       },
+      "dashboard-title": {
+        _light: darkThemeColors.greyscale[200], // da modificare con i valori corretti
+        _dark: darkThemeColors.greyscale[200],
+      },
+      "dashboard-bg-section": {
+        _light: darkThemeColors.greyscale[200], // da modificare con i valori corretti
+        _dark: darkThemeColors.greyscale[750],
+      },
+      "dashboard-badge-bg": {
+        _light: darkThemeColors.greyscale[200], // da modificare con i valori corretti
+        _dark: "#CBCBCC66",
+      },
       "badge-bg": {
         _light: darkThemeColors.greyscale[500], // da modificare con i valori corretti
         _dark: darkThemeColors.greyscale[500],

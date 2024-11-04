@@ -36,9 +36,6 @@ export const PresetAccordion: React.FC<PresetProps> = ({
 }) => {
   const [borderColor] = useToken("colors", ["border-color"]);
   const [textColor] = useToken("colors", ["body-text"]);
-  const [badgeColor] = useToken("colors", ["badge-color"]);
-  const [badgeIpColor] = useToken("colors", ["badge-ip-color"]);
-  const [badgeBg] = useToken("colors", ["badge-bg"]);
   const [accentColor] = useToken("colors", ["cta-bg"]);
 
   return (

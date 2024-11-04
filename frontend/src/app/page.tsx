@@ -6,8 +6,10 @@ import {
   Flex,
   Heading,
   Text,
+  useColorMode,
   useMediaQuery,
   useTheme,
+  useToken,
   VStack,
 } from "@chakra-ui/react";
 import { Device, DeviceInfo } from "@pluto/interfaces";
@@ -69,7 +71,11 @@ const OverviewPage: React.FC = () => {
     }
   };
 
-  const frameBgColor = "#fff";
+  const [bgColor] = useToken("colors", ["bg-color"]);
+
+  const [textColor] = useToken("colors", ["body-color"]);
+
+  const { colorMode } = useColorMode();
 
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
@@ -78,34 +84,25 @@ const OverviewPage: React.FC = () => {
         flexDirection={"column"}
         gap={"1rem"}
       >
-        <Heading fontSize={"4xl"} fontWeight={400}>
+        <Heading fontSize={"4xl"} fontWeight={"700"} textTransform={"uppercase"}>
           Overview Dashboard
         </Heading>
 
         {dashboardPublicUrl && (
-          <Box
-            backgroundColor={"bg-color"}
-            borderRadius={"1rem"}
-            p={"1rem"}
-            h={{ base: "1555px", tablet: "970px" }}
-          >
-            <Box
-              backgroundColor={frameBgColor}
-              p={"1rem"}
-              borderRadius={"1rem"}
-              h={"100%"}
-              w={"100%"}
-            >
+          <Box backgroundColor={"bg-color"} h={{ base: "1555px", tablet: "970px" }}>
+            <Box borderRadius={"1rem"} h={"100%"} w={"100%"}>
               <iframe
-                onLoad={restyleIframe(iframeRef, frameBgColor)}
+                onLoad={restyleIframe(iframeRef, bgColor, textColor)}
                 ref={iframeRef} // Applichiamo la ref qui
-                src={`${dashboardPublicUrl}&theme=light&transparent=true&refresh=5s`}
+                src={`${dashboardPublicUrl}&theme=${
+                  colorMode === "dark" ? "dark" : "light"
+                }&refresh=5s`}
                 style={{
                   width: "100%",
                   height: "100%",
                   border: "none",
                   backgroundColor: "transparent",
-                }} // Opzionale: stile per rimuovere il bordo
+                }}
               ></iframe>
             </Box>
           </Box>

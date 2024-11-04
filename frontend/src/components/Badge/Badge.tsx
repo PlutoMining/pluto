@@ -1,8 +1,7 @@
-import { Flex, Text, useTheme } from "@chakra-ui/react";
+import { Flex, Text, useTheme, useToken } from "@chakra-ui/react";
 import { Badge as ChakraBadge } from "@chakra-ui/react";
 
 export interface DeviceStatusBadgeProps {
-  title?: string | number;
   label?: string | number;
   color?: string;
   bg?: string;
@@ -10,34 +9,32 @@ export interface DeviceStatusBadgeProps {
 }
 
 export const Badge: React.FC<DeviceStatusBadgeProps> = ({
-  title,
   label,
-  color,
-  bg,
-  fontWeight = 400,
+  color = "body-text",
+  bg = "dashboard-badge-bg",
+  fontWeight = 500,
 }) => {
-  const theme = useTheme();
+  const [badgeColor] = useToken("colors", [bg]);
+  const [textColor] = useToken("colors", [color]);
 
   return (
     <ChakraBadge
-      bg={bg || color}
-      color={bg ? color : theme.colors.greyscale[500]}
+      bg={badgeColor}
+      color={textColor}
       fontSize={"13px"}
       borderRadius={0}
-      padding={"4px 6px"}
+      padding={"4px 8px"}
     >
-      <Flex gap={"0.25rem"} alignItems={"center"} wrap={"wrap"}>
-        {title && (
-          <Text fontWeight={500} textTransform={"capitalize"}>
-            {title}
-          </Text>
-        )}
-        {label && (
-          <Text fontWeight={fontWeight} textTransform={"none"}>
-            {label}
-          </Text>
-        )}
-      </Flex>
+      {label && (
+        <Text
+          fontWeight={fontWeight}
+          textTransform={"uppercase"}
+          fontFamily={"accent"}
+          fontSize={"lg"}
+        >
+          {label}
+        </Text>
+      )}
     </ChakraBadge>
   );
 };

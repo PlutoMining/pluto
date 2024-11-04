@@ -6,9 +6,19 @@ import { ArrowLeftIcon } from "@/components/icons/ArrowIcon";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatTime } from "@/utils/formatTime";
 import { restyleIframe } from "@/utils/iframe";
-import { Box, Container, Flex, Heading, Text, useTheme } from "@chakra-ui/react";
+import {
+  Box,
+  Container,
+  Flex,
+  Heading,
+  Text,
+  useColorMode,
+  useTheme,
+  useToken,
+} from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
 import axios from "axios";
+import { text } from "d3";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -82,7 +92,16 @@ const MonitoringPage: React.FC = () => {
     }
   };
 
-  const frameBgColor = "#fff";
+  const [primaryColor] = useToken("colors", ["primary-color"]);
+  const [bgColor] = useToken("colors", ["bg-color"]);
+  const [borderColor] = useToken("colors", ["border-color"]);
+  const [badgeColor] = useToken("colors", ["badge-color"]);
+  const [badgeBg] = useToken("colors", ["badge-bg"]);
+  const [dashboardBgBadge] = useToken("colors", ["dashboard-bg-section"]);
+  const [textColor] = useToken("colors", ["body-text"]);
+  const [errorColor] = useToken("colors", ["error-color"]);
+
+  const { colorMode } = useColorMode();
 
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
@@ -94,61 +113,75 @@ const MonitoringPage: React.FC = () => {
         <Link
           href={"/monitoring"}
           label="Go back"
-          leftIcon={<ArrowLeftIcon color={theme.colors.greyscale[900]} />}
+          leftIcon={<ArrowLeftIcon color={primaryColor} />}
         />
-        <Heading fontSize={"4xl"} fontWeight={400} textTransform="capitalize">
+        <Heading fontSize={"4xl"} fontWeight={"700"} textTransform={"uppercase"}>
           {id} Dashboard
         </Heading>
         {dashboardPublicUrl ? (
           <Flex flexDirection={"column"} gap={"1rem"}>
             <Flex
-              backgroundColor={theme.colors.greyscale[0]}
-              borderRadius={"1rem"}
+              backgroundColor={bgColor}
               p={"1rem"}
               flexDir={"column"}
               gap={"1rem"}
+              border={`1px solid ${borderColor}`}
             >
-              <Heading fontSize={"1rem"} fontWeight={500}>
+              <Heading fontSize={"32px"} fontWeight={500}>
                 General Info
               </Heading>
               <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
                 <Flex
                   flex={1}
-                  border={`1px solid ${theme.colors.greyscale[200]}`}
-                  borderRadius={"0.5rem"}
+                  backgroundColor={dashboardBgBadge}
+                  borderRadius={0}
                   justify={"space-between"}
+                  alignItems={"center"}
                   p={"1rem"}
                 >
-                  <Heading fontSize={"1rem"} fontWeight={700}>
-                    Device Status
+                  <Heading
+                    fontSize={"lg"}
+                    fontWeight={500}
+                    textTransform={"uppercase"}
+                    color={"dashboard-title"}
+                    fontFamily={"accent"}
+                  >
+                    / Device Status
                   </Heading>
-                  <DeviceStatusBadge status={device?.tracing ? "online" : "offline"} />
+                  <DeviceStatusBadge
+                    status={device?.tracing ? "online" : "offline"}
+                    invert={true}
+                  />
                 </Flex>
                 <Flex
                   flex={1}
-                  border={`1px solid ${theme.colors.greyscale[200]}`}
-                  borderRadius={"0.5rem"}
+                  backgroundColor={dashboardBgBadge}
+                  borderRadius={0}
                   justify={"space-between"}
+                  alignItems={"center"}
                   p={"1rem"}
                 >
-                  <Heading fontSize={"1rem"} fontWeight={700}>
-                    Pool Info
+                  <Heading
+                    fontSize={"lg"}
+                    fontWeight={500}
+                    textTransform={"uppercase"}
+                    color={"dashboard-title"}
+                    fontFamily={"accent"}
+                  >
+                    / Pool Info
                   </Heading>
                   <Heading fontSize={"1rem"} fontWeight={500}>
-                    <Badge
-                      color={theme.colors.greyscale[500]}
-                      bg={theme.colors.greyscale[200]}
-                      label={`${preset ? preset.name : "Custom"}`}
-                    ></Badge>
+                    <Badge label={`${preset ? preset.name : "Custom"}`}></Badge>
                   </Heading>
                 </Flex>
               </Flex>
             </Flex>
 
             <Flex
-              backgroundColor={theme.colors.brand.secondary}
+              backgroundColor={dashboardBgBadge}
               p={"1rem"}
-              borderRadius={"1rem"}
+              borderRadius={"0"}
+              border={`1px solid ${borderColor}`}
               justify={"space-between"}
               gap={"1rem"}
               flexDirection={{ base: "column", tablet: "row" }}
@@ -162,19 +195,15 @@ const MonitoringPage: React.FC = () => {
                 gap={"1rem"}
                 borderRight={"1px solid rgba(#fff, 0.25)"}
                 borderRightWidth={{ base: 0, tablet: "1px" }}
-                borderColor={theme.colors.greyscale[0]}
+                borderColor={borderColor}
                 marginRight={{ base: 0, tablet: "1rem" }}
                 borderBottomWidth={{ base: "1px", tablet: 0 }}
                 paddingBottom={{ base: "1rem", tablet: 0 }}
               >
-                <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
+                <Heading fontSize={"14px"} fontWeight={500}>
                   Hash Rate
                 </Heading>
-                <Heading
-                  color={theme.colors.greyscale[0]}
-                  fontSize={{ base: "20px", tablet: "32px" }}
-                  fontWeight={700}
-                >
+                <Heading fontSize={{ base: "20px", tablet: "32px" }} fontWeight={700}>
                   {device?.info.hashRate.toFixed(2)} GH/s
                 </Heading>
               </Flex>
@@ -183,7 +212,7 @@ const MonitoringPage: React.FC = () => {
                 flexDir={"column"}
                 borderRight={"1px solid rgba(#fff, 0.25)"}
                 borderRightWidth={{ base: 0, tablet: "1px" }}
-                borderColor={theme.colors.greyscale[0]}
+                borderColor={borderColor}
                 marginRight={{ base: 0, tablet: "1rem" }}
                 borderBottomWidth={{ base: "1px", tablet: 0 }}
                 paddingBottom={{ base: "1rem", tablet: 0 }}
@@ -196,25 +225,21 @@ const MonitoringPage: React.FC = () => {
                   alignItems={{ base: "center", tablet: "flex-start" }}
                   gap={"1rem"}
                 >
-                  <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
+                  <Heading fontSize={"14px"} fontWeight={500}>
                     Shares
                   </Heading>
-                  <Heading
-                    color={theme.colors.greyscale[0]}
-                    fontSize={{ base: "20px", tablet: "32px" }}
-                    fontWeight={700}
-                  >
+                  <Heading fontSize={{ base: "20px", tablet: "32px" }} fontWeight={700}>
                     {device?.info.sharesAccepted}
                   </Heading>
                 </Flex>
                 <Flex alignItems={"center"} gap={"0.5rem"}>
                   <Badge
-                    bg="white"
-                    color={theme.colors.alert.error}
+                    bg={errorColor}
+                    color={textColor}
                     label={device?.info.sharesRejected}
-                    fontWeight="700"
+                    fontWeight="500"
                   ></Badge>
-                  <Text fontSize={"12px"} fontWeight={400} color={theme.colors.greyscale[0]}>
+                  <Text fontSize={"12px"} fontWeight={400}>
                     rejected
                   </Text>
                 </Flex>
@@ -228,19 +253,15 @@ const MonitoringPage: React.FC = () => {
                 gap={"1rem"}
                 borderRight={"1px solid rgba(#fff, 0.25)"}
                 borderRightWidth={{ base: 0, tablet: "1px" }}
-                borderColor={theme.colors.greyscale[0]}
+                borderColor={borderColor}
                 marginRight={{ base: 0, tablet: "1rem" }}
                 borderBottomWidth={{ base: "1px", tablet: 0 }}
                 paddingBottom={{ base: "1rem", tablet: 0 }}
               >
-                <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
+                <Heading fontSize={"14px"} fontWeight={500}>
                   Uptime
                 </Heading>
-                <Heading
-                  color={theme.colors.greyscale[0]}
-                  fontSize={{ base: "20px", tablet: "32px" }}
-                  fontWeight={700}
-                >
+                <Heading fontSize={{ base: "20px", tablet: "32px" }} fontWeight={700}>
                   {formatTime(device?.info.uptimeSeconds || 0)}
                 </Heading>
               </Flex>
@@ -252,54 +273,38 @@ const MonitoringPage: React.FC = () => {
                   justify={{ base: "space-between", tablet: "flex-start" }}
                   alignItems={{ base: "center", tablet: "flex-start" }}
                 >
-                  <Heading color={theme.colors.greyscale[0]} fontSize={"14px"} fontWeight={500}>
+                  <Heading fontSize={"14px"} fontWeight={500}>
                     Best difficulty
                   </Heading>
                   <Flex gap={"0.5rem"} alignItems={"baseline"}>
-                    <Heading
-                      color={theme.colors.greyscale[0]}
-                      fontSize={{ base: "20px", tablet: "28px" }}
-                      fontWeight={700}
-                    >
+                    <Heading fontSize={{ base: "20px", tablet: "28px" }} fontWeight={700}>
                       {device?.info.bestDiff}
                     </Heading>
-                    <Heading color={theme.colors.greyscale[0]} fontSize={"1rem"}>
-                      all time best
-                    </Heading>
+                    <Heading fontSize={"1rem"}>all time best</Heading>
                   </Flex>
                 </Flex>
 
                 <Flex alignItems={"center"} gap={"0.5rem"}>
                   <Badge
-                    bg="white"
-                    color={theme.colors.brand.secondary}
+                    color={primaryColor}
                     label={device?.info.sharesRejected}
-                    fontWeight="700"
+                    fontWeight="500"
                   ></Badge>
-                  <Text fontSize={"12px"} fontWeight={400} color={theme.colors.greyscale[0]}>
+                  <Text fontSize={"12px"} fontWeight={400}>
                     since system boot
                   </Text>
                 </Flex>
               </Flex>
             </Flex>
 
-            <Box
-              backgroundColor={theme.colors.greyscale[0]}
-              borderRadius={"1rem"}
-              p={"1rem"}
-              h={{ base: "2135px", tablet: "1200px" }}
-            >
-              <Box
-                backgroundColor={frameBgColor}
-                p={"1rem"}
-                borderRadius={"1rem"}
-                h={"100%"}
-                w={"100%"}
-              >
+            <Box backgroundColor={bgColor} h={{ base: "2135px", tablet: "1200px" }}>
+              <Box h={"100%"} w={"100%"}>
                 <iframe
-                  onLoad={restyleIframe(iframeRef, frameBgColor)}
-                  ref={iframeRef} // Applichiamo la ref qui
-                  src={`${dashboardPublicUrl}&kiosk=1&theme=light&refresh=5s`}
+                  onLoad={restyleIframe(iframeRef, bgColor, textColor)}
+                  ref={iframeRef}
+                  src={`${dashboardPublicUrl}&kiosk=1&theme=${
+                    colorMode === "dark" ? "dark" : "light"
+                  }&refresh=5s`}
                   style={{ width: "100%", height: "100%", border: "none" }}
                 ></iframe>
               </Box>
