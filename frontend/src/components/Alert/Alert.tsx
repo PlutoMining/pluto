@@ -5,6 +5,7 @@ import {
   Alert as ChakraAlert,
   Flex,
   useTheme,
+  useToken,
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { CloseIcon } from "../icons/CloseIcon";
@@ -21,21 +22,29 @@ const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
 
   const theme = useTheme();
 
+  const [successColor, warningColor, errorColor] = useToken("colors", [
+    "success-color",
+    "warning-color",
+    "error-color",
+  ]);
+
+  const [bodyText] = useToken("colors", ["body-text"]);
+
   useEffect(() => {
     switch (content.status) {
       case AlertStatus.ERROR: {
-        setIcon(<ErrorIcon color={theme.colors.alert.error} h={"18"} />);
-        setColor(theme.colors.alert.error);
+        setIcon(<ErrorIcon color={errorColor} h={"18"} />);
+        setColor(errorColor);
         break;
       }
       case AlertStatus.SUCCESS: {
-        setIcon(<SuccessIcon color={theme.colors.alert.success} h={"18"} />);
-        setColor(theme.colors.alert.success);
+        setIcon(<SuccessIcon color={successColor} h={"18"} />);
+        setColor(successColor);
         break;
       }
       case AlertStatus.WARNING: {
-        setIcon(<WarningIcon color={theme.colors.alert.warning} h={"18"} />);
-        setColor(theme.colors.alert.warning);
+        setIcon(<WarningIcon color={warningColor} h={"18"} />);
+        setColor(warningColor);
         break;
       }
       default:
@@ -52,18 +61,12 @@ const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
       zIndex={10}
       maxWidth={theme.breakpoints["desktop"]}
       margin={"0 auto"}
-      p={{ base: "1rem", tablet: "1rem 2rem" }}
+      p={{ base: "1rem", tablet: "1rem 2.5rem" }}
     >
-      <Box
-        bg={theme.colors.greyscale[0]}
-        borderRadius={"1rem"}
-        borderColor={color}
-        borderWidth={"2px"}
-        p={"0.5rem"}
-      >
+      <Box bg={"bg-color"} borderRadius={0} borderColor={color} borderWidth={"1.5px"} p={"0.5rem"}>
         <ChakraAlert
           borderRadius={"1rem"}
-          bg={theme.colors.greyscale[0]}
+          bg={"bg-color"}
           display={"flex"}
           flexDir={"column"}
           alignItems={"start"}
@@ -71,24 +74,20 @@ const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
           p={0}
         >
           <Box pos={"absolute"} top={"0.25rem"} right={"0.25rem"} cursor={"pointer"}>
-            <CloseIcon h={"18"} color={theme.colors.greyscale[500]} onClick={onClose} />
+            <CloseIcon h={"18"} color={bodyText} onClick={onClose} />
           </Box>
           <Flex alignItems={"center"} gap={"0.5rem"}>
             {icon}
-            <AlertTitle
-              color={theme.colors.greyscale[900]}
-              fontFamily={"heading"}
-              fontSize={"1rem"}
-              fontWeight={500}
-            >
+            <AlertTitle color={color} fontFamily={"heading"} fontSize={"1rem"} fontWeight={500}>
               {content.title}
             </AlertTitle>
           </Flex>
           <AlertDescription
-            color={theme.colors.greyscale[900]}
-            fontWeight={400}
+            color={"body-text"}
+            fontWeight={300}
             fontSize={"13px"}
             paddingLeft={"2rem"}
+            fontFamily={"accent"}
           >
             {content.message}
           </AlertDescription>

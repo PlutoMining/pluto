@@ -208,8 +208,16 @@ const theme = extendTheme({
         _dark: darkThemeColors.greyscale[600], // da modificare con i valori corretti
       },
       "error-color": {
-        _light: darkThemeColors.alert.error, // da modificare con i valori corretti
-        _dark: darkThemeColors.alert.error, // da modificare con i valori corretti
+        _light: darkThemeColors.alert.error,
+        _dark: darkThemeColors.alert.error,
+      },
+      "warning-color": {
+        _light: darkThemeColors.alert.warning,
+        _dark: darkThemeColors.alert.warning,
+      },
+      "success-color": {
+        _light: darkThemeColors.alert.success,
+        _dark: darkThemeColors.alert.success,
       },
       "accent-color": {
         _light: darkThemeColors.primary[500], // da modificare con i valori corretti
