@@ -11,8 +11,11 @@ export function middleware(req: NextRequest) {
     // Crea la risposta riscrivendo l'URL
     const response = NextResponse.rewrite(grafanaUrl);
 
-    // Aggiungi gli headers personalizzati per le richieste verso Grafana
-    response.headers.set("X-WEBAUTH-USER", "admin");
+    console.log(url);
+    if (!url.pathname.startsWith("/grafana/public-dashboards")) {
+      // Aggiungi gli headers personalizzati per le richieste verso Grafana
+      response.headers.set("X-WEBAUTH-USER", "admin");
+    }
 
     // Aggiungi l'header per permettere il caricamento in iframe
     response.headers.set("X-Frame-Options", "ALLOWALL");

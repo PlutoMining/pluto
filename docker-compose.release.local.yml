@@ -9,37 +9,37 @@ services:
   #     - frontend
   #   restart: unless-stopped
 
-  mock:
-    # build:
-    #   context: .
-    #   dockerfile: mock/Dockerfile
-    image: whirmill/pluto-mock:0.4.2 # Docker image with specific version
-    ports:
-      - "7770:7770" # Map port 7770 on the host to port 7770 on the container
-      - "7751:7751" # Map port 7751 on the host to port 7751 on the container
-      - "7752:7752" # Map port 7752 on the host to port 7752 on the container
-      - "7753:7753" # Map port 7753 on the host to port 7753 on the container
-      - "7754:7754" # Map port 7754 on the host to port 7754 on the container
-      - "7755:7755" # Map port 7755 on the host to port 7755 on the container
-      - "7756:7756" # Map port 7756 on the host to port 7756 on the container
-      - "7757:7757" # Map port 7757 on the host to port 7757 on the container
-      - "7758:7758" # Map port 7758 on the host to port 7758 on the container
-      - "7759:7759" # Map port 7779 on the host to port 7779 on the container
-      - "7760:7760" # Map port 7760 on the host to port 7760 on the container
-    pid: host
+  # mock:
+  #   # build:
+  #   #   context: .
+  #   #   dockerfile: mock/Dockerfile
+  #   image: whirmill/pluto-mock:0.4.2 # Docker image with specific version
+  #   ports:
+  #     - "7770:7770" # Map port 7770 on the host to port 7770 on the container
+  #     - "7751:7751" # Map port 7751 on the host to port 7751 on the container
+  #     - "7752:7752" # Map port 7752 on the host to port 7752 on the container
+  #     - "7753:7753" # Map port 7753 on the host to port 7753 on the container
+  #     - "7754:7754" # Map port 7754 on the host to port 7754 on the container
+  #     - "7755:7755" # Map port 7755 on the host to port 7755 on the container
+  #     - "7756:7756" # Map port 7756 on the host to port 7756 on the container
+  #     - "7757:7757" # Map port 7757 on the host to port 7757 on the container
+  #     - "7758:7758" # Map port 7758 on the host to port 7758 on the container
+  #     - "7759:7759" # Map port 7779 on the host to port 7779 on the container
+  #     - "7760:7760" # Map port 7760 on the host to port 7760 on the container
+  #   pid: host
 
-    # Container restart policy - restart unless manually stopped
-    restart: unless-stopped
-    # env_file:
-    #   - mock/.env.local
-    environment:
-      - LISTING_PORT=7770
-      - PORTS=7751,7752,7753,7754,7755,7756,7757,7758,7759,7760
-      - LOGS_PUB_ENABLED=false
-    # volumes:
-    #   - ./common/logger:/common/logger:ro # Monta il modulo in read-only
-    #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
-    #   - ./mock:/app/
+  #   # Container restart policy - restart unless manually stopped
+  #   restart: unless-stopped
+  #   # env_file:
+  #   #   - mock/.env.local
+  #   environment:
+  #     - LISTING_PORT=7770
+  #     - PORTS=7751,7752,7753,7754,7755,7756,7757,7758,7759,7760
+  #     - LOGS_PUB_ENABLED=false
+  #   # volumes:
+  #   #   - ./common/logger:/common/logger:ro # Monta il modulo in read-only
+  #   #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
+  #   #   - ./mock:/app/
 
   discovery:
     # build:

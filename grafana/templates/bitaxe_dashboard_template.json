@@ -191,7 +191,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "mockaxe7_hashrate_ghs",
+                    "expr": "@@hostname@@_hashrate_ghs",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -293,7 +293,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "mockaxe7_power_watts",
+                    "expr": "@@hostname@@_power_watts",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -394,7 +394,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "code",
-                    "expr": "mockaxe7_hashrate_ghs/1000/mockaxe7_power_watts/mockaxe7_uptime_seconds*3600",
+                    "expr": "@@hostname@@_hashrate_ghs/1000/@@hostname@@_power_watts/@@hostname@@_uptime_seconds*3600",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -475,20 +475,44 @@
                         "mode": "percentage",
                         "steps": [
                             {
-                                "color": "#00cc14",
+                                "color": "#16fe7d",
                                 "value": null
                             },
                             {
-                                "color": "#ffd500",
+                                "color": "#4ffb5f",
+                                "value": 10
+                            },
+                            {
+                                "color": "#7af948",
+                                "value": 20
+                            },
+                            {
+                                "color": "#b0f72b",
+                                "value": 30
+                            },
+                            {
+                                "color": "#e6f40e",
                                 "value": 40
                             },
                             {
-                                "color": "#fdc500",
+                                "color": "#ffd101",
+                                "value": 50
+                            },
+                            {
+                                "color": "#ffa502",
                                 "value": 60
                             },
                             {
-                                "color": "#ff6464",
+                                "color": "#ff7203",
+                                "value": 70
+                            },
+                            {
+                                "color": "#ff3f04",
                                 "value": 80
+                            },
+                            {
+                                "color": "#ff0f05",
+                                "value": 90
                             }
                         ]
                     },
@@ -530,7 +554,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "mockaxe7_temperature_celsius",
+                    "expr": "@@hostname@@_temperature_celsius",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -559,20 +583,8 @@
                         "mode": "percentage",
                         "steps": [
                             {
-                                "color": "#00cc14",
+                                "color": "#13ffeb",
                                 "value": null
-                            },
-                            {
-                                "color": "#ffd500",
-                                "value": 40
-                            },
-                            {
-                                "color": "#fdc500",
-                                "value": 60
-                            },
-                            {
-                                "color": "#ff6464",
-                                "value": 80
                             }
                         ]
                     },
@@ -614,7 +626,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "mockaxe7_fanspeed_rpm",
+                    "expr": "@@hostname@@_fanspeed_rpm",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -712,7 +724,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#7bcffe",
+                                    "fixedColor": "#d1faf5",
                                     "mode": "fixed"
                                 }
                             }
@@ -765,7 +777,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "mockaxe7_core_voltage_actual_volts",
+                    "expr": "@@hostname@@_core_voltage_actual_volts",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -781,7 +793,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "mockaxe7_core_voltage_volts",
+                    "expr": "@@hostname@@_core_voltage_volts",
                     "fullMetaSearch": false,
                     "hide": false,
                     "includeNullMetadata": true,
@@ -798,7 +810,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "mockaxe7_voltage_volts",
+                    "expr": "@@hostname@@_voltage_volts",
                     "fullMetaSearch": false,
                     "hide": false,
                     "includeNullMetadata": true,
@@ -824,8 +836,8 @@
     },
     "timepicker": {},
     "timezone": "browser",
-    "title": "mockaxe7",
-    "uid": "hntusfrkgnvb55",
+    "title": "@@hostname@@",
+    "uid": "5tqc5wer1r5yqd",
     "version": 1,
     "weekStart": ""
 }

@@ -10,6 +10,6 @@ interface EnvConfig {
 
 export const config: EnvConfig = {
   port: Number(process.env.PORT || 3000),
-  detectMockDevices: process.env.DETECT_MOCK_DEVICES === "true",
+  detectMockDevices: process.env.DETECT_MOCK_DEVICES === "false",
   mockDiscoveryHost: process.env.MOCK_DISCOVERY_HOST!,
 };
