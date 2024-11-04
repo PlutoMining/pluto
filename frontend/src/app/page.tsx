@@ -21,7 +21,6 @@ const OverviewPage: React.FC = () => {
   const [poolPreset, setPoolPreset] = useState<DeviceInfo[]>([]);
 
   const iframeRef = useRef<HTMLIFrameElement>(null); // Inizializziamo la ref
-  const theme = useTheme();
 
   useEffect(() => {
     fetchDevicesAndDashboardsAndUpdate();
@@ -72,6 +71,7 @@ const OverviewPage: React.FC = () => {
   };
 
   const [bgColor] = useToken("colors", ["bg-color"]);
+  const [graphBgColor] = useToken("colors", ["dashboard-bg-section"]);
 
   const [textColor] = useToken("colors", ["body-color"]);
 
@@ -92,11 +92,10 @@ const OverviewPage: React.FC = () => {
           <Box backgroundColor={"bg-color"} h={{ base: "1555px", tablet: "970px" }}>
             <Box borderRadius={"1rem"} h={"100%"} w={"100%"}>
               <iframe
-                onLoad={restyleIframe(iframeRef, bgColor, textColor)}
-                ref={iframeRef} // Applichiamo la ref qui
-                src={`${dashboardPublicUrl}&theme=${
-                  colorMode === "dark" ? "dark" : "light"
-                }&refresh=5s`}
+                key={colorMode} // Forza il ri-rendering quando colorMode cambia
+                onLoad={restyleIframe(iframeRef, bgColor, textColor, graphBgColor)}
+                ref={iframeRef}
+                src={`${dashboardPublicUrl}&theme=${colorMode}&refresh=5s`}
                 style={{
                   width: "100%",
                   height: "100%",

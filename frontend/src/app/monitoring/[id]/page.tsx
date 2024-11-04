@@ -100,6 +100,7 @@ const MonitoringPage: React.FC = () => {
   const [dashboardBgBadge] = useToken("colors", ["dashboard-bg-section"]);
   const [textColor] = useToken("colors", ["body-text"]);
   const [errorColor] = useToken("colors", ["error-color"]);
+  const [graphBgColor] = useToken("colors", ["dashboard-bg-section"]);
 
   const { colorMode } = useColorMode();
 
@@ -300,7 +301,7 @@ const MonitoringPage: React.FC = () => {
             <Box backgroundColor={bgColor} h={{ base: "2135px", tablet: "1200px" }}>
               <Box h={"100%"} w={"100%"}>
                 <iframe
-                  onLoad={restyleIframe(iframeRef, bgColor, textColor)}
+                  onLoad={restyleIframe(iframeRef, bgColor, textColor, graphBgColor)}
                   ref={iframeRef}
                   src={`${dashboardPublicUrl}&kiosk=1&theme=${
                     colorMode === "dark" ? "dark" : "light"

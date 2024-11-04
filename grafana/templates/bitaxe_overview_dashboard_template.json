@@ -28,7 +28,7 @@
             },
             "gridPos": {
                 "h": 1,
-                "w": 2,
+                "w": 6,
                 "x": 0,
                 "y": 0
             },
@@ -55,7 +55,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#7b00cc",
+                        "fixedColor": "#13ffeb",
                         "mode": "fixed"
                     },
                     "custom": {
@@ -163,7 +163,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#7b00cc",
+                        "fixedColor": "#13ffeb",
                         "mode": "fixed"
                     },
                     "custom": {
@@ -267,7 +267,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#7b00cc",
+                        "fixedColor": "#13ffeb",
                         "mode": "fixed"
                     },
                     "mappings": [
@@ -355,7 +355,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#7bcffe",
+                        "fixedColor": "#415058",
                         "mode": "fixed"
                     },
                     "mappings": [
@@ -448,7 +448,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#ff6464",
+                        "fixedColor": "#415058",
                         "mode": "fixed"
                     },
                     "mappings": [
@@ -601,7 +601,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#7b00cc",
+                                    "fixedColor": "#13ffeb",
                                     "mode": "fixed"
                                 }
                             }
@@ -673,7 +673,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#7b00cc",
+                        "fixedColor": "#13ffeb",
                         "mode": "shades"
                     },
                     "mappings": [],
@@ -751,7 +751,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "Overview",
-    "uid": "hbthfgg22ccj0l",
+    "uid": "99kgvcmws0kl2b",
     "version": 1,
     "weekStart": ""
 }

@@ -1,5 +1,5 @@
 import { ReactElement } from "react";
-import { Link as ChakraLink, Flex, textDecoration, useTheme } from "@chakra-ui/react";
+import { Link as ChakraLink, Flex, textDecoration, useTheme, useToken } from "@chakra-ui/react";
 import React from "react";
 
 interface LinkProps {
@@ -29,14 +29,14 @@ const Link: React.FC<LinkProps> = ({
   isDisabled,
   isExternal,
 }) => {
-  const theme = useTheme();
+  const [textColor] = useToken("colors", ["body-text"]);
   return (
     <ChakraLink
       href={isDisabled ? undefined : href}
       fontFamily={fontFamily}
       fontSize={fontSize}
       fontWeight={fontWeight}
-      color={isDisabled ? theme.colors.greyscale[900] : color}
+      color={isDisabled ? textColor : color}
       textDecoration={textDecoration}
       pointerEvents={isDisabled ? "none" : "auto"} // Disables the pointer events
       cursor={isDisabled ? "not-allowed" : "pointer"} // Change cursor to 'not-allowed'

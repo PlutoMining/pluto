@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 2,
+    "id": 6,
     "links": [],
     "panels": [
         {
@@ -106,7 +106,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#7b00cc",
+                                    "fixedColor": "#13ffeb",
                                     "mode": "fixed"
                                 }
                             },
@@ -191,7 +191,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "@@hostname@@_hashrate_ghs",
+                    "expr": "mockaxe7_hashrate_ghs",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -211,7 +211,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#7b00cc",
+                        "fixedColor": "#13ffeb",
                         "mode": "fixed"
                     },
                     "custom": {
@@ -293,7 +293,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "@@hostname@@_power_watts",
+                    "expr": "mockaxe7_power_watts",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -315,7 +315,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#7b00cc",
+                        "fixedColor": "#13ffeb",
                         "mode": "shades"
                     },
                     "custom": {
@@ -394,7 +394,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "code",
-                    "expr": "@@hostname@@_hashrate_ghs/1000/@@hostname@@_power_watts/@@hostname@@_uptime_seconds*3600",
+                    "expr": "mockaxe7_hashrate_ghs/1000/mockaxe7_power_watts/mockaxe7_uptime_seconds*3600",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -530,7 +530,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "@@hostname@@_temperature_celsius",
+                    "expr": "mockaxe7_temperature_celsius",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -614,7 +614,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "@@hostname@@_fanspeed_rpm",
+                    "expr": "mockaxe7_fanspeed_rpm",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -697,7 +697,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#7b00cc",
+                                    "fixedColor": "#13ffeb",
                                     "mode": "fixed"
                                 }
                             }
@@ -727,7 +727,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#8f8d91",
+                                    "fixedColor": "#009888",
                                     "mode": "fixed"
                                 }
                             }
@@ -765,7 +765,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "@@hostname@@_core_voltage_actual_volts",
+                    "expr": "mockaxe7_core_voltage_actual_volts",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -781,7 +781,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "@@hostname@@_core_voltage_volts",
+                    "expr": "mockaxe7_core_voltage_volts",
                     "fullMetaSearch": false,
                     "hide": false,
                     "includeNullMetadata": true,
@@ -798,7 +798,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "@@hostname@@_voltage_volts",
+                    "expr": "mockaxe7_voltage_volts",
                     "fullMetaSearch": false,
                     "hide": false,
                     "includeNullMetadata": true,
@@ -824,8 +824,8 @@
     },
     "timepicker": {},
     "timezone": "browser",
-    "title": "@@hostname@@",
-    "uid": "4thb003abk14iz",
+    "title": "mockaxe7",
+    "uid": "hntusfrkgnvb55",
     "version": 1,
     "weekStart": ""
 }
