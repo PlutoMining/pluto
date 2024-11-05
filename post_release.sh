@@ -19,6 +19,7 @@ sed -i '' -e '/^[[:space:]]*#/d' -e 's/[[:space:]]*#.*$//' dist/store/bemind-plu
 sed -i '' -e '/^[[:space:]]*#/d' -e 's/[[:space:]]*#.*$//' dist/store/bemind-pluto/umbrel-app.yml
 sed -i '' -e '/^[[:space:]]*#/d' -e 's/[[:space:]]*#.*$//' dist/store/bemind-pluto-next/docker-compose.yml
 sed -i '' -e 's|/home/umbrel/umbrel/app-data/bemind-pluto/|/home/umbrel/umbrel/app-data/bemind-pluto-next/|' dist/store/bemind-pluto-next/docker-compose.yml
+sed -i '' -e 's|bemind-pluto_frontend_1|bemind-pluto-next_frontend_1|' dist/store/bemind-pluto-next/docker-compose.yml
 sed -i '' -e '/^[[:space:]]*#/d' -e 's/[[:space:]]*#.*$//' dist/store/bemind-pluto-next/umbrel-app.yml
 
 # Specific modifications for bemind-pluto using yq
