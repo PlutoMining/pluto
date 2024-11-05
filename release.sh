@@ -6,16 +6,17 @@ update_version() {
     local new_version=$2
 
     # Update the version in the service's package.json
-    sed -i '' -E "s/\"version\": \"[0-9]+\.[0-9]+\.[0-9]+\"/\"version\": \"${new_version}\"/" $service/package.json
+    # This regex now includes optional pre-release and build metadata as per SemVer
+    sed -i '' -E "s/\"version\": \"[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?\"/\"version\": \"${new_version}\"/" $service/package.json
 
     # Run npm install in the service to update lockfile
     echo "Running npm install in $service..."
     (cd $service && npm install)
 
     # Update the version in docker-compose.yml for the service
-    sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+/whirmill\/pluto-$service:${new_version}/g" docker-compose.yml
+    sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.yml
     # Update the version in docker-compose.release.local.yml for the service
-    sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+/whirmill\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
+    sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
 }
 
 # Function to update the version in umbrel-app.yml
