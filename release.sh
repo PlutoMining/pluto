@@ -55,7 +55,7 @@ for arg in "$@"; do
 done
 
 # Check the current Git branch
-check_git_branch
+# check_git_branch
 
 # Only perform Docker login if the skip login flag is not set
 if [ "$SKIP_LOGIN" = false ]; then

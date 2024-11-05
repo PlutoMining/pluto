@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { generateSystemInfo } from "../services/mock.service";
-import { DeviceInfo } from "@pluto/interfaces";
+import { generateSystemInfo, generateSystemInfoAlt } from "../services/mock.service";
+import { DeviceApiVersion, DeviceInfo } from "@pluto/interfaces";
 
 // Funzione per calcolare l'uptime
 const calculateUptime = (startTime: Date): number => {
@@ -14,11 +14,15 @@ export const getSystemInfo = async (req: Request, res: Response) => {
   try {
     // Recupera il hostname salvato in app.locals
     const hostname = req.app.locals.hostname;
+    const apiVersion = req.app.locals.apiVersion;
 
     console.log(req.app.locals.startTime);
 
     const uptimeSeconds = calculateUptime(req.app.locals.startTime);
-    const systemInfo = generateSystemInfo(hostname, uptimeSeconds, req.app.locals.systemInfo);
+    const systemInfo =
+      apiVersion === DeviceApiVersion.Legacy
+        ? generateSystemInfo(hostname, uptimeSeconds, req.app.locals.systemInfo)
+        : generateSystemInfoAlt(hostname, uptimeSeconds, req.app.locals.systemInfo);
     res.json(systemInfo);
   } catch (error) {
     res.status(500).json({ error: "Failed to retrieve system info" });

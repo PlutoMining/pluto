@@ -1,11 +1,15 @@
 import { Entity } from "./entity.interface";
 
-export interface DeviceInfo {
+export interface DeviceInfoLegacy {
   power: number;
   voltage: number;
   current: number;
   fanSpeedRpm: number;
   temp: number;
+  /**
+   * @deprecated
+   * use DeviceInfoNew hashRate_10m, hashRate_1h, hashRate_1d
+   */
   hashRate: number;
   bestDiff: string;
   bestSessionDiff: string;
@@ -36,9 +40,73 @@ export interface DeviceInfo {
   efficiency: number;
 }
 
+export interface DeviceInfoNew {
+  power: number;
+  maxPower: number;
+  minPower: number;
+  voltage: number;
+  maxVoltage: number;
+  minVoltage: number;
+  current: number;
+  temp: number;
+  vrTemp: number;
+  hashRateTimestamp: number;
+  hashRate_10m: number;
+  hashRate_1h: number;
+  hashRate_1d: number;
+  jobInterval: number;
+  bestDiff: string;
+  bestSessionDiff: string;
+  freeHeap: number;
+  coreVoltage: number;
+  coreVoltageActual: number;
+  frequency: number;
+  ssid: string;
+  hostname: string;
+  wifiStatus: string;
+  sharesAccepted: number;
+  sharesRejected: number;
+  uptimeSeconds: number;
+  asicCount: number;
+  smallCoreCount: number;
+  ASICModel: string;
+  deviceModel: string;
+  stratumURL: string;
+  stratumPort: number;
+  stratumUser: string;
+  wifiPassword?: string;
+  stratumPassword?: string;
+  version: string;
+  runningPartition: string;
+  flipscreen: number;
+  overheat_temp: number;
+  invertscreen: number;
+  autoscreenoff: number;
+  invertfanpolarity: number;
+  autofanspeed: number;
+  fanspeed: number;
+  fanrpm: number;
+  lastResetReason: string;
+  history: {
+    hashrate_10m: number[];
+    hashrate_1h: number[];
+    hashrate_1d: number[];
+    timestamps: number[];
+    timestampBase: number;
+  };
+}
+
+export interface DeviceInfo extends DeviceInfoLegacy, DeviceInfoNew {}
+
+export enum DeviceApiVersion {
+  Legacy = "legacy",
+  New = "new",
+}
+
 export interface ExtendedDeviceInfo extends DeviceInfo {
   tracing?: boolean;
 }
+
 export interface Device extends Entity {
   ip: string;
   mac: string;

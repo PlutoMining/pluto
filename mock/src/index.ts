@@ -3,6 +3,7 @@ import { logger } from "@pluto/logger";
 import { config } from "./config/environment";
 import express, { Express } from "express";
 import path from "path";
+import { DeviceApiVersion } from "@pluto/interfaces";
 
 interface ServerInfo {
   port: number;
@@ -14,10 +15,14 @@ const activeServers: ServerInfo[] = [];
 const { listingPort, ports } = config;
 
 // Funzione per creare un worker per ogni mock server
-const createMockServerWorker = (port: number, hostname: string): Promise<void> => {
+const createMockServerWorker = (
+  port: number,
+  hostname: string,
+  apiVersion: DeviceApiVersion
+): Promise<void> => {
   return new Promise((resolve, reject) => {
     const worker = new Worker(path.resolve(__dirname, "./mockWorker.js"), {
-      workerData: { port, hostname },
+      workerData: { port, hostname, apiVersion },
     });
 
     worker.on("message", (message: any) => {
@@ -47,7 +52,15 @@ const createMockServerWorker = (port: number, hostname: string): Promise<void> =
 };
 
 // Crea un worker per ogni porta definita in `config`
-Promise.all(ports.map((port: number, i: number) => createMockServerWorker(port, `mockaxe${i + 1}`)))
+Promise.all(
+  ports.map((port: number, i: number) =>
+    createMockServerWorker(
+      port,
+      `mockaxe${i + 1}`,
+      i % 2 === 0 ? DeviceApiVersion.Legacy : DeviceApiVersion.New // creo metà mock legacy e metà mock nuovi
+    )
+  )
+)
   .then(() => logger.info("All mock servers started successfully"))
   .catch((error) => logger.error("Error starting mock servers:", error));
 

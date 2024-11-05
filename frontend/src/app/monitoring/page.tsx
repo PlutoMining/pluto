@@ -20,7 +20,7 @@ import {
   useToken,
 } from "@chakra-ui/react";
 import axios from "axios";
-import { Dashboard, Device } from "@pluto/interfaces";
+import { Dashboard, Device, DeviceInfo } from "@pluto/interfaces";
 import { useSocket } from "@/providers/SocketProvider";
 import { DeviceStatusBadge } from "@/components/Badge";
 import { SearchInput } from "@/components/Input";
@@ -262,7 +262,7 @@ const MonitoringTablePage: React.FC = () => {
                         textAlign={"center"}
                         fontWeight={"400"}
                       >
-                        {device.info.hashRate.toFixed(2)} GH/s
+                        {(device.info.hashRate_10m || device.info.hashRate)?.toFixed(2)} GH/s
                       </Td>
                       <Td
                         borderColor={borderColor}

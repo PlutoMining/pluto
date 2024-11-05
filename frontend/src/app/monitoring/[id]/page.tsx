@@ -18,7 +18,6 @@ import {
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
 import axios from "axios";
-import { text } from "d3";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -207,7 +206,7 @@ const MonitoringPage: React.FC = () => {
                   / Hash Rate
                 </Heading>
                 <Heading fontSize={{ base: "20px", tablet: "32px" }} fontWeight={700}>
-                  {device?.info.hashRate.toFixed(2)} GH/s
+                  {(device?.info.hashRate_10m || device?.info.hashRate)?.toFixed(2)} GH/s
                 </Heading>
               </Flex>
 
