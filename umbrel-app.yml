@@ -4,7 +4,7 @@ name: Pluto
 category: Mining
 version: "0.5.3"
 tagline: Pluto
-icon: https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/pluto_logo.png
+icon: https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/icon.jpg
 description: >
   Pluto is an advanced platform designed for open source miners. It provides a comprehensive and improved mining experience with enhanced features and functionalities.
 developer: Bemind
@@ -14,12 +14,13 @@ repo: https://gitlab.com/bemindinteractive/pluto
 support: https://gitlab.com/bemindinteractive/pluto/issues
 port: 7777
 gallery:
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/Screenshot%202024-09-26%20alle%2017.50.22.png
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/Screenshot+2024-09-26+alle+17.53.15.png
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/Screenshot%202024-09-26%20alle%2017.52.06.png
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/Screenshot%202024-09-26%20alle%2017.52.22.png
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/Screenshot%202024-09-26%20alle%2017.52.37.png
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/Screenshot%202024-09-26%20alle%2017.52.49.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_00.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_01.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_02.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_03.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_04.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_05.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_06.png
 path: ""
 defaultPassword: ""
 releaseNotes: >
