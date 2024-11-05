@@ -221,7 +221,7 @@ const theme = extendTheme({
       },
       "status-offline": {
         _light: colors.greyscale[300],
-        _dark: colors.greyscale[600],
+        _dark: colors.greyscale[300],
       },
       "error-color": {
         _light: colors.alert.error,
@@ -264,11 +264,15 @@ const theme = extendTheme({
         _dark: colors.greyscale[500],
       },
       "primary-color": {
-        _light: colors.primary[500],
+        _light: colors.primary[600],
         _dark: colors.primary[500],
       },
+      "footer-terms-and-conditions": {
+        _light: colors.greyscale[900],
+        _dark: colors.primary[100],
+      },
       "footer-text": {
-        _light: colors.primary[800],
+        _light: colors.greyscale[500],
         _dark: colors.primary[100],
       },
     },
@@ -279,7 +283,7 @@ const theme = extendTheme({
   fonts,
   fontSizes,
   fontWeights,
-  config: { useSystemColorMode: true, initialColorMode: "light", cssVarPrefix: "chakra" },
+  config: { useSystemColorMode: true, initialColorMode: "dark", cssVarPrefix: "chakra" },
   components: {
     Button: buttonTheme,
   },
