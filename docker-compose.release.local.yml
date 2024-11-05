@@ -109,7 +109,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: whirmill/pluto-frontend:0.6.0-beta.5 # Docker image with specific version
+    image: whirmill/pluto-frontend:0.6.0-beta.6 # Docker image with specific version
     ports:
       - "7777:7777" # Map port 7777 on the host to port 7777 on the container
     # Use the host's PID namespace to allow container processes to be visible on the host
