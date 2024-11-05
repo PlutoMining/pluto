@@ -1,6 +1,4 @@
 import {
-  Box,
-  Link,
   Table,
   TableContainer,
   Tbody,
@@ -219,7 +217,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 fontWeight="400"
                 fontFamily={"accent"}
               >
-                {getMinerName(device.info.boardVersion)}
+                {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
               </Td>
               <Td
                 borderTopWidth={"1px"}
