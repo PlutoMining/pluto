@@ -86,7 +86,7 @@ services:
       - PORT=7776
       - AUTO_LISTEN=true
       - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7775
-      - GF_HOST=http://grafana:3000
+      - GF_HOST=http://bemind-pluto_grafana_1:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
       # - ./common/utils:/common/utils:ro # Monta il modulo in read-only
@@ -123,8 +123,8 @@ services:
     #   - frontend/.env.local
     environment:
       - PORT=7777
-      - GF_HOST=http://grafana:3000
-      - BACKEND_DESTINATION_HOST=http://backend:7776
+      - GF_HOST=http://bemind-pluto_grafana_1:3000
+      - BACKEND_DESTINATION_HOST=http://bemind-pluto_backend_1:7776
       - NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776
     volumes:
       - /home/umbrel/umbrel/app-data/bemind-pluto/umbrel-app.yml:/tmp/umbrel-app.yml:ro

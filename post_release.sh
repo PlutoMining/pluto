@@ -20,6 +20,11 @@ sed -i '' -e '/^[[:space:]]*#/d' -e 's/[[:space:]]*#.*$//' dist/store/bemind-plu
 sed -i '' -e '/^[[:space:]]*#/d' -e 's/[[:space:]]*#.*$//' dist/store/bemind-pluto-next/docker-compose.yml
 sed -i '' -e 's|/home/umbrel/umbrel/app-data/bemind-pluto/|/home/umbrel/umbrel/app-data/bemind-pluto-next/|' dist/store/bemind-pluto-next/docker-compose.yml
 sed -i '' -e 's|bemind-pluto_frontend_1|bemind-pluto-next_frontend_1|' dist/store/bemind-pluto-next/docker-compose.yml
+sed -i '' -e 's|bemind-pluto_backend_1|bemind-pluto-next_backend_1|' dist/store/bemind-pluto-next/docker-compose.yml
+sed -i '' -e 's|bemind-pluto_mock_1|bemind-pluto-next_mock_1|' dist/store/bemind-pluto-next/docker-compose.yml
+sed -i '' -e 's|bemind-pluto_discovery_1|bemind-pluto-next_discovery_1|' dist/store/bemind-pluto-next/docker-compose.yml
+sed -i '' -e 's|bemind-pluto_prometheus_1|bemind-pluto-next_prometheus_1|' dist/store/bemind-pluto-next/docker-compose.yml
+sed -i '' -e 's|bemind-pluto_grafana_1|bemind-pluto-next_grafana_1|' dist/store/bemind-pluto-next/docker-compose.yml
 sed -i '' -e '/^[[:space:]]*#/d' -e 's/[[:space:]]*#.*$//' dist/store/bemind-pluto-next/umbrel-app.yml
 
 # Specific modifications for bemind-pluto using yq
