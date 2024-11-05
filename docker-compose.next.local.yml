@@ -8,7 +8,7 @@ services:
   #   restart: unless-stopped
 
   mock:
-    image: whirmill/pluto-mock:0.6.0-beta.5
+    image: whirmill/pluto-mock:0.6.0-beta.6
     ports:
       - "7670:7670"
       - "7651:7651"
@@ -30,7 +30,7 @@ services:
       - LOGS_PUB_ENABLED=false
 
   discovery:
-    image: whirmill/pluto-discovery:0.6.0-beta.5
+    image: whirmill/pluto-discovery:0.6.0-beta.6
     network_mode: "host"
     pid: host
 
@@ -46,7 +46,7 @@ services:
         condition: service_completed_successfully
 
   backend:
-    image: whirmill/pluto-backend:0.6.0-beta.5
+    image: whirmill/pluto-backend:0.6.0-beta.6
     ports:
       - "7676:7676"
     pid: host
@@ -70,7 +70,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: whirmill/pluto-frontend:0.6.0-beta.5
+    image: whirmill/pluto-frontend:0.6.0-beta.6
     pid: host
     ports:
       - "7677:7677"

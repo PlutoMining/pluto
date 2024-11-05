@@ -17,6 +17,8 @@ update_version() {
     sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.yml
     # Update the version in docker-compose.release.local.yml for the service
     sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
+    # Update the version in docker-compose.next.local.yml for the service
+    sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.next.local.yml
 }
 
 # Function to update the version in umbrel-app.yml
