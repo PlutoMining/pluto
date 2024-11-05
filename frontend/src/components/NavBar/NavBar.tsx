@@ -266,9 +266,9 @@ export const NavBar = () => {
                 <Text fontFamily={"heading"} fontSize={"14px"}>
                   Profile
                 </Text> */}
-                <Button onClick={toggleColorMode}>
+                {/* <Button onClick={toggleColorMode}>
                   {colorMode === "light" ? "Dark" : "Light"} Mode
-                </Button>
+                </Button> */}
               </Flex>
 
               <Box aria-label="Open Menu" display={{ tabletL: "none" }} cursor={"pointer"}>
