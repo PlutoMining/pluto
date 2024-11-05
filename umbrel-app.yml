@@ -2,7 +2,7 @@ manifestVersion: 1
 id: bemind-pluto
 name: Pluto
 category: Mining
-version: "0.6.0-beta.4"
+version: "0.6.0-beta.5"
 tagline: Pluto
 icon: https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/icon.jpg
 description: >
@@ -24,8 +24,10 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >
-  Version 0.6.0-beta.4
-  - MVP Release
+  Version 0.6.0-beta.5
+  - Rebranding
+  - Dark mode
+  - NerdAxe support
 
 submitter: Bemind
 submission:
