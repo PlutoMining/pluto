@@ -33,8 +33,8 @@ const Link: React.FC<LinkProps> = ({
   const [textColor] = useToken("colors", ["body-text"]);
   return (
     <ChakraLink
-      as={as}
-      href={isDisabled ? undefined : href}
+      {...(as ? {} : { as })}
+      {...(isDisabled && href !== undefined ? {} : { href })}
       fontFamily={fontFamily}
       fontSize={fontSize}
       fontWeight={fontWeight}

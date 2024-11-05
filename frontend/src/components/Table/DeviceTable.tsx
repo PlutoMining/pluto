@@ -1,6 +1,4 @@
 import {
-  Box,
-  Link,
   Table,
   TableContainer,
   Tbody,
