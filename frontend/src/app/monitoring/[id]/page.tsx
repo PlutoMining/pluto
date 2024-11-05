@@ -179,7 +179,7 @@ const MonitoringPage: React.FC = () => {
             </Flex>
 
             <Flex
-              backgroundColor={dashboardBgBadge}
+              backgroundColor={bgColor}
               p={"1rem"}
               borderRadius={"0"}
               border={`1px solid ${borderColor}`}
@@ -194,15 +194,17 @@ const MonitoringPage: React.FC = () => {
                 justify={{ base: "space-between", tablet: "flex-start" }}
                 alignItems={{ base: "center", tablet: "flex-start" }}
                 gap={"1rem"}
-                borderRight={"1px solid rgba(#fff, 0.25)"}
-                borderRightWidth={{ base: 0, tablet: "1px" }}
-                borderColor={borderColor}
-                marginRight={{ base: 0, tablet: "1rem" }}
-                borderBottomWidth={{ base: "1px", tablet: 0 }}
-                paddingBottom={{ base: "1rem", tablet: 0 }}
+                backgroundColor={dashboardBgBadge}
+                p={"1rem"}
               >
-                <Heading fontSize={"14px"} fontWeight={500}>
-                  Hash Rate
+                <Heading
+                  fontSize={"lg"}
+                  fontWeight={500}
+                  textTransform={"uppercase"}
+                  color={"dashboard-title"}
+                  fontFamily={"accent"}
+                >
+                  / Hash Rate
                 </Heading>
                 <Heading fontSize={{ base: "20px", tablet: "32px" }} fontWeight={700}>
                   {device?.info.hashRate.toFixed(2)} GH/s
@@ -210,39 +212,47 @@ const MonitoringPage: React.FC = () => {
               </Flex>
 
               <Flex
-                flexDir={"column"}
-                borderRight={"1px solid rgba(#fff, 0.25)"}
-                borderRightWidth={{ base: 0, tablet: "1px" }}
-                borderColor={borderColor}
-                marginRight={{ base: 0, tablet: "1rem" }}
-                borderBottomWidth={{ base: "1px", tablet: 0 }}
-                paddingBottom={{ base: "1rem", tablet: 0 }}
                 flex={1}
+                flexDir={{ base: "row", tablet: "column" }}
+                justify={{ base: "space-between", tablet: "flex-start" }}
+                alignItems={{ base: "center", tablet: "flex-start" }}
                 gap={"1rem"}
+                backgroundColor={dashboardBgBadge}
+                p={"1rem"}
               >
                 <Flex
                   flexDir={{ base: "row", tablet: "column" }}
                   justify={{ base: "space-between", tablet: "flex-start" }}
                   alignItems={{ base: "center", tablet: "flex-start" }}
+                  w={"100%"}
                   gap={"1rem"}
                 >
-                  <Heading fontSize={"14px"} fontWeight={500}>
-                    Shares
+                  <Heading
+                    fontSize={"lg"}
+                    fontWeight={500}
+                    textTransform={"uppercase"}
+                    color={"dashboard-title"}
+                    fontFamily={"accent"}
+                  >
+                    / Shares
                   </Heading>
-                  <Heading fontSize={{ base: "20px", tablet: "32px" }} fontWeight={700}>
-                    {device?.info.sharesAccepted}
-                  </Heading>
-                </Flex>
-                <Flex alignItems={"center"} gap={"0.5rem"}>
-                  <Badge
-                    bg={errorColor}
-                    color={textColor}
-                    label={device?.info.sharesRejected}
-                    fontWeight="500"
-                  ></Badge>
-                  <Text fontSize={"12px"} fontWeight={400}>
-                    rejected
-                  </Text>
+                  <Flex flexDir={"column"} alignItems={{ base: "flex-end", tablet: "flex-start" }}>
+                    <Heading fontSize={{ base: "20px", tablet: "32px" }} fontWeight={700}>
+                      {device?.info.sharesAccepted}
+                    </Heading>
+
+                    <Flex alignItems={"center"} gap={"0.5rem"}>
+                      <Badge
+                        bg={errorColor}
+                        color={textColor}
+                        label={device?.info.sharesRejected}
+                        fontWeight="500"
+                      ></Badge>
+                      <Text fontSize={"12px"} fontWeight={400}>
+                        rejected
+                      </Text>
+                    </Flex>
+                  </Flex>
                 </Flex>
               </Flex>
 
@@ -252,48 +262,67 @@ const MonitoringPage: React.FC = () => {
                 justify={{ base: "space-between", tablet: "flex-start" }}
                 alignItems={{ base: "center", tablet: "flex-start" }}
                 gap={"1rem"}
-                borderRight={"1px solid rgba(#fff, 0.25)"}
-                borderRightWidth={{ base: 0, tablet: "1px" }}
-                borderColor={borderColor}
-                marginRight={{ base: 0, tablet: "1rem" }}
-                borderBottomWidth={{ base: "1px", tablet: 0 }}
-                paddingBottom={{ base: "1rem", tablet: 0 }}
+                backgroundColor={dashboardBgBadge}
+                p={"1rem"}
               >
-                <Heading fontSize={"14px"} fontWeight={500}>
-                  Uptime
+                <Heading
+                  fontSize={"lg"}
+                  fontWeight={500}
+                  textTransform={"uppercase"}
+                  color={"dashboard-title"}
+                  fontFamily={"accent"}
+                >
+                  / Uptime
                 </Heading>
                 <Heading fontSize={{ base: "20px", tablet: "32px" }} fontWeight={700}>
                   {formatTime(device?.info.uptimeSeconds || 0)}
                 </Heading>
               </Flex>
 
-              <Flex flexDir={"column"} flex={1} gap={"1rem"}>
+              <Flex
+                flex={1}
+                flexDir={{ base: "row", tablet: "column" }}
+                justify={{ base: "space-between", tablet: "flex-start" }}
+                alignItems={{ base: "center", tablet: "flex-start" }}
+                gap={"1rem"}
+                backgroundColor={dashboardBgBadge}
+                p={"1rem"}
+                w={"100%"}
+              >
                 <Flex
                   gap={"1rem"}
                   flexDir={{ base: "row", tablet: "column" }}
                   justify={{ base: "space-between", tablet: "flex-start" }}
                   alignItems={{ base: "center", tablet: "flex-start" }}
+                  w={"100%"}
                 >
-                  <Heading fontSize={"14px"} fontWeight={500}>
-                    Best difficulty
+                  <Heading
+                    fontSize={"lg"}
+                    fontWeight={500}
+                    textTransform={"uppercase"}
+                    color={"dashboard-title"}
+                    fontFamily={"accent"}
+                  >
+                    / Best difficulty
                   </Heading>
-                  <Flex gap={"0.5rem"} alignItems={"baseline"}>
-                    <Heading fontSize={{ base: "20px", tablet: "28px" }} fontWeight={700}>
-                      {device?.info.bestDiff}
-                    </Heading>
-                    <Heading fontSize={"1rem"}>all time best</Heading>
+                  <Flex flexDir={"column"} alignItems={{ base: "flex-end", tablet: "flex-start" }}>
+                    <Flex gap={"0.5rem"} alignItems={"baseline"}>
+                      <Heading fontSize={{ base: "20px", tablet: "28px" }} fontWeight={700}>
+                        {device?.info.bestDiff}
+                      </Heading>
+                      <Heading fontSize={"1rem"}>all time best</Heading>
+                    </Flex>
+                    <Flex alignItems={"center"} gap={"0.5rem"}>
+                      <Badge
+                        color={primaryColor}
+                        label={device?.info.sharesRejected}
+                        fontWeight="500"
+                      ></Badge>
+                      <Text fontSize={"12px"} fontWeight={400}>
+                        since system boot
+                      </Text>
+                    </Flex>
                   </Flex>
-                </Flex>
-
-                <Flex alignItems={"center"} gap={"0.5rem"}>
-                  <Badge
-                    color={primaryColor}
-                    label={device?.info.sharesRejected}
-                    fontWeight="500"
-                  ></Badge>
-                  <Text fontSize={"12px"} fontWeight={400}>
-                    since system boot
-                  </Text>
                 </Flex>
               </Flex>
             </Flex>
