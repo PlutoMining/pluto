@@ -1,6 +1,7 @@
 "use client";
 import {
   Box,
+  Button,
   Flex,
   HStack,
   Link,
@@ -53,7 +54,7 @@ export const NavBar = () => {
       href: "/",
       component: (pathname?: string | null) => (
         <Box
-          color={pathname === "/" ? "primary-color" : "header-text"}
+          color={pathname === "/" ? "header-selected" : "header-text"}
           fontWeight={pathname === "/" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
@@ -65,7 +66,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "border-color",
+            backgroundColor: "header-selected-underline",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -83,7 +84,7 @@ export const NavBar = () => {
         <Box
           color={
             pathname === "/monitoring" || /^\/monitoring/.test(pathname || "")
-              ? "primary-color"
+              ? "header-selected"
               : "header-text"
           }
           fontWeight={
@@ -100,7 +101,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "border-color",
+            backgroundColor: "header-selected-underline",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -116,7 +117,7 @@ export const NavBar = () => {
       href: "/settings",
       component: (pathname?: string | null) => (
         <Box
-          color={pathname === "/settings" ? "primary-color" : "header-text"}
+          color={pathname === "/settings" ? "header-selected" : "header-text"}
           fontWeight={pathname === "/settings" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
@@ -128,7 +129,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "border-color",
+            backgroundColor: "header-selected-underline",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -144,7 +145,7 @@ export const NavBar = () => {
       href: "/presets",
       component: (pathname?: string | null) => (
         <Box
-          color={pathname === "/presets" ? "primary-color" : "header-text"}
+          color={pathname === "/presets" ? "header-selected" : "header-text"}
           fontWeight={pathname === "/presets" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
@@ -156,7 +157,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "border-color",
+            backgroundColor: "header-selected-underline",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -172,7 +173,7 @@ export const NavBar = () => {
       href: "/devices",
       component: (pathname?: string | null) => (
         <Box
-          color={pathname === "/devices" ? "primary-color" : "header-text"}
+          color={pathname === "/devices" ? "header-selected" : "header-text"}
           textTransform={"uppercase"}
           fontWeight={pathname === "/devices" ? "700" : "500"}
           fontFamily={"heading"}
@@ -184,7 +185,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "border-color",
+            backgroundColor: "header-selected-underline",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -267,9 +268,9 @@ export const NavBar = () => {
                 <Text fontFamily={"heading"} fontSize={"14px"}>
                   Profile
                 </Text> */}
-                {/* <Button onClick={toggleColorMode}>
+                <Button onClick={toggleColorMode}>
                   {colorMode === "light" ? "Dark" : "Light"} Mode
-                </Button> */}
+                </Button>
               </Flex>
 
               <Box aria-label="Open Menu" display={{ tabletL: "none" }} cursor={"pointer"}>
