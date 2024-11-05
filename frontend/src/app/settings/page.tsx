@@ -132,7 +132,7 @@ const SettingsPage = () => {
         <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
       )}
 
-      <Box p={{ mobile: "1rem 0", tablet: "1.5rem" }}>
+      <Box p={{ mobile: "1rem 0", tablet: "1rem" }}>
         <Flex as="form" flexDir={"column"} gap={"2rem"}>
           <VStack spacing={4} align="stretch">
             <Flex
