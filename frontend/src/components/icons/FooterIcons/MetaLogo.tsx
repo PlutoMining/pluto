@@ -3,11 +3,12 @@ import React from "react";
 
 interface MetaLogoProps {
   url?: string;
+  target?: string;
 }
 
-export const MetaLogo = ({ url }: MetaLogoProps) => {
+export const MetaLogo = ({ url, target }: MetaLogoProps) => {
   return (
-    <Link href={url}>
+    <Link href={url} target={target}>
       <svg
         width="16"
         height="16"

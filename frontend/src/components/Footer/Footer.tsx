@@ -42,13 +42,13 @@ export const Footer = () => {
               Terms & Conditions
             </Text>
             <Flex gap={"0.5rem"}>
-              {/* <MetaLogo /> */}
+              {/* <MetaLogo target="_blank" /> */}
               <GitLabLogo
                 url="https://gitlab.com/bemindinteractive/umbrel-community-app-store"
-                target="blank"
+                target="_blank"
               />
-              <DiscordLogo url="https://discord.gg/osmu" target="blank" />
-              {/* <RedditLogo /> */}
+              <DiscordLogo url="https://discord.gg/osmu" target="_blank" />
+              {/* <RedditLogo target="_blank" /> */}
             </Flex>
           </Flex>
           <Text fontSize={"xs"} fontWeight={300} color={"footer-text"}>
@@ -60,7 +60,7 @@ export const Footer = () => {
           <Text fontSize={"xs"} fontWeight={300} color={"footer-text"}>
             Designed with love by
           </Text>
-          <BemindLogo url="https://www.bemind.me/" />
+          <BemindLogo url="https://www.bemind.me/" target="_blank" />
         </Flex>
       </Flex>
     </Flex>

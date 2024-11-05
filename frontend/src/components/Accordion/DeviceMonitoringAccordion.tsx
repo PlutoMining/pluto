@@ -1,25 +1,23 @@
 import { useSocket } from "@/providers/SocketProvider";
+import { formatDetailedTime } from "@/utils/formatTime";
 import {
   AccordionButton,
   AccordionIcon,
   AccordionPanel,
   Accordion as ChakraAccordion,
   AccordionItem as ChakraAccordionItem,
+  Link as ChakraLink,
   Divider,
   Flex,
   Heading,
   Text,
-  Link as ChakraLink,
-  useAccordionItemState,
-  useTheme,
   useToken,
 } from "@chakra-ui/react";
 import { Device } from "@pluto/interfaces";
+import NextLink from "next/link";
 import { useEffect, useState } from "react";
 import { DeviceStatusBadge } from "../Badge";
 import { ArrowLeftSmallIcon } from "../icons/ArrowIcon";
-import Link from "../Link/Link";
-import { formatDetailedTime } from "@/utils/formatTime";
 
 interface DeviceMonitoringAccordionProps {
   devices: Device[] | undefined;
@@ -125,6 +123,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
           </Flex>
         </Flex>
         <ChakraLink
+          as={NextLink}
           href={`monitoring/${device.info.hostname}`}
           onClick={(e) => e.stopPropagation()}
         >

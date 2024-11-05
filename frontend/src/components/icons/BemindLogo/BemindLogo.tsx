@@ -3,11 +3,12 @@ import React from "react";
 
 interface BemindLogoProps {
   url?: string;
+  target?: string;
 }
 
-export const BemindLogo = ({ url }: BemindLogoProps) => {
+export const BemindLogo = ({ url, target }: BemindLogoProps) => {
   return (
-    <Link href={url}>
+    <Link target={target} href={url}>
       <svg
         fill="none"
         height="16"

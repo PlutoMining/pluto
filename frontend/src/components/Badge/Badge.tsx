@@ -1,5 +1,4 @@
-import { Flex, Text, useTheme, useToken } from "@chakra-ui/react";
-import { Badge as ChakraBadge } from "@chakra-ui/react";
+import { Badge as ChakraBadge, Text, useToken } from "@chakra-ui/react";
 
 export interface DeviceStatusBadgeProps {
   label?: string | number;

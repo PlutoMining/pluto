@@ -1,5 +1,4 @@
-import { useToken } from "@chakra-ui/react";
-import { Badge as ChakraBadge } from "@chakra-ui/react";
+import { Badge as ChakraBadge, useToken } from "@chakra-ui/react";
 
 export interface DeviceStatusBadgeProps {
   status?: "online" | "offline";

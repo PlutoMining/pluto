@@ -1,7 +1,6 @@
 "use client";
 import {
   Box,
-  Button,
   Flex,
   HStack,
   Link,
@@ -12,15 +11,16 @@ import {
   useDisclosure,
   useToken,
 } from "@chakra-ui/react";
+import axios from "axios";
+import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Alert from "../Alert/Alert";
 import { AlertInterface } from "../Alert/interfaces";
-import { Logo } from "../icons/Logo";
-import { HamburgerIcon } from "../icons/HamburgerIcon";
 import { CrossIcon } from "../icons/CrossIcon";
-import { DiscordLogo, GitLabLogo, MetaLogo, RedditLogo } from "../icons/FooterIcons";
-import axios from "axios";
+import { DiscordLogo, GitLabLogo } from "../icons/FooterIcons";
+import { HamburgerIcon } from "../icons/HamburgerIcon";
+import { Logo } from "../icons/Logo";
 
 export const NavBar = () => {
   const { isOpen, onOpen, onClose, onToggle } = useDisclosure();
@@ -218,7 +218,7 @@ export const NavBar = () => {
           <Flex h={16} alignItems="center" gap={"1rem"} justifyContent="space-between" w={"100%"}>
             <Flex alignItems="center" gap={"1rem"} justify={"space-between"} w={"100%"}>
               <Flex marginRight={"auto"} gap={"0.5rem"} alignItems={"flex-end"}>
-                <Link key={`md-nav-link-logo`} href={"/"}>
+                <Link as={NextLink} key={`md-nav-link-logo`} href={"/"}>
                   <Logo />
                 </Link>
                 {version && (
@@ -250,6 +250,7 @@ export const NavBar = () => {
               >
                 {links.map((link) => (
                   <Link
+                    as={NextLink}
                     key={`md-nav-link-${link.key}`}
                     href={link.href}
                     whiteSpace={"nowrap"}
@@ -310,6 +311,7 @@ export const NavBar = () => {
                 <Stack alignItems={"start"} as="nav" spacing={"2rem"}>
                   {links.map((link) => (
                     <Link
+                      as={NextLink}
                       key={`sm-nav-link-${link.key}`}
                       href={link.href}
                       cursor={"pointer"}
@@ -330,20 +332,21 @@ export const NavBar = () => {
                     borderBottomColor={"border-color"}
                     paddingBottom={"1rem"}
                   >
-                    {/* <MetaLogo /> */}
+                    {/* <MetaLogo target="_blank" /> */}
                     <GitLabLogo
                       url="https://gitlab.com/bemindinteractive/umbrel-community-app-store"
-                      target="blank"
+                      target="_blank"
                       color={primaryColor}
                     />
                     <DiscordLogo
                       url="https://discord.gg/osmu"
-                      target="blank"
+                      target="_blank"
                       color={primaryColor}
                     />
-                    {/* <RedditLogo /> */}
+                    {/* <RedditLogo target="_blank" /> */}
                   </Flex>
                   <Link
+                    // as={NextLink}
                     fontFamily={"heading"}
                     fontSize={"xs"}
                     color={"footer-text"}

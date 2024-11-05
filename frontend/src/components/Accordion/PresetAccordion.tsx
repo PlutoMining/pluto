@@ -7,17 +7,15 @@ import {
   Flex,
   Heading,
   Text,
-  Badge as ChakraBadge,
   useToken,
 } from "@chakra-ui/react";
 import { Preset } from "@pluto/interfaces";
 import { MouseEvent } from "react";
+import { HostnameBadge } from "../Badge";
 import Button from "../Button/Button";
 import { DeleteIcon } from "../icons/DeleteIcon";
 import { DuplicateIcon } from "../icons/DuplicateIcon";
-import Link from "../Link/Link";
 import { Input } from "../Input";
-import { HostnameBadge } from "../Badge";
 
 interface PresetProps {
   preset: Preset;

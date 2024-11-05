@@ -3,11 +3,12 @@ import React from "react";
 
 interface RedditLogoProps {
   url?: string;
+  target?: string;
 }
 
-export const RedditLogo = ({ url }: RedditLogoProps) => {
+export const RedditLogo = ({ url, target }: RedditLogoProps) => {
   return (
-    <Link href={url}>
+    <Link href={url} target={target}>
       <svg
         width="17"
         height="16"

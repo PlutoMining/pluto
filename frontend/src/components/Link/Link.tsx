@@ -1,6 +1,5 @@
-import { ReactElement } from "react";
-import { Link as ChakraLink, Flex, textDecoration, useTheme, useToken } from "@chakra-ui/react";
-import React from "react";
+import { As, Link as ChakraLink, Flex, useToken } from "@chakra-ui/react";
+import React, { ReactElement } from "react";
 
 interface LinkProps {
   label: string;
@@ -14,6 +13,7 @@ interface LinkProps {
   textDecoration?: string;
   isDisabled?: boolean;
   isExternal?: boolean;
+  as?: As;
 }
 
 const Link: React.FC<LinkProps> = ({
@@ -28,10 +28,12 @@ const Link: React.FC<LinkProps> = ({
   textDecoration,
   isDisabled,
   isExternal,
+  as,
 }) => {
   const [textColor] = useToken("colors", ["body-text"]);
   return (
     <ChakraLink
+      as={as}
       href={isDisabled ? undefined : href}
       fontFamily={fontFamily}
       fontSize={fontSize}

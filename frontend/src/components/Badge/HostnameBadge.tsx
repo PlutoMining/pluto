@@ -1,5 +1,4 @@
-import { Flex, Text, useTheme, useToken } from "@chakra-ui/react";
-import { Badge as ChakraBadge } from "@chakra-ui/react";
+import { Badge as ChakraBadge, Flex, Text, useToken } from "@chakra-ui/react";
 import Link from "../Link/Link";
 
 export interface DeviceStatusBadgeProps {
@@ -30,6 +29,7 @@ export const HostnameBadge: React.FC<DeviceStatusBadgeProps> = ({ mac, hostname,
           {" - "}
         </Text>
         <Link
+          isExternal={true}
           href={ip}
           label={ip}
           fontFamily="accent"

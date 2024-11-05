@@ -8,7 +8,6 @@ import {
   AccordionItem as ChakraAccordionItem,
   Divider,
   Flex,
-  FormControl,
   Grid,
   Modal,
   ModalBody,
@@ -23,28 +22,27 @@ import {
   useAccordionItemState,
   useDisclosure,
   useTheme,
-  Checkbox as ChakraCheckbox,
   useToken,
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
 import { validateDomain, validateTCPPort } from "@pluto/utils";
 import axios from "axios";
-import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { AlertInterface, AlertStatus } from "../Alert/interfaces";
 import { DeviceStatusBadge } from "../Badge";
 import Button from "../Button/Button";
 import { Checkbox } from "../Checkbox/Checkbox";
 import { ArrowIcon, ArrowRightUpIcon } from "../icons/ArrowIcon";
+import { CloseIcon } from "../icons/CloseIcon";
 import { RestartIcon } from "../icons/RestartIcon";
 import { Input } from "../Input/Input";
-import { RadioButton } from "../RadioButton";
-import { Select } from "../Select/Select";
 import Link from "../Link/Link";
 import { SaveAndRestartModal } from "../Modal";
-import { RadioButtonValues } from "../Modal/SaveAndRestartModal";
 import { RestartModal } from "../Modal/RestartModal";
-import { CloseIcon } from "../icons/CloseIcon";
+import { RadioButtonValues } from "../Modal/SaveAndRestartModal";
 import { SelectPresetModal } from "../Modal/SelectPresetModal";
+import { RadioButton } from "../RadioButton";
+import { Select } from "../Select/Select";
 
 interface DeviceSettingsAccordionProps {
   fetchedDevices: Device[] | undefined;

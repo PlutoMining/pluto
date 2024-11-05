@@ -14,6 +14,7 @@ import { Device } from "@pluto/interfaces";
 import { DeviceStatusBadge } from "../Badge";
 import { getMinerName } from "@/utils/minerMap";
 import { formatDetailedTime } from "@/utils/formatTime";
+import NextLink from "next/link";
 
 interface DeviceAccordionProps {
   devices: Device[];
@@ -77,6 +78,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
 
         {/* Pass the device ID to the removeRegisteredDevice function */}
         <Link
+          as={NextLink}
           fontFamily={"accent"}
           fontWeight={500}
           textDecoration={"underline"}

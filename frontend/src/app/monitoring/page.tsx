@@ -1,7 +1,15 @@
 "use client";
-import { ChangeEvent, useEffect, useState } from "react";
+import { DeviceMonitoringAccordion } from "@/components/Accordion";
+import { DeviceStatusBadge } from "@/components/Badge";
+import { ArrowLeftSmallIcon } from "@/components/icons/ArrowIcon";
+import { SearchInput } from "@/components/Input";
+import Link from "@/components/Link/Link";
+import { useSocket } from "@/providers/SocketProvider";
+import { formatDetailedTime, formatTime } from "@/utils/formatTime";
 import {
   Box,
+  Container,
+  Flex,
   Heading,
   Table,
   TableContainer,
@@ -10,24 +18,16 @@ import {
   Text,
   Th,
   Thead,
+  Tooltip,
   Tr,
   useTheme,
-  VStack,
-  Container,
-  Flex,
-  Accordion as ChakraAccordion,
-  Tooltip,
   useToken,
+  VStack,
 } from "@chakra-ui/react";
+import { Dashboard, Device } from "@pluto/interfaces";
 import axios from "axios";
-import { Dashboard, Device, DeviceInfo } from "@pluto/interfaces";
-import { useSocket } from "@/providers/SocketProvider";
-import { DeviceStatusBadge } from "@/components/Badge";
-import { SearchInput } from "@/components/Input";
-import { DeviceMonitoringAccordion } from "@/components/Accordion";
-import { ArrowLeftSmallIcon } from "@/components/icons/ArrowIcon";
-import Link from "@/components/Link/Link";
-import { formatDetailedTime, formatTime } from "@/utils/formatTime";
+import NextLink from "next/link";
+import { ChangeEvent, useEffect, useState } from "react";
 
 const MonitoringTablePage: React.FC = () => {
   const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
@@ -333,6 +333,7 @@ const MonitoringTablePage: React.FC = () => {
                         fontWeight={"400"}
                       >
                         <Link
+                          as={NextLink}
                           href={`monitoring/${device.info.hostname}`}
                           label="Dashboard"
                           fontWeight={500}

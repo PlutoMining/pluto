@@ -20,6 +20,7 @@ import { Device, Preset } from "@pluto/interfaces";
 import axios from "axios";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import NextLink from "next/link";
 
 const MonitoringPage: React.FC = () => {
   const { id }: { id: string } = useParams();
@@ -111,6 +112,7 @@ const MonitoringPage: React.FC = () => {
         gap={"1rem"}
       >
         <Link
+          as={NextLink}
           href={"/monitoring"}
           label="Go back"
           leftIcon={<ArrowLeftIcon color={primaryColor} />}
