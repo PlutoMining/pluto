@@ -119,10 +119,6 @@ export const restyleIframe =
         text-align: left !important;
         color: ${textColor} !important;
       }
-      section {
-        border: none !important;
-        border-radius: 0px !important;
-      }
       `;
       iframeDocument.head.appendChild(style);
 

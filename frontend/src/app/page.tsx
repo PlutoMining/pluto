@@ -71,7 +71,7 @@ const OverviewPage: React.FC = () => {
   };
 
   const [bgColor] = useToken("colors", ["bg-color"]);
-  const [graphBgColor] = useToken("colors", ["dashboard-bg-section"]);
+  const [graphBgColor] = useToken("colors", ["dashboard-section-bg"]);
 
   const [textColor] = useToken("colors", ["body-color"]);
 

@@ -94,13 +94,13 @@ const MonitoringPage: React.FC = () => {
 
   const [primaryColor] = useToken("colors", ["primary-color"]);
   const [bgColor] = useToken("colors", ["bg-color"]);
-  const [borderColor] = useToken("colors", ["border-color"]);
-  const [badgeColor] = useToken("colors", ["badge-color"]);
-  const [badgeBg] = useToken("colors", ["badge-bg"]);
-  const [dashboardBgBadge] = useToken("colors", ["dashboard-bg-section"]);
+  const [borderColor] = useToken("colors", ["dashboard-border-color"]);
+  const [dashboardSectionBg] = useToken("colors", ["dashboard-section-bg"]);
+  const [dashboardSectionBadgeBg] = useToken("colors", ["dashboard-section-badge-bg"]);
+
   const [textColor] = useToken("colors", ["body-text"]);
   const [errorColor] = useToken("colors", ["error-color"]);
-  const [graphBgColor] = useToken("colors", ["dashboard-bg-section"]);
+  const [graphBgColor] = useToken("colors", ["dashboard-section-bg"]);
 
   const { colorMode } = useColorMode();
 
@@ -123,7 +123,7 @@ const MonitoringPage: React.FC = () => {
         {dashboardPublicUrl ? (
           <Flex flexDirection={"column"} gap={"1rem"}>
             <Flex
-              backgroundColor={bgColor}
+              backgroundColor={dashboardSectionBg}
               p={"1rem"}
               flexDir={"column"}
               gap={"1rem"}
@@ -135,7 +135,7 @@ const MonitoringPage: React.FC = () => {
               <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
                 <Flex
                   flex={1}
-                  backgroundColor={dashboardBgBadge}
+                  backgroundColor={dashboardSectionBadgeBg}
                   borderRadius={0}
                   justify={"space-between"}
                   alignItems={"center"}
@@ -152,12 +152,12 @@ const MonitoringPage: React.FC = () => {
                   </Heading>
                   <DeviceStatusBadge
                     status={device?.tracing ? "online" : "offline"}
-                    invert={true}
+                    invert={colorMode === "light" ? false : true}
                   />
                 </Flex>
                 <Flex
                   flex={1}
-                  backgroundColor={dashboardBgBadge}
+                  backgroundColor={dashboardSectionBadgeBg}
                   borderRadius={0}
                   justify={"space-between"}
                   alignItems={"center"}
@@ -180,7 +180,7 @@ const MonitoringPage: React.FC = () => {
             </Flex>
 
             <Flex
-              backgroundColor={bgColor}
+              backgroundColor={dashboardSectionBg}
               p={"1rem"}
               borderRadius={"0"}
               border={`1px solid ${borderColor}`}
@@ -195,7 +195,7 @@ const MonitoringPage: React.FC = () => {
                 justify={{ base: "space-between", tablet: "flex-start" }}
                 alignItems={{ base: "center", tablet: "flex-start" }}
                 gap={"1rem"}
-                backgroundColor={dashboardBgBadge}
+                backgroundColor={dashboardSectionBadgeBg}
                 p={"1rem"}
               >
                 <Heading
@@ -218,7 +218,7 @@ const MonitoringPage: React.FC = () => {
                 justify={{ base: "space-between", tablet: "flex-start" }}
                 alignItems={{ base: "center", tablet: "flex-start" }}
                 gap={"1rem"}
-                backgroundColor={dashboardBgBadge}
+                backgroundColor={dashboardSectionBadgeBg}
                 p={"1rem"}
               >
                 <Flex
@@ -263,7 +263,7 @@ const MonitoringPage: React.FC = () => {
                 justify={{ base: "space-between", tablet: "flex-start" }}
                 alignItems={{ base: "center", tablet: "flex-start" }}
                 gap={"1rem"}
-                backgroundColor={dashboardBgBadge}
+                backgroundColor={dashboardSectionBadgeBg}
                 p={"1rem"}
               >
                 <Heading
@@ -286,7 +286,7 @@ const MonitoringPage: React.FC = () => {
                 justify={{ base: "space-between", tablet: "flex-start" }}
                 alignItems={{ base: "center", tablet: "flex-start" }}
                 gap={"1rem"}
-                backgroundColor={dashboardBgBadge}
+                backgroundColor={dashboardSectionBadgeBg}
                 p={"1rem"}
                 w={"100%"}
               >
@@ -328,7 +328,12 @@ const MonitoringPage: React.FC = () => {
               </Flex>
             </Flex>
 
-            <Box backgroundColor={bgColor} h={{ base: "2135px", tablet: "1200px" }}>
+            <Box
+              p={"1rem"}
+              backgroundColor={dashboardSectionBg}
+              border={`1px solid ${borderColor}`}
+              h={{ base: "2135px", tablet: "1150px" }}
+            >
               <Box h={"100%"} w={"100%"}>
                 <iframe
                   onLoad={restyleIframe(iframeRef, bgColor, textColor, graphBgColor)}

@@ -108,7 +108,7 @@ const theme = extendTheme({
       },
       // Input
       "input-bg": {
-        _light: colors.greyscale[0],
+        _light: colors.greyscale[100],
         _dark: colors.greyscale[600],
       },
       "input-right-bg": {
@@ -116,19 +116,19 @@ const theme = extendTheme({
         _dark: colors.greyscale[600],
       },
       "input-label-color": {
-        _light: colors.greyscale[600],
+        _light: colors.greyscale[300],
         _dark: colors.greyscale[300],
       },
       "input-placeholder-color": {
-        _light: colors.greyscale[700],
+        _light: colors.greyscale[300],
         _dark: colors.greyscale[200],
       },
       "input-disabled-color": {
-        _light: colors.greyscale[500],
+        _light: colors.greyscale[200],
         _dark: colors.greyscale[500],
       },
       "input-disabled-bg": {
-        _light: colors.greyscale[700],
+        _light: colors.greyscale[100],
         _dark: colors.greyscale[700],
       },
       "input-disabled-hint-color": {
@@ -236,8 +236,8 @@ const theme = extendTheme({
         _dark: colors.alert.success,
       },
       "accent-color": {
-        _light: colors.primary[500], // da modificare con i valori corretti
-        _dark: colors.primary[500], // da modificare con i valori corretti
+        _light: colors.primary[600],
+        _dark: colors.primary[500],
       },
       "badge-color": {
         _light: colors.greyscale[0], // da modificare con i valori corretti
@@ -248,11 +248,19 @@ const theme = extendTheme({
         _dark: colors.greyscale[200],
       },
       "dashboard-title": {
-        _light: colors.greyscale[200], // da modificare con i valori corretti
+        _light: colors.greyscale[500],
         _dark: colors.greyscale[200],
       },
-      "dashboard-bg-section": {
-        _light: colors.greyscale[200], // da modificare con i valori corretti
+      "dashboard-section-bg": {
+        _light: colors.greyscale[100],
+        _dark: colors.greyscale[900],
+      },
+      "dashboard-border-color": {
+        _light: colors.greyscale[100],
+        _dark: colors.greyscale[500],
+      },
+      "dashboard-section-badge-bg": {
+        _light: colors.greyscale[0],
         _dark: colors.greyscale[750],
       },
       "dashboard-badge-bg": {
