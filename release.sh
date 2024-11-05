@@ -174,4 +174,6 @@ git commit -m "Bump versions:
 echo "Pushing changes to the repository..."
 git push
 
+./post_release.sh
+
 echo "Process completed successfully!"
