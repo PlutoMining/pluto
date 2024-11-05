@@ -126,7 +126,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
               Miner
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
-              {getMinerName(device.info.boardVersion)}
+              {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
             </Text>
           </Flex>
           <Flex justify={"space-between"}>
