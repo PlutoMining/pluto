@@ -25,18 +25,24 @@ export const AddNewPresetModal: React.FC<AddNewPresetModalProps> = ({
   presetId,
 }) => {
   const [bgColor] = useToken("colors", ["item-bg"]);
+  const [primaryColor] = useToken("colors", ["primary-color"]);
 
   return (
     <Modal onClose={onClose} size={"full)"} isOpen={isOpen}>
-      <ModalOverlay />
+      <ModalOverlay boxShadow={"0px -39px 39px 0px #00988817"} />
       <ModalContent
         bg={bgColor}
+        borderRadius={0}
         height={{
           base: "calc(100% - 8.5rem)",
           tablet: "calc(100% - 10.5rem)",
           tabletL: "calc(100% - 9.5rem)",
         }}
         top={"1.5rem"}
+        overflow={"scroll"}
+        borderColor={"border-color"}
+        borderTopWidth={"1px"}
+        borderBottomWidth={"1px"}
       >
         <Box
           maxW="container.desktop"
@@ -55,7 +61,7 @@ export const AddNewPresetModal: React.FC<AddNewPresetModalProps> = ({
           >
             Add a new preset
           </ModalHeader>
-          <ModalCloseButton />
+          <ModalCloseButton color={primaryColor} />
           <ModalBody overflow={"scroll"} p={0}>
             <PresetEditor
               onCloseModal={onClose}

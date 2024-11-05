@@ -1203,9 +1203,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         display={{ base: "flex", tablet: "none" }}
         justify={"space-between"}
         padding={"0.15rem 1rem"}
-        borderTopWidth={"1px"}
-        borderWidth={"border-color"}
-        backgroundColor={"td-bg"}
+        backgroundColor={"th-bg"}
       >
         <Flex gap={"0.5rem"} alignItems={"center"}>
           <Text fontSize={"md"} fontWeight={500}>

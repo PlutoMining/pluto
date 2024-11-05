@@ -82,6 +82,10 @@ const theme = extendTheme({
         _light: lightThemeColors.brand.purple0,
         _dark: darkThemeColors.greyscale[900],
       },
+      "header-text": {
+        _light: lightThemeColors.greyscale[200],
+        _dark: darkThemeColors.greyscale[200],
+      },
       "footer-bg": {
         _light: lightThemeColors.brand.purple0,
         _dark: darkThemeColors.greyscale[900],

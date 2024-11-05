@@ -239,6 +239,7 @@ function ModalBodyContent({
   const [accentColor] = useToken("colors", ["accent-color"]);
   const [thBg] = useToken("colors", ["th-bg"]);
   const [thColor] = useToken("colors", ["th-color"]);
+  const [primaryColor] = useToken("colors", ["primary-color"]);
 
   return (
     <Box p={0} pt={"1rem"} height={"100%"}>
@@ -343,7 +344,7 @@ function ModalBodyContent({
                   <Box w={"100%"}>
                     {discoveredDevices && (
                       <Box>
-                        {discoveredDevices.length > 0 ? (
+                        {discoveredDevices.length > 0 && ipAndMacAddress.macAddress ? (
                           <Flex flexDir={"column"} gap={"1rem"} mt={"1rem"}>
                             <Text
                               color={"text-color"}
@@ -355,10 +356,16 @@ function ModalBodyContent({
                             </Text>
                             <Box>
                               <TableContainer display={{ base: "none", tablet: "block" }}>
-                                <Table variant="simple">
-                                  <Thead backgroundColor={thBg}>
+                                <Table
+                                  variant="simple"
+                                  h={"100%"}
+                                  borderColor={borderColor}
+                                  borderWidth={"1px"}
+                                >
+                                  <Thead>
                                     <Tr>
                                       <Th
+                                        bg={thBg}
                                         borderColor={borderColor}
                                         fontWeight={500}
                                         color={thColor}
@@ -369,6 +376,7 @@ function ModalBodyContent({
                                         Hostname
                                       </Th>
                                       <Th
+                                        bg={thBg}
                                         borderColor={borderColor}
                                         fontWeight={500}
                                         color={thColor}
@@ -379,6 +387,7 @@ function ModalBodyContent({
                                         IP
                                       </Th>
                                       <Th
+                                        bg={thBg}
                                         borderColor={borderColor}
                                         fontWeight={500}
                                         color={thColor}
@@ -389,6 +398,7 @@ function ModalBodyContent({
                                         Mac Address
                                       </Th>
                                       <Th
+                                        bg={thBg}
                                         borderColor={borderColor}
                                         fontWeight={500}
                                         color={thColor}
@@ -399,6 +409,7 @@ function ModalBodyContent({
                                         Miner
                                       </Th>
                                       <Th
+                                        bg={thBg}
                                         borderColor={borderColor}
                                         fontWeight={500}
                                         color={thColor}
@@ -409,6 +420,7 @@ function ModalBodyContent({
                                         Asic
                                       </Th>
                                       <Th
+                                        bg={thBg}
                                         borderColor={borderColor}
                                         fontWeight={500}
                                         color={thColor}
@@ -437,144 +449,154 @@ function ModalBodyContent({
                                 </Table>
                               </TableContainer>
 
-                              <ChakraAccordion
+                              <Box
                                 display={{ base: "block", tablet: "none" }}
-                                allowMultiple
-                                as={Flex}
-                                flexDir={"column"}
-                                backgroundColor={"item-bg"}
-                                borderWidth={"1px"}
-                                borderColor={"border-color"}
-                                borderRadius={"1rem"}
+                                height={"calc(100% - 6rem)"}
+                                position="relative"
+                                overflow={"scroll"}
                               >
-                                {discoveredDevices?.map((device, index) => (
-                                  <ChakraAccordionItem
-                                    key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
-                                    borderTopWidth={index > 0 ? "1px" : "0"}
-                                    borderBottomWidth={"0!important"}
-                                    padding={"1rem"}
+                                <Box
+                                  height="100%"
+                                  overflow="auto" // Overflow al contenuto scrollabile
+                                  paddingBottom="50px" // Spazio per la sfumatura
+                                >
+                                  <ChakraAccordion
+                                    allowMultiple
+                                    as={Flex}
+                                    flexDir={"column"}
+                                    backgroundColor={"td-bg"}
+                                    borderWidth={"1px"}
+                                    borderColor={"border-color"}
+                                    borderRadius={0}
                                   >
-                                    <AccordionButton
-                                      p={0}
-                                      justifyContent={"space-between"}
-                                      _hover={{ backgroundColor: "none" }}
-                                    >
-                                      <Flex gap={"1rem"} alignItems={"center"}>
-                                        <AccordionIcon />
-                                        <Heading
-                                          fontSize={"sm"}
-                                          fontWeight={600}
-                                          textTransform={"capitalize"}
-                                          fontFamily={"body"}
+                                    {discoveredDevices?.map((device, index) => (
+                                      <ChakraAccordionItem
+                                        key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
+                                        borderTopWidth={index > 0 ? "1px" : "0"}
+                                        borderBottomWidth={"0!important"}
+                                      >
+                                        <AccordionButton
+                                          p={"1rem"}
+                                          justifyContent={"space-between"}
+                                          _hover={{ backgroundColor: "none" }}
+                                          bg={"th-bg"}
                                         >
-                                          {device.info.hostname}
-                                        </Heading>
-                                      </Flex>
-                                    </AccordionButton>
-                                    <AccordionPanel
-                                      p={0}
-                                      pb={4}
-                                      as={Flex}
-                                      flexDir={"column"}
-                                      alignItems={"flex-start"}
-                                    >
-                                      <Divider
-                                        mb={"1rem"}
-                                        mt={"1rem"}
-                                        borderColor={"border-color"}
-                                      />
-
-                                      <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"}>
-                                        <Flex justify={"space-between"}>
-                                          <Text
-                                            fontWeight={500}
-                                            textTransform={"capitalize"}
-                                            fontSize={"sm"}
-                                            fontFamily={"heading"}
+                                          <Flex gap={"1rem"} alignItems={"center"}>
+                                            <AccordionIcon />
+                                            <Heading
+                                              fontSize={"sm"}
+                                              fontWeight={600}
+                                              textTransform={"capitalize"}
+                                              fontFamily={"body"}
+                                            >
+                                              {device.info.hostname}
+                                            </Heading>
+                                          </Flex>
+                                        </AccordionButton>
+                                        <AccordionPanel
+                                          p={0}
+                                          as={Flex}
+                                          flexDir={"column"}
+                                          alignItems={"flex-start"}
+                                        >
+                                          <Flex
+                                            p={"1rem"}
+                                            flexDirection={"column"}
+                                            gap={"0.5rem"}
+                                            w={"100%"}
                                           >
-                                            IP
-                                          </Text>
-                                          <Text
-                                            fontWeight={400}
-                                            fontSize={"sm"}
-                                            fontFamily={"body"}
-                                          >
-                                            {device.ip}
-                                          </Text>
-                                        </Flex>
-                                        <Flex justify={"space-between"}>
-                                          <Text
-                                            fontWeight={500}
-                                            textTransform={"capitalize"}
-                                            fontSize={"sm"}
-                                            fontFamily={"heading"}
-                                          >
-                                            Mac Address
-                                          </Text>
-                                          <Text
-                                            fontWeight={400}
-                                            fontSize={"sm"}
-                                            fontFamily={"body"}
-                                          >
-                                            {device.mac}
-                                          </Text>
-                                        </Flex>
-                                        <Flex justify={"space-between"}>
-                                          <Text
-                                            fontWeight={500}
-                                            textTransform={"capitalize"}
-                                            fontSize={"sm"}
-                                            fontFamily={"heading"}
-                                          >
-                                            Miner
-                                          </Text>
-                                          <Text
-                                            fontWeight={400}
-                                            fontSize={"sm"}
-                                            fontFamily={"body"}
-                                          >
-                                            {getMinerName(device.info.boardVersion)}
-                                          </Text>
-                                        </Flex>
-                                        <Flex justify={"space-between"}>
-                                          <Text
-                                            fontWeight={500}
-                                            textTransform={"capitalize"}
-                                            fontSize={"sm"}
-                                            fontFamily={"heading"}
-                                          >
-                                            ASIC
-                                          </Text>
-                                          <Text
-                                            fontWeight={400}
-                                            fontSize={"sm"}
-                                            fontFamily={"body"}
-                                          >
-                                            {device.info.ASICModel}
-                                          </Text>
-                                        </Flex>
-                                        <Flex justify={"space-between"}>
-                                          <Text
-                                            fontWeight={500}
-                                            textTransform={"capitalize"}
-                                            fontSize={"sm"}
-                                            fontFamily={"heading"}
-                                          >
-                                            FW v.
-                                          </Text>
-                                          <Text
-                                            fontWeight={400}
-                                            fontSize={"sm"}
-                                            fontFamily={"body"}
-                                          >
-                                            {device.info.version}
-                                          </Text>
-                                        </Flex>
-                                      </Flex>
-                                    </AccordionPanel>
-                                  </ChakraAccordionItem>
-                                ))}
-                              </ChakraAccordion>
+                                            <Flex justify={"space-between"}>
+                                              <Text
+                                                fontWeight={500}
+                                                textTransform={"capitalize"}
+                                                fontSize={"sm"}
+                                                fontFamily={"heading"}
+                                              >
+                                                IP
+                                              </Text>
+                                              <Text
+                                                fontWeight={400}
+                                                fontSize={"sm"}
+                                                fontFamily={"body"}
+                                              >
+                                                {device.ip}
+                                              </Text>
+                                            </Flex>
+                                            <Flex justify={"space-between"}>
+                                              <Text
+                                                fontWeight={500}
+                                                textTransform={"capitalize"}
+                                                fontSize={"sm"}
+                                                fontFamily={"heading"}
+                                              >
+                                                Mac Address
+                                              </Text>
+                                              <Text
+                                                fontWeight={400}
+                                                fontSize={"sm"}
+                                                fontFamily={"body"}
+                                              >
+                                                {device.mac}
+                                              </Text>
+                                            </Flex>
+                                            <Flex justify={"space-between"}>
+                                              <Text
+                                                fontWeight={500}
+                                                textTransform={"capitalize"}
+                                                fontSize={"sm"}
+                                                fontFamily={"heading"}
+                                              >
+                                                Miner
+                                              </Text>
+                                              <Text
+                                                fontWeight={400}
+                                                fontSize={"sm"}
+                                                fontFamily={"body"}
+                                              >
+                                                {getMinerName(device.info.boardVersion)}
+                                              </Text>
+                                            </Flex>
+                                            <Flex justify={"space-between"}>
+                                              <Text
+                                                fontWeight={500}
+                                                textTransform={"capitalize"}
+                                                fontSize={"sm"}
+                                                fontFamily={"heading"}
+                                              >
+                                                ASIC
+                                              </Text>
+                                              <Text
+                                                fontWeight={400}
+                                                fontSize={"sm"}
+                                                fontFamily={"body"}
+                                              >
+                                                {device.info.ASICModel}
+                                              </Text>
+                                            </Flex>
+                                            <Flex justify={"space-between"}>
+                                              <Text
+                                                fontWeight={500}
+                                                textTransform={"capitalize"}
+                                                fontSize={"sm"}
+                                                fontFamily={"heading"}
+                                              >
+                                                FW v.
+                                              </Text>
+                                              <Text
+                                                fontWeight={400}
+                                                fontSize={"sm"}
+                                                fontFamily={"body"}
+                                              >
+                                                {device.info.version}
+                                              </Text>
+                                            </Flex>
+                                          </Flex>
+                                        </AccordionPanel>
+                                      </ChakraAccordionItem>
+                                    ))}
+                                  </ChakraAccordion>
+                                </Box>
+                              </Box>
                             </Box>
                             <Flex align={"start"}>
                               <Flex gap={"1rem"}>
@@ -631,39 +653,31 @@ function ModalBodyContent({
                             alignItems="center" // Allinea verticalmente checkbox e testo
                             borderColor={borderColor}
                             sx={{
-                              height: "20px", // Imposta l'altezza
-                              width: "20px", // Imposta la larghezza
-                              borderRadius: 0,
                               "& .chakra-checkbox__control": {
-                                height: "20px", // Altezza del controllo
-                                width: "20px", // Larghezza del controllo
+                                height: "1rem",
+                                width: "1rem",
                                 borderRadius: 0,
-                                bg: bgColor, // colore di sfondo (hex)
-                                borderColor: borderColor, // colore del bordo (hex)
+                                bg: "bgColor",
+                                borderColor: borderColor,
                               },
                               "& .chakra-checkbox__control[data-checked]": {
-                                bg: bgColor, // colore quando è selezionato (checked)
-                                borderColor: accentColor, // colore bordo quando è selezionato
-                                color: accentColor, // colore di sfondo (hex)
-                                boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
+                                bg: accentColor,
+                                borderColor: borderColor,
+                                color: borderColor,
                               },
                               "& .chakra-checkbox__control[data-checked]:hover": {
-                                bg: bgColor, // colore quando è selezionato (checked)
-                                borderColor: accentColor, // colore bordo quando è selezionato
-                                color: accentColor, // colore di sfondo (hex)
-                                boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
+                                bg: accentColor,
+                                borderColor: borderColor,
+                                color: borderColor,
                               },
                               "& .chakra-checkbox__control:focus": {
-                                borderColor: textColor, // colore del bordo quando la checkbox è in focus
-                                boxShadow: `0 0 0 2px ${textColor}`, // effetto di ombra quando è in focus
+                                borderColor: borderColor,
                               },
                             }}
                             isChecked={allChecked}
                             onChange={(e) => handleAllCheckbox(e.target.checked)}
                           >
-                            <Text fontSize="xs" textDecoration={"underline"}>
-                              Select all
-                            </Text>
+                            <Text fontSize="xs">Select all</Text>
                           </ChakraCheckbox>
                         </Flex>
 
@@ -678,38 +692,40 @@ function ModalBodyContent({
                             paddingBottom="50px" // Spazio per la sfumatura
                           >
                             <TableContainer overflowY={"scroll"}>
-                              <Table variant="simple" h={"100%"}>
+                              <Table
+                                variant="simple"
+                                h={"100%"}
+                                borderColor={borderColor}
+                                borderWidth={"1px"}
+                              >
                                 <Thead>
                                   <Tr>
-                                    <Th borderColor={borderColor}>
+                                    <Th borderColor={borderColor} bg={thBg}>
                                       <ChakraCheckbox
+                                        borderRadius={0}
+                                        alignItems="center" // Allinea verticalmente checkbox e testo
                                         borderColor={borderColor}
                                         sx={{
-                                          height: "20px", // Imposta l'altezza
-                                          width: "20px", // Imposta la larghezza
-                                          borderRadius: 0,
+                                          width: "100%",
                                           "& .chakra-checkbox__control": {
-                                            height: "20px", // Altezza del controllo
-                                            width: "20px", // Larghezza del controllo
+                                            height: "1rem",
+                                            width: "1rem",
                                             borderRadius: 0,
-                                            bg: bgColor, // colore di sfondo (hex)
-                                            borderColor: borderColor, // colore del bordo (hex)
+                                            bg: "bgColor",
+                                            borderColor: borderColor,
                                           },
                                           "& .chakra-checkbox__control[data-checked]": {
-                                            bg: bgColor, // colore quando è selezionato (checked)
-                                            borderColor: accentColor, // colore bordo quando è selezionato
-                                            color: accentColor, // colore di sfondo (hex)
-                                            boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
+                                            bg: accentColor,
+                                            borderColor: borderColor,
+                                            color: borderColor,
                                           },
                                           "& .chakra-checkbox__control[data-checked]:hover": {
-                                            bg: bgColor, // colore quando è selezionato (checked)
-                                            borderColor: accentColor, // colore bordo quando è selezionato
-                                            color: accentColor, // colore di sfondo (hex)
-                                            boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
+                                            bg: accentColor,
+                                            borderColor: borderColor,
+                                            color: borderColor,
                                           },
                                           "& .chakra-checkbox__control:focus": {
-                                            borderColor: textColor, // colore del bordo quando la checkbox è in focus
-                                            boxShadow: `0 0 0 2px ${textColor}`, // effetto di ombra quando è in focus
+                                            borderColor: borderColor,
                                           },
                                         }}
                                         isChecked={allChecked}
@@ -728,7 +744,7 @@ function ModalBodyContent({
                                         </Text>
                                       </ChakraCheckbox>
                                     </Th>
-                                    <Th borderColor={borderColor}>
+                                    <Th borderColor={borderColor} bg={thBg}>
                                       <Text
                                         fontWeight={500}
                                         color={textColor}
@@ -739,7 +755,7 @@ function ModalBodyContent({
                                         IP
                                       </Text>
                                     </Th>
-                                    <Th borderColor={borderColor}>
+                                    <Th borderColor={borderColor} bg={thBg}>
                                       <Text
                                         fontWeight={500}
                                         color={textColor}
@@ -750,7 +766,7 @@ function ModalBodyContent({
                                         Mac Address
                                       </Text>
                                     </Th>
-                                    <Th borderColor={borderColor}>
+                                    <Th borderColor={borderColor} bg={thBg}>
                                       <Text
                                         fontWeight={500}
                                         color={textColor}
@@ -761,7 +777,7 @@ function ModalBodyContent({
                                         Miner
                                       </Text>
                                     </Th>
-                                    <Th borderColor={borderColor}>
+                                    <Th borderColor={borderColor} bg={thBg}>
                                       <Text
                                         fontWeight={500}
                                         color={textColor}
@@ -772,7 +788,7 @@ function ModalBodyContent({
                                         Asic
                                       </Text>
                                     </Th>
-                                    <Th borderColor={borderColor}>
+                                    <Th borderColor={borderColor} bg={thBg}>
                                       <Text
                                         fontWeight={500}
                                         color={textColor}
@@ -822,8 +838,9 @@ function ModalBodyContent({
                         </Box>
                         <Box
                           display={{ base: "block", tablet: "none" }}
-                          height={"calc(100% - 5rem)"}
-                          position="relative" // Aggiungi il posizionamento relativo al contenitore principale
+                          height={"calc(100% - 6rem)"}
+                          position="relative"
+                          overflow={"scroll"}
                         >
                           <Box
                             height="100%"
@@ -835,10 +852,10 @@ function ModalBodyContent({
                                 allowMultiple
                                 as={Flex}
                                 flexDir={"column"}
-                                backgroundColor={"greyscale.0"}
+                                backgroundColor={"bg-color"}
                                 borderWidth={"1px"}
-                                borderColor={"greyscale.200"}
-                                borderRadius={"1rem"}
+                                borderColor={"border-color"}
+                                borderRadius={0}
                                 overflow={"scroll"}
                               >
                                 {discoveredDevices?.map((device, index) => (
@@ -846,12 +863,15 @@ function ModalBodyContent({
                                     key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
                                     borderTopWidth={index > 0 ? "1px" : "0"}
                                     borderBottomWidth={"0!important"}
-                                    padding={"1rem"}
                                   >
                                     <AccordionButton
-                                      p={0}
+                                      p={"1rem"}
                                       justifyContent={"space-between"}
                                       _hover={{ backgroundColor: "none" }}
+                                      as={Flex}
+                                      alignItems={"center"}
+                                      justify={"space-between"}
+                                      bg={"th-bg"}
                                     >
                                       <Flex gap={"1rem"} alignItems={"center"}>
                                         <AccordionIcon />
@@ -868,31 +888,25 @@ function ModalBodyContent({
                                       <ChakraCheckbox
                                         borderColor={borderColor}
                                         sx={{
-                                          height: "20px", // Imposta l'altezza
-                                          width: "20px", // Imposta la larghezza
-                                          borderRadius: 0,
                                           "& .chakra-checkbox__control": {
-                                            height: "20px", // Altezza del controllo
-                                            width: "20px", // Larghezza del controllo
+                                            height: "1rem",
+                                            width: "1rem",
                                             borderRadius: 0,
-                                            bg: bgColor, // colore di sfondo (hex)
-                                            borderColor: borderColor, // colore del bordo (hex)
+                                            bg: "bgColor",
+                                            borderColor: borderColor,
                                           },
                                           "& .chakra-checkbox__control[data-checked]": {
-                                            bg: bgColor, // colore quando è selezionato (checked)
-                                            borderColor: accentColor, // colore bordo quando è selezionato
-                                            color: accentColor, // colore di sfondo (hex)
-                                            boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
+                                            bg: accentColor,
+                                            borderColor: borderColor,
+                                            color: borderColor,
                                           },
                                           "& .chakra-checkbox__control[data-checked]:hover": {
-                                            bg: bgColor, // colore quando è selezionato (checked)
-                                            borderColor: accentColor, // colore bordo quando è selezionato
-                                            color: accentColor, // colore di sfondo (hex)
-                                            boxShadow: `inset 0 0 0 2px ${bgColor}`, // spazio bianco tra bordo e riempimento
+                                            bg: accentColor,
+                                            borderColor: borderColor,
+                                            color: borderColor,
                                           },
                                           "& .chakra-checkbox__control:focus": {
-                                            borderColor: textColor, // colore del bordo quando la checkbox è in focus
-                                            boxShadow: `0 0 0 2px ${textColor}`, // effetto di ombra quando è in focus
+                                            borderColor: borderColor,
                                           },
                                         }}
                                         id={device.mac}
@@ -903,14 +917,17 @@ function ModalBodyContent({
                                     </AccordionButton>
                                     <AccordionPanel
                                       p={0}
-                                      pb={4}
                                       as={Flex}
                                       flexDir={"column"}
                                       alignItems={"flex-start"}
+                                      bg={"td-bg"}
                                     >
-                                      <Divider mb={"1rem"} mt={"1rem"} borderColor={borderColor} />
-
-                                      <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"}>
+                                      <Flex
+                                        flexDirection={"column"}
+                                        gap={"0.5rem"}
+                                        w={"100%"}
+                                        p={"1rem"}
+                                      >
                                         <Flex justify={"space-between"}>
                                           <Text
                                             fontWeight={500}
@@ -1053,11 +1070,13 @@ export const RegisterDevicesModal: React.FC<RegisterDevicesModalProps> = ({
   onClose,
   onDevicesChanged,
 }) => {
+  const [primaryColor] = useToken("colors", ["primary-color"]);
+
   return (
     <Modal onClose={onClose} size={"full)"} isOpen={isOpen}>
-      <ModalOverlay />
+      <ModalOverlay boxShadow={"0px -39px 39px 0px #00988817"} />
       <ModalContent
-        bg={"item-bg"}
+        bg={"bg-color"}
         borderRadius={0}
         height={{
           base: "calc(100% - 8.5rem)",
@@ -1065,6 +1084,10 @@ export const RegisterDevicesModal: React.FC<RegisterDevicesModalProps> = ({
           tabletL: "calc(100% - 9.5rem)",
         }}
         top={"1.5rem"}
+        overflow={"scroll"}
+        borderColor={"border-color"}
+        borderTopWidth={"1px"}
+        borderBottomWidth={"1px"}
       >
         <Box
           maxW="container.desktop"
@@ -1077,7 +1100,7 @@ export const RegisterDevicesModal: React.FC<RegisterDevicesModalProps> = ({
           <ModalHeader p={0} fontFamily={"heading"} fontWeight={400} fontSize={"2rem"}>
             Add a new Device
           </ModalHeader>
-          <ModalCloseButton />
+          <ModalCloseButton color={primaryColor} />
           <ModalBody p={0} height={"calc(100% - 5rem)"}>
             <ModalBodyContent
               onClose={onClose}

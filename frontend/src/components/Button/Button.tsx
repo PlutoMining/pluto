@@ -31,20 +31,6 @@ const primary = defineStyle(() => {
   };
 });
 
-const secondary = defineStyle((styles) => {
-  return {
-    fontFamily: styles.theme.fonts.heading,
-    background: styles.theme.colors.greyscale[200],
-    color: styles.theme.colors.greyscale[900],
-    borderRadius: "6px",
-    // width: { base: "100%" },
-    fontWeight: 400,
-    padding: "6px 12px",
-    fontSize: "13px",
-    textAlign: "center",
-  };
-});
-
 const outlined = defineStyle(() => {
   return {
     background: "item-bg",
@@ -101,11 +87,11 @@ const text = defineStyle(() => {
 });
 
 export const buttonTheme = defineStyleConfig({
-  variants: { primary, text, outlined, secondary },
+  variants: { primary, text, outlined },
 });
 
 interface ButtonProps {
-  variant: "text" | "primary" | "outlined" | "secondary";
+  variant: "text" | "primary" | "outlined";
   label?: string;
   onClick: MouseEventHandler<HTMLButtonElement>;
   disabled?: boolean;

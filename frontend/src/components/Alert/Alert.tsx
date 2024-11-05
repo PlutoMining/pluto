@@ -61,7 +61,7 @@ const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
       zIndex={10}
       maxWidth={theme.breakpoints["desktop"]}
       margin={"0 auto"}
-      p={{ base: "1rem", tablet: "1rem 2.5rem" }}
+      p={{ base: "1rem", tablet: "1rem 2rem" }}
     >
       <Box bg={"bg-color"} borderRadius={0} borderColor={color} borderWidth={"1.5px"} p={"0.5rem"}>
         <ChakraAlert

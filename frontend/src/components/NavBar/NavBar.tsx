@@ -53,18 +53,19 @@ export const NavBar = () => {
       href: "/",
       component: (pathname?: string | null) => (
         <Box
-          color={"#fff"}
+          color={pathname === "/" ? "primary-color" : "header-text"}
           fontWeight={pathname === "/" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
+          textTransform={"uppercase"}
           _after={{
             display: pathname === "/" ? "block" : "none",
             content: '""',
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "primary-color",
+            backgroundColor: "border-color",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -80,13 +81,18 @@ export const NavBar = () => {
       href: "/monitoring",
       component: (pathname?: string | null) => (
         <Box
-          color={"#fff"}
+          color={
+            pathname === "/monitoring" || /^\/monitoring/.test(pathname || "")
+              ? "primary-color"
+              : "header-text"
+          }
           fontWeight={
             pathname === "/monitoring" || /^\/monitoring/.test(pathname || "") ? "700" : "500"
           }
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
+          textTransform={"uppercase"}
           _after={{
             display:
               pathname === "/monitoring" || /^\/monitoring/.test(pathname || "") ? "block" : "none",
@@ -94,7 +100,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "primary-color",
+            backgroundColor: "border-color",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -110,18 +116,19 @@ export const NavBar = () => {
       href: "/settings",
       component: (pathname?: string | null) => (
         <Box
-          color={"#fff"}
+          color={pathname === "/settings" ? "primary-color" : "header-text"}
           fontWeight={pathname === "/settings" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
+          textTransform={"uppercase"}
           _after={{
             display: pathname === "/settings" ? "block" : "none",
             content: '""',
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "primary-color",
+            backgroundColor: "border-color",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -137,18 +144,19 @@ export const NavBar = () => {
       href: "/presets",
       component: (pathname?: string | null) => (
         <Box
-          color={"#fff"}
+          color={pathname === "/presets" ? "primary-color" : "header-text"}
           fontWeight={pathname === "/presets" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
+          textTransform={"uppercase"}
           _after={{
             display: pathname === "/presets" ? "block" : "none",
             content: '""',
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "primary-color",
+            backgroundColor: "border-color",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -164,7 +172,8 @@ export const NavBar = () => {
       href: "/devices",
       component: (pathname?: string | null) => (
         <Box
-          color={"#fff"}
+          color={pathname === "/devices" ? "primary-color" : "header-text"}
+          textTransform={"uppercase"}
           fontWeight={pathname === "/devices" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
@@ -175,7 +184,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "primary-color",
+            backgroundColor: "border-color",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -228,7 +237,6 @@ export const NavBar = () => {
                 as="nav"
                 spacing={4}
                 display={{ base: "none", tabletL: "flex" }}
-                backgroundColor={"rgba(255, 255, 255, 0.10)"}
                 p={"0.75rem"}
                 borderRadius={"8px"}
                 fontFamily={"heading"}
@@ -319,7 +327,7 @@ export const NavBar = () => {
                     gap={"1rem"}
                     justify={"flex-start"}
                     borderBottomWidth={"0.5px"}
-                    borderBottomColor={"greyscale.200"}
+                    borderBottomColor={"border-color"}
                     paddingBottom={"1rem"}
                   >
                     {/* <MetaLogo /> */}
@@ -338,14 +346,14 @@ export const NavBar = () => {
                   <Link
                     fontFamily={"heading"}
                     fontSize={"xs"}
-                    color={"greyscale.200"}
+                    color={"footer-text"}
                     fontWeight={500}
                     textDecoration={"underline"}
                   >
                     Terms & Conditions
                   </Link>
 
-                  <Text fontSize={"xs"} fontWeight={300} color={"greyscale.200"}>
+                  <Text fontSize={"xs"} fontWeight={300} color={"footer-text"}>
                     © 2024 Pluto. All rights reserved. This open-source application software is
                     licensed under the Lorem Ipsum License.
                   </Text>
