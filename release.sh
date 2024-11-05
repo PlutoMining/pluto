@@ -30,7 +30,7 @@ update_umbrel_version() {
 # Function to get the current version from the package.json file
 get_current_version() {
     local service=$1
-    grep '"version":' $service/package.json | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+)".*/\1/'
+    grep '"version":' $service/package.json | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?)".*/\1/'
 }
 
 # Function to check the current Git branch
@@ -41,6 +41,18 @@ check_git_branch() {
         exit 1
     fi
 }
+
+# Prompt to check if this is a pre-release
+echo "Is this a pre-release? (y/n)"
+read is_prerelease
+
+# Update the FRONTEND_BUILD_ARGS based on the release type
+if [ "$is_prerelease" == "y" ]; then
+    echo "Pre-release selected: scaling ports down by 100."
+    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676 --build-arg GF_HOST=http://grafana:3000 --build-arg BACKEND_DESTINATION_HOST=http://backend:7676"
+else
+    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776 --build-arg GF_HOST=http://grafana:3000 --build-arg BACKEND_DESTINATION_HOST=http://backend:7776"
+fi
 
 # Flag to skip Docker login
 SKIP_LOGIN=false
@@ -86,7 +98,7 @@ fi
 update_umbrel_version "$new_app_version"
 
 # Get and set versions for each service
-for service in backend discovery mock frontend grafana prometheus init; do
+for service in backend discovery mock frontend init; do
     current_version=$(get_current_version $service)
     # Store the current version in a variable specific to the service
     eval "current_${service}_version=$current_version"
@@ -104,7 +116,7 @@ for service in backend discovery mock frontend grafana prometheus init; do
 done
 
 # Update the files with the new versions and install dependencies
-for service in backend discovery mock frontend grafana prometheus init; do
+for service in backend discovery mock frontend init; do
     eval new_version=\$${service}_version
     eval current_version=\$current_${service}_version
 
@@ -126,11 +138,8 @@ else
     docker buildx create --use --name multi-arch-builder
 fi
 
-# Example build arguments for the 'frontend' service
-FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776 --build-arg GF_HOST=http://grafana:3000 --build-arg BACKEND_DESTINATION_HOST=http://backend:7776"
-
 # Build Docker images only if the version has changed
-for service in backend discovery mock frontend grafana prometheus init; do
+for service in backend discovery mock frontend init; do
     eval new_version=\$${service}_version
     eval current_version=\$current_${service}_version
 

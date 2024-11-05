@@ -13,7 +13,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: mock/Dockerfile
-    image: whirmill/pluto-mock:0.6.0-beta.5 # Docker image with specific version
+    image: whirmill/pluto-mock:0.6.0-beta.6 # Docker image with specific version
     ports:
       - "7770:7770" # Map port 7770 on the host to port 7770 on the container
       - "7751:7751" # Map port 7751 on the host to port 7751 on the container
@@ -45,7 +45,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: whirmill/pluto-discovery:0.6.0-beta.5 # Docker image with specific version
+    image: whirmill/pluto-discovery:0.6.0-beta.6 # Docker image with specific version
     network_mode: "host"
     # ports:
     #   - "7775:7775" # Map port 7775 on the host to port 7775 on the container
@@ -73,7 +73,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: whirmill/pluto-backend:0.6.0-beta.5 # Docker image with specific version
+    image: whirmill/pluto-backend:0.6.0-beta.6 # Docker image with specific version
     ports:
       - "7776:7776" # Map port 7776 on the host to port 7776 on the container
     pid: host
@@ -109,7 +109,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: whirmill/pluto-frontend:0.6.0-beta.5 # Docker image with specific version
+    image: whirmill/pluto-frontend:0.6.0-beta.6 # Docker image with specific version
     ports:
       - "7777:7777" # Map port 7777 on the host to port 7777 on the container
     # Use the host's PID namespace to allow container processes to be visible on the host
@@ -136,10 +136,10 @@ services:
     # build:
     #   context: prometheus
     #   dockerfile: Dockerfile
-    image: whirmill/pluto-prometheus:0.1.1
+    image: prom/prometheus:v2.53.1
     volumes:
       - ./data/prometheus:/prometheus
-      # - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     # ports:
     #   - "9090:9090"
     pid: host
@@ -158,7 +158,7 @@ services:
     # build:
     #   context: grafana
     #   dockerfile: Dockerfile
-    image: whirmill/pluto-grafana:0.1.6
+    image: grafana/grafana:11.1.2
     # ports:
     #   - "7778:3000"
     pid: host
@@ -168,9 +168,9 @@ services:
       - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
     volumes:
       - ./data/grafana:/var/lib/grafana
-      # - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-      # - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
-      # - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
     healthcheck:
       test:
         - "CMD-SHELL"
