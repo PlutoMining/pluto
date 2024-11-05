@@ -6,7 +6,6 @@ update_version() {
     local new_version=$2
 
     # Update the version in the service's package.json
-    # This regex now includes optional pre-release and build metadata as per SemVer
     sed -i '' -E "s/\"version\": \"[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?\"/\"version\": \"${new_version}\"/" $service/package.json
 
     # Run npm install in the service to update lockfile
@@ -17,8 +16,6 @@ update_version() {
     sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.yml
     # Update the version in docker-compose.release.local.yml for the service
     sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
-    # Update the version in docker-compose.next.local.yml for the service
-    sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.next.local.yml
 }
 
 # Function to update the version in umbrel-app.yml
@@ -44,20 +41,9 @@ check_git_branch() {
     fi
 }
 
-# Prompt to check if this is a pre-release
-echo "Is this a pre-release? (y/n)"
-read is_prerelease
-
-# Update the FRONTEND_BUILD_ARGS based on the release type
-if [ "$is_prerelease" == "y" ]; then
-    echo "Pre-release selected: scaling ports down by 100."
-    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676 --build-arg GF_HOST=http://grafana:3000 --build-arg BACKEND_DESTINATION_HOST=http://backend:7676"
-else
-    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776 --build-arg GF_HOST=http://grafana:3000 --build-arg BACKEND_DESTINATION_HOST=http://backend:7776"
-fi
-
-# Flag to skip Docker login
+# Default values for flags
 SKIP_LOGIN=false
+IS_PRERELEASE=false
 
 # Parse command line arguments
 for arg in "$@"; do
@@ -66,11 +52,29 @@ for arg in "$@"; do
         SKIP_LOGIN=true
         shift # Remove --skip-login from processing
         ;;
+    --pre-release)
+        IS_PRERELEASE=true
+        shift # Remove --pre-release from processing
+        ;;
     esac
 done
 
-# Check the current Git branch
-# check_git_branch
+# Prompt to check if this is a pre-release if not set by flag
+if [ "$IS_PRERELEASE" = false ]; then
+    echo "Is this a pre-release? (y/n)"
+    read is_prerelease_input
+    if [ "$is_prerelease_input" == "y" ]; then
+        IS_PRERELEASE=true
+    fi
+fi
+
+# Update the FRONTEND_BUILD_ARGS and Dockerfile selection based on the release type
+if [ "$IS_PRERELEASE" = true ]; then
+    echo "Pre-release selected: scaling ports down by 100."
+    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676 --build-arg GF_HOST=http://grafana:3000 --build-arg BACKEND_DESTINATION_HOST=http://backend:7676"
+else
+    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776 --build-arg GF_HOST=http://grafana:3000 --build-arg BACKEND_DESTINATION_HOST=http://backend:7776"
+fi
 
 # Only perform Docker login if the skip login flag is not set
 if [ "$SKIP_LOGIN" = false ]; then
@@ -100,29 +104,25 @@ fi
 update_umbrel_version "$new_app_version"
 
 # Get and set versions for each service
-for service in backend discovery mock frontend init; do
+for service in backend discovery mock frontend grafana prometheus init; do
     current_version=$(get_current_version $service)
-    # Store the current version in a variable specific to the service
     eval "current_${service}_version=$current_version"
 
     echo "Current version for $service is $current_version. Enter the new version (press Enter to keep $current_version):"
     read new_version
 
-    # If user presses enter, keep the current version
     if [ -z "$new_version" ]; then
         new_version=$current_version
     fi
 
-    # Store the new version for each service in a variable
     eval "${service}_version=$new_version"
 done
 
 # Update the files with the new versions and install dependencies
-for service in backend discovery mock frontend init; do
+for service in backend discovery mock frontend grafana prometheus init; do
     eval new_version=\$${service}_version
     eval current_version=\$current_${service}_version
 
-    # Check if the new version is different from the current one
     if [ "$new_version" != "$current_version" ]; then
         echo "Updating $service from version $current_version to $new_version..."
         update_version $service "$new_version"
@@ -141,25 +141,30 @@ else
 fi
 
 # Build Docker images only if the version has changed
-for service in backend discovery mock frontend init; do
+for service in backend discovery mock frontend grafana prometheus init; do
     eval new_version=\$${service}_version
     eval current_version=\$current_${service}_version
 
-    # Check if the new version is different from the current one
     if [ "$new_version" != "$current_version" ]; then
         echo "Building Docker image for $service with context $(pwd) and Dockerfile $service/Dockerfile..."
+
+        # Choose Dockerfile based on service and release type
+        DOCKERFILE_PATH="$service/Dockerfile"
+        if [ "$IS_PRERELEASE" = true ] && ([[ "$service" == "grafana" ]] || [[ "$service" == "prometheus" ]]); then
+            DOCKERFILE_PATH="$service/Dockerfile.next"
+        fi
 
         # Check if service is frontend to pass specific build args
         if [ "$service" == "frontend" ]; then
             docker buildx build --platform linux/amd64,linux/arm64 \
                 -t whirmill/pluto-$service:latest \
                 -t whirmill/pluto-$service:"$new_version" \
-                -f $service/Dockerfile . --push $FRONTEND_BUILD_ARGS
+                -f $DOCKERFILE_PATH . --push $FRONTEND_BUILD_ARGS
         else
             docker buildx build --platform linux/amd64,linux/arm64 \
                 -t whirmill/pluto-$service:latest \
                 -t whirmill/pluto-$service:"$new_version" \
-                -f $service/Dockerfile . --push
+                -f $DOCKERFILE_PATH . --push
         fi
     else
         echo "Skipping Docker build for $service as the version has not changed."
