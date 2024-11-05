@@ -136,7 +136,7 @@ services:
     # build:
     #   context: prometheus
     #   dockerfile: Dockerfile
-    image: prom/prometheus:v2.53.1
+    image: whirmill/pluto-prometheus:0.6.0-beta.7
     volumes:
       - ./data/prometheus:/prometheus
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -158,7 +158,7 @@ services:
     # build:
     #   context: grafana
     #   dockerfile: Dockerfile
-    image: grafana/grafana:11.1.2
+    image: whirmill/pluto-grafana:0.6.0-beta.7
     # ports:
     #   - "7778:3000"
     pid: host

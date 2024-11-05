@@ -136,7 +136,7 @@ services:
     # build:
     #   context: prometheus
     #   dockerfile: Dockerfile
-    image: grafana/grafana:11.1.2
+    image: whirmill/pluto-prometheus:0.6.0-beta.7
     volumes:
       - /home/umbrel/umbrel/app-data/bemind-pluto/data/prometheus:/prometheus
       # - /home/umbrel/umbrel/app-data/bemind-pluto/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
