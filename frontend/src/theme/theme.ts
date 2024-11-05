@@ -267,7 +267,7 @@ const theme = extendTheme({
   fonts,
   fontSizes,
   fontWeights,
-  config: { useSystemColorMode: true, initialColorMode: "light", cssVarPrefix: "chakra" },
+  config: { useSystemColorMode: true, initialColorMode: "dark", cssVarPrefix: "chakra" },
   components: {
     Button: buttonTheme,
   },
