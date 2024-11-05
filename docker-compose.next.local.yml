@@ -1,0 +1,143 @@
+services:
+  # app_proxy:
+  #   environment:
+  #     APP_HOST: frontend
+  #     APP_PORT: 7677
+  #   depends_on:
+  #     - frontend
+  #   restart: unless-stopped
+
+  mock:
+    image: whirmill/pluto-mock:0.6.0-beta.8
+    ports:
+      - "7670:7670"
+      - "7651:7651"
+      - "7652:7652"
+      - "7653:7653"
+      - "7654:7654"
+      - "7655:7655"
+      - "7656:7656"
+      - "7657:7657"
+      - "7658:7658"
+      - "7659:7659"
+      - "7660:7660"
+    pid: host
+
+    restart: unless-stopped
+    environment:
+      - LISTING_PORT=7670
+      - PORTS=7651,7652,7653,7654,7655,7656,7657,7658,7659,7660
+      - LOGS_PUB_ENABLED=false
+
+  discovery:
+    image: whirmill/pluto-discovery:0.6.0-beta.8
+    network_mode: "host"
+    pid: host
+
+    restart: unless-stopped
+    environment:
+      - PORT=7675
+      - DETECT_MOCK_DEVICES=true
+      - MOCK_DISCOVERY_HOST=http://172.17.0.1:7670
+    volumes:
+      - ./data/leveldb:/app/data
+    depends_on:
+      leveldb-init:
+        condition: service_completed_successfully
+
+  backend:
+    image: whirmill/pluto-backend:0.6.0-beta.8
+    ports:
+      - "7676:7676"
+    pid: host
+
+    restart: unless-stopped
+    environment:
+      - PORT=7676
+      - AUTO_LISTEN=true
+      - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7675
+      - GF_HOST=http://grafana:3000
+      - DELETE_DATA_ON_DEVICE_REMOVE=true
+    volumes:
+      - ./data/leveldb:/app/data
+      - ./data/grafana:/app/grafana
+    depends_on:
+      leveldb-init:
+        condition: service_completed_successfully
+      prometheus:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  frontend:
+    image: whirmill/pluto-frontend:0.6.0-beta.8
+    pid: host
+    ports:
+      - 7677:7677
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      - PORT=7677
+      - GF_HOST=http://grafana:3000
+      - BACKEND_DESTINATION_HOST=http://backend:7676
+      - NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676
+    volumes:
+      - ./umbrel-app.yml:/tmp/umbrel-app.yml:ro
+
+  prometheus:
+    image: whirmill/pluto-prometheus:0.6.0-beta.8
+    volumes:
+      - ./data/prometheus:/prometheus
+
+    pid: host
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "wget --spider --quiet http://localhost:9090/-/ready || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      prometheus-init:
+        condition: service_completed_successfully
+
+  grafana:
+    image: whirmill/pluto-grafana:0.6.0-beta.8
+    pid: host
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${APP_PASSWORD}
+      - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "wget --spider --quiet http://localhost:3000/api/health || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      grafana-init:
+        condition: service_completed_successfully
+      prometheus:
+        condition: service_healthy
+
+  prometheus-init:
+    image: whirmill/pluto-init:0.6.0-beta.8
+    volumes:
+      - ./data/prometheus:/prometheus
+    command: /init-scripts/init-prometheus.sh
+
+  grafana-init:
+    image: whirmill/pluto-init:0.6.0-beta.8
+    volumes:
+      - ./data/grafana:/grafana
+    command: /init-scripts/init-grafana.sh
+
+  leveldb-init:
+    image: whirmill/pluto-init:0.6.0-beta.8
+    volumes:
+      - ./data/leveldb:/leveldb
+    command: /init-scripts/init-leveldb.sh

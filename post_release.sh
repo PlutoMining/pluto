@@ -18,6 +18,7 @@ cp umbrel-app.yml dist/store/bemind-pluto-next/
 sed -i '' -e '/^[[:space:]]*#/d' -e 's/[[:space:]]*#.*$//' dist/store/bemind-pluto/docker-compose.yml
 sed -i '' -e '/^[[:space:]]*#/d' -e 's/[[:space:]]*#.*$//' dist/store/bemind-pluto/umbrel-app.yml
 sed -i '' -e '/^[[:space:]]*#/d' -e 's/[[:space:]]*#.*$//' dist/store/bemind-pluto-next/docker-compose.yml
+sed -i '' -e 's|/home/umbrel/umbrel/app-data/bemind-pluto/|/home/umbrel/umbrel/app-data/bemind-pluto-next/|' dist/store/bemind-pluto-next/docker-compose.yml
 sed -i '' -e '/^[[:space:]]*#/d' -e 's/[[:space:]]*#.*$//' dist/store/bemind-pluto-next/umbrel-app.yml
 
 # Specific modifications for bemind-pluto using yq
