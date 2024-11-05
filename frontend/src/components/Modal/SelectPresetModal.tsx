@@ -98,8 +98,9 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
                 Selected Devices
               </Heading>
               <Flex gap={"1rem"} flexWrap={"wrap"}>
-                {devices.map((device) => (
+                {devices.map((device, i) => (
                   <HostnameBadge
+                    key={`hostname-badge-${i}`}
                     mac={device.mac}
                     hostname={device.info.hostname}
                     ip={device.ip}

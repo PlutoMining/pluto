@@ -106,8 +106,9 @@ export const PresetAccordion: React.FC<PresetProps> = ({
 
           {preset.associatedDevices && preset.associatedDevices.length > 0 ? (
             <Flex gap={"1rem"} flexWrap={"wrap"}>
-              {preset.associatedDevices?.map((device) => (
+              {preset.associatedDevices?.map((device, i) => (
                 <HostnameBadge
+                  key={`hostname-badge-${i}`}
                   mac={device.mac}
                   hostname={device.info.hostname}
                   ip={device.ip}
