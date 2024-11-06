@@ -332,7 +332,7 @@ const MonitoringPage: React.FC = () => {
               p={"1rem"}
               backgroundColor={dashboardSectionBg}
               border={`1px solid ${borderColor}`}
-              h={{ base: "2135px", tablet: "1250px" }}
+              h={{ base: "1970px", tablet: "1100px" }}
             >
               <Box h={"100%"} w={"100%"}>
                 <iframe
