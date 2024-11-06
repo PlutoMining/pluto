@@ -1,5 +1,6 @@
 import { Flex, useToken } from "@chakra-ui/react";
 import { PlutoLogo } from "../PlutoLogo";
+import { PlutoCircleLogo } from "../PlutoLogo/PlutoCircleLogo";
 
 interface LogoProps {}
 
@@ -8,7 +9,7 @@ export const Logo = ({}: LogoProps) => {
 
   return (
     <Flex gap={"0.5rem"} alignItems={"center"}>
-      <PlutoLogo color={color} />
+      <PlutoCircleLogo color={color} />
     </Flex>
   );
 };

@@ -266,7 +266,7 @@ export const NavBar = () => {
                     fontSize={"12px"}
                     opacity={0.8}
                     color={"body-text"}
-                    marginBottom={"1px"}
+                    marginBottom={"4px"}
                   >
                     V.{version}
                   </Text>
