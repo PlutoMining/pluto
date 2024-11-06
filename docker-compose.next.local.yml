@@ -56,7 +56,7 @@ services:
     # Container restart policy - restart unless manually stopped
     restart: unless-stopped
     env_file:
-      - discovery/.env.local
+      - discovery/.env.next.local
     environment:
       - PORT=7675
       - DETECT_MOCK_DEVICES=true
@@ -84,7 +84,7 @@ services:
     # Container restart policy - restart unless manually stopped
     restart: unless-stopped
     env_file:
-      - backend/.env.local
+      - backend/.env.next.local
     environment:
       - PORT=7676
       - AUTO_LISTEN=true
