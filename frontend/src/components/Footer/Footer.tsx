@@ -38,7 +38,12 @@ export const Footer = () => {
             justify={{ mobile: "space-between", tablet: "flex-start", desktop: "flex-start" }}
             w={{ mobile: "100%", tablet: "unset", desktop: "unset" }}
           >
-            <Text fontFamily={"heading"} fontSize={"xs"} color={"footer-text"} fontWeight={500}>
+            <Text
+              fontFamily={"heading"}
+              fontSize={"xs"}
+              color={"footer-terms-and-conditions"}
+              fontWeight={500}
+            >
               Terms & Conditions
             </Text>
             <Flex gap={"0.5rem"}>

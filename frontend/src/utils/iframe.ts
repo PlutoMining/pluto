@@ -59,23 +59,6 @@ export const restyleIframe =
     if (iframeDocument) {
       const style = iframeDocument.createElement("style");
       style.textContent = `
-
-      @font-face {
-        font-family: "Clash_Display";
-        src: url("/fonts/ClashDisplay-Extralight.woff2") format("woff2"),
-          url("/fonts/ClashDisplay-Extralight.woff") format("woff");
-        font-weight: 100;
-        font-style: normal;
-      }
-
-      @font-face {
-        font-family: "Clash_Display";
-        src: url("/fonts/ClashDisplay-Light.woff2") format("woff2"),
-          url("/fonts/ClashDisplay-Light.woff") format("woff");
-        font-weight: 200;
-        font-style: normal;
-      }
-
       @font-face {
         font-family: "Clash_Display";
         src: url("/fonts/ClashDisplay-Regular.woff2") format("woff2"),
@@ -83,45 +66,32 @@ export const restyleIframe =
         font-weight: 400;
         font-style: normal;
       }
-
-      @font-face {
-        font-family: "Clash_Display";
-        src: url("/fonts/ClashDisplay-Medium.woff2") format("woff2"),
-          url("/fonts/ClashDisplay-Medium.woff") format("woff");
-        font-weight: 500;
-        font-style: normal;
-      }
-
-      @font-face {
-        font-family: "Clash_Display";
-        src: url("/fonts/ClashDisplay-Semibold.woff2") format("woff2"),
-          url("/fonts/ClashDisplay-Semibold.woff") format("woff");
-        font-weight: 700;
-        font-style: normal;
-      }
-
-      @font-face {
-        font-family: "Clash_Display";
-        src: url("/fonts/ClashDisplay-Bold.woff2") format("woff2"),
-          url("/fonts/ClashDisplay-Bold.woff") format("woff");
-        font-weight: 800;
-        font-style: normal;
-      }
       html, body {
         font-family: "Azeret Mono", monospace;
         background-color: ${frameBgColor} !important;
       }
-      h2 {
+      h1 {
         font-family: "Clash_Display" !important;
         font-size: 32px !important;
-        font-weight: 500 !important;
+        font-weight: 400 !important;
         line-height: 39.36px !important;
         text-align: left !important;
         color: ${textColor} !important;
       }
-      section {
-        border: none !important;
-        border-radius: 0px !important;
+
+      h2 {
+        font-family: "Azeret Mono", monospace !important;
+        font-size: 18px !important;
+        font-weight: 500 !important;
+        line-height: 21.01px !important;
+        text-align: left !important;
+        color: ${textColor} !important;
+        text-transform: uppercase;
+      }
+
+      h2::before {
+        content: "/";
+        margin-right: 5px; /* Distanza tra il "/" e il testo dell'h2 */
       }
       `;
       iframeDocument.head.appendChild(style);

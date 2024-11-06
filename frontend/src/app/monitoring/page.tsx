@@ -32,8 +32,6 @@ import { ChangeEvent, useEffect, useState } from "react";
 const MonitoringTablePage: React.FC = () => {
   const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
 
-  const theme = useTheme();
-
   useEffect(() => {
     fetchDevicesAndDashboardsAndUpdate();
   }, []);

@@ -7,7 +7,6 @@ import {
   Slide,
   Stack,
   Text,
-  useColorMode,
   useDisclosure,
   useToken,
 } from "@chakra-ui/react";
@@ -21,14 +20,46 @@ import { CrossIcon } from "../icons/CrossIcon";
 import { DiscordLogo, GitLabLogo } from "../icons/FooterIcons";
 import { HamburgerIcon } from "../icons/HamburgerIcon";
 import { Logo } from "../icons/Logo";
+import { SettingsIcon } from "../icons/SettingsIcon/SettingsIcon";
+import { useSocket } from "@/providers/SocketProvider";
+import { Device } from "@pluto/interfaces";
 
 export const NavBar = () => {
-  const { isOpen, onOpen, onClose, onToggle } = useDisclosure();
+  const { isOpen, onToggle } = useDisclosure();
   const pathname = usePathname();
-
-  const { colorMode, toggleColorMode } = useColorMode();
-
   const [version, setVersion] = useState("");
+  const [devices, setDevices] = useState<Device[]>([]);
+
+  const { isConnected, socket } = useSocket();
+
+  useEffect(() => {
+    const listener = (e: Device) => {
+      setDevices((prevDevices) => {
+        if (!prevDevices) return [e]; // Se la lista è vuota, restituisci una lista con il dispositivo
+
+        // Trova l'indice del dispositivo da aggiornare
+        const deviceIndex = prevDevices.findIndex((device) => device.mac === e.mac);
+
+        if (deviceIndex === -1) {
+          // Se il dispositivo non è presente, aggiungilo alla lista
+          return [...prevDevices, e];
+        }
+
+        // Se il dispositivo è già presente, non fare nulla
+        return prevDevices;
+      });
+    };
+
+    if (isConnected) {
+      socket.on("stat_update", listener);
+      socket.on("error", listener);
+
+      return () => {
+        socket.off("stat_update", listener);
+        socket.off("error", listener);
+      };
+    }
+  }, [isConnected, socket]);
 
   useEffect(() => {
     const getVersion = async () => {
@@ -39,21 +70,13 @@ export const NavBar = () => {
     getVersion();
   }, []);
 
-  const [alert, setAlert] = useState<AlertInterface>();
-  const { isOpen: isOpenAlert, onOpen: onOpenAlert, onClose: onCloseAlert } = useDisclosure();
-
-  const closeAlert = () => {
-    setAlert(undefined);
-    onCloseAlert();
-  };
-
   const links = [
     {
       key: "dashboard",
       href: "/",
       component: (pathname?: string | null) => (
         <Box
-          color={pathname === "/" ? "primary-color" : "header-text"}
+          color={pathname === "/" ? "header-selected" : "header-text"}
           fontWeight={pathname === "/" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
@@ -65,7 +88,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "border-color",
+            backgroundColor: "header-selected-underline",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -82,8 +105,10 @@ export const NavBar = () => {
       component: (pathname?: string | null) => (
         <Box
           color={
-            pathname === "/monitoring" || /^\/monitoring/.test(pathname || "")
-              ? "primary-color"
+            devices?.length === 0
+              ? "header-text-disabled"
+              : pathname === "/monitoring" || /^\/monitoring/.test(pathname || "")
+              ? "header-selected"
               : "header-text"
           }
           fontWeight={
@@ -100,7 +125,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "border-color",
+            backgroundColor: "header-selected-underline",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -113,22 +138,28 @@ export const NavBar = () => {
     },
     {
       key: "settings",
-      href: "/settings",
+      href: "/device-settings",
       component: (pathname?: string | null) => (
         <Box
-          color={pathname === "/settings" ? "primary-color" : "header-text"}
-          fontWeight={pathname === "/settings" ? "700" : "500"}
+          color={
+            devices?.length === 0
+              ? "header-text-disabled"
+              : pathname === "/device-settings"
+              ? "header-selected"
+              : "header-text"
+          }
+          fontWeight={pathname === "/device-settings" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
           textTransform={"uppercase"}
           _after={{
-            display: pathname === "/settings" ? "block" : "none",
+            display: pathname === "/device-settings" ? "block" : "none",
             content: '""',
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "border-color",
+            backgroundColor: "header-selected-underline",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -144,7 +175,7 @@ export const NavBar = () => {
       href: "/presets",
       component: (pathname?: string | null) => (
         <Box
-          color={pathname === "/presets" ? "primary-color" : "header-text"}
+          color={pathname === "/presets" ? "header-selected" : "header-text"}
           fontWeight={pathname === "/presets" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
@@ -156,7 +187,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "border-color",
+            backgroundColor: "header-selected-underline",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -172,7 +203,7 @@ export const NavBar = () => {
       href: "/devices",
       component: (pathname?: string | null) => (
         <Box
-          color={pathname === "/devices" ? "primary-color" : "header-text"}
+          color={pathname === "/devices" ? "header-selected" : "header-text"}
           textTransform={"uppercase"}
           fontWeight={pathname === "/devices" ? "700" : "500"}
           fontFamily={"heading"}
@@ -184,7 +215,7 @@ export const NavBar = () => {
             width: "32px",
             height: "2px",
             borderRadius: "3px",
-            backgroundColor: "border-color",
+            backgroundColor: "header-selected-underline",
             position: "absolute",
             bottom: "0",
             left: "50%",
@@ -227,7 +258,7 @@ export const NavBar = () => {
                     fontSize={"12px"}
                     opacity={0.8}
                     color={"body-text"}
-                    marginBottom={"1px"}
+                    marginBottom={"4px"}
                   >
                     V.{version}
                   </Text>
@@ -252,24 +283,50 @@ export const NavBar = () => {
                   <Link
                     as={NextLink}
                     key={`md-nav-link-${link.key}`}
+                    whiteSpace="nowrap"
                     href={link.href}
-                    whiteSpace={"nowrap"}
                     _hover={{ textDecoration: "none" }}
+                    sx={{
+                      cursor: (() => {
+                        if (
+                          devices?.length === 0 &&
+                          link.href !== "/presets" &&
+                          link.href !== "/devices" &&
+                          link.href !== "/"
+                        ) {
+                          return "not-allowed";
+                        } else {
+                          return "pointer";
+                        }
+                      })(),
+                      pointerEvents: (() => {
+                        if (
+                          devices?.length === 0 &&
+                          link.href !== "/presets" &&
+                          link.href !== "/devices" &&
+                          link.href !== "/"
+                        ) {
+                          return "none";
+                        } else {
+                          return "auto";
+                        }
+                      })(),
+                    }}
                   >
                     {link.component(pathname)}
                   </Link>
                 ))}
               </HStack>
               <Flex alignItems="center" gap={"1rem"} color={"#fff"}>
-                {/* <Text fontFamily={"heading"} fontSize={"14px"}>
-                  Notification
-                </Text>
-                <Text fontFamily={"heading"} fontSize={"14px"}>
-                  Profile
-                </Text> */}
-                {/* <Button onClick={toggleColorMode}>
-                  {colorMode === "light" ? "Dark" : "Light"} Mode
-                </Button> */}
+                <Link
+                  as={NextLink}
+                  key={"md-nav-link-settings"}
+                  href={"/settings"}
+                  whiteSpace={"nowrap"}
+                  _hover={{ textDecoration: "none" }}
+                >
+                  <SettingsIcon color={"body-text"} />
+                </Link>
               </Flex>
 
               <Box aria-label="Open Menu" display={{ tabletL: "none" }} cursor={"pointer"}>
@@ -311,6 +368,9 @@ export const NavBar = () => {
                 <Stack alignItems={"start"} as="nav" spacing={"2rem"}>
                   {links.map((link) => (
                     <Link
+                      onClick={() => {
+                        onToggle();
+                      }}
                       as={NextLink}
                       key={`sm-nav-link-${link.key}`}
                       href={link.href}
@@ -366,9 +426,6 @@ export const NavBar = () => {
           </Slide>
         ) : null}
       </Box>
-      {alert && (
-        <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
-      )}
     </>
   );
 };

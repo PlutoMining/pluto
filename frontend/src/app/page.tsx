@@ -71,7 +71,7 @@ const OverviewPage: React.FC = () => {
   };
 
   const [bgColor] = useToken("colors", ["bg-color"]);
-  const [graphBgColor] = useToken("colors", ["dashboard-bg-section"]);
+  const [graphBgColor] = useToken("colors", ["dashboard-section-bg"]);
 
   const [textColor] = useToken("colors", ["body-color"]);
 
@@ -89,7 +89,7 @@ const OverviewPage: React.FC = () => {
         </Heading>
 
         {dashboardPublicUrl && (
-          <Box backgroundColor={"bg-color"} h={{ base: "1555px", tablet: "970px" }}>
+          <Box backgroundColor={"bg-color"} h={{ base: "1450px", tablet: "900px" }}>
             <Box borderRadius={"1rem"} h={"100%"} w={"100%"}>
               <iframe
                 key={colorMode} // Forza il ri-rendering quando colorMode cambia

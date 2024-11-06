@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 6,
+    "id": 18,
     "links": [],
     "panels": [
         {
@@ -412,58 +412,6 @@
                 "type": "prometheus",
                 "uid": "PBFA97CFB590B2093"
             },
-            "gridPos": {
-                "h": 1,
-                "w": 12,
-                "x": 0,
-                "y": 19
-            },
-            "id": 11,
-            "options": {
-                "code": {
-                    "language": "plaintext",
-                    "showLineNumbers": false,
-                    "showMiniMap": false
-                },
-                "content": "",
-                "mode": "markdown"
-            },
-            "pluginVersion": "11.1.2",
-            "title": "Heat",
-            "transparent": true,
-            "type": "text"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-            },
-            "gridPos": {
-                "h": 1,
-                "w": 12,
-                "x": 12,
-                "y": 19
-            },
-            "id": 19,
-            "options": {
-                "code": {
-                    "language": "plaintext",
-                    "showLineNumbers": false,
-                    "showMiniMap": false
-                },
-                "content": "",
-                "mode": "markdown"
-            },
-            "pluginVersion": "11.1.2",
-            "title": "Core Voltage",
-            "transparent": true,
-            "type": "text"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-            },
             "description": "",
             "fieldConfig": {
                 "defaults": {
@@ -524,7 +472,7 @@
                 "h": 7,
                 "w": 6,
                 "x": 0,
-                "y": 20
+                "y": 19
             },
             "id": 10,
             "options": {
@@ -596,7 +544,7 @@
                 "h": 7,
                 "w": 6,
                 "x": 6,
-                "y": 20
+                "y": 19
             },
             "id": 4,
             "options": {
@@ -751,7 +699,7 @@
                 "h": 7,
                 "w": 12,
                 "x": 12,
-                "y": 20
+                "y": 19
             },
             "id": 1,
             "options": {
@@ -821,6 +769,7 @@
                     "useBackend": false
                 }
             ],
+            "title": "Core Voltage",
             "type": "timeseries"
         }
     ],

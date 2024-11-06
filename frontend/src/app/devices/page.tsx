@@ -165,7 +165,7 @@ const DevicePage: React.FC = () => {
     onCloseAlert();
   }, [onCloseAlert]);
 
-  const [itemBg] = useToken("colors", ["item-bg"]);
+  const [ctaIconColor] = useToken("colors", ["cta-primary-icon-color"]);
 
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
@@ -182,7 +182,7 @@ const DevicePage: React.FC = () => {
               <Button
                 variant={"primary"}
                 onClick={onOpen}
-                rightIcon={<AddIcon color={itemBg} />}
+                rightIcon={<AddIcon color={ctaIconColor} />}
                 label="Add device"
               ></Button>
             </Flex>

@@ -1,15 +1,4 @@
-import {
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
-  Text,
-  Th,
-  Thead,
-  Tooltip,
-  Tr,
-  useTheme,
-} from "@chakra-ui/react";
+import { Table, TableContainer, Tbody, Td, Th, Thead, Tooltip, Tr } from "@chakra-ui/react";
 import { Device } from "@pluto/interfaces";
 import { DeviceStatusBadge } from "../Badge";
 import { getMinerName } from "@/utils/minerMap";
@@ -22,8 +11,6 @@ interface DeviceTableProps {
 }
 
 export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceFunction }) => {
-  const theme = useTheme();
-
   return (
     <TableContainer display={{ base: "none", tablet: "block" }}>
       <Table variant="simple" sx={{ borderCollapse: "collapse", width: "100%" }}>
