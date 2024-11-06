@@ -439,7 +439,8 @@ function ModalBodyContent({
                                         <Td borderColor={borderColor}>{device.ip}</Td>
                                         <Td borderColor={borderColor}>{device.mac}</Td>
                                         <Td borderColor={borderColor}>
-                                          {getMinerName(device.info.boardVersion)}
+                                          {getMinerName(device.info.boardVersion) ||
+                                            device.info?.deviceModel}
                                         </Td>
                                         <Td borderColor={borderColor}>{device.info.ASICModel}</Td>
                                         <Td borderColor={borderColor}>{device.info.version}</Td>
@@ -553,7 +554,8 @@ function ModalBodyContent({
                                                 fontSize={"sm"}
                                                 fontFamily={"body"}
                                               >
-                                                {getMinerName(device.info.boardVersion)}
+                                                {getMinerName(device.info.boardVersion) ||
+                                                  device.info?.deviceModel}
                                               </Text>
                                             </Flex>
                                             <Flex justify={"space-between"}>
@@ -816,7 +818,8 @@ function ModalBodyContent({
                                       <Td borderColor={borderColor}>{device.ip}</Td>
                                       <Td borderColor={borderColor}>{device.mac}</Td>
                                       <Td borderColor={borderColor}>
-                                        {getMinerName(device.info.boardVersion)}
+                                        {getMinerName(device.info.boardVersion) ||
+                                          device.info?.deviceModel}
                                       </Td>
                                       <Td borderColor={borderColor}>{device.info.ASICModel}</Td>
                                       <Td borderColor={borderColor}>{device.info.version}</Td>
@@ -976,7 +979,8 @@ function ModalBodyContent({
                                             fontSize={"sm"}
                                             fontFamily={"body"}
                                           >
-                                            {getMinerName(device.info.boardVersion)}
+                                            {getMinerName(device.info.boardVersion) ||
+                                              device.info?.deviceModel}
                                           </Text>
                                         </Flex>
                                         <Flex justify={"space-between"}>
