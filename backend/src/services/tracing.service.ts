@@ -84,6 +84,10 @@ export async function updateOriginalIpsListeners(newDevices: Device[], traceLogs
           // Rimuovi le metriche di Prometheus
           deleteMetricsForDevice(sanitizeHostname(ipMap[existingIp].info?.hostname!));
           logger.info(`Deleted Prometheus metrics for IP ${existingIp}`);
+          ioInstance?.emit("device_removed", {
+            ipRemoved: existingIp,
+            remainingIps: Object.keys(ipMap).filter((k) => k !== existingIp),
+          });
         } catch (err) {
           logger.error(`Failed to delete Grafana dashboard for hostname ${existingIp}:`, err);
         }
