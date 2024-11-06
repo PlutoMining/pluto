@@ -22,13 +22,11 @@ import { CrossIcon } from "../icons/CrossIcon";
 import { DiscordLogo, GitLabLogo } from "../icons/FooterIcons";
 import { HamburgerIcon } from "../icons/HamburgerIcon";
 import { Logo } from "../icons/Logo";
+import { SettingsIcon } from "../icons/SettingsIcon/SettingsIcon";
 
 export const NavBar = () => {
-  const { isOpen, onOpen, onClose, onToggle } = useDisclosure();
+  const { isOpen, onToggle } = useDisclosure();
   const pathname = usePathname();
-
-  const { colorMode, toggleColorMode } = useColorMode();
-
   const [version, setVersion] = useState("");
 
   useEffect(() => {
@@ -114,17 +112,17 @@ export const NavBar = () => {
     },
     {
       key: "settings",
-      href: "/settings",
+      href: "/device-settings",
       component: (pathname?: string | null) => (
         <Box
-          color={pathname === "/settings" ? "header-selected" : "header-text"}
-          fontWeight={pathname === "/settings" ? "700" : "500"}
+          color={pathname === "/device-settings" ? "header-selected" : "header-text"}
+          fontWeight={pathname === "/device-settings" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
           textTransform={"uppercase"}
           _after={{
-            display: pathname === "/settings" ? "block" : "none",
+            display: pathname === "/device-settings" ? "block" : "none",
             content: '""',
             width: "32px",
             height: "2px",
@@ -199,6 +197,7 @@ export const NavBar = () => {
   ];
 
   const [primaryColor] = useToken("colors", ["primary-color"]);
+  const [textColor] = useToken("colors", ["bg-color"]);
 
   return (
     <>
@@ -262,15 +261,15 @@ export const NavBar = () => {
                 ))}
               </HStack>
               <Flex alignItems="center" gap={"1rem"} color={"#fff"}>
-                {/* <Text fontFamily={"heading"} fontSize={"14px"}>
-                  Notification
-                </Text>
-                <Text fontFamily={"heading"} fontSize={"14px"}>
-                  Profile
-                </Text> */}
-                <Button onClick={toggleColorMode}>
-                  {colorMode === "light" ? "Dark" : "Light"} Mode
-                </Button>
+                <Link
+                  as={NextLink}
+                  key={"md-nav-link-settings"}
+                  href={"/settings"}
+                  whiteSpace={"nowrap"}
+                  _hover={{ textDecoration: "none" }}
+                >
+                  <SettingsIcon color={"body-text"} />
+                </Link>
               </Flex>
 
               <Box aria-label="Open Menu" display={{ tabletL: "none" }} cursor={"pointer"}>
