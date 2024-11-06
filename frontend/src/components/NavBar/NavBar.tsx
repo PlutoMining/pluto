@@ -118,10 +118,6 @@ export const NavBar = () => {
           fontSize={"sm"}
           position={"relative"}
           textTransform={"uppercase"}
-          cursor={devices?.length === 0 ? "not-allowed" : "pointer"}
-          pointerEvents={
-            devices?.length === 0 ? "none" : "auto" // Disabilita clic
-          }
           _after={{
             display:
               pathname === "/monitoring" || /^\/monitoring/.test(pathname || "") ? "block" : "none",
@@ -157,10 +153,6 @@ export const NavBar = () => {
           fontSize={"sm"}
           position={"relative"}
           textTransform={"uppercase"}
-          cursor={devices?.length === 0 ? "not-allowed" : "pointer"}
-          pointerEvents={
-            devices?.length === 0 ? "none" : "auto" // Disabilita clic
-          }
           _after={{
             display: pathname === "/device-settings" ? "block" : "none",
             content: '""',
@@ -294,6 +286,32 @@ export const NavBar = () => {
                     whiteSpace="nowrap"
                     href={link.href}
                     _hover={{ textDecoration: "none" }}
+                    sx={{
+                      cursor: (() => {
+                        if (
+                          devices?.length === 0 &&
+                          link.href !== "/presets" &&
+                          link.href !== "/devices" &&
+                          link.href !== "/"
+                        ) {
+                          return "not-allowed";
+                        } else {
+                          return "pointer";
+                        }
+                      })(),
+                      pointerEvents: (() => {
+                        if (
+                          devices?.length === 0 &&
+                          link.href !== "/presets" &&
+                          link.href !== "/devices" &&
+                          link.href !== "/"
+                        ) {
+                          return "none";
+                        } else {
+                          return "auto";
+                        }
+                      })(),
+                    }}
                   >
                     {link.component(pathname)}
                   </Link>
