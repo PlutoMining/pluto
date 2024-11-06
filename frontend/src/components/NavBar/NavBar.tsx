@@ -1,4 +1,5 @@
 "use client";
+import { useSocket } from "@/providers/SocketProvider";
 import {
   Box,
   Flex,
@@ -10,19 +11,16 @@ import {
   useDisclosure,
   useToken,
 } from "@chakra-ui/react";
+import { Device } from "@pluto/interfaces";
 import axios from "axios";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import Alert from "../Alert/Alert";
-import { AlertInterface } from "../Alert/interfaces";
 import { CrossIcon } from "../icons/CrossIcon";
 import { DiscordLogo, GitLabLogo } from "../icons/FooterIcons";
 import { HamburgerIcon } from "../icons/HamburgerIcon";
 import { Logo } from "../icons/Logo";
 import { SettingsIcon } from "../icons/SettingsIcon/SettingsIcon";
-import { useSocket } from "@/providers/SocketProvider";
-import { Device } from "@pluto/interfaces";
 
 export const NavBar = () => {
   const { isOpen, onToggle } = useDisclosure();
@@ -50,12 +48,23 @@ export const NavBar = () => {
       });
     };
 
+    const deviceRemovedListener = (e: { ipRemoved: string; remainingIps: string[] }) => {
+      setDevices((prevDevices) => {
+        // Trova l'indice del dispositivo da aggiornare
+        const newDevices = prevDevices.filter((device) => device.ip !== e.ipRemoved);
+
+        return newDevices;
+      });
+    };
+
     if (isConnected) {
       socket.on("stat_update", listener);
+      socket.on("device_removed", deviceRemovedListener);
       socket.on("error", listener);
 
       return () => {
         socket.off("stat_update", listener);
+        socket.on("device_removed", deviceRemovedListener);
         socket.off("error", listener);
       };
     }
