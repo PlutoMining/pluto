@@ -42,6 +42,16 @@
       "restart": true,
       "localRoot": "${workspaceFolder}/backend/src", // Puntiamo ai file sorgente TypeScript
       "remoteRoot": "/app/src" // Assicurati che corrisponda alla cartella nel container
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Docker: Attach to Discovery",
+      "port": 9229,
+      "address": "localhost",
+      "restart": true,
+      "localRoot": "${workspaceFolder}/discovery/src", // Puntiamo ai file sorgente TypeScript
+      "remoteRoot": "/app/src" // Assicurati che corrisponda alla cartella nel container
     }
   ]
 }
