@@ -21,7 +21,6 @@ import {
   Text,
   useAccordionItemState,
   useDisclosure,
-  useTheme,
   useToken,
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
@@ -121,6 +120,10 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           }))
         : [];
       setCheckedFetchedItems(newValues);
+
+      if (value) {
+        setActiveIndex([]);
+      }
     },
     [devices]
   );
@@ -488,7 +491,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     stratumUser: "",
   });
 
-  const theme = useTheme();
   const { isConnected, socket } = useSocket();
 
   useEffect(() => {
