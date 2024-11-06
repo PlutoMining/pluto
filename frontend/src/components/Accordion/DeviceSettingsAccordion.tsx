@@ -828,7 +828,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     setIsRestartModalOpen(true);
   };
 
-  const [bgColor] = useToken("colors", ["item-bg"]);
+  const [textColor] = useToken("colors", ["body-text"]);
 
   return (
     <>
@@ -1188,7 +1188,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           <Flex justifyContent={"flex-start"}>
             <Button
               variant="primary"
-              rightIcon={<ArrowIcon color={bgColor} />}
+              rightIcon={<ArrowIcon color={textColor} />}
               onClick={() => setIsSaveAndRestartModalOpen(true)}
               disabled={isDeviceValid()}
               label="Save"

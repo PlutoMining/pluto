@@ -312,6 +312,9 @@ export const NavBar = () => {
                 <Stack alignItems={"start"} as="nav" spacing={"2rem"}>
                   {links.map((link) => (
                     <Link
+                      onClick={() => {
+                        onToggle();
+                      }}
                       as={NextLink}
                       key={`sm-nav-link-${link.key}`}
                       href={link.href}

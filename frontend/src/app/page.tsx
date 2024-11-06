@@ -89,7 +89,7 @@ const OverviewPage: React.FC = () => {
         </Heading>
 
         {dashboardPublicUrl && (
-          <Box backgroundColor={"bg-color"} h={{ base: "1450px", tablet: "860px" }}>
+          <Box backgroundColor={"bg-color"} h={{ base: "1450px", tablet: "900px" }}>
             <Box borderRadius={"1rem"} h={"100%"} w={"100%"}>
               <iframe
                 key={colorMode} // Forza il ri-rendering quando colorMode cambia

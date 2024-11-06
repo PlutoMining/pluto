@@ -1,18 +1,15 @@
+import { useToken } from "@chakra-ui/react";
 import React, { MouseEventHandler } from "react";
 
 interface HamburgerIconProps {
-  color?: string;
   w?: string;
   h?: string;
   onClick: MouseEventHandler<SVGSVGElement>;
 }
 
-export const HamburgerIcon = ({
-  color = "white",
-  w = "24",
-  h = "24",
-  onClick,
-}: HamburgerIconProps) => {
+export const HamburgerIcon = ({ w = "24", h = "24", onClick }: HamburgerIconProps) => {
+  const [strokeColor] = useToken("colors", ["logo-color"]);
+
   return (
     <svg
       width={w}
@@ -24,7 +21,7 @@ export const HamburgerIcon = ({
     >
       <path
         d="M6.66663 8H25.3333M6.66663 16H25.3333M6.66663 24H25.3333"
-        stroke={color}
+        stroke={strokeColor}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
