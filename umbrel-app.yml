@@ -24,11 +24,7 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >
-<<<<<<< HEAD
   Version 0.6.0-beta.7
-=======
-  Version 0.6.0-beta.9
->>>>>>> beb29e6214c64e02c0dbd63de49d3905e547a19e
   - Rebranding
   - Dark mode
   - NerdAxe support
