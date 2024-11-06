@@ -22,14 +22,12 @@ import {
   Th,
   Thead,
   Tr,
-  useTheme,
   VStack,
   Accordion as ChakraAccordion,
   AccordionItem as ChakraAccordionItem,
   AccordionButton,
   AccordionIcon,
   AccordionPanel,
-  Divider,
   useToken,
 } from "@chakra-ui/react";
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
@@ -42,6 +40,7 @@ import Button from "../Button/Button";
 import { Checkbox } from "../Checkbox";
 import { AddIcon } from "../icons/AddIcon";
 import { CircularProgressWithDots } from "../ProgressBar/CircularProgressWithDots";
+import { RegisterDeviceTable } from "../Table";
 
 interface RegisterDevicesModalProps {
   isOpen: boolean;
@@ -80,9 +79,9 @@ function ModalBodyContent({
     setIpAndMacAddress({ ipAddress: "", macAddress: "" });
     setSearchError(null);
     setDiscoveredDevices(null);
-    if (tabIndex === 1) {
-      getDiscoverDevices();
-    }
+    // if (tabIndex === 1) {
+    getDiscoverDevices();
+    // }
   }, [tabIndex]);
 
   const getDiscoverDevices = async () => {
@@ -204,8 +203,6 @@ function ModalBodyContent({
       [name]: value,
     }));
   }, []);
-  //   return ipAndMacAddress.ipAddress === "" || ipAndMacAddress.macAddress === ""
-  // };
 
   const hasEmptyFields = (obj: any): boolean => {
     for (const key in obj) {
@@ -235,11 +232,7 @@ function ModalBodyContent({
 
   const [borderColor] = useToken("colors", ["border-color"]);
   const [bgColor] = useToken("colors", ["input-bg"]);
-  const [textColor] = useToken("colors", ["body-text"]);
   const [accentColor] = useToken("colors", ["accent-color"]);
-  const [thBg] = useToken("colors", ["th-bg"]);
-  const [thColor] = useToken("colors", ["th-color"]);
-  const [primaryColor] = useToken("colors", ["primary-color"]);
 
   return (
     <Box p={0} pt={"1rem"} height={"100%"}>
@@ -247,7 +240,7 @@ function ModalBodyContent({
         flexDir={"column"}
         gap={"2rem"}
         borderRadius={0}
-        p={"1rem"}
+        p={{ base: "0.5rem", tablet: "1rem" }}
         borderWidth={"1px"}
         borderColor={"border-color"}
         h={"100%"}
@@ -301,7 +294,7 @@ function ModalBodyContent({
               </Tab>
             </TabList>
 
-            <TabPanels height={"calc(100% - 2.5rem)"}>
+            <TabPanels height={"calc(100% - 2.5rem)"} overflow={"scroll"}>
               <TabPanel>
                 <VStack alignItems={"start"} spacing={"1rem"}>
                   <Flex w={"100%"} gap={"1rem"} flexDirection={{ base: "column", mobileL: "row" }}>
@@ -354,250 +347,14 @@ function ModalBodyContent({
                             >
                               Result for {ipAndMacAddress.macAddress}
                             </Text>
-                            <Box>
-                              <TableContainer display={{ base: "none", tablet: "block" }}>
-                                <Table
-                                  variant="simple"
-                                  h={"100%"}
-                                  borderColor={borderColor}
-                                  borderWidth={"1px"}
-                                >
-                                  <Thead>
-                                    <Tr>
-                                      <Th
-                                        bg={thBg}
-                                        borderColor={borderColor}
-                                        fontWeight={500}
-                                        color={thColor}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"xs"}
-                                      >
-                                        Hostname
-                                      </Th>
-                                      <Th
-                                        bg={thBg}
-                                        borderColor={borderColor}
-                                        fontWeight={500}
-                                        color={thColor}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"xs"}
-                                      >
-                                        IP
-                                      </Th>
-                                      <Th
-                                        bg={thBg}
-                                        borderColor={borderColor}
-                                        fontWeight={500}
-                                        color={thColor}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"xs"}
-                                      >
-                                        Mac Address
-                                      </Th>
-                                      <Th
-                                        bg={thBg}
-                                        borderColor={borderColor}
-                                        fontWeight={500}
-                                        color={thColor}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"xs"}
-                                      >
-                                        Miner
-                                      </Th>
-                                      <Th
-                                        bg={thBg}
-                                        borderColor={borderColor}
-                                        fontWeight={500}
-                                        color={thColor}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"xs"}
-                                      >
-                                        Asic
-                                      </Th>
-                                      <Th
-                                        bg={thBg}
-                                        borderColor={borderColor}
-                                        fontWeight={500}
-                                        color={thColor}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"xs"}
-                                      >
-                                        FW v.
-                                      </Th>
-                                    </Tr>
-                                  </Thead>
-                                  <Tbody>
-                                    {discoveredDevices.map((device, index) => (
-                                      <Tr key={`tab0-device-${device.ip}`}>
-                                        <Td borderColor={borderColor}>{device.info.hostname}</Td>
-                                        <Td borderColor={borderColor}>{device.ip}</Td>
-                                        <Td borderColor={borderColor}>{device.mac}</Td>
-                                        <Td borderColor={borderColor}>
-                                          {getMinerName(device.info.boardVersion)}
-                                        </Td>
-                                        <Td borderColor={borderColor}>{device.info.ASICModel}</Td>
-                                        <Td borderColor={borderColor}>{device.info.version}</Td>
-                                      </Tr>
-                                    ))}
-                                  </Tbody>
-                                </Table>
-                              </TableContainer>
-
-                              <Box
-                                display={{ base: "block", tablet: "none" }}
-                                height={"calc(100% - 6rem)"}
-                                position="relative"
-                                overflow={"scroll"}
-                              >
-                                <Box
-                                  height="100%"
-                                  overflow="auto" // Overflow al contenuto scrollabile
-                                  paddingBottom="50px" // Spazio per la sfumatura
-                                >
-                                  <ChakraAccordion
-                                    allowMultiple
-                                    as={Flex}
-                                    flexDir={"column"}
-                                    backgroundColor={"td-bg"}
-                                    borderWidth={"1px"}
-                                    borderColor={"border-color"}
-                                    borderRadius={0}
-                                  >
-                                    {discoveredDevices?.map((device, index) => (
-                                      <ChakraAccordionItem
-                                        key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
-                                        borderTopWidth={index > 0 ? "1px" : "0"}
-                                        borderBottomWidth={"0!important"}
-                                      >
-                                        <AccordionButton
-                                          p={"1rem"}
-                                          justifyContent={"space-between"}
-                                          _hover={{ backgroundColor: "none" }}
-                                          bg={"th-bg"}
-                                        >
-                                          <Flex gap={"1rem"} alignItems={"center"}>
-                                            <AccordionIcon />
-                                            <Heading
-                                              fontSize={"sm"}
-                                              fontWeight={600}
-                                              textTransform={"capitalize"}
-                                              fontFamily={"body"}
-                                            >
-                                              {device.info.hostname}
-                                            </Heading>
-                                          </Flex>
-                                        </AccordionButton>
-                                        <AccordionPanel
-                                          p={0}
-                                          as={Flex}
-                                          flexDir={"column"}
-                                          alignItems={"flex-start"}
-                                        >
-                                          <Flex
-                                            p={"1rem"}
-                                            flexDirection={"column"}
-                                            gap={"0.5rem"}
-                                            w={"100%"}
-                                          >
-                                            <Flex justify={"space-between"}>
-                                              <Text
-                                                fontWeight={500}
-                                                textTransform={"capitalize"}
-                                                fontSize={"sm"}
-                                                fontFamily={"heading"}
-                                              >
-                                                IP
-                                              </Text>
-                                              <Text
-                                                fontWeight={400}
-                                                fontSize={"sm"}
-                                                fontFamily={"body"}
-                                              >
-                                                {device.ip}
-                                              </Text>
-                                            </Flex>
-                                            <Flex justify={"space-between"}>
-                                              <Text
-                                                fontWeight={500}
-                                                textTransform={"capitalize"}
-                                                fontSize={"sm"}
-                                                fontFamily={"heading"}
-                                              >
-                                                Mac Address
-                                              </Text>
-                                              <Text
-                                                fontWeight={400}
-                                                fontSize={"sm"}
-                                                fontFamily={"body"}
-                                              >
-                                                {device.mac}
-                                              </Text>
-                                            </Flex>
-                                            <Flex justify={"space-between"}>
-                                              <Text
-                                                fontWeight={500}
-                                                textTransform={"capitalize"}
-                                                fontSize={"sm"}
-                                                fontFamily={"heading"}
-                                              >
-                                                Miner
-                                              </Text>
-                                              <Text
-                                                fontWeight={400}
-                                                fontSize={"sm"}
-                                                fontFamily={"body"}
-                                              >
-                                                {getMinerName(device.info.boardVersion)}
-                                              </Text>
-                                            </Flex>
-                                            <Flex justify={"space-between"}>
-                                              <Text
-                                                fontWeight={500}
-                                                textTransform={"capitalize"}
-                                                fontSize={"sm"}
-                                                fontFamily={"heading"}
-                                              >
-                                                ASIC
-                                              </Text>
-                                              <Text
-                                                fontWeight={400}
-                                                fontSize={"sm"}
-                                                fontFamily={"body"}
-                                              >
-                                                {device.info.ASICModel}
-                                              </Text>
-                                            </Flex>
-                                            <Flex justify={"space-between"}>
-                                              <Text
-                                                fontWeight={500}
-                                                textTransform={"capitalize"}
-                                                fontSize={"sm"}
-                                                fontFamily={"heading"}
-                                              >
-                                                FW v.
-                                              </Text>
-                                              <Text
-                                                fontWeight={400}
-                                                fontSize={"sm"}
-                                                fontFamily={"body"}
-                                              >
-                                                {device.info.version}
-                                              </Text>
-                                            </Flex>
-                                          </Flex>
-                                        </AccordionPanel>
-                                      </ChakraAccordionItem>
-                                    ))}
-                                  </ChakraAccordion>
-                                </Box>
-                              </Box>
-                            </Box>
+                            <RegisterDeviceTable
+                              devices={discoveredDevices}
+                              onChange={handleCheckbox}
+                              allChecked={allChecked}
+                              checkedItems={checkedFetchedItems}
+                              handleAllCheckbox={handleAllCheckbox}
+                              selectedTab={tabIndex}
+                            />
                             <Flex align={"start"}>
                               <Flex gap={"1rem"}>
                                 <Button
@@ -681,357 +438,15 @@ function ModalBodyContent({
                           </ChakraCheckbox>
                         </Flex>
 
-                        <Box
-                          display={{ base: "none", tablet: "block" }}
-                          height={"calc(100% - 5.5rem)"}
-                          position="relative" // Aggiungi il posizionamento relativo al contenitore principale
-                        >
-                          <Box
-                            height="100%"
-                            overflow="auto" // Overflow al contenuto scrollabile
-                            paddingBottom="50px" // Spazio per la sfumatura
-                          >
-                            <TableContainer overflowY={"scroll"}>
-                              <Table
-                                variant="simple"
-                                h={"100%"}
-                                borderColor={borderColor}
-                                borderWidth={"1px"}
-                              >
-                                <Thead>
-                                  <Tr>
-                                    <Th borderColor={borderColor} bg={thBg}>
-                                      <ChakraCheckbox
-                                        borderRadius={0}
-                                        alignItems="center" // Allinea verticalmente checkbox e testo
-                                        borderColor={borderColor}
-                                        sx={{
-                                          width: "100%",
-                                          "& .chakra-checkbox__control": {
-                                            height: "1rem",
-                                            width: "1rem",
-                                            borderRadius: 0,
-                                            bg: "bgColor",
-                                            borderColor: borderColor,
-                                          },
-                                          "& .chakra-checkbox__control[data-checked]": {
-                                            bg: accentColor,
-                                            borderColor: borderColor,
-                                            color: borderColor,
-                                          },
-                                          "& .chakra-checkbox__control[data-checked]:hover": {
-                                            bg: accentColor,
-                                            borderColor: borderColor,
-                                            color: borderColor,
-                                          },
-                                          "& .chakra-checkbox__control:focus": {
-                                            borderColor: borderColor,
-                                          },
-                                        }}
-                                        isChecked={allChecked}
-                                        // isIndeterminate={isIndeterminate}
-                                        onChange={(e) => handleAllCheckbox(e.target.checked)}
-                                      >
-                                        <Text
-                                          fontWeight={500}
-                                          color={textColor}
-                                          fontFamily={"heading"}
-                                          textTransform={"capitalize"}
-                                          fontSize={"xs"}
-                                          pl={"0.5rem"}
-                                        >
-                                          Hostname
-                                        </Text>
-                                      </ChakraCheckbox>
-                                    </Th>
-                                    <Th borderColor={borderColor} bg={thBg}>
-                                      <Text
-                                        fontWeight={500}
-                                        color={textColor}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"xs"}
-                                      >
-                                        IP
-                                      </Text>
-                                    </Th>
-                                    <Th borderColor={borderColor} bg={thBg}>
-                                      <Text
-                                        fontWeight={500}
-                                        color={textColor}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"xs"}
-                                      >
-                                        Mac Address
-                                      </Text>
-                                    </Th>
-                                    <Th borderColor={borderColor} bg={thBg}>
-                                      <Text
-                                        fontWeight={500}
-                                        color={textColor}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"xs"}
-                                      >
-                                        Miner
-                                      </Text>
-                                    </Th>
-                                    <Th borderColor={borderColor} bg={thBg}>
-                                      <Text
-                                        fontWeight={500}
-                                        color={textColor}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"xs"}
-                                      >
-                                        Asic
-                                      </Text>
-                                    </Th>
-                                    <Th borderColor={borderColor} bg={thBg}>
-                                      <Text
-                                        fontWeight={500}
-                                        color={textColor}
-                                        fontFamily={"heading"}
-                                        textTransform={"capitalize"}
-                                        fontSize={"xs"}
-                                      >
-                                        FW v.
-                                      </Text>
-                                    </Th>
-                                  </Tr>
-                                </Thead>
-                                <Tbody fontSize={"14px"}>
-                                  {discoveredDevices?.map((device, index) => (
-                                    <Tr key={`tab1-device-${device.ip}`}>
-                                      <Td borderColor={borderColor}>
-                                        <Checkbox
-                                          id={device.mac}
-                                          name={device.mac}
-                                          label={device.info.hostname}
-                                          onChange={() => handleCheckbox(index)}
-                                          isChecked={checkedFetchedItems[index]}
-                                        />
-                                      </Td>
-                                      <Td borderColor={borderColor}>{device.ip}</Td>
-                                      <Td borderColor={borderColor}>{device.mac}</Td>
-                                      <Td borderColor={borderColor}>
-                                        {getMinerName(device.info.boardVersion)}
-                                      </Td>
-                                      <Td borderColor={borderColor}>{device.info.ASICModel}</Td>
-                                      <Td borderColor={borderColor}>{device.info.version}</Td>
-                                    </Tr>
-                                  ))}
-                                </Tbody>
-                              </Table>
-                            </TableContainer>
-                          </Box>
-                          {/* <Box
-                            position="absolute"
-                            bottom="0"
-                            left="0"
-                            width="100%"
-                            height="50px"
-                            background={`linear-gradient(to top, ${bgColor}, transparent)`}
-                            pointerEvents="none"
-                          /> */}
-                        </Box>
-                        <Box
-                          display={{ base: "block", tablet: "none" }}
-                          height={"calc(100% - 6rem)"}
-                          position="relative"
-                          overflow={"scroll"}
-                        >
-                          <Box
-                            height="100%"
-                            overflow="auto" // Overflow al contenuto scrollabile
-                            paddingBottom="50px" // Spazio per la sfumatura
-                          >
-                            {discoveredDevices && discoveredDevices.length > 0 ? (
-                              <ChakraAccordion
-                                allowMultiple
-                                as={Flex}
-                                flexDir={"column"}
-                                backgroundColor={"bg-color"}
-                                borderWidth={"1px"}
-                                borderColor={"border-color"}
-                                borderRadius={0}
-                                overflow={"scroll"}
-                              >
-                                {discoveredDevices?.map((device, index) => (
-                                  <ChakraAccordionItem
-                                    key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
-                                    borderTopWidth={index > 0 ? "1px" : "0"}
-                                    borderBottomWidth={"0!important"}
-                                  >
-                                    <AccordionButton
-                                      p={"1rem"}
-                                      justifyContent={"space-between"}
-                                      _hover={{ backgroundColor: "none" }}
-                                      as={Flex}
-                                      alignItems={"center"}
-                                      justify={"space-between"}
-                                      bg={"th-bg"}
-                                    >
-                                      <Flex gap={"1rem"} alignItems={"center"}>
-                                        <AccordionIcon />
-                                        <Heading
-                                          fontSize={"sm"}
-                                          fontWeight={600}
-                                          textTransform={"capitalize"}
-                                          fontFamily={"body"}
-                                        >
-                                          {device.info.hostname}
-                                        </Heading>
-                                      </Flex>
+                        <RegisterDeviceTable
+                          devices={discoveredDevices}
+                          onChange={handleCheckbox}
+                          allChecked={allChecked}
+                          checkedItems={checkedFetchedItems}
+                          handleAllCheckbox={handleAllCheckbox}
+                          selectedTab={tabIndex}
+                        />
 
-                                      <ChakraCheckbox
-                                        borderColor={borderColor}
-                                        sx={{
-                                          "& .chakra-checkbox__control": {
-                                            height: "1rem",
-                                            width: "1rem",
-                                            borderRadius: 0,
-                                            bg: "bgColor",
-                                            borderColor: borderColor,
-                                          },
-                                          "& .chakra-checkbox__control[data-checked]": {
-                                            bg: accentColor,
-                                            borderColor: borderColor,
-                                            color: borderColor,
-                                          },
-                                          "& .chakra-checkbox__control[data-checked]:hover": {
-                                            bg: accentColor,
-                                            borderColor: borderColor,
-                                            color: borderColor,
-                                          },
-                                          "& .chakra-checkbox__control:focus": {
-                                            borderColor: borderColor,
-                                          },
-                                        }}
-                                        id={device.mac}
-                                        name={device.mac}
-                                        onChange={() => handleCheckbox(index)}
-                                        isChecked={checkedFetchedItems[index]}
-                                      ></ChakraCheckbox>
-                                    </AccordionButton>
-                                    <AccordionPanel
-                                      p={0}
-                                      as={Flex}
-                                      flexDir={"column"}
-                                      alignItems={"flex-start"}
-                                      bg={"td-bg"}
-                                    >
-                                      <Flex
-                                        flexDirection={"column"}
-                                        gap={"0.5rem"}
-                                        w={"100%"}
-                                        p={"1rem"}
-                                      >
-                                        <Flex justify={"space-between"}>
-                                          <Text
-                                            fontWeight={500}
-                                            textTransform={"capitalize"}
-                                            fontSize={"sm"}
-                                            fontFamily={"heading"}
-                                          >
-                                            IP
-                                          </Text>
-                                          <Text
-                                            fontWeight={400}
-                                            fontSize={"sm"}
-                                            fontFamily={"body"}
-                                          >
-                                            {device.ip}
-                                          </Text>
-                                        </Flex>
-                                        <Flex justify={"space-between"}>
-                                          <Text
-                                            fontWeight={500}
-                                            textTransform={"capitalize"}
-                                            fontSize={"sm"}
-                                            fontFamily={"heading"}
-                                          >
-                                            Mac Address
-                                          </Text>
-                                          <Text
-                                            fontWeight={400}
-                                            fontSize={"sm"}
-                                            fontFamily={"body"}
-                                          >
-                                            {device.mac}
-                                          </Text>
-                                        </Flex>
-                                        <Flex justify={"space-between"}>
-                                          <Text
-                                            fontWeight={500}
-                                            textTransform={"capitalize"}
-                                            fontSize={"sm"}
-                                            fontFamily={"heading"}
-                                          >
-                                            Miner
-                                          </Text>
-                                          <Text
-                                            fontWeight={400}
-                                            fontSize={"sm"}
-                                            fontFamily={"body"}
-                                          >
-                                            {getMinerName(device.info.boardVersion)}
-                                          </Text>
-                                        </Flex>
-                                        <Flex justify={"space-between"}>
-                                          <Text
-                                            fontWeight={500}
-                                            textTransform={"capitalize"}
-                                            fontSize={"sm"}
-                                            fontFamily={"heading"}
-                                          >
-                                            ASIC
-                                          </Text>
-                                          <Text
-                                            fontWeight={400}
-                                            fontSize={"sm"}
-                                            fontFamily={"body"}
-                                          >
-                                            {device.info.ASICModel}
-                                          </Text>
-                                        </Flex>
-                                        <Flex justify={"space-between"}>
-                                          <Text
-                                            fontWeight={500}
-                                            textTransform={"capitalize"}
-                                            fontSize={"sm"}
-                                            fontFamily={"heading"}
-                                          >
-                                            FW v.
-                                          </Text>
-                                          <Text
-                                            fontWeight={400}
-                                            fontSize={"sm"}
-                                            fontFamily={"body"}
-                                          >
-                                            {device.info.version}
-                                          </Text>
-                                        </Flex>
-                                      </Flex>
-                                    </AccordionPanel>
-                                  </ChakraAccordionItem>
-                                ))}
-                              </ChakraAccordion>
-                            ) : (
-                              <Text textAlign={"center"}>No device found</Text>
-                            )}
-                          </Box>
-                          {/* <Box
-                            position="absolute"
-                            bottom="0"
-                            left="0"
-                            width="100%"
-                            height="50px"
-                            background={`linear-gradient(to top, ${bgColor}, transparent)`}
-                            pointerEvents="none"
-                          /> */}
-                        </Box>
                         <Flex align={"start"}>
                           <Flex gap={"1rem"}>
                             <Button variant="outlined" onClick={onClose} label="Cancel"></Button>
