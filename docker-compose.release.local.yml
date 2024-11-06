@@ -1,10 +1,10 @@
 services:
   # app_proxy:
   #   environment:
-  #     APP_HOST: frontend # Hostname of the pluto application
+  #     APP_HOST: bemind-pluto_frontend_1 # Hostname of the pluto application
   #     APP_PORT: 7777 # Port number of the pluto application
   #   # ports:
-  #   #   - "7777:7777" # Proxy listens on port 7780 on the host and forwards to APP_HOST:APP_PORT
+  #   #   - "7777:7777" # Proxy listens on port 7777 on the host and forwards to APP_HOST:APP_PORT
   #   depends_on:
   #     - frontend
   #   restart: unless-stopped
@@ -86,7 +86,7 @@ services:
       - PORT=7776
       - AUTO_LISTEN=true
       - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7775
-      - GF_HOST=http://bemind-pluto_grafana_1:3000
+      - GF_HOST=http://grafana:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
       # - ./common/utils:/common/utils:ro # Monta il modulo in read-only
@@ -123,8 +123,8 @@ services:
     #   - frontend/.env.local
     environment:
       - PORT=7777
-      - GF_HOST=http://bemind-pluto_grafana_1:3000
-      - BACKEND_DESTINATION_HOST=http://bemind-pluto_backend_1:7776
+      - GF_HOST=http://grafana:3000
+      - BACKEND_DESTINATION_HOST=http://backend:7776
       - NEXT_PUBLIC_WS_ROOT=ws://localhost:7776
     volumes:
       - ./umbrel-app.yml:/tmp/umbrel-app.yml:ro
@@ -139,7 +139,7 @@ services:
     image: whirmill/pluto-prometheus:0.6.0-beta.9
     volumes:
       - ./data/prometheus:/prometheus
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    #  - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     # ports:
     #   - "9090:9090"
     pid: host
@@ -168,9 +168,9 @@ services:
       - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
     volumes:
       - ./data/grafana:/var/lib/grafana
-      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
-      - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
+      # - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      # - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      # - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
     healthcheck:
       test:
         - "CMD-SHELL"

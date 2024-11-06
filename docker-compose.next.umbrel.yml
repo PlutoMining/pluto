@@ -1,13 +1,13 @@
 services:
-  # app_proxy:
-  #   environment:
-  #     APP_HOST: bemind-pluto-next_frontend_1 # Hostname of the pluto application
-  #     APP_PORT: 7677 # Port number of the pluto application
-  #   # ports:
-  #   #   - "7677:7677" # Proxy listens on port 7677 on the host and forwards to APP_HOST:APP_PORT
-  #   depends_on:
-  #     - frontend
-  #   restart: unless-stopped
+  app_proxy:
+    environment:
+      APP_HOST: bemind-pluto-next_frontend_1 # Hostname of the pluto application
+      APP_PORT: 7677 # Port number of the pluto application
+    # ports:
+    #   - "7677:7677" # Proxy listens on port 7677 on the host and forwards to APP_HOST:APP_PORT
+    depends_on:
+      - frontend
+    restart: unless-stopped
 
   mock:
     # build:
@@ -64,7 +64,7 @@ services:
       # - ./common/db:/common/db:ro # Monta il modulo in read-only
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       # - ./discovery:/app/
-      - ./data/leveldb:/app/data
+      - /home/umbrel/umbrel/app-data/bemind-pluto/data/leveldb:/app/data
     depends_on:
       leveldb-init:
         condition: service_completed_successfully
@@ -95,8 +95,8 @@ services:
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       # - ./backend:/app/
       # - ./grafana/templates:/app/grafana_templates/
-      - ./data/leveldb:/app/data
-      - ./data/grafana:/app/grafana
+      - /home/umbrel/umbrel/app-data/bemind-pluto/data/leveldb:/app/data
+      - /home/umbrel/umbrel/app-data/bemind-pluto/data/grafana:/app/grafana
     depends_on:
       leveldb-init:
         condition: service_completed_successfully
@@ -125,12 +125,12 @@ services:
       - PORT=7677
       - GF_HOST=http://grafana:3000
       - BACKEND_DESTINATION_HOST=http://backend:7676
-      - NEXT_PUBLIC_WS_ROOT=ws://localhost:7776
+      - NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776
     volumes:
-      - ./umbrel-app.yml:/tmp/umbrel-app.yml:ro
+      - /home/umbrel/umbrel/app-data/bemind-pluto/umbrel-app.yml:/tmp/umbrel-app.yml:ro
     #   - ./common/utils:/common/utils:ro # Monta il modulo in read-only
     #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
-    #   - ./frontend:/app/
+    #   - /home/umbrel/umbrel/app-data/bemind-pluto/frontend:/app/
 
   prometheus:
     # build:
@@ -138,8 +138,8 @@ services:
     #   dockerfile: Dockerfile
     image: whirmill/pluto-prometheus:0.6.0-beta.9
     volumes:
-      - ./data/prometheus:/prometheus
-    #  - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - /home/umbrel/umbrel/app-data/bemind-pluto/data/prometheus:/prometheus
+      # - /home/umbrel/umbrel/app-data/bemind-pluto/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     # ports:
     #   - "9090:9090"
     pid: host
@@ -164,13 +164,13 @@ services:
     pid: host
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${APP_PASSWORD}
       - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
     volumes:
-      - ./data/grafana:/var/lib/grafana
-      # - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-      # - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
-      # - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
+      - /home/umbrel/umbrel/app-data/bemind-pluto/data/grafana:/var/lib/grafana
+      # - /home/umbrel/umbrel/app-data/bemind-pluto/grafana/grafana.ini:/etc/grafana/grafana.ini
+      # - /home/umbrel/umbrel/app-data/bemind-pluto/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      # - /home/umbrel/umbrel/app-data/bemind-pluto/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -191,7 +191,7 @@ services:
     image: whirmill/pluto-init:0.6.0-beta.9
     volumes:
       # - ./init/init-prometheus.sh:/init-scripts/init-prometheus.sh
-      - ./data/prometheus:/prometheus
+      - /home/umbrel/umbrel/app-data/bemind-pluto/data/prometheus:/prometheus
     command: /init-scripts/init-prometheus.sh
 
   grafana-init: # sidecar container for volume permissions
@@ -201,7 +201,7 @@ services:
     image: whirmill/pluto-init:0.6.0-beta.9
     volumes:
       # - ./init/init-grafana.sh:/init-scripts/init-grafana.sh
-      - ./data/grafana:/grafana
+      - /home/umbrel/umbrel/app-data/bemind-pluto/data/grafana:/grafana
     command: /init-scripts/init-grafana.sh
 
   leveldb-init: # sidecar container for volume permissions
@@ -211,5 +211,5 @@ services:
     image: whirmill/pluto-init:0.6.0-beta.9
     volumes:
       # - ./init/init-leveldb.sh:/init-scripts/init-leveldb.sh
-      - ./data/leveldb:/leveldb
+      - /home/umbrel/umbrel/app-data/bemind-pluto/data/leveldb:/leveldb
     command: /init-scripts/init-leveldb.sh

@@ -12,20 +12,40 @@ update_version() {
     echo "Running npm install in $service..."
     (cd $service && npm install)
 
-    # Update the version in docker-compose.yml for the service
-    sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.yml
-    # Update the version in docker-compose.release.local.yml for the service
-    sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
-    # Update the version in docker-compose.next.local.yml for the service
-    sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.next.local.yml
+    # Determine which files to update based on pre-release status
+    if [ "$IS_PRERELEASE" = true ]; then
+        # Update only next files
+        sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.next.umbrel.yml
+        sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.next.local.yml
+    else
+        # Update the main files
+        sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.yml
+        sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
+    fi
 }
 
 # Function to update the version in umbrel-app.yml
 update_umbrel_version() {
     local new_version=$1
-    # Update the version in umbrel-app.yml
-    sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" umbrel-app.yml
-    sed -i '' -E "s/Version .*/Version ${new_version}/g" umbrel-app.yml
+
+    if [ "$IS_PRERELEASE" = true ]; then
+        # Update the version in umbrel-app.next.yml
+        sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" umbrel-app.next.yml
+        sed -i '' -E "s/Version .*/Version ${new_version}/g" umbrel-app.next.yml
+    else
+        # Update the version in umbrel-app.yml
+        sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" umbrel-app.yml
+        sed -i '' -E "s/Version .*/Version ${new_version}/g" umbrel-app.yml
+    fi
+}
+
+# Function to get the current version from the correct umbrel app file
+get_current_app_version() {
+    if [ "$IS_PRERELEASE" = true ]; then
+        grep 'version:' umbrel-app.next.yml | sed -E 's/version: "(.*)"/\1/'
+    else
+        grep 'version:' umbrel-app.yml | sed -E 's/version: "(.*)"/\1/'
+    fi
 }
 
 # Function to get the current version from the package.json file
@@ -73,9 +93,9 @@ fi
 # Update the FRONTEND_BUILD_ARGS and Dockerfile selection based on the release type
 if [ "$IS_PRERELEASE" = true ]; then
     echo "Pre-release selected: scaling ports down by 100."
-    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676 --build-arg GF_HOST=http://bemind-pluto_grafana_1:3000 --build-arg BACKEND_DESTINATION_HOST=http://bemind-pluto_backend_1:7676"
+    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676 --build-arg GF_HOST=http://grafana:3000 --build-arg BACKEND_DESTINATION_HOST=http://backend:7676"
 else
-    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776 --build-arg GF_HOST=http://bemind-pluto_grafana_1:3000 --build-arg BACKEND_DESTINATION_HOST=http://bemind-pluto_backend_1:7776"
+    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776 --build-arg GF_HOST=http://grafana:3000 --build-arg BACKEND_DESTINATION_HOST=http://backend:7776"
 fi
 
 # Only perform Docker login if the skip login flag is not set
@@ -92,8 +112,8 @@ else
     echo "Skipping Docker login..."
 fi
 
-# Prompt for the new version of the app (umbrel-app.yml)
-current_app_version=$(grep 'version:' umbrel-app.yml | sed -E 's/version: "(.*)"/\1/')
+# Prompt for the new version of the app (umbrel-app.yml or umbrel-app.next.yml)
+current_app_version=$(get_current_app_version)
 echo "Current app version is $current_app_version. Enter the new app version (press Enter to keep $current_app_version):"
 read new_app_version
 
@@ -191,7 +211,5 @@ git commit -m "Bump versions:
 # Push the Git changes
 echo "Pushing changes to the repository..."
 git push
-
-./post_release.sh
 
 echo "Process completed successfully!"
