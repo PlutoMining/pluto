@@ -10,7 +10,6 @@ import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgr
 import {
   Box,
   Container,
-  Fade,
   Flex,
   Heading,
   Modal,
@@ -25,7 +24,7 @@ import {
   useToken,
   VStack,
 } from "@chakra-ui/react";
-import { Device, Preset } from "@pluto/interfaces";
+import { Device } from "@pluto/interfaces";
 import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 
@@ -38,9 +37,6 @@ const SettingsPage = () => {
   } = useDisclosure({ defaultIsOpen: false });
 
   const [alert, setAlert] = useState<AlertInterface>();
-
-  const theme = useTheme();
-
   const [imprintedDevices, setImprintedDevices] = useState<Device[] | undefined>();
 
   useEffect(() => {

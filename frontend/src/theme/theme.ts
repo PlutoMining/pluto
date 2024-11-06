@@ -86,6 +86,10 @@ const theme = extendTheme({
         _light: colors.greyscale[300],
         _dark: colors.greyscale[200],
       },
+      "header-text-disabled": {
+        _light: colors.greyscale[200],
+        _dark: colors.greyscale[600],
+      },
       "header-selected": {
         _light: colors.greyscale[900],
         _dark: colors.primary[500],

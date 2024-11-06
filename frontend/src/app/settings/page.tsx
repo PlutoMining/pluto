@@ -1,6 +1,6 @@
 "use client";
 import { Box, Container, Flex, Heading, useColorMode, VStack } from "@chakra-ui/react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Select } from "@/components/Select";
 
 const SettingsPage: React.FC = () => {
@@ -10,11 +10,11 @@ const SettingsPage: React.FC = () => {
   const colorModes = [
     {
       value: "dark",
-      label: "Dark",
+      label: "Dark Theme",
     },
     {
       value: "light",
-      label: "Light",
+      label: "Light Theme",
     },
   ];
 

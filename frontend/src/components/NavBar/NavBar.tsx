@@ -1,14 +1,12 @@
 "use client";
 import {
   Box,
-  Button,
   Flex,
   HStack,
   Link,
   Slide,
   Stack,
   Text,
-  useColorMode,
   useDisclosure,
   useToken,
 } from "@chakra-ui/react";
@@ -23,11 +21,45 @@ import { DiscordLogo, GitLabLogo } from "../icons/FooterIcons";
 import { HamburgerIcon } from "../icons/HamburgerIcon";
 import { Logo } from "../icons/Logo";
 import { SettingsIcon } from "../icons/SettingsIcon/SettingsIcon";
+import { useSocket } from "@/providers/SocketProvider";
+import { Device } from "@pluto/interfaces";
 
 export const NavBar = () => {
   const { isOpen, onToggle } = useDisclosure();
   const pathname = usePathname();
   const [version, setVersion] = useState("");
+  const [devices, setDevices] = useState<Device[]>([]);
+
+  const { isConnected, socket } = useSocket();
+
+  useEffect(() => {
+    const listener = (e: Device) => {
+      setDevices((prevDevices) => {
+        if (!prevDevices) return [e]; // Se la lista è vuota, restituisci una lista con il dispositivo
+
+        // Trova l'indice del dispositivo da aggiornare
+        const deviceIndex = prevDevices.findIndex((device) => device.mac === e.mac);
+
+        if (deviceIndex === -1) {
+          // Se il dispositivo non è presente, aggiungilo alla lista
+          return [...prevDevices, e];
+        }
+
+        // Se il dispositivo è già presente, non fare nulla
+        return prevDevices;
+      });
+    };
+
+    if (isConnected) {
+      socket.on("stat_update", listener);
+      socket.on("error", listener);
+
+      return () => {
+        socket.off("stat_update", listener);
+        socket.off("error", listener);
+      };
+    }
+  }, [isConnected, socket]);
 
   useEffect(() => {
     const getVersion = async () => {
@@ -37,14 +69,6 @@ export const NavBar = () => {
 
     getVersion();
   }, []);
-
-  const [alert, setAlert] = useState<AlertInterface>();
-  const { isOpen: isOpenAlert, onOpen: onOpenAlert, onClose: onCloseAlert } = useDisclosure();
-
-  const closeAlert = () => {
-    setAlert(undefined);
-    onCloseAlert();
-  };
 
   const links = [
     {
@@ -81,7 +105,9 @@ export const NavBar = () => {
       component: (pathname?: string | null) => (
         <Box
           color={
-            pathname === "/monitoring" || /^\/monitoring/.test(pathname || "")
+            devices?.length === 0
+              ? "header-text-disabled"
+              : pathname === "/monitoring" || /^\/monitoring/.test(pathname || "")
               ? "header-selected"
               : "header-text"
           }
@@ -92,6 +118,10 @@ export const NavBar = () => {
           fontSize={"sm"}
           position={"relative"}
           textTransform={"uppercase"}
+          cursor={devices?.length === 0 ? "not-allowed" : "pointer"}
+          pointerEvents={
+            devices?.length === 0 ? "none" : "auto" // Disabilita clic
+          }
           _after={{
             display:
               pathname === "/monitoring" || /^\/monitoring/.test(pathname || "") ? "block" : "none",
@@ -115,12 +145,22 @@ export const NavBar = () => {
       href: "/device-settings",
       component: (pathname?: string | null) => (
         <Box
-          color={pathname === "/device-settings" ? "header-selected" : "header-text"}
+          color={
+            devices?.length === 0
+              ? "header-text-disabled"
+              : pathname === "/device-settings"
+              ? "header-selected"
+              : "header-text"
+          }
           fontWeight={pathname === "/device-settings" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
           position={"relative"}
           textTransform={"uppercase"}
+          cursor={devices?.length === 0 ? "not-allowed" : "pointer"}
+          pointerEvents={
+            devices?.length === 0 ? "none" : "auto" // Disabilita clic
+          }
           _after={{
             display: pathname === "/device-settings" ? "block" : "none",
             content: '""',
@@ -197,7 +237,6 @@ export const NavBar = () => {
   ];
 
   const [primaryColor] = useToken("colors", ["primary-color"]);
-  const [textColor] = useToken("colors", ["bg-color"]);
 
   return (
     <>
@@ -252,8 +291,8 @@ export const NavBar = () => {
                   <Link
                     as={NextLink}
                     key={`md-nav-link-${link.key}`}
+                    whiteSpace="nowrap"
                     href={link.href}
-                    whiteSpace={"nowrap"}
                     _hover={{ textDecoration: "none" }}
                   >
                     {link.component(pathname)}
@@ -369,9 +408,6 @@ export const NavBar = () => {
           </Slide>
         ) : null}
       </Box>
-      {alert && (
-        <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
-      )}
     </>
   );
 };

@@ -79,9 +79,9 @@ function ModalBodyContent({
     setIpAndMacAddress({ ipAddress: "", macAddress: "" });
     setSearchError(null);
     setDiscoveredDevices(null);
-    // if (tabIndex === 1) {
-    getDiscoverDevices();
-    // }
+    if (tabIndex === 1) {
+      getDiscoverDevices();
+    }
   }, [tabIndex]);
 
   const getDiscoverDevices = async () => {
