@@ -16,7 +16,7 @@ export const getSystemInfo = async (req: Request, res: Response) => {
     const hostname = req.app.locals.hostname;
     const apiVersion = req.app.locals.apiVersion;
 
-    console.log(req.app.locals.startTime);
+    // console.log(req.app.locals.startTime);
 
     const uptimeSeconds = calculateUptime(req.app.locals.startTime);
     const systemInfo =

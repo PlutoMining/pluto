@@ -155,7 +155,7 @@ export const PresetEditor = ({
       uuid,
     };
 
-    console.log(updatedPreset);
+    // console.log(updatedPreset);
 
     const promise = axios.post("/api/presets", updatedPreset);
 

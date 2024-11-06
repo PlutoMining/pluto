@@ -60,7 +60,7 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
     if (selectedPreset) {
       onCloseSuccessfully(selectedPreset.uuid);
     } else {
-      console.log("No preset selected");
+      // console.log("No preset selected");
     }
   }, [onCloseSuccessfully, selectedPreset]);
 

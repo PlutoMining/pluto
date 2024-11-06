@@ -42,7 +42,7 @@ async function closeAllDatabases(): Promise<void> {
     if (db) {
       await db.close();
       dbInstances.delete(dbName);
-      console.log(`Database ${dbName} closed.`);
+      // console.log(`Database ${dbName} closed.`);
     }
   }
 }
@@ -53,7 +53,7 @@ async function closeDatabase(dbName: string): Promise<void> {
   if (db) {
     await db.close();
     dbInstances.delete(dbName);
-    console.log(`Database ${dbName} closed.`);
+    // console.log(`Database ${dbName} closed.`);
   }
 }
 
@@ -183,7 +183,7 @@ export async function insertOne<T extends BaseEntity>(
     await db.put(objectFullKey, newObject); // Salva l'oggetto
     await db.put(fullListKey, keyList); // Salva la lista aggiornata delle chiavi
 
-    console.log(`Object with key ${objectFullKey} inserted into ${fullListKey}.`);
+    // console.log(`Object with key ${objectFullKey} inserted into ${fullListKey}.`);
   } catch (error) {
     if (error instanceof Error) {
       console.error(`Error writing to DB with key ${objectKey}:`, error.message);
@@ -246,7 +246,7 @@ export async function updateOne<T extends BaseEntity>(
     await db.put(objectFullKey, mergedObject); // Salva l'oggetto
     await db.put(fullListKey, keyList); // Salva la lista aggiornata delle chiavi
 
-    console.log(`Object with key ${objectFullKey} updated in ${fullListKey}.`);
+    // console.log(`Object with key ${objectFullKey} updated in ${fullListKey}.`);
   } catch (error) {
     if (error instanceof Error) {
       console.error(`Error writing to DB with key ${objectKey}:`, error.message);
@@ -277,7 +277,7 @@ export async function deleteOne<T extends BaseEntity>(
 
     // Cancella il record
     await db.del(fullKey);
-    console.log(`Record with key ${fullKey} deleted.`);
+    // console.log(`Record with key ${fullKey} deleted.`);
 
     // Aggiorna la lista delle chiavi
     let keyList: string[] = [];
