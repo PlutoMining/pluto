@@ -13,7 +13,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: mock/Dockerfile
-    image: whirmill/pluto-mock:0.6.0-beta.12 # Docker image with specific version
+    image: whirmill/pluto-mock:0.6.0-beta.13 # Docker image with specific version
     ports:
       - "7670:7670"
       - "7651:7651"
@@ -45,7 +45,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: whirmill/pluto-discovery:0.6.0-beta.12 # Docker image with specific version
+    image: whirmill/pluto-discovery:0.6.0-beta.13 # Docker image with specific version
     network_mode: "host"
     # ports:
     #   - "7675:7675" # Map port 7675 on the host to port 7675 on the container
@@ -73,7 +73,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: whirmill/pluto-backend:0.6.0-beta.12 # Docker image with specific version
+    image: whirmill/pluto-backend:0.6.0-beta.13 # Docker image with specific version
     ports:
       - "7676:7676"
     pid: host
@@ -109,7 +109,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: whirmill/pluto-frontend:0.6.0-beta.12 # Docker image with specific version
+    image: whirmill/pluto-frontend:0.6.0-beta.13 # Docker image with specific version
     ports:
       - "7677:7677" # Map port 7777 on the host to port 7777 on the container
     # Use the host's PID namespace to allow container processes to be visible on the host
@@ -136,7 +136,7 @@ services:
     # build:
     #   context: prometheus
     #   dockerfile: Dockerfile
-    image: whirmill/pluto-prometheus:0.6.0-beta.12
+    image: whirmill/pluto-prometheus:0.6.0-beta.13
     volumes:
       - /home/umbrel/umbrel/app-data/bemind-pluto/data/prometheus:/prometheus
       # - /home/umbrel/umbrel/app-data/bemind-pluto/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -158,7 +158,7 @@ services:
     # build:
     #   context: grafana
     #   dockerfile: Dockerfile
-    image: whirmill/pluto-grafana:0.6.0-beta.12
+    image: whirmill/pluto-grafana:0.6.0-beta.13
     # ports:
     #   - "7778:3000"
     pid: host
@@ -188,7 +188,7 @@ services:
     # build:
     #   context: init
     #   dockerfile: Dockerfile
-    image: whirmill/pluto-init:0.6.0-beta.12
+    image: whirmill/pluto-init:0.6.0-beta.13
     volumes:
       # - ./init/init-prometheus.sh:/init-scripts/init-prometheus.sh
       - /home/umbrel/umbrel/app-data/bemind-pluto/data/prometheus:/prometheus
@@ -198,7 +198,7 @@ services:
     # build:
     #   context: init
     #   dockerfile: Dockerfile
-    image: whirmill/pluto-init:0.6.0-beta.12
+    image: whirmill/pluto-init:0.6.0-beta.13
     volumes:
       # - ./init/init-grafana.sh:/init-scripts/init-grafana.sh
       - /home/umbrel/umbrel/app-data/bemind-pluto/data/grafana:/grafana
@@ -208,7 +208,7 @@ services:
     # build:
     #   context: init
     #   dockerfile: Dockerfile
-    image: whirmill/pluto-init:0.6.0-beta.12
+    image: whirmill/pluto-init:0.6.0-beta.13
     volumes:
       # - ./init/init-leveldb.sh:/init-scripts/init-leveldb.sh
       - /home/umbrel/umbrel/app-data/bemind-pluto/data/leveldb:/leveldb

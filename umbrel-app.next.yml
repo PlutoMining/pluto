@@ -2,7 +2,7 @@ manifestVersion: 1
 id: bemind-pluto-next
 name: Pluto Next
 category: Mining
-version: "0.6.0-beta.12"
+version: "0.6.0-beta.13"
 tagline: Pluto
 icon: https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto-next/icon.jpg
 description: >
@@ -24,7 +24,7 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >
-  Version 0.6.0-beta.12
+  Version 0.6.0-beta.13
   - Rebranding
   - Dark mode
   - NerdAxe support
