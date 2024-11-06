@@ -95,7 +95,7 @@ if [ "$IS_PRERELEASE" = true ]; then
     echo "Pre-release selected: scaling ports down by 100."
     FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776 --build-arg GF_HOST=http://bemind-pluto-next_grafana_1:3000 --build-arg BACKEND_DESTINATION_HOST=http://bemind-pluto-next_backend_1:7776"
 else
-    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676 --build-arg GF_HOST=http://bemind-pluto_grafana:3000 --build-arg BACKEND_DESTINATION_HOST=http://bemind-pluto_backend_1:7676"
+    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676 --build-arg GF_HOST=http://bemind-pluto_grafana_1:3000 --build-arg BACKEND_DESTINATION_HOST=http://bemind-pluto_backend_1:7676"
 fi
 
 # Only perform Docker login if the skip login flag is not set
