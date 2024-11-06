@@ -12,7 +12,7 @@ website: https://gitlab.com/bemindinteractive/pluto
 dependencies: []
 repo: https://gitlab.com/bemindinteractive/pluto
 support: https://gitlab.com/bemindinteractive/pluto/issues
-port: 7777
+port: 7677
 gallery:
   - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto-next/screenshot_00.png
   - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto-next/screenshot_01.png
