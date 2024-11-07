@@ -112,7 +112,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: whirmill/pluto-frontend:0.6.0-beta.13 # Docker image with specific version
+    image: whirmill/pluto-frontend:0.6.0-beta.14 # Docker image with specific version
     container_name: bemind-pluto-next_frontend_1
     ports:
       - "7677:7677" # Map port 7777 on the host to port 7777 on the container
