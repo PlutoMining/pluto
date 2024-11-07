@@ -15,7 +15,7 @@ import { Device } from "@pluto/interfaces";
 import axios from "axios";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CrossIcon } from "../icons/CrossIcon";
 import { DiscordLogo, GitLabLogo } from "../icons/FooterIcons";
 import { HamburgerIcon } from "../icons/HamburgerIcon";
@@ -23,12 +23,28 @@ import { Logo } from "../icons/Logo";
 import { SettingsIcon } from "../icons/SettingsIcon/SettingsIcon";
 
 export const NavBar = () => {
-  const { isOpen, onToggle } = useDisclosure();
+  const { isOpen, onClose, onToggle } = useDisclosure();
   const pathname = usePathname();
   const [version, setVersion] = useState("");
   const [devices, setDevices] = useState<Device[]>([]);
 
   const { isConnected, socket } = useSocket();
+
+  const slideRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (slideRef.current && !slideRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
 
   useEffect(() => {
     const listener = (e: Device) => {
@@ -361,6 +377,7 @@ export const NavBar = () => {
             }}
           >
             <Box
+              ref={slideRef}
               bgColor="bg-color"
               p={"2rem"}
               borderLeftWidth={"1px"}
