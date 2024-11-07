@@ -35,7 +35,7 @@ const SettingsPage: React.FC = () => {
           <Heading fontSize={"4xl"} fontWeight={"700"} textTransform={"uppercase"}>
             Settings
           </Heading>
-          <VStack spacing={"1.5rem"} align="stretch" padding={"0 10rem"}>
+          <VStack spacing={"1.5rem"} align="stretch" padding={{ tabletL: "0 10rem" }}>
             <Heading
               fontWeight={500}
               fontSize={"lg"}
