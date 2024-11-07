@@ -1,5 +1,4 @@
 "use client";
-import { useSocket } from "@/providers/SocketProvider";
 import {
   Box,
   Flex,
@@ -11,7 +10,6 @@ import {
   useDisclosure,
   useToken,
 } from "@chakra-ui/react";
-import { Device } from "@pluto/interfaces";
 import axios from "axios";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
@@ -26,9 +24,6 @@ export const NavBar = () => {
   const { isOpen, onClose, onToggle } = useDisclosure();
   const pathname = usePathname();
   const [version, setVersion] = useState("");
-  const [devices, setDevices] = useState<Device[]>([]);
-
-  const { isConnected, socket } = useSocket();
 
   const slideRef = useRef<HTMLDivElement>(null);
 
@@ -45,46 +40,6 @@ export const NavBar = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [onClose]);
-
-  useEffect(() => {
-    const listener = (e: Device) => {
-      setDevices((prevDevices) => {
-        if (!prevDevices) return [e]; // Se la lista è vuota, restituisci una lista con il dispositivo
-
-        // Trova l'indice del dispositivo da aggiornare
-        const deviceIndex = prevDevices.findIndex((device) => device.mac === e.mac);
-
-        if (deviceIndex === -1) {
-          // Se il dispositivo non è presente, aggiungilo alla lista
-          return [...prevDevices, e];
-        }
-
-        // Se il dispositivo è già presente, non fare nulla
-        return prevDevices;
-      });
-    };
-
-    const deviceRemovedListener = (e: { ipRemoved: string; remainingIps: string[] }) => {
-      setDevices((prevDevices) => {
-        // Trova l'indice del dispositivo da aggiornare
-        const newDevices = prevDevices.filter((device) => device.ip !== e.ipRemoved);
-
-        return newDevices;
-      });
-    };
-
-    if (isConnected) {
-      socket.on("stat_update", listener);
-      socket.on("device_removed", deviceRemovedListener);
-      socket.on("error", listener);
-
-      return () => {
-        socket.off("stat_update", listener);
-        socket.on("device_removed", deviceRemovedListener);
-        socket.off("error", listener);
-      };
-    }
-  }, [isConnected, socket]);
 
   useEffect(() => {
     const getVersion = async () => {
@@ -130,9 +85,7 @@ export const NavBar = () => {
       component: (pathname?: string | null) => (
         <Box
           color={
-            devices?.length === 0
-              ? "header-text-disabled"
-              : pathname === "/monitoring" || /^\/monitoring/.test(pathname || "")
+            pathname === "/monitoring" || /^\/monitoring/.test(pathname || "")
               ? "header-selected"
               : "header-text"
           }
@@ -166,13 +119,7 @@ export const NavBar = () => {
       href: "/device-settings",
       component: (pathname?: string | null) => (
         <Box
-          color={
-            devices?.length === 0
-              ? "header-text-disabled"
-              : pathname === "/device-settings"
-              ? "header-selected"
-              : "header-text"
-          }
+          color={pathname === "/device-settings" ? "header-selected" : "header-text"}
           fontWeight={pathname === "/device-settings" ? "700" : "500"}
           fontFamily={"heading"}
           fontSize={"sm"}
@@ -311,32 +258,6 @@ export const NavBar = () => {
                     whiteSpace="nowrap"
                     href={link.href}
                     _hover={{ textDecoration: "none" }}
-                    sx={{
-                      cursor: (() => {
-                        if (
-                          devices?.length === 0 &&
-                          link.href !== "/presets" &&
-                          link.href !== "/devices" &&
-                          link.href !== "/"
-                        ) {
-                          return "not-allowed";
-                        } else {
-                          return "pointer";
-                        }
-                      })(),
-                      pointerEvents: (() => {
-                        if (
-                          devices?.length === 0 &&
-                          link.href !== "/presets" &&
-                          link.href !== "/devices" &&
-                          link.href !== "/"
-                        ) {
-                          return "none";
-                        } else {
-                          return "auto";
-                        }
-                      })(),
-                    }}
                   >
                     {link.component(pathname)}
                   </Link>
