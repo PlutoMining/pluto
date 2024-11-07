@@ -116,7 +116,7 @@ const MonitoringTablePage: React.FC = () => {
 
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
-      <VStack p={{ mobile: "1rem 0", tablet: "1.5rem" }} spacing={"1.5rem"} align="stretch">
+      <VStack p={{ mobile: "1rem 0", tablet: "1rem" }} spacing={"1.5rem"} align="stretch">
         <Flex
           justify={{
             base: "flex-start",
@@ -139,7 +139,7 @@ const MonitoringTablePage: React.FC = () => {
           </Box>
         </Flex>
 
-        {registeredDevices ? (
+        {registeredDevices && registeredDevices.length > 0 ? (
           <Box backgroundColor={"bg-color"}>
             <TableContainer
               borderRadius={0}
@@ -350,7 +350,7 @@ const MonitoringTablePage: React.FC = () => {
             </Box>
           </Box>
         ) : (
-          <Text>No dashboards available.</Text>
+          <Text textAlign={"center"}>No dashboards available.</Text>
         )}
       </VStack>
     </Container>

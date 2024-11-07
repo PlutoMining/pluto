@@ -166,12 +166,18 @@ const SettingsPage = () => {
             </Flex>
 
             {imprintedDevices ? (
-              <DeviceSettingsAccordion
-                fetchedDevices={imprintedDevices}
-                setAlert={setAlert}
-                alert={alert}
-                onOpenAlert={onOpenAlert}
-              />
+              <>
+                {imprintedDevices.length > 0 ? (
+                  <DeviceSettingsAccordion
+                    fetchedDevices={imprintedDevices}
+                    setAlert={setAlert}
+                    alert={alert}
+                    onOpenAlert={onOpenAlert}
+                  />
+                ) : (
+                  <Text textAlign={"center"}>No devices available.</Text>
+                )}
+              </>
             ) : (
               // <DeviceSettingsTable devices={imprintedDevices}></DeviceSettingsTable>
               <Flex w={"100%"} alignItems={"center"} flexDirection={"column"} m={"2rem auto"}>

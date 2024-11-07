@@ -1,4 +1,7 @@
 "use client";
+import Button from "@/components/Button/Button";
+import Link from "@/components/Link/Link";
+import { NoDeviceAddedSection } from "@/components/Section";
 import { restyleIframe } from "@/utils/iframe";
 import {
   Box,
@@ -7,18 +10,18 @@ import {
   Heading,
   Text,
   useColorMode,
-  useMediaQuery,
-  useTheme,
   useToken,
   VStack,
+  Link as ChakraLink,
+  textDecoration,
 } from "@chakra-ui/react";
-import { Device, DeviceInfo } from "@pluto/interfaces";
+import { Device } from "@pluto/interfaces";
 import axios from "axios";
 import { useEffect, useState, useRef } from "react";
 
 const OverviewPage: React.FC = () => {
   const [dashboardPublicUrl, setDashboardPublicUrl] = useState<string>();
-  const [poolPreset, setPoolPreset] = useState<DeviceInfo[]>([]);
+  const [devices, setDevices] = useState<Device[]>([]);
 
   const iframeRef = useRef<HTMLIFrameElement>(null); // Inizializziamo la ref
 
@@ -42,29 +45,9 @@ const OverviewPage: React.FC = () => {
     try {
       const response = await axios.get("/api/devices/imprint");
       const imprintedDevices: Device[] = response.data.data;
-
-      const result = imprintedDevices.reduce<DeviceInfo[]>((acc, device) => {
-        const { stratumURL, sharesAccepted, sharesRejected } = device.info;
-
-        // Verifica se lo stratumURL esiste già nell'accumulatore
-        const existingEntry = acc.find((entry) => entry.stratumURL === stratumURL);
-
-        if (existingEntry) {
-          // Se esiste già, somma i valori di sharesAccepted e sharesRejected
-          existingEntry.sharesAccepted += sharesAccepted;
-          existingEntry.sharesRejected += sharesRejected;
-        } else {
-          // Altrimenti, aggiungi un nuovo entry
-          acc.push({
-            stratumURL,
-            sharesAccepted,
-            sharesRejected,
-          } as DeviceInfo);
-        }
-
-        return acc;
-      }, []); // Inizialmente l'accumulatore è un array vuoto
-      setPoolPreset(result);
+      if (imprintedDevices) {
+        setDevices(imprintedDevices);
+      }
     } catch (error) {
       console.error("Error discovering devices:", error);
     }
@@ -88,23 +71,29 @@ const OverviewPage: React.FC = () => {
           Overview Dashboard
         </Heading>
 
-        {dashboardPublicUrl && (
-          <Box backgroundColor={"bg-color"} h={{ base: "1450px", tablet: "900px" }}>
-            <Box borderRadius={"1rem"} h={"100%"} w={"100%"}>
-              <iframe
-                key={colorMode} // Forza il ri-rendering quando colorMode cambia
-                onLoad={restyleIframe(iframeRef, bgColor, textColor, graphBgColor)}
-                ref={iframeRef}
-                src={`${dashboardPublicUrl}&theme=${colorMode}&refresh=5s`}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                  backgroundColor: "transparent",
-                }}
-              ></iframe>
-            </Box>
-          </Box>
+        {devices?.length === 0 ? (
+          <NoDeviceAddedSection />
+        ) : (
+          <>
+            {dashboardPublicUrl && (
+              <Box backgroundColor={"bg-color"} h={{ base: "1450px", tablet: "900px" }}>
+                <Box borderRadius={"1rem"} h={"100%"} w={"100%"}>
+                  <iframe
+                    key={colorMode} // Forza il ri-rendering quando colorMode cambia
+                    onLoad={restyleIframe(iframeRef, bgColor, textColor, graphBgColor)}
+                    ref={iframeRef}
+                    src={`${dashboardPublicUrl}&theme=${colorMode}&refresh=5s`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      border: "none",
+                      backgroundColor: "transparent",
+                    }}
+                  ></iframe>
+                </Box>
+              </Box>
+            )}
+          </>
         )}
 
         {/*
