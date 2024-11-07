@@ -125,7 +125,7 @@ services:
       - PORT=7677
       - GF_HOST=http://bemind-pluto-next_grafana_1:3000
       - BACKEND_DESTINATION_HOST=http://bemind-pluto-next_backend_1:7676
-      - NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776
+      - NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676
     volumes:
       - /home/umbrel/umbrel/app-data/bemind-pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
     #   - ./common/utils:/common/utils:ro # Monta il modulo in read-only
