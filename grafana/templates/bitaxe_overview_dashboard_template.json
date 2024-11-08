@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 1,
+    "id": 6,
     "links": [],
     "panels": [
         {
@@ -55,7 +55,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#13ffeb",
+                        "fixedColor": "#00cbb8",
                         "mode": "fixed"
                     },
                     "custom": {
@@ -163,7 +163,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#13ffeb",
+                        "fixedColor": "#00cbb8",
                         "mode": "fixed"
                     },
                     "custom": {
@@ -267,7 +267,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#13ffeb",
+                        "fixedColor": "#00cbb8",
                         "mode": "fixed"
                     },
                     "mappings": [
@@ -601,7 +601,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#13ffeb",
+                                    "fixedColor": "#00cbb8",
                                     "mode": "fixed"
                                 }
                             }
@@ -673,28 +673,28 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#13ffeb",
-                        "mode": "shades"
+                        "fixedColor": "#00cbb8",
+                        "mode": "thresholds"
                     },
                     "mappings": [],
                     "thresholds": {
-                        "mode": "percentage",
+                        "mode": "absolute",
                         "steps": [
                             {
-                                "color": "#f0edf2",
+                                "color": "#A2A6A5",
                                 "value": null
                             },
                             {
-                                "color": "#7b00cc",
-                                "value": 0
+                                "color": "#00685b",
+                                "value": 1
                             },
                             {
-                                "color": "#7b00cce6",
+                                "color": "#009888",
                                 "value": 2
                             },
                             {
-                                "color": "#7b00cc",
-                                "value": 5
+                                "color": "#00cbb8",
+                                "value": 3
                             }
                         ]
                     }
@@ -751,7 +751,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "Overview",
-    "uid": "99kgvcmws0kl2b",
+    "uid": "wiat3fwp2r4g6r",
     "version": 1,
     "weekStart": ""
 }

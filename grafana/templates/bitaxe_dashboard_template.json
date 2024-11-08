@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 18,
+    "id": 1,
     "links": [],
     "panels": [
         {
@@ -106,7 +106,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#13ffeb",
+                                    "fixedColor": "#00cbb8",
                                     "mode": "fixed"
                                 }
                             },
@@ -211,7 +211,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#13ffeb",
+                        "fixedColor": "#00cbb8",
                         "mode": "fixed"
                     },
                     "custom": {
@@ -315,7 +315,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "fixedColor": "#13ffeb",
+                        "fixedColor": "#00cbb8",
                         "mode": "shades"
                     },
                     "custom": {
@@ -531,7 +531,7 @@
                         "mode": "percentage",
                         "steps": [
                             {
-                                "color": "#13ffeb",
+                                "color": "#00cbb8",
                                 "value": null
                             }
                         ]
@@ -657,7 +657,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#13ffeb",
+                                    "fixedColor": "#00cbb8",
                                     "mode": "fixed"
                                 }
                             }
@@ -672,7 +672,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#d1faf5",
+                                    "fixedColor": "#00685b",
                                     "mode": "fixed"
                                 }
                             }
@@ -687,7 +687,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#009888",
+                                    "fixedColor": "#13ffeb",
                                     "mode": "fixed"
                                 }
                             }
@@ -786,7 +786,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "@@hostname@@",
-    "uid": "5tqc5wer1r5yqd",
+    "uid": "zqz8xdvgjc315t",
     "version": 1,
     "weekStart": ""
 }
