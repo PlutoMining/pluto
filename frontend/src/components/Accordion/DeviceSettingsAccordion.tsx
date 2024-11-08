@@ -338,7 +338,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             p={"1rem"}
             display={{ base: "none", tablet: "flex" }}
             borderBottom={`1px solid ${borderColor}`}
-            gap={"2rem"}
           >
             <Text
               fontWeight={600}
@@ -349,11 +348,11 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
               textAlign={"center"}
               p={0}
               as={Flex}
-              flex={10}
+              flex={8}
             >
               Hostname
             </Text>
-            <Box as={Flex} flex={3} gap={"1.75rem"} justify={"flex-end"}>
+            <Box as={Flex} flex={5} gap={"1.75rem"} justify={"space-between"}>
               <Text
                 fontWeight={600}
                 color={"device-th-color"}
@@ -834,7 +833,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         bg={"ds-h-acc"}
       >
         <Flex gap={"1rem"} alignItems={"center"} justify={"space-between"} w={"100%"}>
-          <Flex alignItems={"center"} gap={"0.25rem"} flex={10}>
+          <Flex alignItems={"center"} gap={"0.25rem"} flex={8}>
             <Flex alignItems={"center"} gap={"0.5rem"} fontFamily={"heading"}>
               <Flex display={{ base: "none", tablet: "flex" }}>
                 <Checkbox
@@ -876,7 +875,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               </Flex>
             </Flex>
           </Flex>
-          <Flex alignItems={"center"} gap={"1rem"} flex={3} justify={{ base: "flex-end" }}>
+          <Flex alignItems={"center"} gap={"1rem"} flex={5} justify={{ base: "space-between" }}>
             <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
             <Flex alignItems={"center"} display={{ base: "none", tablet: "flex" }}>
               <Flex
@@ -907,7 +906,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                   },
                 }}
               >
-                <RestartIcon color={"body-text"} />
+                <RestartIcon color={"primary-color"} />
                 Restart
               </Flex>
             </Flex>

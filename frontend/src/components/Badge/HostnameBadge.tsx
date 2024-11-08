@@ -10,6 +10,7 @@ export interface DeviceStatusBadgeProps {
 
 export const HostnameBadge: React.FC<DeviceStatusBadgeProps> = ({ mac, hostname, ip, tracing }) => {
   const [badgeBg] = useToken("colors", ["badge-bg"]);
+  const [badgeBorder] = useToken("colors", ["badge-border"]);
   const [badgeColor] = useToken("colors", ["badge-color"]);
   const [badgeIpColor] = useToken("colors", ["badge-ip-color"]);
   return (
@@ -20,6 +21,7 @@ export const HostnameBadge: React.FC<DeviceStatusBadgeProps> = ({ mac, hostname,
       borderRadius={0}
       padding={"4px 6px"}
       fontFamily={"body"}
+      border={`1px solid ${badgeBorder}`}
     >
       <Flex alignItems={"center"} gap={"0.25rem"} p={"5px 8px"} height={"21.5px"}>
         <Text fontWeight={500} textTransform={"capitalize"} color={badgeColor}>

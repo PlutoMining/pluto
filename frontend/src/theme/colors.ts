@@ -15,6 +15,7 @@ export const colors = {
   },
   primary: {
     100: "#D1FAF5",
+    200: "#D3F2F2",
     500: "#13FFEB", // primary
     600: "#00CBB8",
     700: "#009888",
@@ -28,7 +29,7 @@ export const colors = {
     500: "#0077C1", // secondary
   },
   alert: {
-    success: "#96E04D",
+    success: "#77C926",
     error: "#EE2B34",
     warning: "#FFBE4D",
   },

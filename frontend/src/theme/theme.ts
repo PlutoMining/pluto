@@ -261,11 +261,19 @@ const theme = extendTheme({
         _dark: colors.primary[500],
       },
       "badge-color": {
-        _light: colors.greyscale[0], // da modificare con i valori corretti
+        _light: colors.greyscale[900],
         _dark: colors.greyscale[0],
       },
+      "badge-bg": {
+        _light: colors.primary[200],
+        _dark: colors.greyscale[500],
+      },
+      "badge-border": {
+        _light: colors.greyscale[200],
+        _dark: colors.greyscale[500],
+      },
       "badge-ip-color": {
-        _light: colors.greyscale[200], // da modificare con i valori corretti
+        _light: colors.greyscale[500],
         _dark: colors.greyscale[200],
       },
       "dashboard-title": {
@@ -287,10 +295,6 @@ const theme = extendTheme({
       "dashboard-badge-bg": {
         _light: colors.greyscale[200], // da modificare con i valori corretti
         _dark: "#CBCBCC66",
-      },
-      "badge-bg": {
-        _light: colors.greyscale[500], // da modificare con i valori corretti
-        _dark: colors.greyscale[500],
       },
       "primary-color": {
         _light: colors.primary[600],
