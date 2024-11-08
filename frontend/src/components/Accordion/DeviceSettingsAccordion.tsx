@@ -271,14 +271,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 
   return (
     <>
-      <Flex
-        flexDirection={"column"}
-        gap={"1rem"}
-        borderWidth={"1px"}
-        borderColor={"border-color"}
-        backgroundColor={"bg-color"}
-        p={"1rem"}
-      >
+      <Flex flexDirection={"column"} gap={"1rem"}>
         <Flex
           justify={{ base: "flex-end", tablet: "space-between" }}
           alignItems={{ base: "flex-end", tablet: "center" }}
@@ -340,9 +333,9 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           onChange={setActiveIndex}
         >
           <Flex
-            backgroundColor={"bg-color"}
+            backgroundColor={"ds-h-table"}
             justify={"flex-end"}
-            p={"0.5rem 1rem"}
+            p={"1rem"}
             display={{ base: "none", tablet: "flex" }}
             borderBottom={`1px solid ${borderColor}`}
             gap={"2rem"}
@@ -838,7 +831,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         p={"0.5rem 1rem"}
         justifyContent={"space-between"}
         _hover={{ backgroundColor: "none" }}
-        bg={"th-bg"}
+        bg={"ds-h-acc"}
       >
         <Flex gap={"1rem"} alignItems={"center"} justify={"space-between"} w={"100%"}>
           <Flex alignItems={"center"} gap={"0.25rem"} flex={10}>
@@ -855,7 +848,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
             </Flex>
             <Flex alignItems={"center"} gap={"0.5rem"}>
               <Text
-                fontSize={"md"}
+                fontSize={"sm"}
                 fontWeight={400}
                 textTransform={"capitalize"}
                 fontFamily={"accent"}
@@ -863,7 +856,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 {device.info.hostname}
               </Text>
               <Text
-                fontSize={"md"}
+                fontSize={"sm"}
                 fontWeight={400}
                 textTransform={"capitalize"}
                 display={{ base: "none", tablet: "block" }}
@@ -929,7 +922,13 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           </Flex>
         </Flex>
       </AccordionButton>
-      <AccordionPanel p={0} as={Flex} flexDir={"column"} alignItems={"flex-start"} bg={"td-bg"}>
+      <AccordionPanel
+        p={0}
+        as={Flex}
+        flexDir={"column"}
+        alignItems={"flex-start"}
+        bg={"ds-body-acc"}
+      >
         <Divider borderColor={"border-color"} />
         <Flex flexDir={"column"} p={"1rem"} w={"100%"}>
           <Flex flexDirection={"column"} gap={"1rem"} w={"100%"}>

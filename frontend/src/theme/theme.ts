@@ -287,6 +287,20 @@ const theme = extendTheme({
         _light: colors.greyscale[500],
         _dark: colors.primary[100],
       },
+
+      // device-settings
+      "ds-h-table": {
+        _light: colors.greyscale[50],
+        _dark: colors.greyscale[850],
+      },
+      "ds-h-acc": {
+        _light: colors.greyscale[100],
+        _dark: colors.greyscale[800],
+      },
+      "ds-body-acc": {
+        _light: colors.greyscale[0],
+        _dark: colors.greyscale[900],
+      },
     },
   },
   colors: [colors, colors],

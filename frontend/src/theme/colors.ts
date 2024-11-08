@@ -1,6 +1,7 @@
 export const colors = {
   greyscale: {
     0: "#fff",
+    50: "#FAFAFA",
     100: "#F2F5F5",
     200: "#CBCCCC",
     300: "#A2A6A5",
@@ -9,6 +10,7 @@ export const colors = {
     700: "#121619",
     750: "#161B1F",
     800: "#090B0D",
+    850: "#090B0D",
     900: "#000000",
   },
   primary: {

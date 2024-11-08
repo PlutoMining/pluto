@@ -4,7 +4,7 @@ import Alert from "@/components/Alert/Alert";
 import { AlertInterface, AlertStatus } from "@/components/Alert/interfaces";
 import Button from "@/components/Button/Button";
 import { CloseIcon } from "@/components/icons/CloseIcon";
-import { RestartIcon } from "@/components/icons/RestartIcon";
+import { RestartAllIcon, RestartIcon } from "@/components/icons/RestartIcon";
 import { SearchInput } from "@/components/Input";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import {
@@ -120,7 +120,7 @@ const SettingsPage = () => {
     onCloseAlert();
   }, [onCloseAlert]);
 
-  const [itemBg] = useToken("colors", ["item-bg"]);
+  const [textColor] = useToken("colors", ["body-text"]);
 
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
@@ -140,6 +140,9 @@ const SettingsPage = () => {
               alignItems={{ mobile: "start", tablet: "center", desktop: "center" }}
               flexDir={{ mobile: "column", tablet: "row", desktop: "row" }}
               gap={"1.5rem"}
+              pb={"1rem"}
+              borderColor={"border-color"}
+              borderBottomWidth={"1px"}
             >
               <Heading fontSize={"4xl"} fontWeight={"700"} textTransform={"uppercase"}>
                 Device settings
@@ -157,7 +160,7 @@ const SettingsPage = () => {
                 <Box>
                   <Button
                     variant="primary"
-                    icon={<RestartIcon color={itemBg} />}
+                    icon={<RestartAllIcon color={textColor} />}
                     onClick={onOpenModal}
                     label="Restart all"
                   ></Button>
