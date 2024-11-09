@@ -64,7 +64,7 @@ services:
       # - ./common/db:/common/db:ro # Monta il modulo in read-only
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       # - ./discovery:/app/
-      - /home/umbrel/umbrel/app-data/bemind-pluto-next/data/leveldb:/app/data
+      - ${APP_DATA_DIR}/data/leveldb:/app/data
     depends_on:
       leveldb-init:
         condition: service_completed_successfully
@@ -95,8 +95,8 @@ services:
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       # - ./backend:/app/
       # - ./grafana/templates:/app/grafana_templates/
-      - /home/umbrel/umbrel/app-data/bemind-pluto-next/data/leveldb:/app/data
-      - /home/umbrel/umbrel/app-data/bemind-pluto-next/data/grafana:/app/grafana
+      - ${APP_DATA_DIR}/data/leveldb:/app/data
+      - ${APP_DATA_DIR}/data/grafana:/app/grafana
     depends_on:
       leveldb-init:
         condition: service_completed_successfully
@@ -127,10 +127,10 @@ services:
       - BACKEND_DESTINATION_HOST=http://bemind-pluto-next_backend_1:7676
       - NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676
     volumes:
-      - /home/umbrel/umbrel/app-data/bemind-pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
+      - ${APP_DATA_DIR}/umbrel-app.yml:/tmp/umbrel-app.yml:ro
     #   - ./common/utils:/common/utils:ro # Monta il modulo in read-only
     #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
-    #   - /home/umbrel/umbrel/app-data/bemind-pluto-next/frontend:/app/
+    #   - ${APP_DATA_DIR}/frontend:/app/
 
   prometheus:
     # build:
@@ -138,8 +138,8 @@ services:
     #   dockerfile: Dockerfile
     image: whirmill/pluto-prometheus:0.6.0-beta.13
     volumes:
-      - /home/umbrel/umbrel/app-data/bemind-pluto-next/data/prometheus:/prometheus
-      # - /home/umbrel/umbrel/app-data/bemind-pluto-next/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ${APP_DATA_DIR}/data/prometheus:/prometheus
+      # - ${APP_DATA_DIR}/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     # ports:
     #   - "9090:9090"
     pid: host
@@ -167,10 +167,10 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${APP_PASSWORD}
       - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
     volumes:
-      - /home/umbrel/umbrel/app-data/bemind-pluto-next/data/grafana:/var/lib/grafana
-      # - /home/umbrel/umbrel/app-data/bemind-pluto-next/grafana/grafana.ini:/etc/grafana/grafana.ini
-      # - /home/umbrel/umbrel/app-data/bemind-pluto-next/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
-      # - /home/umbrel/umbrel/app-data/bemind-pluto-next/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
+      - ${APP_DATA_DIR}/data/grafana:/var/lib/grafana
+      # - ${APP_DATA_DIR}/grafana/grafana.ini:/etc/grafana/grafana.ini
+      # - ${APP_DATA_DIR}/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      # - ${APP_DATA_DIR}/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -191,7 +191,7 @@ services:
     image: whirmill/pluto-init:0.6.0-beta.13
     volumes:
       # - ./init/init-prometheus.sh:/init-scripts/init-prometheus.sh
-      - /home/umbrel/umbrel/app-data/bemind-pluto-next/data/prometheus:/prometheus
+      - ${APP_DATA_DIR}/data/prometheus:/prometheus
     command: /init-scripts/init-prometheus.sh
 
   grafana-init: # sidecar container for volume permissions
@@ -201,7 +201,7 @@ services:
     image: whirmill/pluto-init:0.6.0-beta.13
     volumes:
       # - ./init/init-grafana.sh:/init-scripts/init-grafana.sh
-      - /home/umbrel/umbrel/app-data/bemind-pluto-next/data/grafana:/grafana
+      - ${APP_DATA_DIR}/data/grafana:/grafana
     command: /init-scripts/init-grafana.sh
 
   leveldb-init: # sidecar container for volume permissions
@@ -211,5 +211,5 @@ services:
     image: whirmill/pluto-init:0.6.0-beta.13
     volumes:
       # - ./init/init-leveldb.sh:/init-scripts/init-leveldb.sh
-      - /home/umbrel/umbrel/app-data/bemind-pluto-next/data/leveldb:/leveldb
+      - ${APP_DATA_DIR}/data/leveldb:/leveldb
     command: /init-scripts/init-leveldb.sh

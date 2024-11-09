@@ -1,7 +1,7 @@
 manifestVersion: 1
 id: bemind-pluto-next
 name: Pluto Next
-category: Mining
+category: bitcoin
 version: "0.6.0-beta.15"
 tagline: Pluto
 icon: https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto-next/icon.jpg
