@@ -13,7 +13,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: mock/Dockerfile
-    image: whirmill/pluto-mock:0.6.0-beta.13 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-mock:0.6.0-beta.18 # Docker image with specific version
     container_name: plutomining-pluto-next_mock_1
     ports:
       - "7670:7670"
@@ -46,7 +46,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: whirmill/pluto-discovery:0.6.0-beta.13 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-beta.18 # Docker image with specific version
     container_name: plutomining-pluto-next_discovery_1
     network_mode: "host"
     # ports:
@@ -72,7 +72,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: whirmill/pluto-backend:0.6.0-beta.13 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-beta.18 # Docker image with specific version
     container_name: plutomining-pluto-next_backend_1
     ports:
       - "7676:7676"
@@ -107,7 +107,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: whirmill/pluto-frontend:0.6.0-beta.16 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.6.0-beta.18 # Docker image with specific version
     container_name: plutomining-pluto-next_frontend_1
     ports:
       - "7677:7677" # Map port 7777 on the host to port 7777 on the container
