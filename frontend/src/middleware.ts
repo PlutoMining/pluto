@@ -4,6 +4,8 @@ import type { NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
 
+  const internalApiRoutes = ["/api/app-version"];
+
   // Gestione delle richieste verso Grafana
   if (url.pathname.startsWith("/grafana")) {
     const grafanaUrl = new URL(`${process.env.GF_HOST!}${url.pathname}`, req.url);
@@ -31,13 +33,18 @@ export function middleware(req: NextRequest) {
 
   // Gestione delle richieste verso l'API backend
   if (url.pathname.startsWith("/api")) {
-    const backendHost = process.env.BACKEND_DESTINATION_HOST;
-    if (backendHost) {
-      const apiUrl = new URL(`${backendHost}${url.pathname}${url.search}`);
-      return NextResponse.rewrite(apiUrl);
-    } else {
-      console.error("Errore: BACKEND_DESTINATION_HOST non è definito");
-      return NextResponse.next(); // O restituisci un errore personalizzato
+    // Verifica se la rotta è tra quelle da escludere
+    const isInternalRoute = internalApiRoutes.some((route) => url.pathname.startsWith(route));
+
+    if (!isInternalRoute) {
+      const backendHost = process.env.BACKEND_DESTINATION_HOST;
+      if (backendHost) {
+        const apiUrl = new URL(`${backendHost}${url.pathname}${url.search}`);
+        return NextResponse.rewrite(apiUrl);
+      } else {
+        console.error("Errore: BACKEND_DESTINATION_HOST non è definito");
+        return NextResponse.next(); // O restituisci un errore personalizzato
+      }
     }
   }
 
