@@ -6,15 +6,9 @@ export function middleware(req: NextRequest) {
 
   const internalApiRoutes = ["/api/app-version"];
 
-  // Function to ensure each URL segment has a trailing slash
-  const ensureTrailingSlash = (str: string) => (str.endsWith("/") ? str : `${str}/`);
-
   // Handling requests to Grafana
   if (url.pathname.startsWith("/grafana")) {
-    const grafanaUrl = new URL(
-      `${ensureTrailingSlash(process.env.GF_HOST!)}${url.pathname}`,
-      req.url
-    );
+    const grafanaUrl = new URL(`${process.env.GF_HOST!}${url.pathname}`, req.url);
 
     // Create the response by rewriting the URL
     const response = NextResponse.rewrite(grafanaUrl);
@@ -45,7 +39,9 @@ export function middleware(req: NextRequest) {
     if (!isInternalRoute) {
       const backendHost = process.env.BACKEND_DESTINATION_HOST;
       if (backendHost) {
-        const apiUrl = new URL(`${ensureTrailingSlash(backendHost)}${url.pathname}${url.search}`);
+        // Remove "/api" from the destination path
+        const strippedPath = url.pathname.replace("/api", "");
+        const apiUrl = new URL(`${backendHost}${strippedPath}${url.search}`);
         return NextResponse.rewrite(apiUrl);
       } else {
         console.error("Error: BACKEND_DESTINATION_HOST is not defined");
