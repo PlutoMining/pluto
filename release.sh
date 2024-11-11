@@ -111,7 +111,7 @@ if [ "$SKIP_LOGIN" = false ]; then
     read -s DOCKER_ACCESS_TOKEN
 
     # Perform Docker login
-    echo "$DOCKER_ACCESS_TOKEN" | docker login $DOCKER_REGISTRY --password-stdin
+    echo "$DOCKER_ACCESS_TOKEN" | docker login $DOCKER_REGISTRY # --password-stdin
     # echo "$DOCKER_ACCESS_TOKEN" | docker login --username "$DOCKER_USERNAME" --password-stdin
 else
     echo "Skipping Docker login..."
