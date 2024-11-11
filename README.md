@@ -175,4 +175,4 @@ The release configuration uses external directories for persistent data storage:
 
 ## License
 
-This project is licensed under the AGPLv3 License. See the [LICENSE](LICENSE) file for more details.
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). See the [LICENSE](LICENSE) file for more details.
