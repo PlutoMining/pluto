@@ -1,4 +1,5 @@
-import { Link as ChakraLink, Text, useToken, VStack } from "@chakra-ui/react";
+import { Link as ChakraLink, Text, VStack } from "@chakra-ui/react";
+import NextLink from "next/link";
 import React from "react";
 
 interface NoDeviceAddedSectionProps {}
@@ -8,6 +9,7 @@ export const NoDeviceAddedSection: React.FC<NoDeviceAddedSectionProps> = ({}) =>
     <VStack>
       <Text>Start using Pluto adding your first device</Text>
       <ChakraLink
+        as={NextLink}
         key={"add-devices"}
         href={"/devices"}
         textTransform={"uppercase"}
@@ -34,7 +36,7 @@ export const NoDeviceAddedSection: React.FC<NoDeviceAddedSectionProps> = ({}) =>
           pointerEvents: "none",
         }}
       >
-        Go to "Your Devices"
+        {'Go to "Your Devices"'}
       </ChakraLink>
     </VStack>
   );
