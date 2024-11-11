@@ -43,6 +43,8 @@ export function middleware(req: NextRequest) {
     if (!isInternalRoute) {
       const backendHost = process.env.BACKEND_DESTINATION_HOST;
       if (backendHost) {
+        console.log("DEST URL: ", `${backendHost}${url.pathname}${url.search}`);
+
         const apiUrl = new URL(`${backendHost}${url.pathname}${url.search}`);
         return NextResponse.rewrite(apiUrl);
       } else {
