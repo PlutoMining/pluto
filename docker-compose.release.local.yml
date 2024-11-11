@@ -114,7 +114,7 @@ services:
     # Use the host's PID namespace to allow container processes to be visible on the host
     pid: host
 
-    # Container restart policy - restart unless manually stopped
+    # Container restart policy - restart unless manually stoppedq
     restart: unless-stopped
     depends_on:
       - backend
@@ -124,7 +124,7 @@ services:
       - PORT=7777
       - GF_HOST=http://plutomining-pluto_grafana_1:3000
       - BACKEND_DESTINATION_HOST=http://plutomining-pluto_backend_1:7776
-      - NEXT_PUBLIC_WS_ROOT=ws://localhost:7776
+      # - NEXT_PUBLIC_WS_ROOT=ws://localhost:7776
     volumes:
       - ./umbrel-app.yml:/tmp/umbrel-app.yml:ro
     #   - ./common/utils:/common/utils:ro # Monta il modulo in read-only

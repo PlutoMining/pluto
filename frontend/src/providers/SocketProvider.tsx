@@ -17,7 +17,7 @@ const SocketContext = createContext<SocketContextType>({
 });
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
-  const wsRoot = process.env.NEXT_PUBLIC_WS_ROOT!;
+  const wsRoot = window.location.origin;
 
   const [socket, setSocket] = useState<any | null>(null);
   const [isConnected, setIsConnected] = useState(false);

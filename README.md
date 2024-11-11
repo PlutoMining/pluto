@@ -142,7 +142,7 @@ The release configuration uses external directories for persistent data storage:
 - **Environment Variables**:
   - `PORT`: Frontend service port.
   - `BACKEND_DESTINATION_HOST`: URL for the backend service.
-  - `NEXT_PUBLIC_WS_ROOT`: WebSocket root URL for frontend communication.
+  <!-- - `NEXT_PUBLIC_WS_ROOT`: WebSocket root URL for frontend communication. -->
 
 ### prometheus
 

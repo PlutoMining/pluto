@@ -99,13 +99,13 @@ if [ "$IS_PRERELEASE" = false ]; then
     fi
 fi
 
-# Update the FRONTEND_BUILD_ARGS and Dockerfile selection based on the release type
-if [ "$IS_PRERELEASE" = true ]; then
-    echo "Pre-release selected: scaling ports down by 100."
-    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676"
-else
-    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776"
-fi
+# # Update the FRONTEND_BUILD_ARGS and Dockerfile selection based on the release type
+# if [ "$IS_PRERELEASE" = true ]; then
+#     echo "Pre-release selected: scaling ports down by 100."
+#     FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676"
+# else
+#     FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776"
+# fi
 
 # Only perform Docker login if the skip login flag is not set
 if [ "$SKIP_LOGIN" = false ]; then
