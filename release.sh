@@ -186,18 +186,18 @@ for service in backend discovery mock frontend; do
             DOCKERFILE_PATH="$service/Dockerfile.next"
         fi
 
-        # Check if service is frontend to pass specific build args
-        if [ "$service" == "frontend" ]; then
-            docker buildx build --platform linux/amd64,linux/arm64 \
-                -t ${DOCKER_REGISTRY}/pluto-$service:latest \
-                -t ${DOCKER_REGISTRY}/pluto-$service:"$new_version" \
-                -f $DOCKERFILE_PATH . --push $FRONTEND_BUILD_ARGS
-        else
-            docker buildx build --platform linux/amd64,linux/arm64 \
-                -t ${DOCKER_REGISTRY}/pluto-$service:latest \
-                -t ${DOCKER_REGISTRY}/pluto-$service:"$new_version" \
-                -f $DOCKERFILE_PATH . --push
-        fi
+        # # Check if service is frontend to pass specific build args
+        # if [ "$service" == "frontend" ]; then
+        #     docker buildx build --platform linux/amd64,linux/arm64 \
+        #         -t ${DOCKER_REGISTRY}/pluto-$service:latest \
+        #         -t ${DOCKER_REGISTRY}/pluto-$service:"$new_version" \
+        #         -f $DOCKERFILE_PATH . --push $FRONTEND_BUILD_ARGS
+        # else
+        docker buildx build --platform linux/amd64,linux/arm64 \
+            -t ${DOCKER_REGISTRY}/pluto-$service:latest \
+            -t ${DOCKER_REGISTRY}/pluto-$service:"$new_version" \
+            -f $DOCKERFILE_PATH . --push
+        # fi
     else
         echo "Skipping Docker build for $service as the version has not changed."
     fi
