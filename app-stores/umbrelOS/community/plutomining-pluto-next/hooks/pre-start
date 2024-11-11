@@ -38,9 +38,9 @@ echo "Setting permissions for Prometheus data directory..."
 
 mkdir -p ${APP_DATA_DIR}/data/prometheus
 
-chmod -R 777 /prometheus
+chmod -R 777 ${APP_DATA_DIR}/data/prometheus
 
 # Stampa i permessi per confermare
-ls -ld /prometheus
+ls -ld ${APP_DATA_DIR}/data/prometheus
 
 echo "Prometheus permissions set successfully!"
