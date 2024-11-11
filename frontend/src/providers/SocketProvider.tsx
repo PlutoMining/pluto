@@ -17,7 +17,7 @@ const SocketContext = createContext<SocketContextType>({
 });
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
-  const wsRoot = "/";
+  const wsRoot = "/api/";
 
   const [socket, setSocket] = useState<any | null>(null);
   const [isConnected, setIsConnected] = useState(false);
