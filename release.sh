@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DOCKER_REGISTRY=https://registry.gitlab.com/plutomining/pluto
+DOCKER_REGISTRY=registry.gitlab.com/plutomining/pluto
 
 # Function to update the version in the specified files
 update_version() {
