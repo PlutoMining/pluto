@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DOCKER_REGISTRY=https://registry.gitlab.com/plutomining/pluto
+
 # Function to update the version in the specified files
 update_version() {
     local service=$1
@@ -15,13 +17,13 @@ update_version() {
     # Determine which files to update based on pre-release status
     if [ "$IS_PRERELEASE" = true ]; then
         # Update only next files
-        sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto-next/docker-compose.yml
-        sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.next.local.yml
+        sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto-next/docker-compose.yml
+        sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" docker-compose.next.local.yml
     else
         # Update the main files
-        sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" app-stores/umbrelOS/official/pluto/docker-compose.yml
-        sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/docker-compose.yml
-        sed -i '' -E "s/whirmill\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/whirmill\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
+        sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/official/pluto/docker-compose.yml
+        sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/docker-compose.yml
+        sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
     fi
 }
 
@@ -109,7 +111,7 @@ if [ "$SKIP_LOGIN" = false ]; then
     read -s DOCKER_ACCESS_TOKEN
 
     # Perform Docker login
-    echo "$DOCKER_ACCESS_TOKEN" | docker login --username "$DOCKER_USERNAME" --password-stdin
+    echo "$DOCKER_ACCESS_TOKEN" | docker login --registry $DOCKER_REGISTRY --username "$DOCKER_USERNAME" --password-stdin
 else
     echo "Skipping Docker login..."
 fi
@@ -181,13 +183,13 @@ for service in backend discovery mock frontend; do
         # Check if service is frontend to pass specific build args
         if [ "$service" == "frontend" ]; then
             docker buildx build --platform linux/amd64,linux/arm64 \
-                -t whirmill/pluto-$service:latest \
-                -t whirmill/pluto-$service:"$new_version" \
+                -t ${DOCKER_REGISTRY}/pluto-$service:latest \
+                -t ${DOCKER_REGISTRY}/pluto-$service:"$new_version" \
                 -f $DOCKERFILE_PATH . --push $FRONTEND_BUILD_ARGS
         else
             docker buildx build --platform linux/amd64,linux/arm64 \
-                -t whirmill/pluto-$service:latest \
-                -t whirmill/pluto-$service:"$new_version" \
+                -t ${DOCKER_REGISTRY}/pluto-$service:latest \
+                -t ${DOCKER_REGISTRY}/pluto-$service:"$new_version" \
                 -f $DOCKERFILE_PATH . --push
         fi
     else
