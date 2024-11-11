@@ -6,26 +6,28 @@ export function middleware(req: NextRequest) {
 
   const internalApiRoutes = ["/api/app-version"];
 
-  console.log("---middleware---");
-  console.log("process.env.GF_HOST: ", process.env.GF_HOST);
-  console.log("process.env.BACKEND_DESTINATION_HOST: ", process.env.BACKEND_DESTINATION_HOST);
+  // Function to ensure each URL segment has a trailing slash
+  const ensureTrailingSlash = (str: string) => (str.endsWith("/") ? str : `${str}/`);
 
-  // Gestione delle richieste verso Grafana
+  // Handling requests to Grafana
   if (url.pathname.startsWith("/grafana")) {
-    const grafanaUrl = new URL(`${process.env.GF_HOST!}${url.pathname}`, req.url);
+    const grafanaUrl = new URL(
+      `${ensureTrailingSlash(process.env.GF_HOST!)}${url.pathname}`,
+      req.url
+    );
 
-    // Crea la risposta riscrivendo l'URL
+    // Create the response by rewriting the URL
     const response = NextResponse.rewrite(grafanaUrl);
 
     if (!url.pathname.startsWith("/grafana/public-dashboards")) {
-      // Aggiungi gli headers personalizzati per le richieste verso Grafana
+      // Add custom headers for requests to Grafana
       response.headers.set("X-WEBAUTH-USER", "admin");
     }
 
-    // Aggiungi l'header per permettere il caricamento in iframe
+    // Add header to allow iframe loading
     response.headers.set("X-Frame-Options", "ALLOWALL");
 
-    // Imposta il Content-Security-Policy per consentire iframe da qualsiasi origine
+    // Set Content-Security-Policy to allow iframes from any origin
     response.headers.set("Content-Security-Policy", "frame-ancestors 'self' *;");
 
     if (url.pathname.includes("/api") && !url.pathname.includes("api/user/auth-tokens/rotate")) {
@@ -35,30 +37,28 @@ export function middleware(req: NextRequest) {
     return response;
   }
 
-  // Gestione delle richieste verso l'API backend
+  // Handling requests to the backend API
   if (url.pathname.startsWith("/api")) {
-    // Verifica se la rotta è tra quelle da escludere
+    // Check if the route is in the list of internal routes
     const isInternalRoute = internalApiRoutes.some((route) => url.pathname.startsWith(route));
 
     if (!isInternalRoute) {
       const backendHost = process.env.BACKEND_DESTINATION_HOST;
       if (backendHost) {
-        console.log("DEST URL: ", `${backendHost}${url.pathname}${url.search}`);
-
-        const apiUrl = new URL(`${backendHost}${url.pathname}${url.search}`);
+        const apiUrl = new URL(`${ensureTrailingSlash(backendHost)}${url.pathname}${url.search}`);
         return NextResponse.rewrite(apiUrl);
       } else {
-        console.error("Errore: BACKEND_DESTINATION_HOST non è definito");
-        return NextResponse.next(); // O restituisci un errore personalizzato
+        console.error("Error: BACKEND_DESTINATION_HOST is not defined");
+        return NextResponse.next(); // Or return a custom error response
       }
     }
   }
 
-  // Se nessuna condizione è soddisfatta, prosegui normalmente
+  // If no condition is met, proceed normally
   return NextResponse.next();
 }
 
-// Configurazione del matcher per gestire entrambe le rotte
+// Matcher configuration to handle both routes
 export const config = {
   matcher: ["/grafana/:path*", "/api/:path*"],
   dynamic: "force-dynamic",
