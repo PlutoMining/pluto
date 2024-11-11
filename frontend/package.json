@@ -1,6 +1,6 @@
 {
   "name": "@pluto/frontend",
-  "version": "0.6.0-beta.30",
+  "version": "0.6.0-beta.31",
   "private": true,
   "scripts": {
     "dev": "next dev",
