@@ -13,22 +13,29 @@ export const DeviceStatusBadge: React.FC<DeviceStatusBadgeProps> = ({
   lineHeight = "20px",
   invert = false,
 }) => {
-  const [onlineColor] = useToken("colors", ["status-online"]);
-  const [offlineColor] = useToken("colors", ["status-offline"]);
+  // online colors
+  const [onlineColor] = useToken("colors", ["badge-online-color"]);
+  const [onlineBorder] = useToken("colors", ["badge-online-border"]);
+  const [onlineBg] = useToken("colors", ["badge-online-bg"]);
+
+  // offline colors
+  const [offlineColor] = useToken("colors", ["badge-offline-color"]);
+  const [offlineBorder] = useToken("colors", ["badge-offline-border"]);
+  const [offlineBg] = useToken("colors", ["badge-offline-bg"]);
 
   const color = status === "online" ? onlineColor : offlineColor;
-  const bgColor = useToken("colors", ["bg-color"]);
-
+  const borderColor = status === "online" ? onlineBorder : offlineBorder;
+  const bgColor = status === "online" ? onlineBg : offlineBg;
   return (
     <ChakraBadge
       fontFamily={"body"}
       fontWeight={"500"}
-      bg={invert ? color : "transparent"}
-      color={invert ? bgColor : color}
+      bg={bgColor}
+      color={color}
       fontSize={"13px"}
       lineHeight={lineHeight}
       borderWidth={"1px"}
-      borderColor={color}
+      borderColor={borderColor}
       padding={"4px 8px"}
       textTransform={"uppercase"}
       alignContent={"center"}

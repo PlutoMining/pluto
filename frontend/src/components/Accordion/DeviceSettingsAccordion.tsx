@@ -271,14 +271,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 
   return (
     <>
-      <Flex
-        flexDirection={"column"}
-        gap={"1rem"}
-        borderWidth={"1px"}
-        borderColor={"border-color"}
-        backgroundColor={"bg-color"}
-        p={"1rem"}
-      >
+      <Flex flexDirection={"column"} gap={"1rem"}>
         <Flex
           justify={{ base: "flex-end", tablet: "space-between" }}
           alignItems={{ base: "flex-end", tablet: "center" }}
@@ -333,19 +326,17 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           allowMultiple
           as={Flex}
           flexDir={"column"}
-          borderWidth={"1px"}
-          borderColor={"border-color"}
-          backgroundColor={"item-bg"}
           index={activeIndex}
           onChange={setActiveIndex}
+          gap={{ base: "0.5rem", tablet: "0" }}
         >
           <Flex
-            backgroundColor={"bg-color"}
+            backgroundColor={"ds-h-table"}
             justify={"flex-end"}
-            p={"0.5rem 1rem"}
+            p={"1rem"}
             display={{ base: "none", tablet: "flex" }}
-            borderBottom={`1px solid ${borderColor}`}
-            gap={"2rem"}
+            border={`1px solid ${borderColor}`}
+            borderBottomWidth={0}
           >
             <Text
               fontWeight={600}
@@ -356,11 +347,11 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
               textAlign={"center"}
               p={0}
               as={Flex}
-              flex={10}
+              flex={8}
             >
               Hostname
             </Text>
-            <Box as={Flex} flex={3} gap={"1.75rem"} justify={"flex-end"}>
+            <Box as={Flex} flex={5} gap={"1.75rem"} justify={"space-between"}>
               <Text
                 fontWeight={600}
                 color={"device-th-color"}
@@ -379,9 +370,11 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           {devices?.map((device, index) => (
             <ChakraAccordionItem
               key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
-              p={0}
-              borderTopWidth={index === 0 ? "none" : "1px"}
-              borderBottomWidth={"0px!important"}
+              borderTopWidth={{ tablet: index === 0 ? "none" : "1px" }}
+              borderBottomWidth={{ tablet: devices.length - 1 === index ? "1px" : "0px!important" }}
+              // borderBottomWidth={{ tablet: { devices.length === index ? "1px" : "0px!important"} }}
+              borderWidth={"1px"}
+              borderColor={"border-color"}
             >
               {device && presets && (
                 <AccordionItem
@@ -838,10 +831,10 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         p={"0.5rem 1rem"}
         justifyContent={"space-between"}
         _hover={{ backgroundColor: "none" }}
-        bg={"th-bg"}
+        bg={"ds-h-acc"}
       >
         <Flex gap={"1rem"} alignItems={"center"} justify={"space-between"} w={"100%"}>
-          <Flex alignItems={"center"} gap={"0.25rem"} flex={10}>
+          <Flex alignItems={"center"} gap={"0.25rem"} flex={8}>
             <Flex alignItems={"center"} gap={"0.5rem"} fontFamily={"heading"}>
               <Flex display={{ base: "none", tablet: "flex" }}>
                 <Checkbox
@@ -855,7 +848,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
             </Flex>
             <Flex alignItems={"center"} gap={"0.5rem"}>
               <Text
-                fontSize={"md"}
+                fontSize={"sm"}
                 fontWeight={400}
                 textTransform={"capitalize"}
                 fontFamily={"accent"}
@@ -863,7 +856,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 {device.info.hostname}
               </Text>
               <Text
-                fontSize={"md"}
+                fontSize={"sm"}
                 fontWeight={400}
                 textTransform={"capitalize"}
                 display={{ base: "none", tablet: "block" }}
@@ -883,7 +876,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               </Flex>
             </Flex>
           </Flex>
-          <Flex alignItems={"center"} gap={"1rem"} flex={3} justify={{ base: "flex-end" }}>
+          <Flex alignItems={"center"} gap={"1rem"} flex={5} justify={{ base: "space-between" }}>
             <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
             <Flex alignItems={"center"} display={{ base: "none", tablet: "flex" }}>
               <Flex
@@ -914,7 +907,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                   },
                 }}
               >
-                <RestartIcon color={"body-text"} />
+                <RestartIcon color={"primary-color"} />
                 Restart
               </Flex>
             </Flex>
@@ -929,7 +922,13 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           </Flex>
         </Flex>
       </AccordionButton>
-      <AccordionPanel p={0} as={Flex} flexDir={"column"} alignItems={"flex-start"} bg={"td-bg"}>
+      <AccordionPanel
+        p={0}
+        as={Flex}
+        flexDir={"column"}
+        alignItems={"flex-start"}
+        bg={"ds-body-acc"}
+      >
         <Divider borderColor={"border-color"} />
         <Flex flexDir={"column"} p={"1rem"} w={"100%"}>
           <Flex flexDirection={"column"} gap={"1rem"} w={"100%"}>
@@ -1203,23 +1202,26 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         display={{ base: "flex", tablet: "none" }}
         justify={"space-between"}
         padding={"0.15rem 1rem"}
-        backgroundColor={"th-bg"}
+        backgroundColor={"ds-h-table"}
+        borderTopColor={"border-color"}
+        borderTopWidth={"1px"}
       >
-        <Flex gap={"0.5rem"} alignItems={"center"}>
-          <Text fontSize={"md"} fontWeight={500}>
+        <Flex gap={"0.5rem"} alignItems={"center"} fontFamily={"accent"}>
+          <Text fontSize={"sm"} fontWeight={500}>
             IP
           </Text>
-          <Text fontSize={"md"} fontWeight={500}>
+          <Text fontSize={"sm"} fontWeight={500}>
             -
           </Text>
           <Link
             href={`http://${device.ip}`}
             isExternal={true}
             label={device.ip}
-            fontSize={"md"}
+            fontSize={"sm"}
             fontWeight={400}
             textDecoration="underline"
             isDisabled={device.tracing ? false : true}
+            fontFamily={"accent"}
           />
         </Flex>
         <Flex
@@ -1233,7 +1235,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           lineHeight="1.5rem"
           fontWeight={400}
           fontFamily={"accent"}
-          textTransform={"uppercase"}
+          textTransform={"capitalize"}
           padding={"0.5rem 1rem"}
           _hover={{ color: "cta-text-hover", iconColor: "cta-bg-hover" }}
           _focus={{
@@ -1250,7 +1252,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
             },
           }}
         >
-          <RestartIcon color={"body-text"} />
+          <RestartIcon color={"primary-color"} />
           Restart
         </Flex>
       </Flex>

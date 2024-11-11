@@ -21,9 +21,10 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   defaultChecked,
   flexDir = "row",
 }) => {
-  const [borderColor] = useToken("colors", ["border-color"]);
+  const [borderColor] = useToken("colors", ["input-border-color"]);
+  const [bgColor] = useToken("colors", ["bg-color"]);
   const [textColor] = useToken("colors", ["body-text"]);
-  const [accentColor] = useToken("colors", ["cta-bg"]);
+  const [accentColor] = useToken("colors", ["input-accent-color"]);
 
   return (
     <FormControl>
@@ -46,23 +47,34 @@ export const Checkbox: React.FC<CheckboxProps> = ({
             borderRadius: 0,
             bg: "bgColor",
             borderColor: borderColor,
+            boxShadow: `inset 0 0 0 1px ${bgColor}`,
           },
           "& .chakra-checkbox__control[data-checked]": {
             bg: accentColor,
             borderColor: borderColor,
             color: borderColor,
+            boxShadow: `inset 0 0 0 1px ${bgColor}`,
           },
           "& .chakra-checkbox__control[data-checked]:hover": {
             bg: accentColor,
             borderColor: borderColor,
             color: borderColor,
+            boxShadow: `inset 0 0 0 1px ${bgColor}`,
           },
           "& .chakra-checkbox__control:focus": {
             borderColor: borderColor,
+            boxShadow: `inset 0 0 0 1px ${bgColor}`,
           },
         }}
       >
-        <Text fontSize="md" color={textColor} flexGrow={1} mr="0.5rem">
+        <Text
+          fontSize="sm"
+          fontWeight={500}
+          color={textColor}
+          flexGrow={1}
+          mr="0.5rem"
+          fontFamily={"accent"}
+        >
           {label}
         </Text>
       </ChakraCheckbox>

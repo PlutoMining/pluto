@@ -93,6 +93,15 @@ export const restyleIframe =
         content: "/";
         margin-right: 5px; /* Distanza tra il "/" e il testo dell'h2 */
       }
+
+      @media (max-width: 543.95px) {
+        [role="dialog"] {
+          position: fixed;
+          top: 0 !important;
+          right: 0 !important;
+          transform: unset;
+        }
+      }
       `;
       iframeDocument.head.appendChild(style);
 
