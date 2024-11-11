@@ -6,6 +6,10 @@ export function middleware(req: NextRequest) {
 
   const internalApiRoutes = ["/api/app-version"];
 
+  console.log("---middleware---");
+  console.log("process.env.GF_HOST: ", process.env.GF_HOST);
+  console.log("process.env.BACKEND_DESTINATION_HOST: ", process.env.BACKEND_DESTINATION_HOST);
+
   // Gestione delle richieste verso Grafana
   if (url.pathname.startsWith("/grafana")) {
     const grafanaUrl = new URL(`${process.env.GF_HOST!}${url.pathname}`, req.url);
