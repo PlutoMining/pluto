@@ -270,7 +270,7 @@ const MonitoringTablePage: React.FC = () => {
                         fontWeight={"400"}
                       >
                         {device.info.sharesAccepted} |{" "}
-                        <Text as={"label"} color={"accent-color"}>
+                        <Text as={"label"} color={"primary-color"}>
                           {device.info.sharesRejected}
                         </Text>
                       </Td>

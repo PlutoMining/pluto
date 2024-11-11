@@ -158,7 +158,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
               {device.info.sharesAccepted} |{" "}
-              <Text as={"label"} color={"accent-color"}>
+              <Text as={"label"} color={"primary-color"}>
                 {device.info.sharesRejected}
               </Text>
             </Text>

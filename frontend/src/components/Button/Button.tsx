@@ -38,7 +38,7 @@ const outlined = defineStyle(() => {
     borderColor: "body-text",
     borderWidth: "1px",
     borderRadius: 0,
-    fontWeight: 400,
+    fontWeight: 500,
     padding: "6px 12px",
     textAlign: "center",
     fontSize: "13px",
@@ -63,7 +63,7 @@ const text = defineStyle(() => {
     color: "body-text",
     fontSize: "13px",
     lineHeight: "1.5rem",
-    fontWeight: 400,
+    fontWeight: 500,
     padding: 0,
     iconColor: "cta-bg",
     _hover: {

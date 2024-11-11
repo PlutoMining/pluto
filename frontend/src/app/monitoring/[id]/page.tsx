@@ -15,6 +15,7 @@ import {
   useColorMode,
   useTheme,
   useToken,
+  Badge as ChakraBadge,
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
 import axios from "axios";
@@ -173,7 +174,23 @@ const MonitoringPage: React.FC = () => {
                     / Pool Info
                   </Heading>
                   <Heading fontSize={"1rem"} fontWeight={500}>
-                    <Badge label={`${preset ? preset.name : "Custom"}`}></Badge>
+                    <ChakraBadge
+                      fontSize={"13px"}
+                      borderRadius={0}
+                      padding={"2px 5px"}
+                      borderColor={"border-color"}
+                      borderWidth={"1px"}
+                    >
+                      <Text
+                        fontWeight={400}
+                        textTransform={"uppercase"}
+                        fontFamily={"accent"}
+                        fontSize={"lg"}
+                        color={"body-text"}
+                      >
+                        {preset ? preset.name : "Custom"}
+                      </Text>
+                    </ChakraBadge>
                   </Heading>
                 </Flex>
               </Flex>
@@ -233,7 +250,7 @@ const MonitoringPage: React.FC = () => {
                     fontWeight={500}
                     textTransform={"uppercase"}
                     color={"dashboard-title"}
-                    fontFamily={"accent"}
+                    fontFamily={"body"}
                   >
                     / Shares
                   </Heading>
@@ -243,14 +260,32 @@ const MonitoringPage: React.FC = () => {
                     </Heading>
 
                     <Flex alignItems={"center"} gap={"0.5rem"}>
-                      <Badge
-                        bg={errorColor}
+                      <ChakraBadge
+                        bg={"#EE2B3433"}
                         color={textColor}
-                        label={device?.info.sharesRejected}
-                        fontWeight="500"
-                      ></Badge>
-                      <Text fontSize={"12px"} fontWeight={400}>
-                        rejected
+                        fontSize={"13px"}
+                        borderRadius={0}
+                        padding={"2px 5px"}
+                        borderColor={"error-color"}
+                        borderWidth={"1px"}
+                      >
+                        <Text
+                          fontWeight={500}
+                          textTransform={"uppercase"}
+                          fontFamily={"accent"}
+                          fontSize={"lg"}
+                          color={"error-color"}
+                        >
+                          {device?.info.sharesRejected}
+                        </Text>
+                      </ChakraBadge>
+                      <Text
+                        fontSize={"12px"}
+                        fontWeight={400}
+                        color={"header-text"}
+                        fontFamily={"accent"}
+                      >
+                        Rejected
                       </Text>
                     </Flex>
                   </Flex>
@@ -311,16 +346,36 @@ const MonitoringPage: React.FC = () => {
                       <Heading fontSize={{ base: "20px", tablet: "28px" }} fontWeight={700}>
                         {device?.info.bestDiff}
                       </Heading>
-                      <Heading fontSize={"1rem"}>all time best</Heading>
+                      <Heading fontSize={"1rem"} fontFamily={"body"} color={"primary-color"}>
+                        all time best
+                      </Heading>
                     </Flex>
                     <Flex alignItems={"center"} gap={"0.5rem"}>
-                      <Badge
-                        color={primaryColor}
-                        label={device?.info.sharesRejected}
-                        fontWeight="500"
-                      ></Badge>
-                      <Text fontSize={"12px"} fontWeight={400}>
-                        since system boot
+                      <ChakraBadge
+                        bg={"#00CBB80D"}
+                        fontSize={"13px"}
+                        borderRadius={0}
+                        padding={"2px 5px"}
+                        borderColor={"primary-color"}
+                        borderWidth={"1px"}
+                      >
+                        <Text
+                          fontWeight={500}
+                          textTransform={"uppercase"}
+                          fontFamily={"accent"}
+                          fontSize={"lg"}
+                          color={"body-text"}
+                        >
+                          {device?.info.bestSessionDiff}
+                        </Text>
+                      </ChakraBadge>
+                      <Text
+                        fontSize={"12px"}
+                        fontWeight={400}
+                        color={"header-text"}
+                        fontFamily={"accent"}
+                      >
+                        Since system boot
                       </Text>
                     </Flex>
                   </Flex>

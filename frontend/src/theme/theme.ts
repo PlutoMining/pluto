@@ -112,11 +112,11 @@ const theme = extendTheme({
       },
       // Input
       "input-bg": {
-        _light: colors.greyscale[100],
+        _light: colors.greyscale[50],
         _dark: colors.greyscale[600],
       },
       "input-right-bg": {
-        _light: colors.greyscale[100],
+        _light: colors.greyscale[50],
         _dark: colors.greyscale[600],
       },
       "input-label-color": {
@@ -139,6 +139,14 @@ const theme = extendTheme({
         _light: colors.greyscale[600],
         _dark: colors.greyscale[300],
       },
+      "input-accent-color": {
+        _light: colors.primary[800],
+        _dark: colors.primary[500],
+      },
+      "input-border-color": {
+        _light: colors.greyscale[500],
+        _dark: colors.greyscale[300],
+      },
       "cta-icon-color": {
         _light: colors.greyscale[800],
         _dark: colors.primary[500],
@@ -152,7 +160,7 @@ const theme = extendTheme({
         _dark: colors.greyscale[900],
       },
       "cta-bg-hover": {
-        _light: colors.primary[600],
+        _light: colors.primary[700],
         _dark: colors.primary[600],
       },
       "cta-bg-focus": {
@@ -277,7 +285,7 @@ const theme = extendTheme({
         _dark: colors.greyscale[200],
       },
       "dashboard-title": {
-        _light: colors.greyscale[500],
+        _light: colors.greyscale[900],
         _dark: colors.greyscale[200],
       },
       "dashboard-section-bg": {
@@ -293,7 +301,7 @@ const theme = extendTheme({
         _dark: colors.greyscale[750],
       },
       "dashboard-badge-bg": {
-        _light: colors.greyscale[200], // da modificare con i valori corretti
+        _light: colors.greyscale[100],
         _dark: "#CBCBCC66",
       },
       "primary-color": {

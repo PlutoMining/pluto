@@ -51,7 +51,6 @@ export const Input: React.FC<InputProps> = ({
   const [inputPlaceholderColor] = useToken("colors", ["input-placeholder-color"]);
   const [inputDisabledColor] = useToken("colors", ["input-disabled-color"]);
   const [inputDisabledBg] = useToken("colors", ["input-disabled-bg"]);
-  const [inputDisabledHintColor] = useToken("colors", ["input-disabled-hint-color"]);
 
   // primaryColor
   const [primaryColor] = useToken("colors", ["cta-bg"]);
@@ -123,14 +122,10 @@ export const Input: React.FC<InputProps> = ({
           <InputRightAddon
             padding="1rem"
             height="40px"
-            borderColor={error ? errorColor : borderColor}
+            borderColor={error ? errorColor : isDisabled ? inputDisabledColor : borderColor}
             borderLeft={"none"}
-            backgroundColor={rightAddonBg}
-            _disabled={{
-              borderColor: inputDisabledColor,
-              color: inputDisabledColor,
-              bg: inputDisabledBg,
-            }}
+            color={isDisabled ? inputDisabledColor : textColor}
+            backgroundColor={isDisabled ? inputDisabledBg : rightAddonBg}
             borderRadius={0}
             fontFamily={"accent"}
             fontWeight={400}
