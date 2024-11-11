@@ -1,0 +1,46 @@
+#!/bin/sh
+
+# Imposta permessi di scrittura per Grafana sulla directory /var/lib/grafana
+echo "Setting permissions for Grafana data directory..."
+
+mkdir -p ${APP_DATA_DIR}/grafana
+
+chmod -R 777 ${APP_DATA_DIR}/grafana
+
+# Stampa i permessi per confermare
+ls -ld ${APP_DATA_DIR}/grafana
+
+echo "Grafana permissions set successfully!"
+
+# # Rimuove tutti i file e cartelle (inclusi quelli nascosti) sotto /grafana
+# echo "Removing contents of ${APP_DATA_DIR}/grafana..."
+
+# # Rimuove tutti i file e cartelle sotto la directory /grafana
+# rm -rf ${APP_DATA_DIR}/grafana/* ${APP_DATA_DIR}/grafana/.* 2>/dev/null || true
+
+# mkdir -p ${APP_DATA_DIR}/grafana/dashboards # ricreo la cartella delle dashboards per evitare problemi durante l'inizializzazione
+
+# echo "Contents of /grafana removed successfully!"
+
+# Imposta permessi di scrittura per LevelDB sulla directory /leveldb
+echo "Setting permissions for LevelDB data directory..."
+
+mkdir -p ${APP_DATA_DIR}/leveldb
+
+chmod -R 777 ${APP_DATA_DIR}/leveldb
+
+# Stampa i permessi per confermare
+ls -ld ${APP_DATA_DIR}/leveldb
+
+echo "LevelDB permissions set successfully!"
+
+echo "Setting permissions for Prometheus data directory..."
+
+mkdir -p ${APP_DATA_DIR}/prometheus
+
+chmod -R 777 /prometheus
+
+# Stampa i permessi per confermare
+ls -ld /prometheus
+
+echo "Prometheus permissions set successfully!"
