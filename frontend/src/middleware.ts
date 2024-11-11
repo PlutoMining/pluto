@@ -29,12 +29,24 @@ export function middleware(req: NextRequest) {
     return response;
   }
 
+  // Gestione delle richieste verso l'API backend
+  if (url.pathname.startsWith("/api")) {
+    const backendHost = process.env.BACKEND_DESTINATION_HOST;
+    if (backendHost) {
+      const apiUrl = new URL(`${backendHost}${url.pathname}${url.search}`);
+      return NextResponse.rewrite(apiUrl);
+    } else {
+      console.error("Errore: BACKEND_DESTINATION_HOST non è definito");
+      return NextResponse.next(); // O restituisci un errore personalizzato
+    }
+  }
+
   // Se nessuna condizione è soddisfatta, prosegui normalmente
   return NextResponse.next();
 }
 
-// Configurazione del matcher (opzionale)
+// Configurazione del matcher per gestire entrambe le rotte
 export const config = {
-  matcher: ["/grafana/:path*"],
+  matcher: ["/grafana/:path*", "/api/:path*"],
   dynamic: "force-dynamic",
 };
