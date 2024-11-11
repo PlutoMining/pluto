@@ -1,26 +1,26 @@
 manifestVersion: 1
-id: bemind-pluto
+id: plutomining-pluto
 name: Pluto
 category: bitcoin
 version: "0.6.0-beta.7"
 tagline: Pluto
-icon: https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/icon.jpg
+icon: https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/plutomining/icon.jpg
 description: >
   Pluto is an advanced platform designed for open source miners. It provides a comprehensive and improved mining experience with enhanced features and functionalities.
-developer: Bemind
-website: https://gitlab.com/bemindinteractive/pluto
+developer: Pluto
+website: https://gitlab.com/plutomining/pluto
 dependencies: []
-repo: https://gitlab.com/bemindinteractive/pluto
-support: https://gitlab.com/bemindinteractive/pluto/issues
+repo: https://gitlab.com/plutomining/pluto
+support: https://gitlab.com/plutomining/pluto/issues
 port: 7777
 gallery:
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_00.png
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_01.png
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_02.png
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_03.png
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_04.png
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_05.png
-  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/bemind-pluto/screenshot_06.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/plutomining/screenshot_00.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/plutomining/screenshot_01.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/plutomining/screenshot_02.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/plutomining/screenshot_03.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/plutomining/screenshot_04.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/plutomining/screenshot_05.png
+  - https://bemind-umbrel-app-store.s3.eu-south-1.amazonaws.com/plutomining/screenshot_06.png
 path: ""
 defaultPassword: ""
 releaseNotes: >
@@ -29,7 +29,7 @@ releaseNotes: >
   - Dark mode
   - NerdAxe support
 
-submitter: Bemind
+submitter: Pluto
 submission:
 defaultUsername: admin
 deterministicPassword: true

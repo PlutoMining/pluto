@@ -1,7 +1,7 @@
 services:
   app_proxy:
     environment:
-      APP_HOST: bemind-pluto_frontend_1 # Hostname of the pluto application
+      APP_HOST: plutomining-pluto_frontend_1 # Hostname of the pluto application
       APP_PORT: 7777 # Port number of the pluto application
     # ports:
     #   - "7777:7777" # Proxy listens on port 7780 on the host and forwards to APP_HOST:APP_PORT

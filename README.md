@@ -101,9 +101,9 @@ docker-compose down
 
 The release configuration uses external directories for persistent data storage:
 
-- Prometheus: `/home/umbrel/umbrel/app-data/bemind-pluto/data/prometheus`
-- Grafana: `/home/umbrel/umbrel/app-data/bemind-pluto/data/grafana`
-- Backend Data: `/home/umbrel/umbrel/app-data/bemind-pluto/data/leveldb`
+- Prometheus: `/home/umbrel/umbrel/app-data/plutomining-pluto/data/prometheus`
+- Grafana: `/home/umbrel/umbrel/app-data/plutomining-pluto/data/grafana`
+- Backend Data: `/home/umbrel/umbrel/app-data/plutomining-pluto/data/leveldb`
 
 ## Service Details
 

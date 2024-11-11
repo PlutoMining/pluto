@@ -341,7 +341,7 @@ export const NavBar = () => {
                   >
                     {/* <MetaLogo target="_blank" /> */}
                     <GitLabLogo
-                      url="https://gitlab.com/bemindinteractive/umbrel-community-app-store"
+                      url="https://gitlab.com/plutomining/pluto"
                       target="_blank"
                       color={primaryColor}
                     />

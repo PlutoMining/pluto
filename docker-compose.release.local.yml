@@ -1,7 +1,7 @@
 services:
   # app_proxy:
   #   environment:
-  #     APP_HOST: bemind-pluto_frontend_1 # Hostname of the pluto application
+  #     APP_HOST: plutomining-pluto_frontend_1 # Hostname of the pluto application
   #     APP_PORT: 7777 # Port number of the pluto application
   #   # ports:
   #   #   - "7777:7777" # Proxy listens on port 7777 on the host and forwards to APP_HOST:APP_PORT
@@ -13,7 +13,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: mock/Dockerfile
-    container_name: bemind-pluto_mock_1
+    container_name: plutomining-pluto_mock_1
     image: whirmill/pluto-mock:0.6.0-beta.9 # Docker image with specific version
     ports:
       - "7770:7770" # Map port 7770 on the host to port 7770 on the container
@@ -47,7 +47,7 @@ services:
     #   context: .
     #   dockerfile: discovery/Dockerfile
     image: whirmill/pluto-discovery:0.6.0-beta.9 # Docker image with specific version
-    container_name: bemind-pluto_discovery_1
+    container_name: plutomining-pluto_discovery_1
     network_mode: "host"
     # ports:
     #   - "7775:7775" # Map port 7775 on the host to port 7775 on the container
@@ -76,7 +76,7 @@ services:
     #   context: .
     #   dockerfile: backend/Dockerfile
     image: whirmill/pluto-backend:0.6.0-beta.9 # Docker image with specific version
-    container_name: bemind-pluto_backend_1
+    container_name: plutomining-pluto_backend_1
     ports:
       - "7776:7776" # Map port 7776 on the host to port 7776 on the container
     pid: host
@@ -89,7 +89,7 @@ services:
       - PORT=7776
       - AUTO_LISTEN=true
       # - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7775
-      - GF_HOST=http://bemind-pluto_grafana_1:3000
+      - GF_HOST=http://plutomining-pluto_grafana_1:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
       # - ./common/utils:/common/utils:ro # Monta il modulo in read-only
@@ -113,7 +113,7 @@ services:
     #   context: .
     #   dockerfile: frontend/Dockerfile
     image: whirmill/pluto-frontend:0.6.0-beta.7 # Docker image with specific version
-    container_name: bemind-pluto_frontend_1
+    container_name: plutomining-pluto_frontend_1
     ports:
       - "7777:7777" # Map port 7777 on the host to port 7777 on the container
     # Use the host's PID namespace to allow container processes to be visible on the host
@@ -127,8 +127,8 @@ services:
     #   - frontend/.env.local
     environment:
       - PORT=7777
-      - GF_HOST=http://bemind-pluto_grafana_1:3000
-      - BACKEND_DESTINATION_HOST=http://bemind-pluto_backend_1:7776
+      - GF_HOST=http://plutomining-pluto_grafana_1:3000
+      - BACKEND_DESTINATION_HOST=http://plutomining-pluto_backend_1:7776
       - NEXT_PUBLIC_WS_ROOT=ws://localhost:7776
     volumes:
       - ./umbrel-app.yml:/tmp/umbrel-app.yml:ro
@@ -141,7 +141,7 @@ services:
     #   context: prometheus
     #   dockerfile: Dockerfile
     image: whirmill/pluto-prometheus:0.6.0-beta.9
-    container_name: bemind-pluto_prometheus_1
+    container_name: plutomining-pluto_prometheus_1
     volumes:
       - ./data/prometheus:/prometheus
     #  - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -164,7 +164,7 @@ services:
     #   context: grafana
     #   dockerfile: Dockerfile
     image: whirmill/pluto-grafana:0.6.0-beta.9
-    container_name: bemind-pluto_grafana_1
+    container_name: plutomining-pluto_grafana_1
     # ports:
     #   - "7778:3000"
     pid: host

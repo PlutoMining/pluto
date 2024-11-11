@@ -1,7 +1,7 @@
 services:
   app_proxy:
     environment:
-      APP_HOST: bemind-pluto-next_frontend_1 # Hostname of the pluto application
+      APP_HOST: plutomining-pluto-next_frontend_1 # Hostname of the pluto application
       APP_PORT: 7677 # Port number of the pluto application
     # ports:
     #   - "7677:7677" # Proxy listens on port 7677 on the host and forwards to APP_HOST:APP_PORT
@@ -86,7 +86,7 @@ services:
       - PORT=7676
       - AUTO_LISTEN=true
       - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7675
-      - GF_HOST=http://bemind-pluto-next_grafana_1:3000
+      - GF_HOST=http://plutomining-pluto-next_grafana_1:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
       # - ./common/utils:/common/utils:ro # Monta il modulo in read-only
@@ -123,8 +123,8 @@ services:
     #   - frontend/.env.local
     environment:
       - PORT=7677
-      - GF_HOST=http://bemind-pluto-next_grafana_1:3000
-      - BACKEND_DESTINATION_HOST=http://bemind-pluto-next_backend_1:7676
+      - GF_HOST=http://plutomining-pluto-next_grafana_1:3000
+      - BACKEND_DESTINATION_HOST=http://plutomining-pluto-next_backend_1:7676
       - NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676
     volumes:
       - ${APP_DATA_DIR}/umbrel-app.yml:/tmp/umbrel-app.yml:ro
