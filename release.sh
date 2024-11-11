@@ -128,7 +128,7 @@ fi
 update_umbrel_version "$new_app_version"
 
 # Get and set versions for each service
-for service in backend discovery mock frontend grafana prometheus init; do
+for service in backend discovery mock frontend; do
     current_version=$(get_current_version $service)
     eval "current_${service}_version=$current_version"
 
@@ -143,7 +143,7 @@ for service in backend discovery mock frontend grafana prometheus init; do
 done
 
 # Update the files with the new versions and install dependencies
-for service in backend discovery mock frontend grafana prometheus init; do
+for service in backend discovery mock frontend; do
     eval new_version=\$${service}_version
     eval current_version=\$current_${service}_version
 
@@ -165,7 +165,7 @@ else
 fi
 
 # Build Docker images only if the version has changed
-for service in backend discovery mock frontend grafana prometheus init; do
+for service in backend discovery mock frontend; do
     eval new_version=\$${service}_version
     eval current_version=\$current_${service}_version
 
