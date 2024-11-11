@@ -4,7 +4,7 @@
 echo "Setting permissions for Grafana data directory..."
 
 mkdir -p ${APP_DATA_DIR}/data/grafana
-
+chown -R umbrel:umbrel ${APP_DATA_DIR}/data/grafana
 chmod -R 777 ${APP_DATA_DIR}/data/grafana
 
 # Stampa i permessi per confermare
@@ -26,7 +26,7 @@ echo "Grafana permissions set successfully!"
 echo "Setting permissions for LevelDB data directory..."
 
 mkdir -p ${APP_DATA_DIR}/data/leveldb
-
+chown -R umbrel:umbrel ${APP_DATA_DIR}/data/leveldb
 chmod -R 777 ${APP_DATA_DIR}/data/leveldb
 
 # Stampa i permessi per confermare
@@ -37,7 +37,7 @@ echo "LevelDB permissions set successfully!"
 echo "Setting permissions for Prometheus data directory..."
 
 mkdir -p ${APP_DATA_DIR}/data/prometheus
-
+chown -R umbrel:umbrel ${APP_DATA_DIR}/data/prometheus
 chmod -R 777 ${APP_DATA_DIR}/data/prometheus
 
 # Stampa i permessi per confermare
