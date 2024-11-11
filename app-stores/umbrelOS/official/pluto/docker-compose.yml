@@ -120,7 +120,7 @@ services:
       - PORT=7777
       - GF_HOST=http://pluto_grafana_1:3000
       - BACKEND_DESTINATION_HOST=http://pluto_backend_1:7776
-      # - NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776
+      - NEXT_PUBLIC_WS_PORT=7776
     volumes:
       - ${APP_DATA_DIR}/umbrel-app.yml:/tmp/umbrel-app.yml:ro
     #   - ./common/utils:/common/utils:ro # Monta il modulo in read-only

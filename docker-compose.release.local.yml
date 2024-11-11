@@ -74,8 +74,8 @@ services:
     #   dockerfile: backend/Dockerfile
     image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-beta.9 # Docker image with specific version
     container_name: plutomining-pluto_backend_1
-    # ports:
-    #   - "7776:7776" # Map port 7776 on the host to port 7776 on the container
+    ports:
+      - "7776:7776" # Map port 7776 on the host to port 7776 on the container
     pid: host
 
     # Container restart policy - restart unless manually stopped
@@ -124,7 +124,7 @@ services:
       - PORT=7777
       - GF_HOST=http://plutomining-pluto_grafana_1:3000
       - BACKEND_DESTINATION_HOST=http://plutomining-pluto_backend_1:7776
-      # - NEXT_PUBLIC_WS_ROOT=ws://localhost:7776
+      - NEXT_PUBLIC_WS_PORT=7776
     volumes:
       - ./umbrel-app.yml:/tmp/umbrel-app.yml:ro
     #   - ./common/utils:/common/utils:ro # Monta il modulo in read-only

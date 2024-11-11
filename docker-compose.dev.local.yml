@@ -73,9 +73,9 @@ services:
     #   - npm
     #   - run
     #   - dev:debug
-    # ports:
-    #   - "7776:7776" # Map port 7776 on the host to port 7776 on the container
-    # - "9229:9229" # Porta per il debugger
+    ports:
+      - "7776:7776" # Map port 7776 on the host to port 7776 on the container
+      # - "9229:9229" # Porta per il debugger
     pid: host
 
     # Container restart policy - restart unless manually stopped

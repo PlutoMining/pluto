@@ -31,6 +31,20 @@ export function middleware(req: NextRequest) {
     return response;
   }
 
+  // Special handling for Socket.IO connections
+  if (url.pathname === "/api/socket/io" && req.headers.get("upgrade") === "websocket") {
+    console.log("sto richiedendo websocket");
+
+    const backendHost = process.env.BACKEND_DESTINATION_HOST;
+    if (backendHost) {
+      const socketUrl = new URL(`${backendHost}/socket/io${url.search}`);
+      return NextResponse.rewrite(socketUrl);
+    } else {
+      console.error("Error: BACKEND_DESTINATION_HOST is not defined");
+      return NextResponse.next();
+    }
+  }
+
   // Handling requests to the backend API
   if (url.pathname.startsWith("/api")) {
     // Check if the route is in the list of internal routes

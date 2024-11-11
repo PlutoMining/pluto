@@ -17,13 +17,13 @@ const SocketContext = createContext<SocketContextType>({
 });
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
-  const wsRoot = "/api/";
-
   const [socket, setSocket] = useState<any | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [devices, setDevices] = useState<Device[] | null>(null);
 
   useEffect(() => {
+    const wsRoot = `ws://${window.location.hostname}:${process.env.NEXT_PUBLIC_WS_PORT}`;
+
     const fetchDevices = async () => {
       try {
         const response = await axios.get("/api/devices/imprint"); // Supponiamo che l'endpoint di discovery sia questo

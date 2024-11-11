@@ -99,13 +99,13 @@ if [ "$IS_PRERELEASE" = false ]; then
     fi
 fi
 
-# # Update the FRONTEND_BUILD_ARGS and Dockerfile selection based on the release type
-# if [ "$IS_PRERELEASE" = true ]; then
-#     echo "Pre-release selected: scaling ports down by 100."
-#     FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7676"
-# else
-#     FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_ROOT=ws://umbrel.local:7776"
-# fi
+# Update the FRONTEND_BUILD_ARGS and Dockerfile selection based on the release type
+if [ "$IS_PRERELEASE" = true ]; then
+    echo "Pre-release selected: scaling ports down by 100."
+    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_PORT=7676"
+else
+    FRONTEND_BUILD_ARGS="--build-arg NEXT_PUBLIC_WS_PORT=7776"
+fi
 
 # Only perform Docker login if the skip login flag is not set
 if [ "$SKIP_LOGIN" = false ]; then
@@ -186,18 +186,18 @@ for service in backend discovery mock frontend; do
             DOCKERFILE_PATH="$service/Dockerfile.next"
         fi
 
-        # # Check if service is frontend to pass specific build args
-        # if [ "$service" == "frontend" ]; then
-        #     docker buildx build --platform linux/amd64,linux/arm64 \
-        #         -t ${DOCKER_REGISTRY}/pluto-$service:latest \
-        #         -t ${DOCKER_REGISTRY}/pluto-$service:"$new_version" \
-        #         -f $DOCKERFILE_PATH . --push $FRONTEND_BUILD_ARGS
-        # else
-        docker buildx build --platform linux/amd64,linux/arm64 \
-            -t ${DOCKER_REGISTRY}/pluto-$service:latest \
-            -t ${DOCKER_REGISTRY}/pluto-$service:"$new_version" \
-            -f $DOCKERFILE_PATH . --push
-        # fi
+        # Check if service is frontend to pass specific build args
+        if [ "$service" == "frontend" ]; then
+            docker buildx build --platform linux/amd64,linux/arm64 \
+                -t ${DOCKER_REGISTRY}/pluto-$service:latest \
+                -t ${DOCKER_REGISTRY}/pluto-$service:"$new_version" \
+                -f $DOCKERFILE_PATH . --push $FRONTEND_BUILD_ARGS
+        else
+            docker buildx build --platform linux/amd64,linux/arm64 \
+                -t ${DOCKER_REGISTRY}/pluto-$service:latest \
+                -t ${DOCKER_REGISTRY}/pluto-$service:"$new_version" \
+                -f $DOCKERFILE_PATH . --push
+        fi
     else
         echo "Skipping Docker build for $service as the version has not changed."
     fi
