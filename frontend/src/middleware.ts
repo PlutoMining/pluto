@@ -36,4 +36,5 @@ export function middleware(req: NextRequest) {
 // Configurazione del matcher (opzionale)
 export const config = {
   matcher: ["/grafana/:path*"],
+  dynamic: "force-dynamic",
 };
