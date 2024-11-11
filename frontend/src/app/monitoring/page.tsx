@@ -20,7 +20,6 @@ import {
   Thead,
   Tooltip,
   Tr,
-  useTheme,
   useToken,
   VStack,
 } from "@chakra-ui/react";
@@ -350,7 +349,13 @@ const MonitoringTablePage: React.FC = () => {
             </Box>
           </Box>
         ) : (
-          <Text textAlign={"center"}>No dashboards available.</Text>
+          <Text textAlign={"center"}>
+            To start using Pluto, go to{" "}
+            <NextLink href={"/devices"} style={{ textDecoration: "underline" }}>
+              Your Devices
+            </NextLink>{" "}
+            and add one or more devices.
+          </Text>
         )}
       </VStack>
     </Container>

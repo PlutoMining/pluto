@@ -168,11 +168,11 @@ const theme = extendTheme({
         _dark: colors.primary[800],
       },
       "cta-bg-disabled": {
-        _light: colors.greyscale[700],
+        _light: colors.greyscale[100],
         _dark: colors.greyscale[700],
       },
       "cta-color-disabled": {
-        _light: colors.greyscale[500],
+        _light: colors.greyscale[200],
         _dark: colors.greyscale[500],
       },
       "cta-color": {

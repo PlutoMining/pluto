@@ -4,9 +4,10 @@ import Alert from "@/components/Alert/Alert";
 import { AlertInterface, AlertStatus } from "@/components/Alert/interfaces";
 import Button from "@/components/Button/Button";
 import { CloseIcon } from "@/components/icons/CloseIcon";
-import { RestartAllIcon, RestartIcon } from "@/components/icons/RestartIcon";
+import { RestartAllIcon } from "@/components/icons/RestartIcon";
 import { SearchInput } from "@/components/Input";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
+import NextLink from "next/link";
 import {
   Box,
   Container,
@@ -163,6 +164,7 @@ const SettingsPage = () => {
                     icon={<RestartAllIcon color={textColor} />}
                     onClick={onOpenModal}
                     label="Restart all"
+                    disabled={!imprintedDevices || imprintedDevices?.length === 0}
                   ></Button>
                 </Box>
               </Flex>
@@ -178,7 +180,13 @@ const SettingsPage = () => {
                     onOpenAlert={onOpenAlert}
                   />
                 ) : (
-                  <Text textAlign={"center"}>No devices available.</Text>
+                  <Text textAlign={"center"}>
+                    To start using Pluto, go to{" "}
+                    <NextLink href={"/devices"} style={{ textDecoration: "underline" }}>
+                      Your Devices
+                    </NextLink>{" "}
+                    and add one or more devices.
+                  </Text>
                 )}
               </>
             ) : (
