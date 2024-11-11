@@ -64,9 +64,6 @@ services:
       - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       - ./discovery:/app/
       - ./data/leveldb:/app/data
-    depends_on:
-      leveldb-init:
-        condition: service_completed_successfully
 
   backend:
     build:
@@ -101,8 +98,6 @@ services:
       - ./data/leveldb:/app/data
       - ./data/grafana:/app/grafana
     depends_on:
-      leveldb-init:
-        condition: service_completed_successfully
       prometheus:
         condition: service_healthy
       grafana:
@@ -151,9 +146,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    depends_on:
-      prometheus-init:
-        condition: service_completed_successfully
 
   grafana:
     build:
@@ -179,34 +171,5 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      grafana-init:
-        condition: service_completed_successfully
       prometheus:
         condition: service_healthy # Attende che prometheus sia in stato "healthy"
-
-  prometheus-init: # sidecar container for volume permissions
-    build:
-      context: init
-      dockerfile: Dockerfile.development
-    volumes:
-      - ./init/init-prometheus.sh:/init-scripts/init-prometheus.sh
-      - ./data/prometheus:/prometheus
-    command: /init-scripts/init-prometheus.sh
-
-  grafana-init: # sidecar container for volume permissions
-    build:
-      context: init
-      dockerfile: Dockerfile.development
-    volumes:
-      - ./init/init-grafana.sh:/init-scripts/init-grafana.sh
-      - ./data/grafana:/grafana
-    command: /init-scripts/init-grafana.sh
-
-  leveldb-init: # sidecar container for volume permissions
-    build:
-      context: init
-      dockerfile: Dockerfile.development
-    volumes:
-      - ./init/init-leveldb.sh:/init-scripts/init-leveldb.sh
-      - ./data/leveldb:/leveldb
-    command: /init-scripts/init-leveldb.sh

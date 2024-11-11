@@ -67,9 +67,6 @@ services:
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       # - ./discovery:/app/
       - ./data/leveldb:/app/data
-    depends_on:
-      leveldb-init:
-        condition: service_completed_successfully
 
   backend:
     # build:
@@ -101,8 +98,6 @@ services:
       - ./data/leveldb:/app/data
       - ./data/grafana:/app/grafana
     depends_on:
-      leveldb-init:
-        condition: service_completed_successfully
       prometheus:
         condition: service_healthy
       grafana:
@@ -137,14 +132,11 @@ services:
     #   - ./frontend:/app/
 
   prometheus:
-    # build:
-    #   context: prometheus
-    #   dockerfile: Dockerfile
-    image: whirmill/pluto-prometheus:0.6.0-beta.13
+    image: prom/prometheus:v2.53.1
     container_name: plutomining-pluto-next_prometheus_1
     volumes:
       - ./data/prometheus:/prometheus
-    #  - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus.next.yml:/etc/prometheus/prometheus.yml
     # ports:
     #   - "9090:9090"
     pid: host
@@ -155,15 +147,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    depends_on:
-      prometheus-init:
-        condition: service_completed_successfully
 
   grafana:
-    # build:
-    #   context: grafana
-    #   dockerfile: Dockerfile
-    image: whirmill/pluto-grafana:0.6.0-beta.13
+    image: grafana/grafana:11.1.2
     container_name: plutomining-pluto-next_grafana_1
     # ports:
     #   - "7778:3000"
@@ -174,9 +160,9 @@ services:
       - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
     volumes:
       - ./data/grafana:/var/lib/grafana
-      # - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-      # - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
-      # - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
+      - ./grafana/grafana.next.ini:/etc/grafana/grafana.ini
+      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/datasource.next.yaml:/etc/grafana/provisioning/datasources/main.yaml
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -185,37 +171,5 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      grafana-init:
-        condition: service_completed_successfully
       prometheus:
         condition: service_healthy # Attende che prometheus sia in stato "healthy"
-
-  prometheus-init: # sidecar container for volume permissions
-    # build:
-    #   context: init
-    #   dockerfile: Dockerfile
-    image: whirmill/pluto-init:0.6.0-beta.13
-    volumes:
-      # - ./init/init-prometheus.sh:/init-scripts/init-prometheus.sh
-      - ./data/prometheus:/prometheus
-    command: /init-scripts/init-prometheus.sh
-
-  grafana-init: # sidecar container for volume permissions
-    # build:
-    #   context: init
-    #   dockerfile: Dockerfile
-    image: whirmill/pluto-init:0.6.0-beta.13
-    volumes:
-      # - ./init/init-grafana.sh:/init-scripts/init-grafana.sh
-      - ./data/grafana:/grafana
-    command: /init-scripts/init-grafana.sh
-
-  leveldb-init: # sidecar container for volume permissions
-    # build:
-    #   context: init
-    #   dockerfile: Dockerfile
-    image: whirmill/pluto-init:0.6.0-beta.13
-    volumes:
-      # - ./init/init-leveldb.sh:/init-scripts/init-leveldb.sh
-      - ./data/leveldb:/leveldb
-    command: /init-scripts/init-leveldb.sh
