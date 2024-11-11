@@ -105,8 +105,8 @@ fi
 # Only perform Docker login if the skip login flag is not set
 if [ "$SKIP_LOGIN" = false ]; then
     # Request Docker username and personal access token
-    echo "Enter your Docker username:"
-    read DOCKER_USERNAME
+    # echo "Enter your Docker username:"
+    # read DOCKER_USERNAME
     echo "Enter your Docker personal access token:"
     read -s DOCKER_ACCESS_TOKEN
 
