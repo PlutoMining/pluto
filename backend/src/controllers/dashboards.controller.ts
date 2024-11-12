@@ -8,7 +8,7 @@ import * as grafanaService from "../services/grafana.service";
 export const getDashboards = async (req: Request, res: Response) => {
   try {
     // Define the directory path that contains JSON files, using __dirname for portability
-    const dashboardsDir = path.join(__dirname, "grafana/dashboards");
+    let dashboardsDir = "/home/node/app/grafana/dashboards";
 
     // Read the directory to get the list of files
     const files = await fs.readdir(dashboardsDir);
