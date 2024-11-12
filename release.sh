@@ -32,14 +32,9 @@ update_umbrel_version() {
     local new_version=$1
 
     if [ "$IS_PRERELEASE" = true ]; then
-        sed -i '' -E "s/Version .*/Version ${new_version}/g" umbrel-app.next.yml
-
         sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml
         sed -i '' -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml
     else
-
-        sed -i '' -E "s/Version .*/Version ${new_version}/g" umbrel-app.yml
-
         sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/official/pluto/umbrel-app.yml
         sed -i '' -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/official/pluto/umbrel-app.yml
 
