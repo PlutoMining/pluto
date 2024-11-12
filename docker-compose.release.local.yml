@@ -47,7 +47,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-beta.44 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-beta.46 # Docker image with specific version
     container_name: plutomining-pluto_discovery_1
     network_mode: "host"
     # ports:
