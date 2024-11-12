@@ -1187,7 +1187,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           <Flex justifyContent={"flex-start"}>
             <Button
               variant="primary"
-              rightIcon={<ArrowIcon />}
+              rightIcon={<ArrowIcon color="bg-color" />}
               onClick={() => setIsSaveAndRestartModalOpen(true)}
               disabled={isDeviceValid()}
               label="Save"

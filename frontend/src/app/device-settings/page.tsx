@@ -120,8 +120,6 @@ const SettingsPage = () => {
     onCloseAlert();
   }, [onCloseAlert]);
 
-  const [bgColor] = useToken("colors", ["bg-color"]);
-
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
       {alert && (
@@ -160,7 +158,7 @@ const SettingsPage = () => {
                 <Box>
                   <Button
                     variant="primary"
-                    icon={<RestartAllIcon color={bgColor} />}
+                    icon={<RestartAllIcon color={"bg-color"} />}
                     onClick={onOpenModal}
                     label="Restart all"
                     disabled={!imprintedDevices || imprintedDevices?.length === 0}
