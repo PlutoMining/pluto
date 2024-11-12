@@ -14,42 +14,43 @@ update_version() {
     echo "Running npm install in $service..."
     (cd $service && npm install)
 
-    # Determine which files to update based on pre-release status
-    if [ "$IS_PRERELEASE" = true ]; then
-        # Update only next files
-        sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto-next/docker-compose.yml
-        sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" docker-compose.next.local.yml
-    else
-        # Update the main files
-        sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/official/pluto/docker-compose.yml
-        sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/docker-compose.yml
-        sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
-    fi
+    # Get the SHA of the Docker image
+    local image_sha=$(get_image_sha "${DOCKER_REGISTRY}/pluto-$service:${new_version}")
+
+    # # Determine which files to update based on pre-release status
+    # if [ "$IS_PRERELEASE" = true ]; then
+    sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto-next/docker-compose.yml
+    sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" docker-compose.next.local.yml
+    # else
+    sed -i '' -E "s#plutomining/pluto/pluto-$service(:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?|@sha256:[a-f0-9]+)?#plutomining/pluto/pluto-$service@${image_sha}#g" app-stores/umbrelOS/official/pluto/docker-compose.yml
+    sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/docker-compose.yml
+    sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
+    # fi
 }
 
 # Function to update the version in umbrel-app.yml
 update_umbrel_version() {
     local new_version=$1
 
-    if [ "$IS_PRERELEASE" = true ]; then
-        sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml
-        sed -i '' -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml
-    else
-        sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/official/pluto/umbrel-app.yml
-        sed -i '' -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/official/pluto/umbrel-app.yml
+    # if [ "$IS_PRERELEASE" = true ]; then
+    sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml
+    sed -i '' -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml
+    # else
+    sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/official/pluto/umbrel-app.yml
+    sed -i '' -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/official/pluto/umbrel-app.yml
 
-        sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml
-        sed -i '' -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml
-    fi
+    sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml
+    sed -i '' -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml
+    # fi
 }
 
 # Function to get the current version from the correct umbrel app file
 get_current_app_version() {
-    if [ "$IS_PRERELEASE" = true ]; then
-        grep 'version:' app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml | sed -E 's/version: "(.*)"/\1/'
-    else
-        grep 'version:' app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml | sed -E 's/version: "(.*)"/\1/'
-    fi
+    # if [ "$IS_PRERELEASE" = true ]; then
+    #     grep 'version:' app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml | sed -E 's/version: "(.*)"/\1/'
+    # else
+    grep 'version:' app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml | sed -E 's/version: "(.*)"/\1/'
+    # fi
 }
 
 # Function to get the current version from the package.json file
@@ -67,9 +68,15 @@ check_git_branch() {
     fi
 }
 
+# Function to get the SHA of a Docker image
+get_image_sha() {
+    local image=$1
+    docker image inspect --format='{{index .RepoDigests 0}}' $image | cut -d'@' -f2
+}
+
 # Default values for flags
 SKIP_LOGIN=false
-IS_PRERELEASE=false
+# IS_PRERELEASE=false
 
 # Parse command line arguments
 for arg in "$@"; do
@@ -78,21 +85,21 @@ for arg in "$@"; do
         SKIP_LOGIN=true
         shift # Remove --skip-login from processing
         ;;
-    --pre-release)
-        IS_PRERELEASE=true
-        shift # Remove --pre-release from processing
-        ;;
     esac
+    # --pre-release)
+    #     IS_PRERELEASE=true
+    #     shift # Remove --pre-release from processing
+    #     ;;
 done
 
-# Prompt to check if this is a pre-release if not set by flag
-if [ "$IS_PRERELEASE" = false ]; then
-    echo "Is this a pre-release? (y/n)"
-    read is_prerelease_input
-    if [ "$is_prerelease_input" == "y" ]; then
-        IS_PRERELEASE=true
-    fi
-fi
+# # Prompt to check if this is a pre-release if not set by flag
+# if [ "$IS_PRERELEASE" = false ]; then
+#     echo "Is this a pre-release? (y/n)"
+#     read is_prerelease_input
+#     if [ "$is_prerelease_input" == "y" ]; then
+#         IS_PRERELEASE=true
+#     fi
+# fi
 
 # Only perform Docker login if the skip login flag is not set
 if [ "$SKIP_LOGIN" = false ]; then
@@ -169,9 +176,9 @@ for service in backend discovery mock frontend; do
 
         # Choose Dockerfile based on service and release type
         DOCKERFILE_PATH="$service/Dockerfile"
-        if [ "$IS_PRERELEASE" = true ] && ([[ "$service" == "grafana" ]] || [[ "$service" == "prometheus" ]]); then
-            DOCKERFILE_PATH="$service/Dockerfile.next"
-        fi
+        # if [ "$IS_PRERELEASE" = true ] && ([[ "$service" == "grafana" ]] || [[ "$service" == "prometheus" ]]); then
+        #     DOCKERFILE_PATH="$service/Dockerfile.next"
+        # fi
 
         docker buildx build --platform linux/amd64,linux/arm64 \
             -t ${DOCKER_REGISTRY}/pluto-$service:latest \
