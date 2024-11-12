@@ -140,8 +140,16 @@ const theme = extendTheme({
         _dark: colors.greyscale[300],
       },
       "input-accent-color": {
-        _light: colors.primary[800],
+        _light: colors.primary[600],
         _dark: colors.primary[500],
+      },
+      "radio-button-border-disabled": {
+        _light: colors.greyscale[200],
+        _dark: colors.greyscale[500],
+      },
+      "radio-button-color-disabled": {
+        _light: colors.greyscale[200],
+        _dark: colors.primary[800],
       },
       "input-border-color": {
         _light: colors.greyscale[500],
@@ -229,16 +237,16 @@ const theme = extendTheme({
       },
       // device status badge colors
       "badge-online-border": {
-        _light: colors.primary[600],
-        _dark: colors.primary[600],
+        _light: colors.secondary[400],
+        _dark: colors.secondary[400],
       },
       "badge-online-color": {
         _light: colors.greyscale[500],
         _dark: colors.greyscale[0],
       },
       "badge-online-bg": {
-        _light: "rgba(0, 203, 184, 0.05)",
-        _dark: "rgba(0, 203, 184, 0.5)",
+        _light: "rgba(0, 119, 193, 0.05)",
+        _dark: "rgba(0, 119, 193, 0.05)",
       },
       "badge-offline-border": {
         _light: colors.greyscale[300],

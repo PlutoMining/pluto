@@ -25,6 +25,8 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   const [bgColor] = useToken("colors", ["bg-color"]);
   const [textColor] = useToken("colors", ["body-text"]);
   const [accentColor] = useToken("colors", ["input-accent-color"]);
+  const [colorDisabled] = useToken("colors", ["radio-button-border-disabled"]);
+  const [borderColorDisabled] = useToken("colors", ["radio-button-color-disabled"]);
 
   return (
     <FormControl>

@@ -12,6 +12,8 @@ export const RadioButton: React.FC<RadioButtonProps> = ({ label, value, id, disa
   const [borderColor] = useToken("colors", ["input-border-color"]);
   const [accentColor] = useToken("colors", ["input-accent-color"]);
   const [bgColor] = useToken("colors", ["bg-color"]);
+  const [colorDisabled] = useToken("colors", ["radio-button-border-disabled"]);
+  const [borderColorDisabled] = useToken("colors", ["radio-button-color-disabled"]);
 
   return (
     <ChakraRadio
@@ -24,7 +26,8 @@ export const RadioButton: React.FC<RadioButtonProps> = ({ label, value, id, disa
       }}
       isDisabled={disabled}
       _disabled={{
-        opacity: 0.5,
+        bg: colorDisabled,
+        borderColor: borderColorDisabled,
       }}
       fontFamily={"accent"}
       color={"body-text"}
