@@ -8,13 +8,10 @@ update_version() {
     local new_version=$2
     local image_sha=$3
 
-    # Update the version in the service's package.json
-    sed -i '' -E "s/\"version\": \"[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?\"/\"version\": \"${new_version}\"/" $service/package.json
-
     # Update docker-compose files with the correct image and SHA
     sed -i '' -E "s#plutomining/pluto/pluto-$service:(.*)#plutomining/pluto/pluto-$service:${new_version}@${image_sha}#g" app-stores/umbrelOS/official/pluto/docker-compose.yml
-    sed -i '' -E "s#plutomining/pluto/pluto-$service:(.*)#plutomining/pluto/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/docker-compose.yml
-    sed -i '' -E "s#plutomining/pluto/pluto-$service:(.*)#plutomining/pluto/pluto-$service:${new_version}/g" docker-compose.release.local.yml
+    sed -i '' -E "s#plutomining/pluto/pluto-$service:(.*)#plutomining/pluto/pluto-$service:${new_version}#g" app-stores/umbrelOS/community/plutomining-pluto/docker-compose.yml
+    sed -i '' -E "s#plutomining/pluto/pluto-$service:(.*)#plutomining/pluto/pluto-$service:${new_version}#g" docker-compose.release.local.yml
 }
 
 # Function to update the version in umbrel-app.yml
@@ -115,6 +112,9 @@ for service in backend discovery mock frontend; do
     eval current_version=\$current_${service}_version
 
     if [ "$new_version" != "$current_version" ]; then
+
+        # Update the version in the service's package.json
+        sed -i '' -E "s/\"version\": \"[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?\"/\"version\": \"${new_version}\"/" $service/package.json
 
         # Run npm install in the service to update lockfile
         echo "Running npm install in $service..."
