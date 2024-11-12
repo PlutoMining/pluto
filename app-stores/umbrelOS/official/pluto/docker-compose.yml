@@ -134,7 +134,7 @@ services:
     user: "1000:1000"
 
   prometheus:
-    image: prom/prometheus:v2.53.1
+    image: prom/prometheus:v2.53.1@sha256:f20d3127bf2876f4a1df76246fca576b41ddf1125ed1c546fbd8b16ea55117e6
     volumes:
       - ${APP_DATA_DIR}/data/prometheus:/prometheus
       - ${APP_DATA_DIR}/data/conf/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -151,7 +151,7 @@ services:
     user: "65534:65534"
 
   grafana:
-    image: grafana/grafana:11.1.2
+    image: grafana/grafana:11.1.2@sha256:3d605614c7c7ce2e96f71abaccd09eb3cfacef48fea5fda4b02a555c95a73edc
     # ports:
     #   - "7778:3000"
     pid: host
