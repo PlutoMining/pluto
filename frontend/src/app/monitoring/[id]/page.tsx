@@ -1,5 +1,5 @@
 "use client";
-import { Badge, DeviceStatusBadge } from "@/components/Badge";
+import { DeviceStatusBadge } from "@/components/Badge";
 import Link from "@/components/Link/Link";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import { ArrowLeftIcon } from "@/components/icons/ArrowIcon";
@@ -8,24 +8,23 @@ import { formatTime } from "@/utils/formatTime";
 import { restyleIframe } from "@/utils/iframe";
 import {
   Box,
+  Badge as ChakraBadge,
   Container,
   Flex,
   Heading,
   Text,
   useColorMode,
-  useTheme,
   useToken,
-  Badge as ChakraBadge,
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
 import axios from "axios";
+import NextLink from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import NextLink from "next/link";
 
 const MonitoringPage: React.FC = () => {
-  const { id }: { id: string } = useParams();
-  const theme = useTheme();
+  const params = useParams() as { id: string };
+  const id = params.id;
   const [device, setDevice] = useState<Device | undefined>(undefined);
 
   const [dashboardPublicUrl, setDashboardPublicUrl] = useState<string>();
