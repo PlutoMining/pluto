@@ -30,6 +30,6 @@ releaseNotes: >
   - NerdAxe support
 
 submitter: Pluto
-submission:
+submission: https://github.com/getumbrel/umbrel-apps/pull/1790
 defaultUsername: admin
 deterministicPassword: true
