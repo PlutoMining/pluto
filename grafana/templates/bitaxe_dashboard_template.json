@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 1,
+    "id": 6,
     "links": [],
     "panels": [
         {
@@ -360,7 +360,7 @@
                             }
                         ]
                     },
-                    "unit": "GH/Wh"
+                    "unit": "J/TH"
                 },
                 "overrides": []
             },
@@ -394,7 +394,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "code",
-                    "expr": "@@hostname@@_hashrate_ghs/1000/@@hostname@@_power_watts/@@hostname@@_uptime_seconds*3600",
+                    "expr": "@@hostname@@_power_watts/(@@hostname@@_hashrate_ghs/1000)",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -786,7 +786,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "@@hostname@@",
-    "uid": "zqz8xdvgjc315t",
+    "uid": "h3p38hb11v07ir",
     "version": 1,
     "weekStart": ""
 }
