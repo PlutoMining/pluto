@@ -75,7 +75,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-beta.39 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-beta.45 # Docker image with specific version
     # ports:
     #   - "7776:7776" # Map port 7776 on the host to port 7776 on the container
     pid: host
