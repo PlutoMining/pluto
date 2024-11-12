@@ -232,7 +232,7 @@ export async function deleteGrafanaDashboard(hostname: string) {
 
 // Service function to read dashboard files and enrich the response with Grafana API data
 export const getDashboardFiles = async () => {
-  const dashboardsDir = "/app/grafana/dashboards";
+  const dashboardsDir = path.join(__dirname, "grafana/dashboards");
 
   try {
     // Read the directory to get the list of files

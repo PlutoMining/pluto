@@ -7,8 +7,8 @@ import * as grafanaService from "../services/grafana.service";
 // Function to read dashboard files and enrich the response with Grafana API data
 export const getDashboards = async (req: Request, res: Response) => {
   try {
-    // Define the directory path that contains JSON files
-    const dashboardsDir = "/app/grafana/dashboards";
+    // Define the directory path that contains JSON files, using __dirname for portability
+    const dashboardsDir = path.join(__dirname, "grafana/dashboards");
 
     // Read the directory to get the list of files
     const files = await fs.readdir(dashboardsDir);
@@ -58,22 +58,3 @@ export const getDashboards = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to read dashboard files" });
   }
 };
-
-// // Function to check and enable dashboards in Grafana if necessary
-// export const publishDashboard = async (dashboardUid: string) => {
-//   try {
-//     return grafanaService.publishDashboard(dashboardUid);
-//   } catch (error) {
-//     console.error("Error during the sequence of requests:", error);
-//     throw error;
-//   }
-// };
-
-// export const unpublishDashboard = async (dashboardUid: string) => {
-//   try {
-//     return grafanaService.unpublishDashboard(dashboardUid);
-//   } catch (error) {
-//     logger.error(`Error deleting public dashboard for UID ${dashboardUid}:`, error);
-//     throw error;
-//   }
-// };

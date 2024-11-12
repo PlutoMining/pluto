@@ -1,9 +1,17 @@
 # Fase 1: Costruzione
 FROM node:20-alpine AS builder
 
-RUN apk add arp-scan
+# Installa arp-scan
+RUN apk add --no-cache arp-scan
 
-WORKDIR /app
+# Imposta la directory di lavoro
+WORKDIR /home/node/app
+
+# Cambia proprietà per permettere l'accesso all'utente `node`
+RUN chown -R node:node /home/node
+
+# Passa all'utente `node`
+USER node
 
 # Avvia l'applicazione
 CMD ["npm", "run", "dev"]

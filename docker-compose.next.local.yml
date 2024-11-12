@@ -13,7 +13,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: mock/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-mock:0.6.0-beta.36 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-mock:0.6.0-beta.37 # Docker image with specific version
     container_name: plutomining-pluto-next_mock_1
     ports:
       - "7670:7670"
@@ -40,20 +40,19 @@ services:
     # volumes:
     #   - ./common/logger:/common/logger:ro # Monta il modulo in read-only
     #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
-    #   - ./mock:/app/
+    #   - ./mock:/home/node/app/
     user: "1000:1000"
 
   discovery:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-beta.36 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-beta.37 # Docker image with specific version
     container_name: plutomining-pluto-next_discovery_1
     network_mode: "host"
     # ports:
     #   - "7675:7675" # Map port 7675 on the host to port 7675 on the container
     pid: host
-
     cap_add:
       - NET_RAW
       - NET_ADMIN
@@ -70,15 +69,15 @@ services:
       # - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
       # - ./common/db:/common/db:ro # Monta il modulo in read-only
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
-      # - ./discovery:/app/
-      - ./data/leveldb:/app/data
+      # - ./discovery:/home/node/app/
+      - ./data/leveldb:/home/node/app/data
     user: "1000:1000"
 
   backend:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-beta.36 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-beta.37 # Docker image with specific version
     container_name: plutomining-pluto-next_backend_1
     # ports:
     #   - "7676:7676"
@@ -99,10 +98,10 @@ services:
       # - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
       # - ./common/db:/common/db:ro # Monta il modulo in read-only
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
-      # - ./backend:/app/
-      # - ./grafana/templates:/app/grafana_templates/
-      - ./data/leveldb:/app/data
-      - ./data/grafana:/app/grafana
+      # - ./backend:/home/node/app/
+      # - ./grafana/templates:/home/node/app/grafana_templates/
+      - ./data/leveldb:/home/node/app/data
+      - ./data/grafana:/home/node/app/grafana
     depends_on:
       prometheus:
         condition: service_healthy
@@ -114,7 +113,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.6.0-beta.36 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.6.0-beta.37 # Docker image with specific version
     container_name: plutomining-pluto-next_frontend_1
     ports:
       - "7677:7677" # Map port 7777 on the host to port 7777 on the container
@@ -135,7 +134,7 @@ services:
       - ./app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
     #   - ./common/utils:/common/utils:ro # Monta il modulo in read-only
     #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
-    #   - ./frontend:/app/
+    #   - ./frontend:/home/node/app/
     user: "1000:1000"
 
   prometheus:

@@ -40,7 +40,8 @@ services:
     # volumes:
     #   - ./common/logger:/common/logger:ro # Monta il modulo in read-only
     #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
-    #   - ./mock:/app/
+    #   - ./mock:/home/node/app/
+    user: "1000:1000"
 
   discovery:
     # build:
@@ -52,6 +53,9 @@ services:
     # ports:
     #   - "7775:7775" # Map port 7775 on the host to port 7775 on the container
     pid: host
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
 
     # Container restart policy - restart unless manually stopped
     restart: on-failure
@@ -65,8 +69,9 @@ services:
       # - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
       # - ./common/db:/common/db:ro # Monta il modulo in read-only
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
-      # - ./discovery:/app/
-      - ./data/leveldb:/app/data
+      # - ./discovery:/home/node/app/
+      - ./data/leveldb:/home/node/app/data
+    user: "1000:1000"
 
   backend:
     # build:
@@ -93,15 +98,16 @@ services:
       # - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
       # - ./common/db:/common/db:ro # Monta il modulo in read-only
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
-      # - ./backend:/app/
-      # - ./grafana/templates:/app/grafana_templates/
-      - ./data/leveldb:/app/data
-      - ./data/grafana:/app/grafana
+      # - ./backend:/home/node/app/
+      # - ./grafana/templates:/home/node/app/grafana_templates/
+      - ./data/leveldb:/home/node/app/data
+      - ./data/grafana:/home/node/app/grafana
     depends_on:
       prometheus:
         condition: service_healthy
       grafana:
         condition: service_healthy
+    user: "1000:1000"
 
   frontend:
     # build:
@@ -128,7 +134,8 @@ services:
       - ./app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml:/tmp/umbrel-app.yml:ro
     #   - ./common/utils:/common/utils:ro # Monta il modulo in read-only
     #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
-    #   - ./frontend:/app/
+    #   - ./frontend:/home/node/app/
+    user: "1000:1000"
 
   prometheus:
     image: prom/prometheus:v2.53.1
