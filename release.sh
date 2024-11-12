@@ -6,6 +6,7 @@ DOCKER_REGISTRY=registry.gitlab.com/plutomining/pluto
 update_version() {
     local service=$1
     local new_version=$2
+    local image_sha=$3
 
     # Update the version in the service's package.json
     sed -i '' -E "s/\"version\": \"[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?\"/\"version\": \"${new_version}\"/" $service/package.json
@@ -14,43 +15,29 @@ update_version() {
     echo "Running npm install in $service..."
     (cd $service && npm install)
 
-    # Get the SHA of the Docker image
-    local image_sha=$(get_image_sha "${DOCKER_REGISTRY}/pluto-$service:${new_version}")
-
-    # # Determine which files to update based on pre-release status
-    # if [ "$IS_PRERELEASE" = true ]; then
-    sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto-next/docker-compose.yml
-    sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" docker-compose.next.local.yml
-    # else
+    # Update docker-compose files with the correct image and SHA
     sed -i '' -E "s#plutomining/pluto/pluto-$service(:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?|@sha256:[a-f0-9]+)?#plutomining/pluto/pluto-$service@${image_sha}#g" app-stores/umbrelOS/official/pluto/docker-compose.yml
     sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/docker-compose.yml
     sed -i '' -E "s/plutomining\/pluto\/pluto-$service:[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?/plutomining\/pluto\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
-    # fi
 }
 
 # Function to update the version in umbrel-app.yml
 update_umbrel_version() {
     local new_version=$1
 
-    # if [ "$IS_PRERELEASE" = true ]; then
     sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml
     sed -i '' -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml
-    # else
+
     sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/official/pluto/umbrel-app.yml
     sed -i '' -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/official/pluto/umbrel-app.yml
 
     sed -i '' -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml
     sed -i '' -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml
-    # fi
 }
 
 # Function to get the current version from the correct umbrel app file
 get_current_app_version() {
-    # if [ "$IS_PRERELEASE" = true ]; then
-    #     grep 'version:' app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml | sed -E 's/version: "(.*)"/\1/'
-    # else
     grep 'version:' app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml | sed -E 's/version: "(.*)"/\1/'
-    # fi
 }
 
 # Function to get the current version from the package.json file
@@ -76,7 +63,6 @@ get_image_sha() {
 
 # Default values for flags
 SKIP_LOGIN=false
-# IS_PRERELEASE=false
 
 # Parse command line arguments
 for arg in "$@"; do
@@ -86,32 +72,15 @@ for arg in "$@"; do
         shift # Remove --skip-login from processing
         ;;
     esac
-    # --pre-release)
-    #     IS_PRERELEASE=true
-    #     shift # Remove --pre-release from processing
-    #     ;;
 done
-
-# # Prompt to check if this is a pre-release if not set by flag
-# if [ "$IS_PRERELEASE" = false ]; then
-#     echo "Is this a pre-release? (y/n)"
-#     read is_prerelease_input
-#     if [ "$is_prerelease_input" == "y" ]; then
-#         IS_PRERELEASE=true
-#     fi
-# fi
 
 # Only perform Docker login if the skip login flag is not set
 if [ "$SKIP_LOGIN" = false ]; then
-    # Request Docker username and personal access token
-    # echo "Enter your Docker username:"
-    # read DOCKER_USERNAME
     echo "Enter your Docker personal access token:"
     read -s DOCKER_ACCESS_TOKEN
 
     # Perform Docker login
-    echo "$DOCKER_ACCESS_TOKEN" | docker login $DOCKER_REGISTRY # --password-stdin
-    # echo "$DOCKER_ACCESS_TOKEN" | docker login --username "$DOCKER_USERNAME" --password-stdin
+    echo "$DOCKER_ACCESS_TOKEN" | docker login $DOCKER_REGISTRY
 else
     echo "Skipping Docker login..."
 fi
@@ -150,44 +119,24 @@ for service in backend discovery mock frontend; do
     eval current_version=\$current_${service}_version
 
     if [ "$new_version" != "$current_version" ]; then
-        echo "Updating $service from version $current_version to $new_version..."
-        update_version $service "$new_version"
-    else
-        echo "Skipping $service as the version has not changed."
-    fi
-done
-
-# Enable Docker Buildx for multi-architecture builds
-if docker buildx inspect multi-arch-builder >/dev/null 2>&1; then
-    echo "Using existing multi-arch-builder instance..."
-    docker buildx use multi-arch-builder
-else
-    echo "Creating new multi-arch-builder instance..."
-    docker buildx create --use --name multi-arch-builder
-fi
-
-# Build Docker images only if the version has changed
-for service in backend discovery mock frontend; do
-    eval new_version=\$${service}_version
-    eval current_version=\$current_${service}_version
-
-    if [ "$new_version" != "$current_version" ]; then
         echo "Building Docker image for $service with context $(pwd) and Dockerfile $service/Dockerfile..."
 
-        # Choose Dockerfile based on service and release type
-        DOCKERFILE_PATH="$service/Dockerfile"
-        # if [ "$IS_PRERELEASE" = true ] && ([[ "$service" == "grafana" ]] || [[ "$service" == "prometheus" ]]); then
-        #     DOCKERFILE_PATH="$service/Dockerfile.next"
-        # fi
-
+        # Build the Docker image with the specified version tags
         docker buildx build --platform linux/amd64,linux/arm64 \
             -t ${DOCKER_REGISTRY}/pluto-$service:latest \
             -t ${DOCKER_REGISTRY}/pluto-$service:"$new_version" \
-            -f $DOCKERFILE_PATH . --push
+            -f $service/Dockerfile . --push
 
+        # Get the updated SHA after build
+        image_sha=$(get_image_sha "${DOCKER_REGISTRY}/pluto-$service:${new_version}")
     else
         echo "Skipping Docker build for $service as the version has not changed."
+        # Get the existing SHA of the current image
+        image_sha=$(get_image_sha "${DOCKER_REGISTRY}/pluto-$service:${new_version}")
     fi
+
+    # Update files with the SHA for the service
+    update_version $service "$new_version" "$image_sha"
 done
 
 # Stage all changes
@@ -195,8 +144,6 @@ echo "Staging changes..."
 git add -A .
 
 # Commit the changes with a message
-echo "Committing changes..."
-# Commit the changes with a detailed message for each service
 echo "Committing changes..."
 git commit -m "Bump versions:
 - App version: ${new_app_version}
