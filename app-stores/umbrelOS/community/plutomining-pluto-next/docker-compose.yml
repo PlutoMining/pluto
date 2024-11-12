@@ -13,7 +13,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: mock/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-mock:0.6.0-beta.37 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-mock:0.6.0-beta.38 # Docker image with specific version
     ports:
       - "7670:7670"
       - "7651:7651"
@@ -46,7 +46,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-beta.37 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-beta.38 # Docker image with specific version
     network_mode: "host"
     # ports:
     #   - "7675:7675" # Map port 7675 on the host to port 7675 on the container
@@ -75,7 +75,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-beta.37 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-beta.38 # Docker image with specific version
     ports:
       - "7676:7676"
     pid: host
@@ -110,7 +110,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.6.0-beta.37 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.6.0-beta.38 # Docker image with specific version
     # ports:
     #   - "7677:7677" # Map port 7777 on the host to port 7777 on the container
     # Use the host's PID namespace to allow container processes to be visible on the host
