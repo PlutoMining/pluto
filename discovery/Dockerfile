@@ -28,7 +28,7 @@ RUN npm run build
 FROM node:20-alpine
 
 # Installa arp-scan
-RUN apk add arp-scan
+RUN apk add --no-cache arp-scan libcap
 
 # Imposta la directory di lavoro
 WORKDIR /home/node/app
