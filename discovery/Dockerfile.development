@@ -1,14 +1,17 @@
 # Fase 1: Costruzione
 FROM node:20-alpine AS builder
 
-# Installa arp-scan
-RUN apk add --no-cache arp-scan
+# Installa arp-scan e altri strumenti necessari
+RUN apk add --no-cache arp-scan libcap
 
 # Imposta la directory di lavoro
 WORKDIR /home/node/app
 
 # Cambia proprietà per permettere l'accesso all'utente `node`
 RUN chown -R node:node /home/node
+
+# Concede i permessi di rete al binario arp-scan per l'utente non root
+RUN setcap cap_net_raw,cap_net_admin=eip /usr/bin/arp-scan
 
 # Passa all'utente `node`
 USER node

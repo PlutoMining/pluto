@@ -42,6 +42,9 @@ COPY --from=builder /home/node/app/package*.json ./
 # Cambia proprietà per permettere l'accesso all'utente `node`
 RUN chown -R node:node /home/node
 
+# Concede i permessi di rete al binario arp-scan per l'utente non root
+RUN setcap cap_net_raw,cap_net_admin=eip /usr/bin/arp-scan
+
 # Passa all'utente `node`
 USER node
 

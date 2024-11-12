@@ -47,6 +47,7 @@ services:
       context: discovery
       dockerfile: Dockerfile.development
     network_mode: "host"
+    privileged: true
     # ports:
     #   - "7775:7775" # Map port 7775 on the host to port 7775 on the container
     pid: host
