@@ -178,15 +178,15 @@ const MonitoringPage: React.FC = () => {
                       fontSize={"13px"}
                       borderRadius={0}
                       padding={"2px 5px"}
-                      borderColor={"border-color"}
+                      borderColor={"header-text"}
                       borderWidth={"1px"}
                     >
                       <Text
-                        fontWeight={400}
+                        fontWeight={500}
                         textTransform={"uppercase"}
                         fontFamily={"accent"}
-                        fontSize={"lg"}
-                        color={"body-text"}
+                        fontSize={"md"}
+                        color={"header-text"}
                       >
                         {preset ? preset.name : "Custom"}
                       </Text>
@@ -375,7 +375,7 @@ const MonitoringPage: React.FC = () => {
                         color={"header-text"}
                         fontFamily={"accent"}
                       >
-                        Since system boot
+                        since system boot
                       </Text>
                     </Flex>
                   </Flex>
