@@ -1,5 +1,5 @@
 import { MouseEventHandler, ReactElement } from "react";
-import { Button as ChakraButton } from "@chakra-ui/react";
+import { Button as ChakraButton, ResponsiveValue } from "@chakra-ui/react";
 import { defineStyle, defineStyleConfig } from "@chakra-ui/react";
 import React from "react";
 
@@ -100,6 +100,8 @@ interface ButtonProps {
   borderColor?: string;
   icon?: ReactElement;
   rightIcon?: ReactElement;
+  size?: string;
+  transform?: "uppercase" | "capitalize";
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -111,11 +113,13 @@ const Button: React.FC<ButtonProps> = ({
   isLoading,
   icon,
   rightIcon,
+  size = "sm",
+  transform = "uppercase",
 }) => {
   return (
     <ChakraButton
       fontFamily={"body"}
-      textTransform={"uppercase"}
+      textTransform={transform}
       leftIcon={icon}
       rightIcon={rightIcon}
       isLoading={isLoading}
@@ -123,6 +127,7 @@ const Button: React.FC<ButtonProps> = ({
       variant={variant}
       onClick={onClick}
       type={type}
+      fontSize={size}
     >
       {label}
     </ChakraButton>

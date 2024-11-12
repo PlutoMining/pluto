@@ -21,7 +21,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   defaultChecked,
   flexDir = "row",
 }) => {
-  const [borderColor] = useToken("colors", ["input-border-color"]);
+  const [borderColor] = useToken("colors", ["radio-button-border-color"]);
   const [bgColor] = useToken("colors", ["bg-color"]);
   const [textColor] = useToken("colors", ["body-text"]);
   const [accentColor] = useToken("colors", ["input-accent-color"]);

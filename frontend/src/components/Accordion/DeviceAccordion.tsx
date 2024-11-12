@@ -91,12 +91,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
         <Divider borderColor={"border-color"} />
         <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"} p={"1rem"}>
           <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"accent"}
-            >
+            <Text fontWeight={500} textTransform={"capitalize"} fontSize={"sm"} fontFamily={"body"}>
               Data added
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
@@ -104,12 +99,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
             </Text>
           </Flex>
           <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"accent"}
-            >
+            <Text fontWeight={500} textTransform={"capitalize"} fontSize={"sm"} fontFamily={"body"}>
               IP
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
@@ -117,12 +107,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
             </Text>
           </Flex>
           <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"accent"}
-            >
+            <Text fontWeight={500} textTransform={"capitalize"} fontSize={"sm"} fontFamily={"body"}>
               Miner
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
@@ -130,12 +115,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
             </Text>
           </Flex>
           <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"accent"}
-            >
+            <Text fontWeight={500} textTransform={"capitalize"} fontSize={"sm"} fontFamily={"body"}>
               ASIC
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
@@ -143,12 +123,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
             </Text>
           </Flex>
           <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"accent"}
-            >
+            <Text fontWeight={500} textTransform={"capitalize"} fontSize={"sm"} fontFamily={"body"}>
               FW v.
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
@@ -156,12 +131,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
             </Text>
           </Flex>
           <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"accent"}
-            >
+            <Text fontWeight={500} textTransform={"capitalize"} fontSize={"sm"} fontFamily={"body"}>
               Uptime
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>

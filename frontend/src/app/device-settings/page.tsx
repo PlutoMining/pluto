@@ -158,7 +158,7 @@ const SettingsPage = () => {
                 <Box>
                   <Button
                     variant="primary"
-                    icon={<RestartAllIcon color={"bg-color"} />}
+                    icon={<RestartAllIcon color={"cta-primary-icon-color"} />}
                     onClick={onOpenModal}
                     label="Restart all"
                     disabled={!imprintedDevices || imprintedDevices?.length === 0}

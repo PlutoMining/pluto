@@ -120,7 +120,7 @@ const theme = extendTheme({
         _dark: colors.greyscale[600],
       },
       "input-label-color": {
-        _light: colors.greyscale[300],
+        _light: colors.greyscale[900],
         _dark: colors.greyscale[300],
       },
       "input-placeholder-color": {
@@ -150,6 +150,10 @@ const theme = extendTheme({
       "radio-button-color-disabled": {
         _light: colors.greyscale[200],
         _dark: colors.primary[800],
+      },
+      "radio-button-border-color": {
+        _light: colors.greyscale[300],
+        _dark: colors.greyscale[400],
       },
       "input-border-color": {
         _light: colors.greyscale[500],
