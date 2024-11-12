@@ -7,7 +7,7 @@ services:
     #   - "7677:7677" # Proxy listens on port 7677 on the host and forwards to APP_HOST:APP_PORT
     depends_on:
       - frontend
-    restart: unless-stopped
+    restart: on-failure
 
   mock:
     # build:
@@ -29,7 +29,7 @@ services:
     pid: host
 
     # Container restart policy - restart unless manually stopped
-    restart: unless-stopped
+    restart: on-failure
     # env_file:
     #   - mock/.env.local
     environment:
@@ -52,7 +52,7 @@ services:
     pid: host
 
     # Container restart policy - restart unless manually stopped
-    restart: unless-stopped
+    restart: on-failure
     # env_file:
     #   - discovery/.env.local
     environment:
@@ -76,7 +76,7 @@ services:
     pid: host
 
     # Container restart policy - restart unless manually stopped
-    restart: unless-stopped
+    restart: on-failure
     # env_file:
     #   - backend/.env.local
     environment:
@@ -111,7 +111,7 @@ services:
     pid: host
 
     # Container restart policy - restart unless manually stopped
-    restart: unless-stopped
+    restart: on-failure
     depends_on:
       - backend
     # env_file:
@@ -141,6 +141,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    user: "65534:65534"
 
   grafana:
     image: grafana/grafana:11.1.2
@@ -166,3 +167,4 @@ services:
     depends_on:
       prometheus:
         condition: service_healthy # Attende che prometheus sia in stato "healthy"
+    user: "472:472"
