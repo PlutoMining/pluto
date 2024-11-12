@@ -13,7 +13,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: mock/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-mock:0.6.0-beta.19 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-mock:0.6.0-beta.36 # Docker image with specific version
     container_name: plutomining-pluto-next_mock_1
     ports:
       - "7670:7670"
@@ -41,17 +41,22 @@ services:
     #   - ./common/logger:/common/logger:ro # Monta il modulo in read-only
     #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
     #   - ./mock:/app/
+    user: "1000:1000"
 
   discovery:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-beta.19 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-beta.36 # Docker image with specific version
     container_name: plutomining-pluto-next_discovery_1
     network_mode: "host"
     # ports:
     #   - "7675:7675" # Map port 7675 on the host to port 7675 on the container
     pid: host
+
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
 
     # Container restart policy - restart unless manually stopped
     restart: on-failure
@@ -67,12 +72,13 @@ services:
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       # - ./discovery:/app/
       - ./data/leveldb:/app/data
+    user: "1000:1000"
 
   backend:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-beta.19 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-beta.36 # Docker image with specific version
     container_name: plutomining-pluto-next_backend_1
     # ports:
     #   - "7676:7676"
@@ -102,12 +108,13 @@ services:
         condition: service_healthy
       grafana:
         condition: service_healthy
+    user: "1000:1000"
 
   frontend:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.6.0-beta.35 # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.6.0-beta.36 # Docker image with specific version
     container_name: plutomining-pluto-next_frontend_1
     ports:
       - "7677:7677" # Map port 7777 on the host to port 7777 on the container
@@ -129,6 +136,7 @@ services:
     #   - ./common/utils:/common/utils:ro # Monta il modulo in read-only
     #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
     #   - ./frontend:/app/
+    user: "1000:1000"
 
   prometheus:
     image: prom/prometheus:v2.53.1

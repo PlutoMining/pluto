@@ -58,7 +58,7 @@ export const Footer = () => {
           </Flex>
           <Text fontSize={"xs"} fontWeight={300} color={"footer-text"}>
             © 2024 Pluto. All rights reserved. This open-source application software is licensed
-            under the Lorem Ipsum License.
+            under the AGPL 3.0 License.
           </Text>
         </Flex>
         <Flex gap={"0.5rem"} align={"center"}>
