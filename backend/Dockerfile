@@ -1,50 +1,50 @@
 # Fase 1: Costruzione
 FROM node:20-alpine AS builder
 
-WORKDIR /app
+# Imposta la directory di lavoro
+WORKDIR /home/node/app
 
 # Copia package.json e package-lock.json e installa le dipendenze
 COPY ./backend/package*.json ./
-RUN mkdir -p /common
-COPY ./common /common
-RUN npm ci --prefix /common/utils
-RUN npm ci --prefix /common/db
-RUN npm ci --prefix /common/interfaces
-RUN npm ci --prefix /common/logger
+RUN mkdir -p /home/node/common
+COPY ./common /home/node/common
+RUN npm ci --prefix /home/node/common/utils
+RUN npm ci --prefix /home/node/common/db
+RUN npm ci --prefix /home/node/common/interfaces
+RUN npm ci --prefix /home/node/common/logger
 RUN npm ci
 
 # Copia il resto dei file e costruisce l'applicazione
 COPY ./backend .
 
-# Compila il modulo TypeScript `common/utils`
-RUN npm run build --prefix /common/utils
-# Compila il modulo TypeScript `common/db`
-RUN npm run build --prefix /common/db
-# Compila il modulo TypeScript `common/interfaces`
-RUN npm run build --prefix /common/interfaces
-# Compila il modulo TypeScript `common/logger`
-RUN npm run build --prefix /common/logger
+# Compila i moduli TypeScript nella cartella common
+RUN npm run build --prefix /home/node/common/utils
+RUN npm run build --prefix /home/node/common/db
+RUN npm run build --prefix /home/node/common/interfaces
+RUN npm run build --prefix /home/node/common/logger
 
 RUN npm run build
 
 # Fase 2: Runtime
 FROM node:20-alpine
 
-WORKDIR /app
+# Imposta la directory di lavoro
+WORKDIR /home/node/app
 
-COPY --from=builder /common /common
-
-# Copia solo le dipendenze di produzione
-COPY --from=builder /app/node_modules ./node_modules
-
-# Copia la build TypeScript dalla fase di build
-COPY --from=builder /app/dist ./dist
-
-# Copia il package.json necessario per eseguire l'applicazione
-COPY --from=builder /app/package*.json ./
+# Copia i file dalla fase di build
+COPY --from=builder /home/node/common /home/node/common
+COPY --from=builder /home/node/app/node_modules ./node_modules
+COPY --from=builder /home/node/app/dist ./dist
+COPY --from=builder /home/node/app/package*.json ./
 
 # Copia i templates delle dashboard di grafana
 COPY ./grafana/templates ./grafana_templates
+
+# Cambia proprietà per permettere l'accesso all'utente `node`
+RUN chown -R node:node /home/node
+
+# Passa all'utente `node`
+USER node
 
 # Avvia l'applicazione
 CMD ["npm", "start"]

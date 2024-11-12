@@ -1,42 +1,44 @@
 # Fase 1: Costruzione
 FROM node:20-alpine AS builder
 
-WORKDIR /app
+# Imposta la directory di lavoro
+WORKDIR /home/node/app
 
 # Copia package.json e package-lock.json e installa le dipendenze
 COPY ./mock/package*.json ./
-RUN mkdir -p /common/logger
-COPY ./common /common
-RUN npm ci --prefix /common/logger
-RUN npm ci --prefix /common/interfaces
+RUN mkdir -p /home/node/common/logger
+COPY ./common /home/node/common
+RUN npm ci --prefix /home/node/common/logger
+RUN npm ci --prefix /home/node/common/interfaces
 RUN npm ci
 
 # Copia il resto dei file e costruisce l'applicazione
 COPY ./mock .
 
-# Compila il modulo TypeScript `common/logger`
-RUN npm run build --prefix /common/logger
+# Compila i moduli TypeScript nella cartella common
+RUN npm run build --prefix /home/node/common/logger
+RUN npm run build --prefix /home/node/common/interfaces
 
-# Compila il modulo TypeScript `common/interfaces`
-RUN npm run build --prefix /common/interfaces
-
+# Compila l'applicazione mock
 RUN npm run build
 
 # Fase 2: Runtime
 FROM node:20-alpine
 
-WORKDIR /app
+# Imposta la directory di lavoro
+WORKDIR /home/node/app
 
-COPY --from=builder /common /common
+# Copia i file necessari dalla fase di build
+COPY --from=builder /home/node/common /home/node/common
+COPY --from=builder /home/node/app/node_modules ./node_modules
+COPY --from=builder /home/node/app/dist ./dist
+COPY --from=builder /home/node/app/package*.json ./
 
-# Copia solo le dipendenze di produzione
-COPY --from=builder /app/node_modules ./node_modules
+# Cambia proprietà per permettere l'accesso all'utente `node`
+RUN chown -R node:node /home/node
 
-# Copia la build TypeScript dalla fase di build
-COPY --from=builder /app/dist ./dist
-
-# Copia il package.json necessario per eseguire l'applicazione
-COPY --from=builder /app/package*.json ./
+# Passa all'utente `node`
+USER node
 
 # Avvia l'applicazione
 CMD ["npm", "start"]
