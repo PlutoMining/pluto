@@ -22,6 +22,7 @@
     "d3-time-format": "^4.1.0",
     "framer-motion": "^11.11.8",
     "http-proxy": "^1.18.1",
+    "http-proxy-middleware": "^3.0.3",
     "js-yaml": "^4.1.0",
     "next": "14.2.5",
     "prom-client": "^15.1.3",

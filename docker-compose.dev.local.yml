@@ -121,8 +121,7 @@ services:
     environment:
       - PORT=7777
       - GF_HOST=http://grafana:3000
-      - BACKEND_DESTINATION_HOST=http://backend:7776
-      # - NEXT_PUBLIC_WS_ROOT=ws://localhost:7776
+      - BACKEND_DESTINATION_HOST=http://pluto-backend-1:7776
     volumes:
       - ./common/utils:/common/utils:ro # Monta il modulo in read-only
       - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only

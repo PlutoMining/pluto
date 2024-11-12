@@ -22,7 +22,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const [devices, setDevices] = useState<Device[] | null>(null);
 
   useEffect(() => {
-    const wsRoot = `ws://${window.location.hostname}:${process.env.NEXT_PUBLIC_WS_PORT}`;
+    const wsRoot = "/";
 
     const fetchDevices = async () => {
       try {
@@ -36,14 +36,10 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     };
     if (devices) {
       const socketInstance = ClientIO(wsRoot, {
-        path: "/socket/io",
-        // path: "/api/socket/io",
-        transports: ["websocket"], // Usa solo WebSocket
+        path: "/api/socket/io",
+        // transports: ["websocket"], // Usa solo WebSocket
         reconnectionAttempts: 5, // Limita il numero di tentativi di riconnessione
         reconnectionDelay: 1000, // Imposta un ritardo tra i tentativi di riconnessione
-        // extraHeaders: {
-        //   "X-Mac-Addresses": devices.map((d) => d.mac).join(","),
-        // },
       });
 
       socketInstance.on("connect", () => {

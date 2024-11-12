@@ -14,13 +14,6 @@ RUN npm ci
 # Copia il resto dei file e costruisce l'applicazione
 COPY ./frontend .
 
-# ARG GF_HOST
-# ENV GF_HOST=$GF_HOST
-# ARG BACKEND_DESTINATION_HOST
-# ENV BACKEND_DESTINATION_HOST=$BACKEND_DESTINATION_HOST
-ARG NEXT_PUBLIC_WS_PORT
-ENV NEXT_PUBLIC_WS_PORT=$NEXT_PUBLIC_WS_PORT
-
 # Compila il modulo TypeScript `common/utils`
 RUN npm run build --prefix /common/utils
 
