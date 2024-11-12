@@ -25,6 +25,7 @@ export const Select: React.FC<SelectProps> = ({
   const [borderColor] = useToken("colors", ["border-color"]);
   const [bgColor] = useToken("colors", ["input-bg"]);
   const [textColor] = useToken("colors", ["body-text"]);
+  const [inputLabelColor] = useToken("colors", ["input-label-color"]);
 
   // primaryColor
   const [primaryColor] = useToken("colors", ["cta-bg"]);
@@ -34,10 +35,11 @@ export const Select: React.FC<SelectProps> = ({
     <FormControl>
       <FormLabel
         htmlFor={name}
-        fontWeight={400}
-        fontSize={"13px"}
+        fontWeight={600}
+        fontSize={"xs"}
         fontFamily={"body"}
         textTransform={"uppercase"}
+        color={inputLabelColor}
       >
         {label}
       </FormLabel>

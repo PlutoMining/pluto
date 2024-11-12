@@ -21,7 +21,6 @@ import {
   ModalOverlay,
   Text,
   useDisclosure,
-  useTheme,
   useToken,
   VStack,
 } from "@chakra-ui/react";
@@ -121,8 +120,6 @@ const SettingsPage = () => {
     onCloseAlert();
   }, [onCloseAlert]);
 
-  const [textColor] = useToken("colors", ["body-text"]);
-
   return (
     <Container flex="1" maxW="container.desktop" h={"100%"}>
       {alert && (
@@ -161,7 +158,7 @@ const SettingsPage = () => {
                 <Box>
                   <Button
                     variant="primary"
-                    icon={<RestartAllIcon color={textColor} />}
+                    icon={<RestartAllIcon color={"cta-primary-icon-color"} />}
                     onClick={onOpenModal}
                     label="Restart all"
                     disabled={!imprintedDevices || imprintedDevices?.length === 0}

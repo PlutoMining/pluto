@@ -6,8 +6,10 @@ import {
   Box,
   Accordion as ChakraAccordion,
   AccordionItem as ChakraAccordionItem,
+  Checkbox as ChakraCheckbox,
   Divider,
   Flex,
+  FormControl,
   Grid,
   Modal,
   ModalBody,
@@ -22,6 +24,7 @@ import {
   useAccordionItemState,
   useDisclosure,
   useToken,
+  useTheme,
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
 import { validateDomain, validateTCPPort } from "@pluto/utils";
@@ -269,6 +272,10 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   const [textColor] = useToken("colors", ["body-text"]);
   const [accentColor] = useToken("colors", ["accent-color"]);
 
+  const [checkboxBorderColor] = useToken("colors", ["radio-button-border-color"]);
+
+  const theme = useTheme();
+
   return (
     <>
       <Flex flexDirection={"column"} gap={"1rem"}>
@@ -278,27 +285,79 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           gap={"1rem"}
           flexDir={{ base: "column", tablet: "row" }}
         >
-          <Checkbox
-            id={"select-all-devices"}
-            name={"select-all-devices"}
-            label={
-              checkedFetchedItems.filter((d) => d.value === true).length === 0
-                ? `Select all`
-                : `${checkedFetchedItems.filter((d) => d.value === true).length} of ${
-                    devices?.length
-                  } selected`
-            }
-            defaultChecked={allChecked}
-            isChecked={allChecked}
-            onChange={(e) => handleAllCheckbox(e.target.checked)}
-            flexDir={{ base: "row-reverse", tablet: "row" }}
-          />
+          <FormControl>
+            <ChakraCheckbox
+              name={"select-all-devices"}
+              onChange={(e) => handleAllCheckbox(e.target.checked)}
+              id={"select-all-devices"}
+              isChecked={allChecked}
+              defaultChecked={allChecked}
+              borderColor={checkboxBorderColor}
+              borderRadius={0}
+              display="flex"
+              alignItems="center"
+              flexDir={{ base: "row-reverse", tablet: "row" }}
+              gap={"0.5rem"}
+              sx={{
+                width: "100%",
+                "& .chakra-checkbox__control": {
+                  height: "1rem",
+                  width: "1rem",
+                  borderRadius: 0,
+                  bg: "bgColor",
+                  borderColor: borderColor,
+                  boxShadow: `inset 0 0 0 1px ${bgColor}`,
+                },
+                "& .chakra-checkbox__control[data-checked]": {
+                  bg: accentColor,
+                  borderColor: borderColor,
+                  color: borderColor,
+                  boxShadow: `inset 0 0 0 1px ${bgColor}`,
+                },
+                "& .chakra-checkbox__control[data-checked]:hover": {
+                  bg: accentColor,
+                  borderColor: borderColor,
+                  color: borderColor,
+                  boxShadow: `inset 0 0 0 1px ${bgColor}`,
+                },
+                "& .chakra-checkbox__control:focus": {
+                  borderColor: borderColor,
+                  boxShadow: `inset 0 0 0 1px ${bgColor}`,
+                },
+              }}
+            >
+              <Flex alignItems={"center"}>
+                {checkedFetchedItems.filter((d) => d.value === true).length === 0 ? (
+                  <Text fontSize={"md"}>Select all</Text>
+                ) : (
+                  <>
+                    <Text fontSize={"md"} fontWeight={500} fontFamily={"body"}>
+                      {checkedFetchedItems.filter((d) => d.value === true).length}
+                    </Text>
+                    <Text fontSize={"md"} fontWeight={400} fontFamily={"body"} opacity={0.6}>
+                      /{devices?.length}{" "}
+                    </Text>
+                    <Text
+                      marginLeft={"5px"}
+                      fontSize={"xs"}
+                      fontWeight={500}
+                      fontFamily={"accent"}
+                      opacity={0.6}
+                    >
+                      selected
+                    </Text>
+                  </>
+                )}
+              </Flex>
+            </ChakraCheckbox>
+          </FormControl>
           <Flex
-            alignItems={{ base: "flex-start", tablet: "center" }}
+            alignItems={"center"}
             gap={"1rem"}
-            flexDir={{ base: "column", tablet: "row" }}
-            justify={{ base: "flex-start", tablet: "flex-start" }}
-            w={{ base: "100%", tablet: "fit-content" }}
+            flexWrap={"wrap"}
+            flexDir={"row"}
+            justify={{ base: "space-between", mobileL: "flex-end" }}
+            w={"100%"}
           >
             <Button
               onClick={() => setIsSelectPoolPresetModalOpen(true)}
@@ -308,7 +367,9 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
                 checkedFetchedItems.length <= 1 ||
                 checkedFetchedItems.filter((item) => item.value === true).length <= 1
               }
+              size="13px"
               label="Select Pool Preset"
+              transform="capitalize"
             ></Button>
             <Button
               onClick={onOpenModal}
@@ -318,7 +379,9 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
                 checkedFetchedItems.length <= 1 ||
                 checkedFetchedItems.filter((item) => item.value === true).length <= 1
               }
+              size="13px"
               label="Restart selected devices"
+              transform="capitalize"
             ></Button>
           </Flex>
         </Flex>
@@ -823,8 +886,6 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     setIsRestartModalOpen(true);
   };
 
-  const [textColor] = useToken("colors", ["body-text"]);
-
   return (
     <>
       <AccordionButton
@@ -932,7 +993,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         <Divider borderColor={"border-color"} />
         <Flex flexDir={"column"} p={"1rem"} w={"100%"}>
           <Flex flexDirection={"column"} gap={"1rem"} w={"100%"}>
-            <Text fontWeight={"bold"} textTransform={"uppercase"} fontFamily={"accent"}>
+            <Text fontWeight={"bold"} textTransform={"uppercase"}>
               General
             </Text>
             <SimpleGrid columns={{ mobile: 1, tablet: 2, desktop: 2 }} spacing={"1rem"}>
@@ -958,7 +1019,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           </Flex>
 
           <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"100%"}>
-            <Text fontWeight={"bold"} textTransform={"uppercase"} fontFamily={"accent"}>
+            <Text fontWeight={"bold"} textTransform={"uppercase"}>
               Hardware settings
             </Text>
             <Flex flexDir={{ mobile: "column", tablet: "column", desktop: "row" }} gap={"1rem"}>
@@ -998,17 +1059,18 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 />
               </Flex>
 
-              <Flex flex={3} flexDirection={"column"} justify={"space-between"} gap={"0.25rem"}>
+              <Flex flex={3} flexDirection={"column"} justify={"space-between"} gap={"1rem"}>
                 <Text
-                  fontWeight={400}
-                  fontSize={"13px"}
-                  fontFamily={"accent"}
+                  fontWeight={600}
+                  fontSize={"xs"}
+                  fontFamily={"body"}
                   textTransform={"uppercase"}
+                  color={"input-label-color"}
                 >
                   Advanced Hardware Settings
                 </Text>
                 <Flex
-                  gap={"0.5rem"}
+                  gap={"1.5rem"}
                   justify={"flex-start"}
                   alignItems={"center"}
                   flexDir={{ mobile: "column", tablet: "row", desktop: "row" }}
@@ -1189,7 +1251,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           <Flex justifyContent={"flex-start"}>
             <Button
               variant="primary"
-              rightIcon={<ArrowIcon color={textColor} />}
+              rightIcon={<ArrowIcon color="cta-primary-icon-color" />}
               onClick={() => setIsSaveAndRestartModalOpen(true)}
               disabled={isDeviceValid()}
               label="Save"

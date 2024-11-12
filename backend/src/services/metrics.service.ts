@@ -120,10 +120,12 @@ export const createMetricsForDevice = (hostname: string) => {
       if (data.coreVoltageActual) coreVoltageActualGauge.set(data.coreVoltageActual / 1000); // Assume voltage in millivolts
       if (data.frequency) frequencyGauge.set(data.frequency);
 
-      // efficiency (GH / Wh) = hashrate (GH) / (power (W) * uptimeSeconds (s) / 3600 )
       if (data.efficiency)
         efficiencyGauge.set(
-          (data.hashRate || data.hashRate_10m) / ((data.power * data.uptimeSeconds) / 3600)
+          data.power / ((data.hashRate || data.hashRate_10m) / 1000)
+
+          // efficiency (J / TH) = power (W) / (hashrate GH/s / 1000 )
+          // (data.hashRate || data.hashRate_10m) / ((data.power * data.uptimeSeconds) / 3600)
         );
     },
     register: globalRegister, // Return the registry for further usage
