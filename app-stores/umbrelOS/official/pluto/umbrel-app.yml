@@ -2,7 +2,7 @@ manifestVersion: 1
 id: pluto
 name: Pluto
 category: bitcoin
-version: "0.6.0-beta.42"
+version: "0.6.0-beta.43"
 tagline: Pluto
 icon: https://gitlab.com/plutomining/pluto/-/raw/main/images/pluto/icon.jpg
 description: >
@@ -24,7 +24,7 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >
-  Version 0.6.0-beta.42
+  Version 0.6.0-beta.43
   - Rebranding
   - Dark mode
   - NerdAxe support

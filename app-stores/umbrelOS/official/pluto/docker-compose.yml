@@ -46,7 +46,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-discovery@sha256:74a0e0516d6604cd33bec74cac62dbd96250689c99ea412fd1074f67cbb46f2c # Docker image with specific version
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery@ # Docker image with specific version
     network_mode: "host"
     # ports:
     #   - "7775:7775" # Map port 7775 on the host to port 7775 on the container
