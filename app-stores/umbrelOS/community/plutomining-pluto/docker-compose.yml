@@ -71,8 +71,8 @@ services:
     #   context: .
     #   dockerfile: backend/Dockerfile
     image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-beta.33 # Docker image with specific version
-    ports:
-      - "7776:7776" # Map port 7776 on the host to port 7776 on the container
+    # ports:
+    #   - "7776:7776" # Map port 7776 on the host to port 7776 on the container
     pid: host
 
     # Container restart policy - restart unless manually stopped
