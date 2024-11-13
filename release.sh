@@ -55,7 +55,13 @@ check_git_branch() {
 # Function to get the SHA of a Docker image
 get_image_sha() {
     local image=$1
-    docker image inspect --format='{{index .RepoDigests 0}}' $image | cut -d'@' -f2
+    local sha
+
+    # Prova a ottenere l'SHA dell'immagine localmente
+    sha=$(docker buildx imagetools inspect $image --format "{{json .Manifest}}" | jq -r .digest)
+
+    # Restituisce l'SHA dell'immagine
+    echo "$sha"
 }
 
 # Default values for flags
