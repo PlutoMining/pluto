@@ -1,6 +1,6 @@
 {
   "name": "@pluto/backend",
-  "version": "0.6.0-beta.45",
+  "version": "0.6.0-beta-50",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
