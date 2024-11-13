@@ -8,7 +8,7 @@ services:
     restart: on-failure
 
   discovery:
-    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-beta.38
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-beta.50@
     network_mode: "host"
     pid: host
     cap_add:
@@ -42,7 +42,7 @@ services:
     user: "1000:1000"
 
   frontend:
-    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.6.0-beta.38
+    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.6.0-beta.50@
     pid: host
     restart: on-failure
     depends_on:
