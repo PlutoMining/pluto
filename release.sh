@@ -9,9 +9,9 @@ update_version() {
     local image_sha=$3
 
     # Update docker-compose files with the correct image and SHA
-    sed -i '' -E "s#plutomining/pluto/pluto-$service:(:[^\s]+)?#plutomining/pluto/pluto-$service:${new_version}@${image_sha}#g" app-stores/umbrelOS/official/pluto/docker-compose.yml
-    sed -i '' -E "s#plutomining/pluto/pluto-$service:(:[^\s]+)?#plutomining/pluto/pluto-$service:${new_version}#g" app-stores/umbrelOS/community/plutomining-pluto/docker-compose.yml
-    sed -i '' -E "s#plutomining/pluto/pluto-$service:(:[^\s]+)?#plutomining/pluto/pluto-$service:${new_version}#g" docker-compose.release.local.yml
+    sed -i '' -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+)/plutomining\/pluto\/pluto-$service:${new_version}@${image_sha}/g" app-stores/umbrelOS/official/pluto/docker-compose.yml
+    sed -i '' -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+)/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/docker-compose.yml
+    sed -i '' -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+)/plutomining\/pluto\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
 }
 
 # Function to update the version in umbrel-app.yml
