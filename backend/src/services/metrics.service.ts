@@ -224,11 +224,11 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   const onlineDevices = devicesData.filter((device) => device.tracing).length;
   const offlineDevices = totalDevices - onlineDevices;
 
-  const totalHashrate = devicesData.reduce(
-    (acc, device) => acc + (device.hashRate || device.hashRate_10m),
-    0
-  );
-  const averageHashrate = totalHashrate / totalDevices;
+  const totalHashrate = devicesData.reduce((acc, device) => {
+    const hashRate = device.hashRate ?? device.hashRate_10m ?? 0; // Usa 0 se entrambi sono null o undefined
+    return acc + hashRate;
+  }, 0);
+  const averageHashrate = totalDevices > 0 ? totalHashrate / totalDevices : 0;
 
   const totalPower = devicesData.reduce((acc, device) => acc + device.power, 0);
   const sharesAccepted = devicesData.reduce((acc, device) => acc + device.sharesAccepted, 0);

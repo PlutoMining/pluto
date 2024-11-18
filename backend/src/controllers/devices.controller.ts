@@ -2,7 +2,7 @@ import { logger } from "@pluto/logger";
 import { Request, Response } from "express";
 import * as deviceService from "../services/device.service";
 import * as presetsService from "../services/presets.service";
-import { Device } from "@pluto/interfaces";
+import { Device, DeviceFrequencyOptions, DeviceVoltageOptions } from "@pluto/interfaces";
 import axios from "axios";
 
 export const discoverDevices = async (req: Request, res: Response) => {
@@ -77,7 +77,10 @@ export const imprintDevice = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "No devices found for the provided MAC addresses" });
     }
 
-    res.status(200).json({ message: "Devices imprint successful", data });
+    res.status(200).json({
+      message: "Devices imprint successful",
+      data: data,
+    });
   } catch (error) {
     logger.error("Error in imprintDevices request:", error);
     res.status(500).json({ error: "Failed to process the request" });
@@ -91,7 +94,21 @@ export const getImprintedDevices = async (req: Request, res: Response) => {
       partialMatch: true,
     });
 
-    res.status(200).json({ message: "Devices retrieved successfully", data });
+    const enrichedDevices = data.map((device) => {
+      const frequencyOptions = DeviceFrequencyOptions[device.info.ASICModel] || [];
+      const coreVoltageOptions = DeviceVoltageOptions[device.info.ASICModel] || [];
+
+      return {
+        ...device,
+        info: {
+          ...device.info,
+          frequencyOptions,
+          coreVoltageOptions,
+        },
+      };
+    });
+
+    res.status(200).json({ message: "Devices retrieved successfully", data: enrichedDevices });
   } catch (error) {
     logger.error("Error in imprintDevices request:", error);
     res.status(500).json({ error: "Failed to process the request" });

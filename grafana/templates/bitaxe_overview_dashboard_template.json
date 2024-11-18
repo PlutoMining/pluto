@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 4,
+    "id": 1,
     "links": [],
     "panels": [
         {
@@ -537,7 +537,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "palette-classic"
+                        "mode": "fixed"
                     },
                     "custom": {
                         "axisBorderShow": false,
@@ -557,7 +557,7 @@
                         "insertNulls": false,
                         "lineInterpolation": "smooth",
                         "lineWidth": 2,
-                        "pointSize": 6,
+                        "pointSize": 2,
                         "scaleDistribution": {
                             "type": "linear"
                         },
@@ -578,10 +578,6 @@
                             {
                                 "color": "green",
                                 "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
                             }
                         ]
                     },
@@ -594,10 +590,6 @@
                             "options": "Total hashrate"
                         },
                         "properties": [
-                            {
-                                "id": "custom.drawStyle",
-                                "value": "line"
-                            },
                             {
                                 "id": "color",
                                 "value": {
@@ -616,7 +608,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#7bcffe",
+                                    "fixedColor": "#00685b",
                                     "mode": "fixed"
                                 }
                             }
@@ -659,6 +651,23 @@
                     "legendFormat": "Total hashrate",
                     "range": true,
                     "refId": "A",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "average_hashrate",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "Average hashrate",
+                    "range": true,
+                    "refId": "B",
                     "useBackend": false
                 }
             ],
@@ -723,13 +732,14 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
+                    "exemplar": false,
                     "expr": "firmware_version_distribution",
                     "format": "table",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
-                    "instant": false,
+                    "instant": true,
                     "legendFormat": "{{version}}",
-                    "range": true,
+                    "range": false,
                     "refId": "A",
                     "useBackend": false
                 }
@@ -751,7 +761,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "Overview",
-    "uid": "8b86wdhswhiud9",
+    "uid": "xlqpuydajbv3dq",
     "version": 1,
     "weekStart": ""
 }

@@ -38,6 +38,8 @@ export interface DeviceInfoLegacy {
   autofanspeed: number;
   fanspeed: number;
   efficiency: number;
+  frequencyOptions: DropdownOption[];
+  coreVoltageOptions: DropdownOption[];
 }
 
 export interface DeviceInfoNew {
@@ -120,3 +122,97 @@ export interface Device extends Entity {
 export interface DeviceInfoWithSecrets extends Partial<DeviceInfo> {
   wifiPass?: string;
 }
+
+export const DeviceFrequencyOptions: Record<string, DropdownOption[]> = {
+  BM1397: [
+    { label: "400", value: 400 },
+    { label: "425 (default)", value: 425 },
+    { label: "450", value: 450 },
+    { label: "475", value: 475 },
+    { label: "485", value: 485 },
+    { label: "500", value: 500 },
+    { label: "525", value: 525 },
+    { label: "550", value: 550 },
+    { label: "575", value: 575 },
+    { label: "590", value: 590 },
+    { label: "600", value: 600 },
+    { label: "610", value: 610 },
+    { label: "620", value: 620 },
+    { label: "630", value: 630 },
+    { label: "640", value: 640 },
+    { label: "650", value: 650 },
+  ],
+  BM1366: [
+    { label: "400", value: 400 },
+    { label: "425", value: 425 },
+    { label: "450", value: 450 },
+    { label: "475", value: 475 },
+    { label: "485 (default)", value: 485 },
+    { label: "500", value: 500 },
+    { label: "525", value: 525 },
+    { label: "550", value: 550 },
+    { label: "575", value: 575 },
+  ],
+  BM1368: [
+    { label: "400", value: 400 },
+    { label: "425", value: 425 },
+    { label: "450", value: 450 },
+    { label: "475", value: 475 },
+    { label: "490 (default)", value: 490 },
+    { label: "500", value: 500 },
+    { label: "525", value: 525 },
+    { label: "550", value: 550 },
+    { label: "575", value: 575 },
+  ],
+  BM1370: [
+    { label: "400", value: 400 },
+    { label: "490", value: 490 },
+    { label: "525 (default)", value: 525 },
+    { label: "550", value: 550 },
+    { label: "575", value: 575 },
+    { label: "600", value: 600 },
+    { label: "625", value: 625 },
+  ],
+};
+
+export interface DropdownOption {
+  label: string;
+  value: number;
+}
+
+export const DeviceVoltageOptions: Record<string, DropdownOption[]> = {
+  BM1370: [
+    { label: "1000", value: 1000 },
+    { label: "1060", value: 1060 },
+    { label: "1100", value: 1100 },
+    { label: "1150 (default)", value: 1150 },
+    { label: "1200", value: 1200 },
+    { label: "1250", value: 1250 },
+  ],
+  BM1397: [
+    { label: "1150", value: 1150 },
+    { label: "1100", value: 1100 },
+    { label: "1200", value: 1200 },
+    { label: "1250", value: 1250 },
+    { label: "1300", value: 1300 },
+    { label: "1350", value: 1350 },
+    { label: "1400", value: 1400 },
+    { label: "1450", value: 1450 },
+    { label: "1500", value: 1500 },
+  ],
+  BM1366: [
+    { label: "1100", value: 1100 },
+    { label: "1150", value: 1150 },
+    { label: "1200 (default)", value: 1200 },
+    { label: "1250", value: 1250 },
+    { label: "1300", value: 1300 },
+  ],
+  BM1368: [
+    { label: "1100", value: 1100 },
+    { label: "1150", value: 1150 },
+    { label: "1166 (default)", value: 1166 },
+    { label: "1200", value: 1200 },
+    { label: "1250", value: 1250 },
+    { label: "1300", value: 1300 },
+  ],
+};

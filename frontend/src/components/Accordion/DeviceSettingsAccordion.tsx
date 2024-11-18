@@ -1030,17 +1030,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                   name="frequency"
                   onChange={handleChange}
                   defaultValue={device.info.frequency}
-                  optionValues={[
-                    { value: 400, label: "400" },
-                    { value: 425, label: "425" },
-                    { value: 450, label: "450" },
-                    { value: 475, label: "475" },
-                    { value: 490, label: "490 (default)" },
-                    { value: 500, label: "500" },
-                    { value: 525, label: "525" },
-                    { value: 550, label: "550" },
-                    { value: 575, label: "575" },
-                  ]}
+                  optionValues={device.info.frequencyOptions}
                 />
                 <Select
                   id={`${device.mac}-coreVoltage`}
@@ -1048,14 +1038,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                   name="coreVoltage"
                   onChange={handleChange}
                   defaultValue={device.info.coreVoltage}
-                  optionValues={[
-                    { value: 1100, label: "1100" },
-                    { value: 1150, label: "1150" },
-                    { value: 1166, label: "1166 (default)" },
-                    { value: 1200, label: "1200" },
-                    { value: 1250, label: "1250" },
-                    { value: 1300, label: "1300" },
-                  ]}
+                  optionValues={device.info.coreVoltageOptions}
                 />
               </Flex>
 

@@ -90,7 +90,6 @@ const DevicePage: React.FC = () => {
     try {
       const response = await axios.get("/api/devices/imprint");
       let imprintedDevices: Device[] = response.data.data;
-
       setRegisteredDevices([...imprintedDevices]);
       return imprintedDevices;
     } catch (error) {
