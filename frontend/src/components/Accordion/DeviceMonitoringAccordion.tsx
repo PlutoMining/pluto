@@ -196,6 +196,19 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
               fontSize={"sm"}
               fontFamily={"heading"}
             >
+              Difficulty
+            </Text>
+            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
+              {device.info.bestSessionDiff}
+            </Text>
+          </Flex>
+          <Flex justify={"space-between"}>
+            <Text
+              fontWeight={500}
+              textTransform={"capitalize"}
+              fontSize={"sm"}
+              fontFamily={"heading"}
+            >
               Best Difficulty
             </Text>
             <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>

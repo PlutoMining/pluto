@@ -213,6 +213,17 @@ const MonitoringTablePage: React.FC = () => {
                       textAlign={"center"}
                       fontWeight={"400"}
                     >
+                      Difficulty
+                    </Th>
+                    <Th
+                      borderColor={"border-color"}
+                      color={"th-color"}
+                      fontFamily={"accent"}
+                      textTransform={"uppercase"}
+                      fontSize={"xs"}
+                      textAlign={"center"}
+                      fontWeight={"400"}
+                    >
                       Best difficulty
                     </Th>
                     <Th
@@ -290,6 +301,15 @@ const MonitoringTablePage: React.FC = () => {
                         fontWeight={"400"}
                       >
                         {device.info.temp} °C
+                      </Td>
+                      <Td
+                        borderColor={borderColor}
+                        bg={"td-bg"}
+                        fontSize={"sm"}
+                        textAlign={"center"}
+                        fontWeight={"400"}
+                      >
+                        {device.info.bestSessionDiff}
                       </Td>
                       <Td
                         borderColor={borderColor}
