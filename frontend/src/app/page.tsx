@@ -1,20 +1,7 @@
 "use client";
-import Button from "@/components/Button/Button";
-import Link from "@/components/Link/Link";
 import { NoDeviceAddedSection } from "@/components/Section";
 import { restyleIframe } from "@/utils/iframe";
-import {
-  Box,
-  Container,
-  Flex,
-  Heading,
-  Text,
-  useColorMode,
-  useToken,
-  VStack,
-  Link as ChakraLink,
-  textDecoration,
-} from "@chakra-ui/react";
+import { Box, Container, Flex, Heading, useColorMode, useToken } from "@chakra-ui/react";
 import { Device } from "@pluto/interfaces";
 import axios from "axios";
 import { useEffect, useState, useRef } from "react";
@@ -55,9 +42,7 @@ const OverviewPage: React.FC = () => {
 
   const [bgColor] = useToken("colors", ["bg-color"]);
   const [graphBgColor] = useToken("colors", ["dashboard-section-bg"]);
-
   const [textColor] = useToken("colors", ["body-color"]);
-
   const { colorMode } = useColorMode();
 
   return (

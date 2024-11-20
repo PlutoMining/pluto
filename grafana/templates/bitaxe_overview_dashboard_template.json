@@ -619,11 +619,7 @@
                             {
                                 "id": "custom.lineStyle",
                                 "value": {
-                                    "dash": [
-                                        10,
-                                        10
-                                    ],
-                                    "fill": "dash"
+                                    "fill": "solid"
                                 }
                             },
                             {
@@ -691,7 +687,7 @@
                     "disableTextWrap": false,
                     "editorMode": "code",
                     "exemplar": false,
-                    "expr": "avg_over_time(average_hashrate[$__range])",
+                    "expr": "total_hashrate/total_hardware",
                     "format": "time_series",
                     "fullMetaSearch": false,
                     "hide": false,
@@ -793,7 +789,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "Overview",
-    "uid": "xlqpuydajbv3dq",
+    "uid": "pdpxhokb23auv4",
     "version": 1,
     "weekStart": ""
 }

@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 12,
+    "id": 4,
     "links": [],
     "panels": [
         {
@@ -146,7 +146,7 @@
                             {
                                 "id": "color",
                                 "value": {
-                                    "fixedColor": "#7b00cc",
+                                    "fixedColor": "#00685b",
                                     "mode": "fixed"
                                 }
                             },
@@ -198,6 +198,23 @@
                     "legendFormat": "Hashrate",
                     "range": true,
                     "refId": "A",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "code",
+                    "expr": "avg_over_time(@@hostname@@_hashrate_ghs[$__range])",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "Average hashrate",
+                    "range": true,
+                    "refId": "B",
                     "useBackend": false
                 }
             ],
@@ -786,7 +803,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "@@hostname@@",
-    "uid": "c1wvpoe81i07yj",
+    "uid": "mrdipugz7m58od",
     "version": 1,
     "weekStart": ""
 }

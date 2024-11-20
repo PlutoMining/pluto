@@ -353,6 +353,7 @@ const MonitoringTablePage: React.FC = () => {
                         fontSize={"sm"}
                         textAlign={"center"}
                         fontWeight={"400"}
+                        opacity={!device?.publicDashboardUrl ? 0.5 : 1}
                       >
                         <Link
                           as={NextLink}
