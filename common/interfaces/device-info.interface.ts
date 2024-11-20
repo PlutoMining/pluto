@@ -123,6 +123,11 @@ export interface DeviceInfoWithSecrets extends Partial<DeviceInfo> {
   wifiPass?: string;
 }
 
+export interface DropdownOption {
+  label: string;
+  value: number;
+}
+
 export const DeviceFrequencyOptions: Record<string, DropdownOption[]> = {
   BM1397: [
     { label: "400", value: 400 },
@@ -174,11 +179,6 @@ export const DeviceFrequencyOptions: Record<string, DropdownOption[]> = {
     { label: "625", value: 625 },
   ],
 };
-
-export interface DropdownOption {
-  label: string;
-  value: number;
-}
 
 export const DeviceVoltageOptions: Record<string, DropdownOption[]> = {
   BM1370: [

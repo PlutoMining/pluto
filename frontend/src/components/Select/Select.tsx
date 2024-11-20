@@ -9,7 +9,7 @@ interface SelectProps {
   id: string;
   value?: string | number;
   defaultValue?: string | number;
-  optionValues: Array<{ value: string | number; label: string }>;
+  optionValues: Array<{ label: string; value: string | number }>;
   onChange: ChangeEventHandler<HTMLSelectElement>;
 }
 
@@ -19,7 +19,7 @@ export const Select: React.FC<SelectProps> = ({
   id,
   value,
   defaultValue,
-  optionValues,
+  optionValues = [],
   onChange,
 }) => {
   const [borderColor] = useToken("colors", ["border-color"]);
@@ -72,13 +72,13 @@ export const Select: React.FC<SelectProps> = ({
           iconColor: primaryColorHover,
         }}
       >
-        {optionValues.map((elem: { value: string | number; label: string }, index) => {
-          return (
+        {optionValues &&
+          Array.isArray(optionValues) &&
+          optionValues.map((elem, index) => (
             <option key={`option-${index}-${elem.value}`} value={elem.value}>
               {elem.label}
             </option>
-          );
-        })}
+          ))}
       </ChakraSelect>
     </FormControl>
   );

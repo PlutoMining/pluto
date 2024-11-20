@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 6,
+    "id": 12,
     "links": [],
     "panels": [
         {
@@ -528,7 +528,7 @@
                     },
                     "mappings": [],
                     "thresholds": {
-                        "mode": "percentage",
+                        "mode": "absolute",
                         "steps": [
                             {
                                 "color": "#00cbb8",
@@ -786,7 +786,7 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "@@hostname@@",
-    "uid": "h3p38hb11v07ir",
+    "uid": "c1wvpoe81i07yj",
     "version": 1,
     "weekStart": ""
 }

@@ -611,6 +611,35 @@
                                     "fixedColor": "#00685b",
                                     "mode": "fixed"
                                 }
+                            },
+                            {
+                                "id": "custom.showPoints",
+                                "value": "never"
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        10,
+                                        10
+                                    ],
+                                    "fill": "dash"
+                                }
+                            },
+                            {
+                                "id": "custom.stacking",
+                                "value": {
+                                    "group": "",
+                                    "mode": "none"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.lineInterpolation",
+                                "value": "smooth"
                             }
                         ]
                     }
@@ -644,6 +673,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
+                    "exemplar": false,
                     "expr": "total_hashrate",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
@@ -659,8 +689,10 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "average_hashrate",
+                    "editorMode": "code",
+                    "exemplar": false,
+                    "expr": "avg_over_time(average_hashrate[$__range])",
+                    "format": "time_series",
                     "fullMetaSearch": false,
                     "hide": false,
                     "includeNullMetadata": true,
