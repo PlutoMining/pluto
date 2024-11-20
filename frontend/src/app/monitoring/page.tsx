@@ -300,7 +300,12 @@ const MonitoringTablePage: React.FC = () => {
                         textAlign={"center"}
                         fontWeight={"400"}
                       >
-                        {device.info.temp} °C
+                        {device.info.temp
+                          ? Number.isInteger(device.info.temp)
+                            ? device.info.temp
+                            : device.info.temp.toFixed(1)
+                          : "N/A"}{" "}
+                        °C
                       </Td>
                       <Td
                         borderColor={borderColor}
