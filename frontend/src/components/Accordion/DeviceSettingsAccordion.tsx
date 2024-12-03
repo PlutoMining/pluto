@@ -694,7 +694,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               ? 1
               : 0
             : name === "stratumPort"
-            ? value.replace(/\D/g, "") // Mantieni solo numeri nell'input
+            ? parseInt(value.replace(/\D/g, ""), 10) || 0 // Mantieni solo numeri nell'input
             : ["wifiPass", "stratumPassword"].includes(name)
             ? value
             : parseInt(value) || value,
