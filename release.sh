@@ -15,7 +15,7 @@ update_version() {
     sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+)/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/docker-compose.yml
     sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+)/plutomining\/pluto\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
 
-    sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+)/plutomining\/pluto\/pluto-$service:${new_version}@${image_sha}/g" app-stores/umbrelOS/official/pluto/docker-compose.yml
+    sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+(@sha256:[a-f0-9]+))/plutomining\/pluto\/pluto-$service:${new_version}@${image_sha}/g" app-stores/umbrelOS/official/pluto/docker-compose.yml
 }
 
 # Function to update the version in umbrel-app.yml
@@ -102,7 +102,7 @@ fi
 update_umbrel_version "$new_app_version"
 
 # Get and set versions for each service
-for service in backend discovery mock frontend; do
+for service in backend discovery mock frontend grafana prometheus; do
     current_version=$(get_current_version $service)
     eval "current_${service}_version=$current_version"
 
@@ -117,7 +117,7 @@ for service in backend discovery mock frontend; do
 done
 
 # Update the files with the new versions and install dependencies
-for service in backend discovery mock frontend; do
+for service in backend discovery mock frontend grafana prometheus; do
     eval new_version=\$${service}_version
     eval current_version=\$current_${service}_version
 
@@ -161,7 +161,9 @@ git commit -m "Bump versions:
 - Backend version: ${backend_version}
 - Discovery version: ${discovery_version}
 - Mock version: ${mock_version}
-- Frontend version: ${frontend_version}"
+- Frontend version: ${frontend_version}
+- Grafana version: ${grafana_version}
+- Prometheus version: ${prometheus_version}"
 
 # Push the Git changes
 echo "Pushing changes to the repository..."
