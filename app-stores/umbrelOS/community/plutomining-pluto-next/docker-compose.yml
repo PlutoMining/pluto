@@ -8,7 +8,7 @@ services:
     restart: on-failure
 
   mock:
-    image: registry.gitlab.com/plutomining/pluto/pluto-mock:0.6.0-rc.5
+    image: registry.gitlab.com/plutomining/pluto/pluto-mock:0.6.0-rc.7
     ports:
       - "7670:7670"
       - "7651:7651"
@@ -30,7 +30,7 @@ services:
     user: "1000:1000"
 
   discovery:
-    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-rc.5
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-rc.7
     network_mode: "host"
     pid: host
     cap_add:
@@ -46,7 +46,7 @@ services:
     user: "1000:1000"
 
   backend:
-    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-rc.5
+    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-rc.7
     pid: host
     restart: on-failure
     environment:
@@ -66,7 +66,7 @@ services:
     user: "1000:1000"
 
   frontend:
-    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.6.0-rc.5
+    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.6.0-rc.7
     pid: host
     restart: on-failure
     depends_on:

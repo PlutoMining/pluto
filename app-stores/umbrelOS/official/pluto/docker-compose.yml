@@ -8,7 +8,7 @@ services:
     restart: on-failure
 
   discovery:
-    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-rc.5@sha256:5f86458bcc832e4af495c2c7053650b9cfe030f637cdcfba9b72a62896bce8d7
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.6.0-rc.6@
     network_mode: "host"
     pid: host
     cap_add:
@@ -22,7 +22,7 @@ services:
     user: "1000:1000"
 
   backend:
-    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-rc.5@sha256:34d8c5aa1278f0339307670eaf88859dcbabf3e1cd6352807a099b1306db1b90
+    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.6.0-rc.6@
     pid: host
     restart: on-failure
     environment:
