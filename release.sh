@@ -102,7 +102,7 @@ fi
 update_umbrel_version "$new_app_version"
 
 # Get and set versions for each service
-for service in backend discovery mock frontend; do
+for service in backend discovery mock frontend grafana prometheus; do
     current_version=$(get_current_version $service)
     eval "current_${service}_version=$current_version"
 
@@ -117,7 +117,7 @@ for service in backend discovery mock frontend; do
 done
 
 # Update the files with the new versions and install dependencies
-for service in backend discovery mock frontend; do
+for service in backend discovery mock frontend grafana prometheus; do
     eval new_version=\$${service}_version
     eval current_version=\$current_${service}_version
 
@@ -162,6 +162,8 @@ git commit -m "Bump versions:
 - Discovery version: ${discovery_version}
 - Mock version: ${mock_version}
 - Frontend version: ${frontend_version}"
+- Grafana version: ${grafana_version}
+- Prometheus version: ${prometheus_version}"
 
 # Push the Git changes
 echo "Pushing changes to the repository..."
