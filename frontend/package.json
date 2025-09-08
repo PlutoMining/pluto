@@ -1,6 +1,10 @@
 {
   "name": "@pluto/frontend",
+<<<<<<< HEAD
   "version": "0.6.0-rc.7",
+=======
+  "version": "0.6.0-rc.14",
+>>>>>>> temp
   "private": true,
   "scripts": {
     "dev": "next dev",
