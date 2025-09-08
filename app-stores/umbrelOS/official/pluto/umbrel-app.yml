@@ -2,7 +2,7 @@ manifestVersion: 1
 id: pluto
 name: Pluto
 category: bitcoin
-version: "0.6.0-rc.8"
+version: "0.6.0-rc.9"
 tagline: Pluto
 icon: ""
 description: >
