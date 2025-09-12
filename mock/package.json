@@ -1,6 +1,6 @@
 {
   "name": "@pluto/mock",
-  "version": "0.6.0-rc.15",
+  "version": "0.6.0-rc.16",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
