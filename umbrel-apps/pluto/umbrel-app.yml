@@ -2,7 +2,7 @@ manifestVersion: 1
 id: pluto
 name: Pluto
 category: bitcoin
-version: "0.7.0-rc.6"
+version: "0.7.0-rc.7"
 tagline: Pluto
 icon: https://raw.githubusercontent.com/PlutoMining/pluto/main/images/pluto/icon.jpg
 description: >
@@ -24,7 +24,7 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >
-  Version 0.7.0-rc.6
+  Version 0.7.0-rc.7
 submitter: Pluto
 submission:
 defaultUsername: admin
