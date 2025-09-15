@@ -1,6 +1,6 @@
 {
   "name": "@pluto/discovery",
-  "version": "0.7.0-rc.8",
+  "version": "0.7.0-rc.9",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
