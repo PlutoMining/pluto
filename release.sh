@@ -9,32 +9,32 @@ update_version() {
     local image_sha=$3
 
     # Update docker-compose files with the correct image and SHA
-    sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+)/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto-next/docker-compose.yml
+    sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+)/plutomining\/pluto\/pluto-$service:${new_version}/g" umbrel-apps/pluto-next/docker-compose.yml
     sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+)/plutomining\/pluto\/pluto-$service:${new_version}/g" docker-compose.next.local.yml
 
-    sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+)/plutomining\/pluto\/pluto-$service:${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/docker-compose.yml
+    sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+)/plutomining\/pluto\/pluto-$service:${new_version}/g" umbrel-apps/pluto/docker-compose.yml
     sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+)/plutomining\/pluto\/pluto-$service:${new_version}/g" docker-compose.release.local.yml
 
-#    sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+(@sha256:[a-f0-9]+))/plutomining\/pluto\/pluto-$service:${new_version}@${image_sha}/g" app-stores/umbrelOS/official/pluto/docker-compose.yml
+#    sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+(@sha256:[a-f0-9]+))/plutomining\/pluto\/pluto-$service:${new_version}@${image_sha}/g" umbrel-apps/pluto/docker-compose.yml
 }
 
 # Function to update the version in umbrel-app.yml
 update_umbrel_version() {
     local new_version=$1
 
-    sed -i -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml
-    sed -i -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml
+    sed -i -E "s/version: \".*\"/version: \"${new_version}\"/g" umbrel-apps/pluto-next/umbrel-app.yml
+    sed -i -E "s/Version .*/Version ${new_version}/g" umbrel-apps/pluto-next/umbrel-app.yml
 
-    sed -i -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml
-    sed -i -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml
+    sed -i -E "s/version: \".*\"/version: \"${new_version}\"/g" umbrel-apps/pluto/umbrel-app.yml
+    sed -i -E "s/Version .*/Version ${new_version}/g" umbrel-apps/pluto/umbrel-app.yml
 
-#    sed -i -E "s/version: \".*\"/version: \"${new_version}\"/g" app-stores/umbrelOS/official/pluto/umbrel-app.yml
-#    sed -i -E "s/Version .*/Version ${new_version}/g" app-stores/umbrelOS/official/pluto/umbrel-app.yml
+#    sed -i -E "s/version: \".*\"/version: \"${new_version}\"/g" umbrel-apps/pluto/umbrel-app.yml
+#    sed -i -E "s/Version .*/Version ${new_version}/g" umbrel-apps/plutoumbrel-app.yml
 }
 
 # Function to get the current version from the correct umbrel app file
 get_current_app_version() {
-    grep 'version:' app-stores/umbrelOS/community/plutomining-pluto/umbrel-app.yml | sed -E 's/version: "(.*)"/\1/'
+    grep 'version:' umbrel-apps/pluto/umbrel-app.yml | sed -E 's/version: "(.*)"/\1/'
 }
 
 # Function to get the current version from the package.json file
