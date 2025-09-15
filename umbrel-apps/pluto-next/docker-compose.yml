@@ -30,7 +30,7 @@ services:
     user: "1000:1000"
 
   discovery:
-    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.7.0-rc.7
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.7.0-rc.8
     network_mode: "host"
     pid: host
     cap_add:
@@ -46,7 +46,7 @@ services:
     user: "1000:1000"
 
   backend:
-    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.7.0-rc.7
+    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.7.0-rc.8
     pid: host
     restart: on-failure
     environment:
@@ -66,7 +66,7 @@ services:
     user: "1000:1000"
 
   frontend:
-    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.7.0-rc.7
+    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.7.0-rc.8
     pid: host
     restart: on-failure
     depends_on:
@@ -80,7 +80,7 @@ services:
     user: "1000:1000"
 
   prometheus:
-    image: registry.gitlab.com/plutomining/pluto/pluto-prometheus:0.7.0-rc.7
+    image: registry.gitlab.com/plutomining/pluto/pluto-prometheus:0.7.0-rc.8
     volumes:
       - ${APP_DATA_DIR}/data/prometheus:/prometheus
     pid: host
@@ -94,7 +94,7 @@ services:
     user: "65534:65534"
 
   grafana:
-    image: registry.gitlab.com/plutomining/pluto/pluto-grafana:0.7.0-rc.7
+    image: registry.gitlab.com/plutomining/pluto/pluto-grafana:0.7.0-rc.8
     pid: host
     environment:
       - GF_SECURITY_ADMIN_USER=admin
