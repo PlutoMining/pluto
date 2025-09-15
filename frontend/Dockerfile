@@ -1,5 +1,5 @@
 # Fase 1: Costruzione
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Imposta la directory di lavoro
 WORKDIR /home/node/app
@@ -23,7 +23,7 @@ RUN npm run build --prefix /home/node/common/interfaces
 RUN npm run build
 
 # Fase 2: Runtime
-FROM node:20-alpine
+FROM node:24-alpine
 
 # Imposta la directory di lavoro
 WORKDIR /home/node/app

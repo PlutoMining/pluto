@@ -1,5 +1,5 @@
 # Fase 1: Costruzione
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Installa arp-scan e altri strumenti necessari
 RUN apk add --no-cache arp-scan libcap
