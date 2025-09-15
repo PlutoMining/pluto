@@ -142,11 +142,11 @@ main() {
                 -f $service/Dockerfile . --push
 
             # Get the updated SHA after build
-            image_sha=$(get_image_sha "${DOCKER_REGISTRY}/pluto-$service:${current_version}")
+            image_sha=$(get_image_sha "${DOCKER_REGISTRY}/pluto-$service:${new_version}")
         else
             echo "Skipping Docker build for $service as the version has not changed."
             # Get the existing SHA of the current image
-            image_sha=$(get_image_sha "${DOCKER_REGISTRY}/pluto-$service:${current_version}")
+            image_sha=$(get_image_sha "${DOCKER_REGISTRY}/pluto-$service:${new_version}")
         fi
 
         # Update files with the SHA for the service

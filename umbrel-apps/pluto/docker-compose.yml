@@ -8,7 +8,7 @@ services:
     restart: on-failure
 
   discovery:
-    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.7.0-rc.12@
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.7.0-rc.13@sha256:a96c75e2b859f17ab09bd0383c520a585bdf36e6c7aef0dade44d0944a40bf9c
     network_mode: "host"
     pid: host
     cap_add:
@@ -22,7 +22,7 @@ services:
     user: "1000:1000"
 
   backend:
-    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.7.0-rc.12@
+    image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.7.0-rc.13@sha256:113891af0e61ff1b6b4fb70546ebcf4f9c7d64cc107500812cafe7c4ce1f1f34
     pid: host
     restart: on-failure
     environment:
@@ -42,7 +42,7 @@ services:
     user: "1000:1000"
 
   frontend:
-    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.7.0-rc.12@
+    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.7.0-rc.13@sha256:a081ab76ab026b68067ea1f2e77f5bccc26414b3c8fbb4f4dcd44b519413643a
     pid: host
     restart: on-failure
     depends_on:
@@ -56,7 +56,7 @@ services:
     user: "1000:1000"
 
   prometheus:
-    image: registry.gitlab.com/plutomining/pluto/pluto-prometheus:0.7.0-rc.12@
+    image: registry.gitlab.com/plutomining/pluto/pluto-prometheus:0.7.0-rc.13@sha256:8c6d186510fad6a6d44924611df53ab5f8474b03dfb9ff108a0916f0ef935aac
     volumes:
       - ${APP_DATA_DIR}/data/prometheus:/prometheus
     pid: host
@@ -70,7 +70,7 @@ services:
     user: "65534:65534"
 
   grafana:
-    image: registry.gitlab.com/plutomining/pluto/pluto-grafana:0.7.0-rc.12@
+    image: registry.gitlab.com/plutomining/pluto/pluto-grafana:0.7.0-rc.13@sha256:8938c3262029b273dbf10f08f6d6e052b6011409e54007fefbac6085642b4f3b
     pid: host
     environment:
       - GF_SECURITY_ADMIN_USER=admin
