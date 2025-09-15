@@ -1,7 +1,7 @@
 services:
   # app_proxy:
   #   environment:
-  #     APP_HOST: plutomining-pluto-next_frontend_1 # Hostname of the pluto application
+  #     APP_HOST: pluto-next_frontend_1 # Hostname of the pluto application
   #     APP_PORT: 7677 # Port number of the pluto application
   #   # ports:
   #   #   - "7677:7677" # Proxy listens on port 7677 on the host and forwards to APP_HOST:APP_PORT
@@ -14,7 +14,7 @@ services:
     #   context: .
     #   dockerfile: mock/Dockerfile
     image: registry.gitlab.com/plutomining/pluto/pluto-mock:0.7.0-rc.2
-    container_name: plutomining-pluto-next_mock_1
+    container_name: pluto-next_mock_1
     ports:
       - "7670:7670"
       - "7651:7651"
@@ -48,7 +48,7 @@ services:
     #   context: .
     #   dockerfile: discovery/Dockerfile
     image: registry.gitlab.com/plutomining/pluto/pluto-discovery:0.7.0-rc.4
-    container_name: plutomining-pluto-next_discovery_1
+    container_name: pluto-next_discovery_1
     network_mode: "host"
     # ports:
     #   - "7675:7675" # Map port 7675 on the host to port 7675 on the container
@@ -78,7 +78,7 @@ services:
     #   context: .
     #   dockerfile: backend/Dockerfile
     image: registry.gitlab.com/plutomining/pluto/pluto-backend:0.7.0-rc.4
-    container_name: plutomining-pluto-next_backend_1
+    container_name: pluto-next_backend_1
     # ports:
     #   - "7676:7676"
     pid: host
@@ -91,7 +91,7 @@ services:
       - PORT=7676
       - AUTO_LISTEN=true
       # - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7675
-      - GF_HOST=http://plutomining-pluto-next_grafana_1:3000
+      - GF_HOST=http://pluto-next_grafana_1:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
       # - ./common/utils:/common/utils:ro # Monta il modulo in read-only
@@ -114,7 +114,7 @@ services:
     #   context: .
     #   dockerfile: frontend/Dockerfile
     image: registry.gitlab.com/plutomining/pluto/pluto-frontend:0.7.0-rc.4
-    container_name: plutomining-pluto-next_frontend_1
+    container_name: pluto-next_frontend_1
     ports:
       - "7677:7677" # Map port 7777 on the host to port 7777 on the container
     # Use the host's PID namespace to allow container processes to be visible on the host
@@ -128,10 +128,10 @@ services:
     #   - frontend/.env.local
     environment:
       - PORT=7677
-      - GF_HOST=http://plutomining-pluto-next_grafana_1:3000
-      - BACKEND_DESTINATION_HOST=http://plutomining-pluto-next_backend_1:7676
+      - GF_HOST=http://pluto-next_grafana_1:3000
+      - BACKEND_DESTINATION_HOST=http://pluto-next_backend_1:7676
     volumes:
-      - ./app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
+      - ./app-stores/umbrelOS/community/pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
     #   - ./common/utils:/common/utils:ro # Monta il modulo in read-only
     #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
     #   - ./frontend:/home/node/app/
@@ -139,7 +139,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.53.1
-    container_name: plutomining-pluto-next_prometheus_1
+    container_name: pluto-next_prometheus_1
     volumes:
       - ./data/prometheus:/prometheus
       - ./prometheus/prometheus.next.yml:/etc/prometheus/prometheus.yml
@@ -157,7 +157,7 @@ services:
 
   grafana:
     image: grafana/grafana:11.1.2
-    container_name: plutomining-pluto-next_grafana_1
+    container_name: pluto-next_grafana_1
     # ports:
     #   - "7778:3000"
     pid: host

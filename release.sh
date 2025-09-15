@@ -160,7 +160,6 @@ git commit -m "Bump versions:
 - App version: ${new_app_version}
 - Backend version: ${backend_version}
 - Discovery version: ${discovery_version}
-- Mock version: ${mock_version}
 - Frontend version: ${frontend_version}
 - Grafana version: ${grafana_version}
 - Prometheus version: ${prometheus_version}"

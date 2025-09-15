@@ -2,7 +2,7 @@ services:
   # app_proxy:
   #   image: getumbrel/app-proxy:latest
   #   environment:
-  #     APP_HOST: plutomining-pluto_frontend_1 # Hostname of the pluto application
+  #     APP_HOST: pluto_frontend_1 # Hostname of the pluto application
   #     APP_PORT: 7777 # Port number of the pluto application
   #   # ports:
   #   #   - "7780:7777" # Proxy listens on port 7780 on the host and forwards to APP_HOST:APP_PORT
@@ -133,7 +133,7 @@ services:
       - ./common/utils:/home/node/common/utils:ro # Monta il modulo in read-only
       - ./common/interfaces:/home/node/common/interfaces:ro # Monta il modulo in read-only
       - ./frontend:/home/node/app/
-      - ./app-stores/umbrelOS/community/plutomining-pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
+      - ./app-stores/umbrelOS/community/pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
     user: "1000:1000"
 
   prometheus:
