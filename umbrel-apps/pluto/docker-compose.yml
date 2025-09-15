@@ -1,7 +1,7 @@
 services:
   app_proxy:
     environment:
-      APP_HOST: plutomining-pluto_frontend_1
+      APP_HOST: pluto_frontend_1
       APP_PORT: 7777
     depends_on:
       - frontend
@@ -29,7 +29,7 @@ services:
       - PORT=7776
       - AUTO_LISTEN=true
       - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7775
-      - GF_HOST=http://plutomining-pluto_grafana_1:3000
+      - GF_HOST=http://pluto_grafana_1:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
       - ${APP_DATA_DIR}/data/leveldb:/home/node/app/data
@@ -49,8 +49,8 @@ services:
       - backend
     environment:
       - PORT=7777
-      - GF_HOST=http://plutomining-pluto_grafana_1:3000
-      - BACKEND_DESTINATION_HOST=http://plutomining-pluto_backend_1:7776
+      - GF_HOST=http://pluto_grafana_1:3000
+      - BACKEND_DESTINATION_HOST=http://pluto_backend_1:7776
     volumes:
       - ${APP_DATA_DIR}/umbrel-app.yml:/tmp/umbrel-app.yml:ro
     user: "1000:1000"
