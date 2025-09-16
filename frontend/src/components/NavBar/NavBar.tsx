@@ -15,7 +15,7 @@ import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { CrossIcon } from "../icons/CrossIcon";
-import { DiscordLogo, GitLabLogo } from "../icons/FooterIcons";
+import { DiscordLogo, GithubLogo } from "../icons/FooterIcons";
 import { HamburgerIcon } from "../icons/HamburgerIcon";
 import { Logo } from "../icons/Logo";
 import { SettingsIcon } from "../icons/SettingsIcon/SettingsIcon";
@@ -340,8 +340,8 @@ export const NavBar = () => {
                     paddingBottom={"1rem"}
                   >
                     {/* <MetaLogo target="_blank" /> */}
-                    <GitLabLogo
-                      url="https://gitlab.com/plutomining/pluto"
+                    <GithubLogo
+                      url="https://github.com/PlutoMining/pluto"
                       target="_blank"
                       color={primaryColor}
                     />

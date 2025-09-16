@@ -1,7 +1,7 @@
 "use client";
 import { Flex, Text } from "@chakra-ui/react";
 import { BemindLogo } from "../icons/BemindLogo";
-import { DiscordLogo, GitLabLogo, MetaLogo, RedditLogo } from "../icons/FooterIcons";
+import { DiscordLogo, GithubLogo, MetaLogo, RedditLogo } from "../icons/FooterIcons";
 
 export const Footer = () => {
   return (
@@ -48,8 +48,8 @@ export const Footer = () => {
             </Text>
             <Flex gap={"0.5rem"}>
               {/* <MetaLogo target="_blank" /> */}
-              <GitLabLogo
-                url="https://gitlab.com/bemindinteractive/umbrel-community-app-store"
+              <GithubLogo
+                url="https://github.com/PlutoMining/pluto"
                 target="_blank"
               />
               <DiscordLogo url="https://discord.gg/osmu" target="_blank" />

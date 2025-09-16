@@ -1,4 +1,4 @@
 export { MetaLogo } from "./MetaLogo";
 export { DiscordLogo } from "./DiscordLogo";
-export { GitLabLogo } from "./GitLabLogo";
+export { GithubLogo } from "./GithubLogo";
 export { RedditLogo } from "./RedditLogo";
