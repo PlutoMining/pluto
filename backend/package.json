@@ -1,6 +1,6 @@
 {
   "name": "@pluto/backend",
-  "version": "0.7.0-rc.13",
+  "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
