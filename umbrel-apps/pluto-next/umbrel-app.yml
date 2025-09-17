@@ -2,7 +2,7 @@ manifestVersion: 1
 id: pluto-next
 name: Pluto Next
 category: bitcoin
-version: "1.0.0"
+version: "1.0.1"
 tagline: Pluto
 icon: https://gitlab.com/plutomining/pluto/-/raw/main/images/pluto-next/icon.jpg
 description: >
@@ -24,7 +24,7 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >
-  Version 1.0.0
+  Version 1.0.1
   - Rebranding
   - Dark mode
   - NerdAxe support
