@@ -1,1 +1,0 @@
-export { BemindLogo } from "./BemindLogo";

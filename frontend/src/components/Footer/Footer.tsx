@@ -1,6 +1,6 @@
 "use client";
 import { Flex, Text } from "@chakra-ui/react";
-import { BemindLogo } from "../icons/BemindLogo";
+import { LoadoutLogo } from "../icons/LoadoutLogo";
 import { DiscordLogo, GithubLogo, MetaLogo, RedditLogo } from "../icons/FooterIcons";
 
 export const Footer = () => {
@@ -65,7 +65,7 @@ export const Footer = () => {
           <Text fontSize={"xs"} fontWeight={300} color={"footer-text"}>
             Designed with love by
           </Text>
-          <BemindLogo url="https://www.bemind.me/" target="_blank" />
+          <LoadoutLogo url="https://www.loadout.gg/" target="_blank" />
         </Flex>
       </Flex>
     </Flex>

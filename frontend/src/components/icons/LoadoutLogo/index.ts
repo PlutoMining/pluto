@@ -1,0 +1,1 @@
+export { LoadoutLogo } from "./LoadoutLogo";
