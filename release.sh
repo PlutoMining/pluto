@@ -88,11 +88,12 @@ main() {
 
     # Only perform Docker login if the skip login flag is not set
     if [ "$SKIP_LOGIN" = false ]; then
-        echo "Enter your Docker personal access token:"
-        read -s DOCKER_ACCESS_TOKEN
+        # echo "Enter your Docker personal access token:"
+        # read -s DOCKER_ACCESS_TOKEN
 
         # Perform Docker login
-        echo "$DOCKER_ACCESS_TOKEN" | docker login $DOCKER_REGISTRY
+        # echo "$DOCKER_ACCESS_TOKEN" | docker login $DOCKER_REGISTRY
+        docker login $DOCKER_REGISTRY
     else
         echo "Skipping Docker login..."
     fi

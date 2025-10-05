@@ -30,7 +30,7 @@ services:
     user: "1000:1000"
 
   discovery:
-    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:1.0.3@sha256:dc2a5a642491748b20d1b2dddbba39f34b43afee4a3720739f1fe9fa42b4189a
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:1.3@sha256:ed0a2bbb930eae55742404ccd4af0f39c686b5dc9711bacfd67902323afdc969
     network_mode: "host"
     pid: host
     cap_add:
@@ -46,7 +46,7 @@ services:
     user: "1000:1000"
 
   backend:
-    image: registry.gitlab.com/plutomining/pluto/pluto-backend:1.0.3@sha256:82ac50f4f8a7c1c4e574c934ad1f7968f41304adc6b8ddbc27183802d6174981
+    image: registry.gitlab.com/plutomining/pluto/pluto-backend:1.3@sha256:18224cc3ff1a2ed83941e2e4360e39effa3d578596e6d0e30128e19b46d45baa
     pid: host
     restart: on-failure
     environment:
@@ -66,7 +66,7 @@ services:
     user: "1000:1000"
 
   frontend:
-    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:1.0.3@sha256:696a100592dc4f446612c6ba7549fd09094392d8b5c0860d3502a7bec30e40aa
+    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:1.3@sha256:454cff001c1a7dbf8fc43d643cb7d2ef28709c633ee475f87e9eb8a255d8a906
     pid: host
     restart: on-failure
     depends_on:
@@ -80,7 +80,7 @@ services:
     user: "1000:1000"
 
   prometheus:
-    image: registry.gitlab.com/plutomining/pluto/pluto-prometheus:1.0.3@sha256:bb5fc20c6feacc374e12ca8611914d032969f6d873684ce6b35c533b6e92bf0e
+    image: registry.gitlab.com/plutomining/pluto/pluto-prometheus:1.3@sha256:0be303621d1ecd7f3c9a21980a2234224b9c2dd8fbb3e680b4ac6dbdc503db2f
     volumes:
       - ${APP_DATA_DIR}/data/prometheus:/prometheus
     pid: host
@@ -94,7 +94,7 @@ services:
     user: "65534:65534"
 
   grafana:
-    image: registry.gitlab.com/plutomining/pluto/pluto-grafana:1.0.3@sha256:1f6c3182b82c53328f9376afd77b6063249f25151f809d716b7265a4f295eefa
+    image: registry.gitlab.com/plutomining/pluto/pluto-grafana:1.3@sha256:9c37515bcae83c0cbc0bfa5f42684db48151cb79d43546ce80d2b2350ab2e386
     pid: host
     environment:
       - GF_SECURITY_ADMIN_USER=admin
