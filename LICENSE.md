@@ -1,3 +1,8 @@
+Pluto - Open Source Bitcoin Mining Management Platform
+Copyright (C) 2024 Alberto Gangarossa and Pluto Contributors
+Licensed under the GNU Affero General Public License v3.0
+
+----------------------------------------------------------------------
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
 
