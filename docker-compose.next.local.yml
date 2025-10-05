@@ -47,7 +47,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:1.3@sha256:ed0a2bbb930eae55742404ccd4af0f39c686b5dc9711bacfd67902323afdc969
+    image: registry.gitlab.com/plutomining/pluto/pluto-discovery:1.3.1@sha256:4fc7192fa646cadec05394537ca4cbae92b713796dae69c5d842f10e28d9e15b
     container_name: pluto-next_discovery_1
     network_mode: "host"
     # ports:
@@ -77,7 +77,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-backend:1.3@sha256:18224cc3ff1a2ed83941e2e4360e39effa3d578596e6d0e30128e19b46d45baa
+    image: registry.gitlab.com/plutomining/pluto/pluto-backend:1.3.1@sha256:50fa6e7cff836b046d3168e7f5851231e6d3023f70781fa36d44ca0e22bd6a3c
     container_name: pluto-next_backend_1
     # ports:
     #   - "7676:7676"
@@ -113,7 +113,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:1.3@sha256:454cff001c1a7dbf8fc43d643cb7d2ef28709c633ee475f87e9eb8a255d8a906
+    image: registry.gitlab.com/plutomining/pluto/pluto-frontend:1.3.1@sha256:7bcdb0e8d05b6dadc79bb92efa0f24068e6e76cae634681f028786e6355e0b81
     container_name: pluto-next_frontend_1
     ports:
       - "7677:7677" # Map port 7777 on the host to port 7777 on the container
