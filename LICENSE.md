@@ -1,4 +1,4 @@
-Pluto Mining- Open Source Bitcoin Mining Management Platform
+Pluto Mining - Open Source Bitcoin Mining Management Platform
 Copyright (C) 2024 Alberto Gangarossa
 Licensed under the GNU Affero General Public License v3.0
 
