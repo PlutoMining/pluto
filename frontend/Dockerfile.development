@@ -1,14 +1,21 @@
-# Fase 1: Costruzione
+# Stage 1: Build
 FROM node:24-alpine AS builder
 
-# Imposta la directory di lavoro
+# Set the working directory
 WORKDIR /home/node/app
 
-# Cambia proprietà per permettere l'accesso all'utente `node`
+# Copy the entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Change ownership to allow access for the `node` user
 RUN chown -R node:node /home/node
 
-# Passa all'utente `node`
+# Switch to the `node` user
 USER node
 
-# Avvia l'applicazione
+# Set the entrypoint
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# Start the application
 CMD ["npm", "run", "dev"]

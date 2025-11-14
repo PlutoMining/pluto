@@ -20,7 +20,7 @@ export const logger = winston.createLogger({
   level: "debug",
   format: winston.format.combine(
     winston.format.timestamp(),
-    winston.format.printf(({ timestamp, level, message }) => {
+    winston.format.printf(({ timestamp, level, message }: { timestamp?: string; level: string; message: unknown }) => {
       // Controlla se il messaggio è un oggetto, in tal caso loggalo come JSON
       const formattedMessage =
         typeof message === "object" ? JSON.stringify(message, null, 2) : message;
@@ -39,7 +39,7 @@ export const createCustomLogger = (fileName: string) => {
     level: "debug",
     format: winston.format.combine(
       winston.format.timestamp(),
-      winston.format.printf(({ timestamp, level, message }) => {
+      winston.format.printf(({ timestamp, level, message }: { timestamp?: string; level: string; message: unknown }) => {
         // Controlla se il messaggio è un oggetto, in tal caso loggalo come JSON
         const formattedMessage =
           typeof message === "object" ? JSON.stringify(message, null, 2) : message;

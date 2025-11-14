@@ -30,15 +30,15 @@ services:
 
     # Container restart policy - restart unless manually stopped
     restart: on-failure
-    # env_file:
-    #   - mock/.env.local
+    env_file:
+      - mock/.env.local
     environment:
       - LISTING_PORT=7770
       - PORTS=7751,7752,7753,7754,7755,7756,7757,7758,7759,7760
       - LOGS_PUB_ENABLED=false
     volumes:
-      - ./common/logger:/home/node/common/logger:ro # Monta il modulo in read-only
-      - ./common/interfaces:/home/node/common/interfaces:ro # Monta il modulo in read-only
+      - ./common/logger:/home/node/common/logger # Monta il modulo (writable per development)
+      - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
       - ./mock:/home/node/app/
     user: "1000:1000"
 
@@ -64,9 +64,9 @@ services:
       - DETECT_MOCK_DEVICES=true
       # - MOCK_DISCOVERY_HOST=http://host.docker.internal:7770
     volumes:
-      - ./common/interfaces:/home/node/common/interfaces:ro # Monta il modulo in read-only
-      - ./common/db:/home/node/common/db:ro # Monta il modulo in read-only
-      - ./common/logger:/home/node/common/logger:ro # Monta il modulo in read-only
+      - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
+      - ./common/db:/home/node/common/db # Monta il modulo (writable per development)
+      - ./common/logger:/home/node/common/logger # Monta il modulo (writable per development)
       - ./discovery:/home/node/app/
       - ./data/leveldb:/home/node/app/data
     user: "1000:1000"
@@ -83,6 +83,8 @@ services:
     #   - "7776:7776" # Map port 7776 on the host to port 7776 on the container
     #   # - "9229:9229" # Porta per il debugger
     pid: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
     # Container restart policy - restart unless manually stopped
     restart: on-failure
@@ -95,10 +97,10 @@ services:
       - GF_HOST=http://grafana:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
-      - ./common/utils:/home/node/common/utils:ro # Monta il modulo in read-only
-      - ./common/interfaces:/home/node/common/interfaces:ro # Monta il modulo in read-only
-      - ./common/db:/home/node/common/db:ro # Monta il modulo in read-only
-      - ./common/logger:/home/node/common/logger:ro # Monta il modulo in read-only
+      - ./common/utils:/home/node/common/utils # Monta il modulo (writable per development)
+      - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
+      - ./common/db:/home/node/common/db # Monta il modulo (writable per development)
+      - ./common/logger:/home/node/common/logger # Monta il modulo (writable per development)
       - ./backend:/home/node/app/
       - ./grafana/templates:/home/node/app/grafana_templates/
       - ./data/leveldb:/home/node/app/data
@@ -130,10 +132,10 @@ services:
       - GF_HOST=http://grafana:3000
       - BACKEND_DESTINATION_HOST=http://pluto-backend-1:7776
     volumes:
-      - ./common/utils:/home/node/common/utils:ro # Monta il modulo in read-only
-      - ./common/interfaces:/home/node/common/interfaces:ro # Monta il modulo in read-only
+      - ./common/utils:/home/node/common/utils # Monta il modulo (writable per development)
+      - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
       - ./frontend:/home/node/app/
-      - ./app-stores/umbrelOS/community/pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
+      - ./umbrel-apps/pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
     user: "1000:1000"
 
   prometheus:

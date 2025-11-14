@@ -13,6 +13,7 @@
 interface EnvConfig {
   port: number;
   mockDiscoveryHost: string;
+  mockDeviceHost: string; // Hostname to use for mock device IPs (for Docker compatibility)
   detectMockDevices: boolean;
 }
 
@@ -20,4 +21,5 @@ export const config: EnvConfig = {
   port: Number(process.env.PORT || 3000),
   detectMockDevices: process.env.DETECT_MOCK_DEVICES === "true",
   mockDiscoveryHost: process.env.MOCK_DISCOVERY_HOST!,
+  mockDeviceHost: process.env.MOCK_DEVICE_HOST || "localhost", // Default to localhost, override for Docker
 };
