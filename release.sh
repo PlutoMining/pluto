@@ -11,15 +11,21 @@ update_version() {
     local service=$1
     local new_version=$2
     local image_sha=$3
+    local registry=$4
 
     # Update docker-compose files with the correct image and SHA
-    sed -i -E "s|(plutomining/pluto/pluto-$service):[^[:space:]]+|\1:${new_version}@${image_sha}|g" umbrel-apps/pluto-next/docker-compose.yml
-    sed -i -E "s|(plutomining/pluto/pluto-$service):[^[:space:]]+|\1:${new_version}@${image_sha}|g" docker-compose.next.local.yml
-
-    sed -i -E "s|(plutomining/pluto/pluto-$service):[^[:space:]]+|\1:${new_version}@${image_sha}|g" umbrel-apps/pluto/docker-compose.yml
-    sed -i -E "s|(plutomining/pluto/pluto-$service):[^[:space:]]+|\1:${new_version}@${image_sha}|g" docker-compose.release.local.yml
-
-#    sed -i -E "s/plutomining\/pluto\/pluto-$service(\:[^\s]+(@sha256:[a-f0-9]+))/plutomining\/pluto\/pluto-$service:${new_version}@${image_sha}/g" umbrel-apps/pluto/docker-compose.yml
+    # Match both old GitLab format (registry.gitlab.com/plutomining/pluto/pluto-SERVICE) 
+    # and new GitHub format (ghcr.io/plutomining/pluto/pluto-SERVICE)
+    # Replace with the new GitHub registry format
+    local new_image="${registry}/pluto-$service:${new_version}@${image_sha}"
+    
+    # Update each file: first replace GitLab format, then ensure GitHub format is correct
+    for file in umbrel-apps/pluto-next/docker-compose.yml docker-compose.next.local.yml umbrel-apps/pluto/docker-compose.yml docker-compose.release.local.yml; do
+        # Replace GitLab registry format
+        sed -i -E "s|registry\.gitlab\.com/plutomining/pluto/pluto-$service:[^[:space:]]+|${new_image}|g" "$file"
+        # Replace GitHub registry format (in case it's already migrated)
+        sed -i -E "s|ghcr\.io/plutomining/pluto/pluto-$service:[^[:space:]]+|${new_image}|g" "$file"
+    done
 }
 
 # Function to update the version in umbrel-app.yml
@@ -44,7 +50,8 @@ get_current_app_version() {
 # Function to get the current version from the package.json file
 get_current_version() {
     local service=$1
-    grep '"version":' $service/package.json | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?)".*/\1/'
+    # Extract version number, handling both "1.1" and "1.1.0" formats, with optional pre-release suffix
+    grep '"version":' $service/package.json | sed -E 's/.*"version":\s*"([0-9]+\.[0-9]+(\.[0-9]+)?(-[a-zA-Z]+(\.[0-9]+)?)?)".*/\1/'
 }
 
 # Function to check the current Git branch
@@ -71,7 +78,9 @@ get_image_sha() {
 # main
 
 main() {
-    DOCKER_REGISTRY=registry.gitlab.com/plutomining/pluto
+    # GitHub Container Registry (ghcr.io)
+    # Format: ghcr.io/OWNER/IMAGE_NAME
+    DOCKER_REGISTRY=ghcr.io/plutomining/pluto
 
     # Default values for flags
     SKIP_LOGIN=false
@@ -88,12 +97,19 @@ main() {
 
     # Only perform Docker login if the skip login flag is not set
     if [ "$SKIP_LOGIN" = false ]; then
-        # echo "Enter your Docker personal access token:"
-        # read -s DOCKER_ACCESS_TOKEN
-
-        # Perform Docker login
-        # echo "$DOCKER_ACCESS_TOKEN" | docker login $DOCKER_REGISTRY
-        docker login $DOCKER_REGISTRY
+        echo "Logging in to GitHub Container Registry (ghcr.io)..."
+        echo "Enter your GitHub username:"
+        read GITHUB_USERNAME
+        echo "Enter your GitHub Personal Access Token (PAT) with 'write:packages' scope:"
+        echo "Create one at: https://github.com/settings/tokens"
+        read -s GITHUB_TOKEN
+        
+        echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin
+        
+        if [ $? -ne 0 ]; then
+            echo "Error: Docker login failed. Please check your credentials."
+            exit 1
+        fi
     else
         echo "Skipping Docker login..."
     fi
@@ -114,7 +130,8 @@ main() {
     # Get and set versions for each service
     for service in backend discovery frontend grafana prometheus; do
         current_version=$(get_current_version $service)
-        eval "current_${service}_version=$current_version"
+        # Properly quote the version to prevent command execution issues
+        eval "current_${service}_version=\"$current_version\""
 
         echo "Current version for $service is $current_version. Enter the new version (press Enter to keep $current_version):"
         read new_version
@@ -123,7 +140,8 @@ main() {
             new_version=$current_version
         fi
 
-        eval "${service}_version=$new_version"
+        # Properly quote the version to prevent command execution issues
+        eval "${service}_version=\"$new_version\""
     done
 
     # Update the files with the new versions and install dependencies
@@ -134,7 +152,8 @@ main() {
         if [ "$new_version" != "$current_version" ]; then
 
             # Update the version in the service's package.json
-            sed -i -E "s/\"version\": \"[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+(\.[0-9]+)?)?\"/\"version\": \"${new_version}\"/" $service/package.json
+            # Handle both "1.1" and "1.1.0" formats, with optional pre-release suffix
+            sed -i -E "s/\"version\": \"[0-9]+\.[0-9]+(\.[0-9]+)?(-[a-zA-Z]+(\.[0-9]+)?)?\"/\"version\": \"${new_version}\"/" $service/package.json
 
             # Run npm install in the service to update lockfile
             echo "Running npm install in $service..."
@@ -157,7 +176,7 @@ main() {
         fi
 
         # Update files with the SHA for the service
-        update_version $service "$new_version" "$image_sha"
+        update_version $service "$new_version" "$image_sha" "$DOCKER_REGISTRY"
     done
 
     # Stage all changes
