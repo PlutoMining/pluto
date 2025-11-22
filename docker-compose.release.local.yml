@@ -14,7 +14,7 @@ services:
     #   context: .
     #   dockerfile: mock/Dockerfile
     container_name: pluto_mock_1
-    image: registry.gitlab.com/plutomining/pluto/pluto-mock:0.7.0-rc.2
+    image: ghcr.io/plutomining/pluto-mock:0.7.0-rc.2@sha256:8a9f6438ab9ce431809106ca089335e51c97be0a50d0a4d1e5270df83b4ee0fc
     ports:
       - "7770:7770" # Map port 7770 on the host to port 7770 on the container
       - "7751:7751" # Map port 7751 on the host to port 7751 on the container
@@ -47,7 +47,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: ghcr.io/plutomining/pluto/pluto-discovery:1.1@
+    image: ghcr.io/plutomining/pluto-discovery:1.1.1@sha256:c503ac0711f3dfc87a1f8c4e081b9c819219dba59abf4107cc4646363e7078e0
     container_name: pluto_discovery_1
     network_mode: "host"
     # ports:
@@ -77,7 +77,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: ghcr.io/plutomining/pluto/pluto-backend:1.1@
+    image: ghcr.io/plutomining/pluto-backend:1.1.2@sha256:9757b7ba547b55f975513b5fe8d7b91dd532f3a862c7fa7fb4f72ee98bed1758
     container_name: pluto_backend_1
     # ports:
     #   - "7776:7776" # Map port 7776 on the host to port 7776 on the container
@@ -113,7 +113,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: ghcr.io/plutomining/pluto/pluto-frontend:1.1@
+    image: ghcr.io/plutomining/pluto-frontend:1.1.4@sha256:b9a48c99392daf37bdbf53be9963fa6b9a5873c60d205056e49f08285b8ea106
     container_name: pluto_frontend_1
     ports:
       - "7777:7777" # Map port 7777 on the host to port 7777 on the container

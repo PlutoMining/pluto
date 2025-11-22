@@ -8,7 +8,7 @@ services:
     restart: on-failure
 
   mock:
-    image: registry.gitlab.com/plutomining/pluto/pluto-mock:0.7.0-rc.2
+    image: ghcr.io/plutomining/pluto-mock:0.7.0-rc.2
     ports:
       - "7670:7670"
       - "7651:7651"
@@ -30,7 +30,7 @@ services:
     user: "1000:1000"
 
   discovery:
-    image: ghcr.io/plutomining/pluto/pluto-discovery:1.1@
+    image: ghcr.io/plutomining/pluto-discovery:1.1.1@sha256:c503ac0711f3dfc87a1f8c4e081b9c819219dba59abf4107cc4646363e7078e0
     network_mode: "host"
     pid: host
     cap_add:
@@ -46,7 +46,7 @@ services:
     user: "1000:1000"
 
   backend:
-    image: ghcr.io/plutomining/pluto/pluto-backend:1.1@
+    image: ghcr.io/plutomining/pluto-backend:1.1.2@sha256:9757b7ba547b55f975513b5fe8d7b91dd532f3a862c7fa7fb4f72ee98bed1758
     pid: host
     restart: on-failure
     environment:
@@ -66,7 +66,7 @@ services:
     user: "1000:1000"
 
   frontend:
-    image: ghcr.io/plutomining/pluto/pluto-frontend:1.1@
+    image: ghcr.io/plutomining/pluto-frontend:1.1.4@sha256:b9a48c99392daf37bdbf53be9963fa6b9a5873c60d205056e49f08285b8ea106
     pid: host
     restart: on-failure
     depends_on:
@@ -80,7 +80,7 @@ services:
     user: "1000:1000"
 
   prometheus:
-    image: ghcr.io/plutomining/pluto/pluto-prometheus:1.3@
+    image: ghcr.io/plutomining/pluto-prometheus:1.1.2@sha256:64bdc2c383e17df9925fe4fbe0dd2972b52616dcfb51489f0aa487307f19c53c
     volumes:
       - ${APP_DATA_DIR}/data/prometheus:/prometheus
     pid: host
@@ -94,7 +94,7 @@ services:
     user: "65534:65534"
 
   grafana:
-    image: ghcr.io/plutomining/pluto/pluto-grafana:1.1@
+    image: ghcr.io/plutomining/pluto-grafana:1.1.3@sha256:a268c8cd80f109a37afab74d6c1bc03beb093b795b4720ce2c5bdab326656640
     pid: host
     environment:
       - GF_SECURITY_ADMIN_USER=admin
