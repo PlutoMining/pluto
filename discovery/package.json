@@ -16,6 +16,7 @@
     "@pluto/db": "file:../common/db",
     "@pluto/interfaces": "file:../common/interfaces",
     "@pluto/logger": "file:../common/logger",
+    "@plutomining/miner": "https://github.com/PlutoMining/pluto-miner/releases/download/v1.2.4/plutomining-miner-1.2.4.tgz",
     "axios": "^1.7.7",
     "dotenv": "^16.4.5",
     "express": "^4.19.2"
