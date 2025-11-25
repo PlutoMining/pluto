@@ -2,29 +2,29 @@ manifestVersion: 1
 id: pluto-next
 name: Pluto Next
 category: bitcoin
-version: "1.3.1"
+version: "1.3.3"
 tagline: Pluto
-icon: https://gitlab.com/plutomining/pluto/-/raw/main/images/pluto-next/icon.jpg
+icon: https://raw.githubusercontent.com/PlutoMining/pluto/main/images/pluto-next/icon.jpg
 description: >
   Pluto is an advanced platform designed for open source miners. It provides a comprehensive and improved mining experience with enhanced features and functionalities.
 developer: Pluto
-website: https://gitlab.com/plutomining/pluto
+website: https://github.com/PlutoMining/pluto
 dependencies: []
-repo: https://gitlab.com/plutomining/pluto
-support: https://gitlab.com/plutomining/pluto/issues
+repo: https://github.com/PlutoMining/pluto
+support: https://github.com/PlutoMining/pluto/issues
 port: 7677
 gallery:
-  - https://gitlab.com/plutomining/pluto/-/raw/main/images/pluto-next/screenshot_00.png
-  - https://gitlab.com/plutomining/pluto/-/raw/main/images/pluto-next/screenshot_01.png
-  - https://gitlab.com/plutomining/pluto/-/raw/main/images/pluto-next/screenshot_02.png
-  - https://gitlab.com/plutomining/pluto/-/raw/main/images/pluto-next/screenshot_03.png
-  - https://gitlab.com/plutomining/pluto/-/raw/main/images/pluto-next/screenshot_04.png
-  - https://gitlab.com/plutomining/pluto/-/raw/main/images/pluto-next/screenshot_05.png
-  - https://gitlab.com/plutomining/pluto/-/raw/main/images/pluto-next/screenshot_06.png
+  - https://raw.githubusercontent.com/PlutoMining/pluto/main/images/pluto-next/screenshot_00.png
+  - https://raw.githubusercontent.com/PlutoMining/pluto/main/images/pluto-next/screenshot_01.png
+  - https://raw.githubusercontent.com/PlutoMining/pluto/main/images/pluto-next/screenshot_02.png
+  - https://raw.githubusercontent.com/PlutoMining/pluto/main/images/pluto-next/screenshot_03.png
+  - https://raw.githubusercontent.com/PlutoMining/pluto/main/images/pluto-next/screenshot_04.png
+  - https://raw.githubusercontent.com/PlutoMining/pluto/main/images/pluto-next/screenshot_05.png
+  - https://raw.githubusercontent.com/PlutoMining/pluto/main/images/pluto-next/screenshot_06.png
 path: ""
 defaultPassword: ""
 releaseNotes: >
-  Version 1.3.1
+  Version 1.3.3
   - Rebranding
   - Dark mode
   - NerdAxe support
