@@ -3,7 +3,9 @@
 
 SHELL := /bin/bash
 COMPOSE_FILE = docker-compose.dev.local.yml
-.PHONY: help setup start stop up down logs build rebuild clean restart status shell
+.PHONY: help setup start stop up down logs build rebuild clean restart status shell lint-apps test-apps lint-app test-app
+
+APPS ?= backend discovery frontend
 
 # Default target
 .DEFAULT_GOAL := help
@@ -16,8 +18,12 @@ help: ## Show this help message
 	@echo "Examples:"
 	@echo "  make setup              # Run initial setup"
 	@echo "  make start              # Start all services"
-	@echo "  make logs SERVICE=backend  # View logs for a specific service"
-	@echo "  make shell SERVICE=backend # Open shell in a service container"
+	@echo "  make logs SERVICE=backend      # View logs for a specific service"
+	@echo "  make shell SERVICE=backend     # Open shell in a service container"
+	@echo "  make lint-apps                 # Lint all default apps ($(APPS))"
+	@echo "  make lint-apps APP=backend     # Lint only the backend"
+	@echo "  make test-apps                 # Run tests for all default apps"
+	@echo "  make test-apps APP=frontend    # Test a single app"
 
 setup: ## Run initial setup script
 	@echo "Running setup script..."
@@ -96,4 +102,46 @@ top: ## Show running processes
 
 config: ## Validate and view docker compose configuration
 	@docker compose -f $(COMPOSE_FILE) config
+
+lint-apps: ## Run ESLint for all apps (override APP=<name> or APPS="a b")
+	@if [ -n "$(APP)" ]; then \
+		$(MAKE) lint-app APP=$(APP); \
+	else \
+		for app in $(APPS); do \
+			$(MAKE) lint-app APP=$$app || exit 1; \
+		done; \
+	fi
+
+lint-app:
+	@if [ -z "$(APP)" ]; then \
+		echo "Error: APP parameter required"; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(APP)" ]; then \
+		echo "Error: directory '$(APP)' not found"; \
+		exit 1; \
+	fi
+	@echo "→ Linting $(APP)..."
+	@cd $(APP) && npm run lint
+
+test-apps: ## Run tests for all apps (override APP=<name> or APPS="a b")
+	@if [ -n "$(APP)" ]; then \
+		$(MAKE) test-app APP=$(APP); \
+	else \
+		for app in $(APPS); do \
+			$(MAKE) test-app APP=$$app || exit 1; \
+		done; \
+	fi
+
+test-app:
+	@if [ -z "$(APP)" ]; then \
+		echo "Error: APP parameter required"; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(APP)" ]; then \
+		echo "Error: directory '$(APP)' not found"; \
+		exit 1; \
+	fi
+	@echo "→ Testing $(APP)..."
+	@cd $(APP) && npm run test
 
