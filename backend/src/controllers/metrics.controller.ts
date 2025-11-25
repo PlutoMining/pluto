@@ -14,7 +14,7 @@ export const getMetrics = async (req: Request, res: Response) => {
   try {
     res.setHeader("Content-Type", register.contentType);
     res.end(await register.metrics());
-  } catch (err) {
+  } catch (_err) {
     res.status(500).end("Failed to collect metrics");
   }
 };
