@@ -1,10 +1,10 @@
-# Fase 1: Costruzione
+# Stage 1: Build
 FROM node:24-alpine AS builder
 
-# Imposta la directory di lavoro
+# Set the working directory
 WORKDIR /home/node/app
 
-# Copia package.json e package-lock.json e installa le dipendenze
+# Copy package.json and package-lock.json and install dependencies
 COPY ./mock/package*.json ./
 RUN mkdir -p /home/node/common/logger
 COPY ./common /home/node/common
@@ -12,33 +12,33 @@ RUN npm ci --prefix /home/node/common/logger
 RUN npm ci --prefix /home/node/common/interfaces
 RUN npm ci
 
-# Copia il resto dei file e costruisce l'applicazione
+# Copy the rest of the files and build the application
 COPY ./mock .
 
-# Compila i moduli TypeScript nella cartella common
+# Compile TypeScript modules in the common folder
 RUN npm run build --prefix /home/node/common/logger
 RUN npm run build --prefix /home/node/common/interfaces
 
-# Compila l'applicazione mock
+# Build the mock application
 RUN npm run build
 
-# Fase 2: Runtime
+# Stage 2: Runtime
 FROM node:24-alpine
 
-# Imposta la directory di lavoro
+# Set the working directory
 WORKDIR /home/node/app
 
-# Copia i file necessari dalla fase di build
+# Copy necessary files from the build stage
 COPY --from=builder /home/node/common /home/node/common
 COPY --from=builder /home/node/app/node_modules ./node_modules
 COPY --from=builder /home/node/app/dist ./dist
 COPY --from=builder /home/node/app/package*.json ./
 
-# Cambia proprietà per permettere l'accesso all'utente `node`
+# Change ownership to allow access for the `node` user
 RUN chown -R node:node /home/node
 
-# Passa all'utente `node`
+# Switch to the `node` user
 USER node
 
-# Avvia l'applicazione
+# Start the application
 CMD ["npm", "start"]

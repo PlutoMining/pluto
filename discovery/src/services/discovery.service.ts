@@ -130,7 +130,11 @@ export async function discoverDevices(options?: DiscoveryOptions) {
         logger.info(`Mock servers retrieved: ${response.data.servers.length} found.`);
 
         const mockDevices = response.data.servers.map((server: any, index: number) => ({
-          ip: config.mockDiscoveryHost.replace(/https?:\/\/(.+)(\:.+)$/, `$1:${server.port}`),
+          // Use MOCK_DEVICE_HOST for device IPs (allows Docker containers to reach mock devices)
+          // If MOCK_DEVICE_HOST is set, use it; otherwise extract from mockDiscoveryHost
+          ip: config.mockDeviceHost
+            ? `${config.mockDeviceHost}:${server.port}`
+            : config.mockDiscoveryHost.replace(/https?:\/\/(.+)(\:.+)$/, `$1:${server.port}`),
           mac: `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`,
           type: "unknown",
         }));
@@ -162,23 +166,31 @@ export async function discoverDevices(options?: DiscoveryOptions) {
     const devices: Device[] = [];
 
     for (const element of validDevices) {
-      logger.info(`Attempting to connect to device with IP: ${element.ip} and MAC: ${element.mac}`);
+      // For mock devices, discovery (host network) needs to use localhost for verification
+      // but store host.docker.internal for backend containers to reach them
+      const isMockDevice = element.mac.startsWith("ff:ff:ff:ff:ff:");
+      const verificationIp = isMockDevice && element.ip.includes("host.docker.internal")
+        ? element.ip.replace("host.docker.internal", "localhost")
+        : element.ip;
+      const storageIp = element.ip; // Keep original IP (host.docker.internal for mock devices) for storage
+
+      logger.info(`Attempting to connect to device with IP: ${verificationIp} and MAC: ${element.mac}`);
 
       try {
-        const response = await axios.get(`http://${element.ip}/api/system/info`, { timeout: 1000 });
+        const response = await axios.get(`http://${verificationIp}/api/system/info`, { timeout: 1000 });
 
-        logger.info(`Received response from ${element.ip}:`, response.data);
+        logger.info(`Received response from ${verificationIp}:`, response.data);
 
         if (response.data && response.data.ASICModel) {
           const deviceInfo: Device = {
-            ip: element.ip,
+            ip: storageIp, // Use storage IP (host.docker.internal for mock devices) so backend can reach them
             mac: element.mac,
             type: element.type,
             info: response.data,
           };
 
           devices.push(deviceInfo);
-          logger.info(`Device ${element.ip} with ASICModel added to the list.`);
+          logger.info(`Device ${storageIp} with ASICModel added to the list.`);
 
           try {
             // Tenta di inserire il dispositivo
@@ -188,11 +200,11 @@ export async function discoverDevices(options?: DiscoveryOptions) {
               element.mac,
               deviceInfo
             );
-            logger.info(`Device ${element.ip} inserted successfully.`);
+            logger.info(`Device ${storageIp} inserted successfully.`);
           } catch (error) {
             if (error instanceof Error && error.message.includes("already exists")) {
               // Se l'inserimento fallisce, effettua un aggiornamento
-              logger.info(`Device ${element.ip} already exists, updating...`);
+              logger.info(`Device ${storageIp} already exists, updating...`);
               await updateOne<Device>(
                 "pluto_discovery",
                 "devices:discovered",
