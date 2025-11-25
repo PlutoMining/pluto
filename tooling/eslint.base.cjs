@@ -31,6 +31,10 @@ module.exports = {
   rules: {
     'prefer-const': 'off',
     'no-prototype-builtins': 'off',
+    'no-empty-pattern': 'off',
+    '@typescript-eslint/no-wrapper-object-types': 'off',
+    '@typescript-eslint/no-empty-object-type': 'off',
+    'no-case-declarations': 'off',
     '@typescript-eslint/no-unused-vars': [
       'warn',
       {
