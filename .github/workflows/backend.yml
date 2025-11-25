@@ -29,6 +29,15 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ matrix.app }}/package-lock.json
 
+      - name: Install shared common packages
+        run: |
+          for pkg in common/logger common/db common/interfaces common/utils; do
+            if [ -f "$pkg/package-lock.json" ]; then
+              echo "Installing deps for $pkg"
+              (cd "$pkg" && npm ci)
+            fi
+          done
+
       - name: Install dependencies
         working-directory: ${{ matrix.app }}
         run: npm ci
