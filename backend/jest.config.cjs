@@ -18,9 +18,9 @@ module.exports = {
   coveragePathIgnorePatterns: [
     '<rootDir>/src/index.ts',
     '<rootDir>/src/config/',
-    '<rootDir>/src/controllers/',
     '<rootDir>/src/routes/',
-    '<rootDir>/src/services/',
+    '<rootDir>/src/services/grafana.service.ts',
+    '<rootDir>/src/services/tracing.service.ts',
   ],
 };
 
