@@ -6,6 +6,7 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
+        "preserveSymlinks": false,  // Add this - tells TypeScript to follow symlinks
         "outDir": "./dist",
         "sourceMap": true, // Abilita le source maps
         "paths": {

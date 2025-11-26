@@ -8,18 +8,21 @@ WORKDIR /home/node/app
 COPY ./discovery/package*.json ./
 RUN mkdir -p /home/node/common
 COPY ./common /home/node/common
-RUN npm ci --prefix /home/node/common/db
-RUN npm ci --prefix /home/node/common/interfaces
-RUN npm ci --prefix /home/node/common/logger
+
+# Install and build common modules (local file dependencies)
+RUN npm ci --prefix /home/node/common/db && \
+    npm ci --prefix /home/node/common/interfaces && \
+    npm ci --prefix /home/node/common/logger && \
+    npm run build --prefix /home/node/common/db && \
+    npm run build --prefix /home/node/common/interfaces && \
+    npm run build --prefix /home/node/common/logger
+
+# Install discovery dependencies
+# @PlutoMining/miner will be installed from npm/git based on package.json
 RUN npm ci
 
 # Copy the rest of the files and build the application
 COPY ./discovery .
-
-# Compile TypeScript modules in the common folder
-RUN npm run build --prefix /home/node/common/db
-RUN npm run build --prefix /home/node/common/interfaces
-RUN npm run build --prefix /home/node/common/logger
 
 # Build the discovery application
 RUN npm run build

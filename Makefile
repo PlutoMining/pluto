@@ -3,7 +3,8 @@
 
 SHELL := /bin/bash
 COMPOSE_FILE = docker-compose.dev.local.yml
-.PHONY: help setup start stop up down logs build rebuild clean restart status shell
+NODE_SERVICES = backend discovery frontend mock
+.PHONY: help setup start stop up down logs build rebuild clean restart status shell deps
 
 # Default target
 .DEFAULT_GOAL := help
@@ -84,6 +85,25 @@ shell: ## Open shell in a service container (requires SERVICE=<name>)
 		exit 1; \
 	fi
 	@docker compose -f $(COMPOSE_FILE) exec $(SERVICE) /bin/sh
+
+deps: ## Run npm install for all Node services (use SERVICE=<name> to limit)
+	@if [ -n "$(SERVICE)" ]; then \
+		TARGETS="$(SERVICE)"; \
+	else \
+		TARGETS="$(NODE_SERVICES)"; \
+	fi; \
+	for dir in $$TARGETS; do \
+		if [ ! -d "$$dir" ]; then \
+			echo "Skipping $$dir (directory not found)"; \
+			continue; \
+		fi; \
+		if [ ! -f "$$dir/package.json" ]; then \
+			echo "Skipping $$dir (no package.json)"; \
+			continue; \
+		fi; \
+		echo "Installing dependencies in $$dir..."; \
+		( cd "$$dir" && npm install ); \
+	done
 
 # Additional useful commands
 pull: ## Pull latest images
