@@ -91,6 +91,7 @@ export async function discoverDevices(options?: DiscoveryOptions) {
       }
     }
 
+    /* istanbul ignore next -- requires OS-level ARP scanning which isn't testable in CI */
     const arpScanInterfaces = await getActiveNetworkInterfaces();
 
     let arpTable = (
@@ -134,7 +135,7 @@ export async function discoverDevices(options?: DiscoveryOptions) {
           // If MOCK_DEVICE_HOST is set, use it; otherwise extract from mockDiscoveryHost
           ip: config.mockDeviceHost
             ? `${config.mockDeviceHost}:${server.port}`
-            : config.mockDiscoveryHost.replace(/https?:\/\/(.+)(\:.+)$/, `$1:${server.port}`),
+            : config.mockDiscoveryHost.replace(/https?:\/\/(.+)(:.+)$/, `$1:${server.port}`),
           mac: `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`,
           type: "unknown",
         }));

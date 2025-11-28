@@ -1,0 +1,52 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "release/**"
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  test-backend:
+    name: Lint & Test Backend
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [backend]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+
+      - name: Install shared common packages
+        run: |
+          for pkg in common/logger common/db common/interfaces common/utils; do
+            if [ -f "$pkg/package-lock.json" ]; then
+              echo "Installing deps for $pkg"
+              (cd "$pkg" && npm ci)
+            fi
+          done
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.app }}
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: ${{ matrix.app }}
+        run: npm run lint
+
+      - name: Run tests with coverage
+        working-directory: ${{ matrix.app }}
+        run: npm run test
+
