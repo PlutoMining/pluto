@@ -12,6 +12,8 @@ update_version() {
     local new_version=$2
     local image_sha=$3
     local registry=$4
+    shift 4
+    local files=("$@")
 
     # Validate inputs
     if [ -z "$service" ] || [ -z "$new_version" ] || [ -z "$image_sha" ] || [ -z "$registry" ]; then
@@ -19,8 +21,11 @@ update_version() {
         return 1
     fi
 
+    if [ ${#files[@]} -eq 0 ]; then
+        files=(umbrel-apps/pluto-next/docker-compose.yml docker-compose.next.local.yml umbrel-apps/pluto/docker-compose.yml docker-compose.release.local.yml)
+    fi
+
     # Update docker-compose files with the correct image and SHA
-    # Match old GitLab format (registry.gitlab.com/plutomining/pluto/pluto-SERVICE)
     # Match old GitHub format (ghcr.io/plutomining/pluto/pluto-SERVICE) - for migration
     # Match new GitHub registry format (ghcr.io/plutomining/pluto-SERVICE) - current format
     # Also match broken references with partial @ or @sha256:
@@ -28,38 +33,41 @@ update_version() {
     local new_image="${registry}/pluto-$service:${new_version}@sha256:${image_sha}"
     
     # Update each file: replace all old formats with the new format
-    for file in umbrel-apps/pluto-next/docker-compose.yml docker-compose.next.local.yml umbrel-apps/pluto/docker-compose.yml docker-compose.release.local.yml; do
+    for file in "${files[@]}"; do
         if [ ! -f "$file" ]; then
             echo "Warning: File $file not found, skipping..." >&2
             continue
         fi
         
-        # Replace GitLab registry format
-        sed -i -E "s|registry\.gitlab\.com/plutomining/pluto/pluto-$service:[^[:space:]]+|${new_image}|g" "$file"
         # Replace old GitHub registry format (ghcr.io/plutomining/pluto/pluto-SERVICE)
-        sed -i -E "s|ghcr\.io/plutomining/pluto/pluto-$service:[^[:space:]]+|${new_image}|g" "$file"
-        # Replace new GitHub registry format (ghcr.io/plutomining/pluto-SERVICE) - including broken references with @ or @sha256:
-        sed -i -E "s|ghcr\.io/plutomining/pluto-$service:${new_version}(@sha256:[^[:space:]]*)?(@[^[:space:]]*)?|${new_image}|g" "$file"
+        sed -i -E "s|ghcr\\.io/plutomining/pluto/pluto-$service:[^[:space:]]+|${new_image}|g" "$file"
+        # Replace new GitHub registry format (ghcr.io/plutomining/pluto-SERVICE)
+        sed -i -E "s|ghcr\\.io/plutomining/pluto-$service:[^[:space:]]+|${new_image}|g" "$file"
     done
 }
 
 # Function to update the version in umbrel-app.yml
 update_umbrel_version() {
-    local new_version=$1
+    local manifest=$1
+    local new_version=$2
 
-    sed -i -E "s/version: \".*\"/version: \"${new_version}\"/g" umbrel-apps/pluto-next/umbrel-app.yml
-    sed -i -E "s/Version .*/Version ${new_version}/g" umbrel-apps/pluto-next/umbrel-app.yml
+    if [ -z "$manifest" ] || [ -z "$new_version" ]; then
+        echo "Error: update_umbrel_version called with invalid parameters" >&2
+        return 1
+    fi
 
-    sed -i -E "s/version: \".*\"/version: \"${new_version}\"/g" umbrel-apps/pluto/umbrel-app.yml
-    sed -i -E "s/Version .*/Version ${new_version}/g" umbrel-apps/pluto/umbrel-app.yml
-
-#    sed -i -E "s/version: \".*\"/version: \"${new_version}\"/g" umbrel-apps/pluto/umbrel-app.yml
-#    sed -i -E "s/Version .*/Version ${new_version}/g" umbrel-apps/plutoumbrel-app.yml
+    sed -i -E "s/version: \".*\"/version: \"${new_version}\"/g" "$manifest"
+    sed -i -E "s/Version .*/Version ${new_version}/g" "$manifest"
 }
 
 # Function to get the current version from the correct umbrel app file
 get_current_app_version() {
-    grep 'version:' umbrel-apps/pluto/umbrel-app.yml | sed -E 's/version: "(.*)"/\1/'
+    local manifest=$1
+    if [ -z "$manifest" ]; then
+        echo "Error: get_current_app_version requires a manifest path" >&2
+        exit 1
+    fi
+    grep 'version:' "$manifest" | sed -E 's/version: "(.*)"/\1/'
 }
 
 # Function to get the current version from the package.json file
@@ -103,6 +111,13 @@ get_image_sha() {
     echo "${sha#sha256:}"
 }
 
+CHANNEL="both"
+
+should_release_channel() {
+    local target=$1
+    [[ "$CHANNEL" == "both" || "$CHANNEL" == "$target" ]]
+}
+
 # main
 
 main() {
@@ -114,14 +129,36 @@ main() {
     SKIP_LOGIN=false
 
     # Parse command line arguments
-    for arg in "$@"; do
-        case $arg in
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
         --skip-login)
             SKIP_LOGIN=true
-            shift # Remove --skip-login from processing
+            shift
+            ;;
+        --channel)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --channel requires an argument (stable|next|both)" >&2
+                exit 1
+            fi
+            CHANNEL="$2"
+            shift 2
+            ;;
+        --channel=*)
+            CHANNEL="${1#*=}"
+            shift
+            ;;
+        *)
+            echo "Error: Unknown argument '$1'" >&2
+            exit 1
             ;;
         esac
     done
+
+    CHANNEL=$(echo "$CHANNEL" | tr '[:upper:]' '[:lower:]')
+    if [[ "$CHANNEL" != "stable" && "$CHANNEL" != "next" && "$CHANNEL" != "both" ]]; then
+        echo "Error: --channel must be one of stable, next, both" >&2
+        exit 1
+    fi
 
     # Only perform Docker login if the skip login flag is not set
     if [ "$SKIP_LOGIN" = false ]; then
@@ -142,18 +179,33 @@ main() {
         echo "Skipping Docker login..."
     fi
 
-    # Prompt for the new version of the app (umbrel-app.yml stable or next)
-    current_app_version=$(get_current_app_version)
-    echo "Current app version is $current_app_version. Enter the new app version (press Enter to keep $current_app_version):"
-    read new_app_version
+    local next_manifest="umbrel-apps/pluto-next/umbrel-app.yml"
+    local stable_manifest="umbrel-apps/pluto/umbrel-app.yml"
+    local -a stable_compose_files=("umbrel-apps/pluto/docker-compose.yml" "docker-compose.release.local.yml")
+    local -a next_compose_files=("umbrel-apps/pluto-next/docker-compose.yml" "docker-compose.next.local.yml")
+    if should_release_channel "next"; then
+        current_next_app_version=$(get_current_app_version "$next_manifest")
+        echo "Current pluto-next app version is $current_next_app_version. Enter the new app version (press Enter to keep $current_next_app_version):"
+        read new_next_app_version
 
-    # If user presses enter, keep the current version
-    if [ -z "$new_app_version" ]; then
-        new_app_version=$current_app_version
+        if [ -z "$new_next_app_version" ]; then
+            new_next_app_version=$current_next_app_version
+        fi
+
+        update_umbrel_version "$next_manifest" "$new_next_app_version"
     fi
 
-    # Update the version in umbrel-app.yml
-    update_umbrel_version "$new_app_version"
+    if should_release_channel "stable"; then
+        current_stable_app_version=$(get_current_app_version "$stable_manifest")
+        echo "Current pluto app version is $current_stable_app_version. Enter the new app version (press Enter to keep $current_stable_app_version):"
+        read new_stable_app_version
+
+        if [ -z "$new_stable_app_version" ]; then
+            new_stable_app_version=$current_stable_app_version
+        fi
+
+        update_umbrel_version "$stable_manifest" "$new_stable_app_version"
+    fi
 
     # Get and set versions for each service
     for service in backend discovery frontend grafana prometheus; do
@@ -246,9 +298,18 @@ main() {
         echo "Retrieved SHA256 for $service: $image_sha"
 
         # Update files with the SHA for the service
-        if ! update_version $service "$new_version" "$image_sha" "$DOCKER_REGISTRY"; then
-            echo "Error: Failed to update version in docker-compose files for $service" >&2
+        if should_release_channel "next"; then
+            if ! update_version $service "$new_version" "$image_sha" "$DOCKER_REGISTRY" "${next_compose_files[@]}"; then
+                echo "Error: Failed to update pluto-next docker-compose files for $service" >&2
+                exit 1
+            fi
+        fi
+
+        if should_release_channel "stable"; then
+            if ! update_version $service "$new_version" "$image_sha" "$DOCKER_REGISTRY" "${stable_compose_files[@]}"; then
+                echo "Error: Failed to update pluto docker-compose files for $service" >&2
             exit 1
+            fi
         fi
     done
 
@@ -259,7 +320,8 @@ main() {
     # Commit the changes with a message
     echo "Committing changes..."
     git commit -m "Bump versions:
-    - App version: ${new_app_version}
+    - pluto app version: ${new_stable_app_version:-unchanged}
+    - pluto-next app version: ${new_next_app_version:-unchanged}
     - Backend version: ${backend_version}
     - Discovery version: ${discovery_version}
     - Frontend version: ${frontend_version}

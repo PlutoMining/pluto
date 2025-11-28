@@ -7,6 +7,7 @@ const sharedJestConfig = {
   clearMocks: true,
   collectCoverage: true,
   coverageDirectory: '<rootDir>/coverage',
+  verbose: true,
   collectCoverageFrom: [
     '<rootDir>/src/**/*.{ts,tsx}',
     '!<rootDir>/src/**/*.d.ts',

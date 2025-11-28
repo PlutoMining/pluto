@@ -18,35 +18,37 @@ describe('socket.controller', () => {
     jest.clearAllMocks();
   });
 
-  it('starts io handler successfully', async () => {
-    const req = {
-      app: {
-        get: jest.fn().mockReturnValue('server'),
-      },
-    } as unknown as Request;
-    const res = mockRes();
+  describe('startIoHandler', () => {
+    it('starts io handler successfully', async () => {
+      const req = {
+        app: {
+          get: jest.fn().mockReturnValue('server'),
+        },
+      } as unknown as Request;
+      const res = mockRes();
 
-    await socketController.startIoHandler(req, res);
+      await socketController.startIoHandler(req, res);
 
-    expect(tracingService.startIoHandler).toHaveBeenCalledWith('server');
-    expect(res.status).toHaveBeenCalledWith(200);
-  });
-
-  it('handles errors when starting socket', async () => {
-    tracingService.startIoHandler.mockImplementation(() => {
-      throw new Error('boom');
+      expect(tracingService.startIoHandler).toHaveBeenCalledWith('server');
+      expect(res.status).toHaveBeenCalledWith(200);
     });
-    const req = {
-      app: {
-        get: jest.fn().mockReturnValue('server'),
-      },
-    } as unknown as Request;
-    const res = mockRes();
 
-    await socketController.startIoHandler(req, res);
+    it('handles errors when starting socket', async () => {
+      tracingService.startIoHandler.mockImplementation(() => {
+        throw new Error('boom');
+      });
+      const req = {
+        app: {
+          get: jest.fn().mockReturnValue('server'),
+        },
+      } as unknown as Request;
+      const res = mockRes();
 
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to process the request' });
+      await socketController.startIoHandler(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to process the request' });
+    });
   });
 });
 

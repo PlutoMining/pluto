@@ -105,6 +105,45 @@ The release configuration uses external directories for persistent data storage:
 - Grafana: `/home/umbrel/umbrel/app-data/pluto/data/grafana`
 - Backend Data: `/home/umbrel/umbrel/app-data/pluto/data/leveldb`
 
+### Stable vs Beta (pluto-next) Releases
+
+- **Automated beta flow:** run `scripts/beta-release.sh` (typically in CI) on prerelease branches. It detects which services changed relative to `origin/main`, reads their prerelease versions (e.g. `1.4.0-beta.2`), builds/pushes the corresponding Docker images, pins the SHAs in `umbrel-apps/pluto-next/docker-compose.yml` & `docker-compose.next.local.yml`, and bumps `umbrel-apps/pluto-next/umbrel-app.yml`. Use `--services` to override detection or `--dry-run` for previews.
+- The script auto-increments the app prerelease version (e.g. `1.3.3-beta.3`) unless you pass `--app-version X.Y.Z-pr`.
+- **Manual stable/beta releases:** `./release.sh --channel next` is still available if you want to perform beta releases from a workstation, and `./release.sh --channel stable` promotes a validated beta to the main `pluto` channel. The default (`--channel both`) keeps both manifests in lockstep.
+- After syncing the manifests via `scripts/sync-umbrel-apps.sh`, both `pluto` and `pluto-next` are reinstalled on the Umbrel host so testers can continue running stable and beta builds side by side.
+
+#### Beta release script
+
+```bash
+# Build/push all changed services since origin/main
+scripts/beta-release.sh
+
+# Specify services manually and bump app version explicitly
+scripts/beta-release.sh --services "frontend,backend" --app-version 1.4.0-beta.5
+
+# Preview without building/pushing
+scripts/beta-release.sh --dry-run
+```
+
+Environment overrides:
+
+- `DOCKER_REGISTRY`: default `ghcr.io/plutomining`
+- `BETA_DIFF_BASE`: default `origin/main`
+- `BETA_TAG_SUFFIX`: default `beta`
+
+#### Deploying to Umbrel
+
+```bash
+# Sync both stable and beta (default)
+scripts/sync-umbrel-apps.sh
+
+# Sync only stable
+APPS_TO_SYNC=pluto scripts/sync-umbrel-apps.sh
+
+# Sync only beta
+APPS_TO_SYNC=pluto-next scripts/sync-umbrel-apps.sh
+```
+
 ## Service Details
 
 ### app_proxy
