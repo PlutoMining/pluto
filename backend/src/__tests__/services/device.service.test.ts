@@ -33,186 +33,204 @@ describe('device.service', () => {
     jest.clearAllMocks();
   });
 
-  it('fetches discovered devices with query params', async () => {
-    mockedAxios.get.mockResolvedValue({ data: ['device'] });
+  describe('discoverDevices', () => {
+    it('fetches discovered devices with query params', async () => {
+      mockedAxios.get.mockResolvedValue({ data: ['device'] });
 
-    await expect(deviceService.discoverDevices({ ip: '1.1.1.1' })).resolves.toEqual(['device']);
+      await expect(deviceService.discoverDevices({ ip: '1.1.1.1' })).resolves.toEqual(['device']);
 
-    expect(mockedAxios.get).toHaveBeenCalledWith('http://discovery.test/discover', {
-      params: { ip: '1.1.1.1', mac: undefined },
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://discovery.test/discover', {
+        params: { ip: '1.1.1.1', mac: undefined },
+      });
+    });
+
+    it('surfaces axios errors from discoverDevices', async () => {
+      const error = new Error('network');
+      mockedAxios.get.mockRejectedValue(error);
+
+      await expect(deviceService.discoverDevices()).rejects.toThrow('network');
+      expect(logger.error).toHaveBeenCalledWith('Error during multiple discovered devices lookup', error);
     });
   });
 
-  it('surfaces axios errors from discoverDevices', async () => {
-    const error = new Error('network');
-    mockedAxios.get.mockRejectedValue(error);
+  describe('lookupMultipleDiscoveredDevices', () => {
+    it('builds lookupMultipleDiscoveredDevices query', async () => {
+      mockedAxios.get.mockResolvedValue({ data: [] });
 
-    await expect(deviceService.discoverDevices()).rejects.toThrow('network');
-    expect(logger.error).toHaveBeenCalledWith('Error during multiple discovered devices lookup', error);
-  });
+      await deviceService.lookupMultipleDiscoveredDevices({
+        macs: ['aa', 'bb'],
+        ips: ['1.1.1.1'],
+        hostnames: ['rig'],
+        partialMatch: { macs: 'left', ips: 'right', hostnames: 'none' },
+      });
 
-  it('builds lookupMultipleDiscoveredDevices query', async () => {
-    mockedAxios.get.mockResolvedValue({ data: [] });
-
-    await deviceService.lookupMultipleDiscoveredDevices({
-      macs: ['aa', 'bb'],
-      ips: ['1.1.1.1'],
-      hostnames: ['rig'],
-      partialMatch: { macs: 'left', ips: 'right', hostnames: 'none' },
-    });
-
-    expect(mockedAxios.get).toHaveBeenCalledWith('http://discovery.test/discovered', {
-      params: {
-        macs: 'aa,bb',
-        ips: '1.1.1.1',
-        hostnames: 'rig',
-        partialMacs: 'left',
-        partialIps: 'right',
-        partialHostnames: 'none',
-      },
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://discovery.test/discovered', {
+        params: {
+          macs: 'aa,bb',
+          ips: '1.1.1.1',
+          hostnames: 'rig',
+          partialMacs: 'left',
+          partialIps: 'right',
+          partialHostnames: 'none',
+        },
+      });
     });
   });
 
-  it('imprints devices inserting new entries', async () => {
-    const lookupSpy = jest
-      .spyOn(deviceService, 'lookupMultipleDiscoveredDevices')
-      .mockResolvedValue([
-        {
+  describe('imprintDevices', () => {
+    it('imprints devices inserting new entries', async () => {
+      const lookupSpy = jest
+        .spyOn(deviceService, 'lookupMultipleDiscoveredDevices')
+        .mockResolvedValue([
+          {
+            mac: 'mac-1',
+            info: {
+              stratumPassword: 'secret',
+              wifiPassword: 'wifi',
+            },
+          } as unknown as Device,
+        ]);
+
+      db.insertOne.mockResolvedValue(undefined);
+
+      const devices = await deviceService.imprintDevices(['mac-1']);
+
+      expect(lookupSpy).toHaveBeenCalledWith({ macs: ['mac-1'] });
+      expect(db.insertOne).toHaveBeenCalledWith(
+        'pluto_core',
+        'devices:imprinted',
+        'mac-1',
+        expect.objectContaining({
           mac: 'mac-1',
-          info: {
-            stratumPassword: 'secret',
-            wifiPassword: 'wifi',
-          },
+          info: {},
+        }),
+      );
+      expect(devices).toHaveLength(1);
+    });
+
+    it('updates devices when already imprinted', async () => {
+      jest.spyOn(deviceService, 'lookupMultipleDiscoveredDevices').mockResolvedValue([
+        {
+          mac: 'mac-2',
+          info: {},
         } as unknown as Device,
       ]);
 
-    db.insertOne.mockResolvedValue(undefined);
+      const duplicateError = new Error('already exists');
+      db.insertOne.mockRejectedValue(duplicateError);
+      db.updateOne.mockResolvedValue(undefined);
 
-    const devices = await deviceService.imprintDevices(['mac-1']);
+      await deviceService.imprintDevices(['mac-2']);
 
-    expect(lookupSpy).toHaveBeenCalledWith({ macs: ['mac-1'] });
-    expect(db.insertOne).toHaveBeenCalledWith(
-      'pluto_core',
-      'devices:imprinted',
-      'mac-1',
-      expect.objectContaining({
-        mac: 'mac-1',
-        info: {},
-      }),
-    );
-    expect(devices).toHaveLength(1);
+      expect(db.updateOne).toHaveBeenCalledWith(
+        'pluto_core',
+        'devices:imprinted',
+        'mac-2',
+        expect.objectContaining({ mac: 'mac-2' }),
+      );
+    });
   });
 
-  it('updates devices when already imprinted', async () => {
-    jest.spyOn(deviceService, 'lookupMultipleDiscoveredDevices').mockResolvedValue([
-      {
-        mac: 'mac-2',
-        info: {},
-      } as unknown as Device,
-    ]);
+  describe('listenToDevices', () => {
+    it('listens to devices by fetching when not provided', async () => {
+      const devices = [{ mac: 'x', info: {} } as Device];
+      db.findMany.mockResolvedValue(devices);
 
-    const duplicateError = new Error('already exists');
-    db.insertOne.mockRejectedValue(duplicateError);
-    db.updateOne.mockResolvedValue(undefined);
+      const response = await deviceService.listenToDevices(undefined, true);
 
-    await deviceService.imprintDevices(['mac-2']);
+      expect(db.findMany).toHaveBeenCalledWith('pluto_core', 'devices:imprinted');
+      expect(tracing.updateOriginalIpsListeners).toHaveBeenCalledWith(devices, true);
+      expect(response).toEqual(devices);
+    });
 
-    expect(db.updateOne).toHaveBeenCalledWith(
-      'pluto_core',
-      'devices:imprinted',
-      'mac-2',
-      expect.objectContaining({ mac: 'mac-2' }),
-    );
+    it('reuses provided array', async () => {
+      const devices = [{ mac: 'y', info: {} } as Device];
+
+      const response = await deviceService.listenToDevices(devices, false);
+
+      expect(db.findMany).not.toHaveBeenCalled();
+      expect(tracing.updateOriginalIpsListeners).toHaveBeenCalledWith(devices, false);
+      expect(response).toBe(devices);
+    });
   });
 
-  it('listens to devices by fetching when not provided', async () => {
-    const devices = [{ mac: 'x', info: {} } as Device];
-    db.findMany.mockResolvedValue(devices);
+  describe('getImprintedDevices', () => {
+    it('filters imprinted devices by exact ip by default', async () => {
+      db.findMany.mockResolvedValue([]);
 
-    const response = await deviceService.listenToDevices(undefined, true);
+      await deviceService.getImprintedDevices({ ip: '10.0.0.1' });
 
-    expect(db.findMany).toHaveBeenCalledWith('pluto_core', 'devices:imprinted');
-    expect(tracing.updateOriginalIpsListeners).toHaveBeenCalledWith(devices, true);
-    expect(response).toEqual(devices);
+      const predicate = db.findMany.mock.calls[0][2];
+      expect(predicate({ ip: '10.0.0.1' } as Device)).toBe(true);
+      expect(predicate({ ip: '10.0.0.10' } as Device)).toBe(false);
+    });
+
+    it('supports partial ip matching for imprinted devices', async () => {
+      db.findMany.mockResolvedValue([]);
+
+      await deviceService.getImprintedDevices({ ip: '10.0', partialMatch: true });
+
+      const predicate = db.findMany.mock.calls[0][2];
+      expect(predicate({ ip: '10.0.1.5' } as Device)).toBe(true);
+      expect(predicate({ ip: '11.0.0.1' } as Device)).toBe(false);
+    });
   });
 
-  it('listenToDevices reuses provided array', async () => {
-    const devices = [{ mac: 'y', info: {} } as Device];
+  describe('getImprintedDevice', () => {
+    it('gets single imprinted device by mac', async () => {
+      const device = { mac: 'mac-3' } as Device;
+      db.findOne.mockResolvedValue(device);
 
-    const response = await deviceService.listenToDevices(devices, false);
-
-    expect(db.findMany).not.toHaveBeenCalled();
-    expect(tracing.updateOriginalIpsListeners).toHaveBeenCalledWith(devices, false);
-    expect(response).toBe(devices);
+      await expect(deviceService.getImprintedDevice('mac-3')).resolves.toEqual(device);
+      expect(db.findOne).toHaveBeenCalledWith('pluto_core', 'devices:imprinted', 'mac-3');
+    });
   });
 
-  it('filters imprinted devices by exact ip by default', async () => {
-    db.findMany.mockResolvedValue([]);
+  describe('getDevicesByPresetId', () => {
+    it('filters devices by preset id', async () => {
+      db.findMany.mockResolvedValue([]);
 
-    await deviceService.getImprintedDevices({ ip: '10.0.0.1' });
+      await deviceService.getDevicesByPresetId('preset-1');
 
-    const predicate = db.findMany.mock.calls[0][2];
-    expect(predicate({ ip: '10.0.0.1' } as Device)).toBe(true);
-    expect(predicate({ ip: '10.0.0.10' } as Device)).toBe(false);
+      const predicate = db.findMany.mock.calls[0][2];
+      expect(predicate({ presetUuid: 'preset-1' } as Device)).toBe(true);
+      expect(predicate({ presetUuid: 'preset-2' } as Device)).toBe(false);
+      expect(predicate({} as Device)).toBe(false);
+    });
   });
 
-  it('supports partial ip matching for imprinted devices', async () => {
-    db.findMany.mockResolvedValue([]);
+  describe('patchImprintedDevice', () => {
+    it('patches imprinted device sanitizing secrets', async () => {
+      const payload = {
+        mac: 'mac-4',
+        info: {
+          stratumPassword: 'secret',
+          wifiPassword: 'wifi',
+        },
+      } as Device;
+      db.updateOne.mockResolvedValue(payload);
 
-    await deviceService.getImprintedDevices({ ip: '10.0', partialMatch: true });
+      await deviceService.patchImprintedDevice('mac-4', payload);
 
-    const predicate = db.findMany.mock.calls[0][2];
-    expect(predicate({ ip: '10.0.1.5' } as Device)).toBe(true);
-    expect(predicate({ ip: '11.0.0.1' } as Device)).toBe(false);
+      expect(db.updateOne).toHaveBeenCalledWith(
+        'pluto_core',
+        'devices:imprinted',
+        'mac-4',
+        expect.objectContaining({
+          info: {},
+        }),
+      );
+    });
   });
 
-  it('gets single imprinted device by mac', async () => {
-    const device = { mac: 'mac-3' } as Device;
-    db.findOne.mockResolvedValue(device);
+  describe('deleteImprintedDevice', () => {
+    it('deletes imprinted device by id', async () => {
+      db.deleteOne.mockResolvedValue(null);
 
-    await expect(deviceService.getImprintedDevice('mac-3')).resolves.toEqual(device);
-    expect(db.findOne).toHaveBeenCalledWith('pluto_core', 'devices:imprinted', 'mac-3');
-  });
+      await deviceService.deleteImprintedDevice('mac-5');
 
-  it('filters devices by preset id', async () => {
-    db.findMany.mockResolvedValue([]);
-
-    await deviceService.getDevicesByPresetId('preset-1');
-
-    const predicate = db.findMany.mock.calls[0][2];
-    expect(predicate({ presetUuid: 'preset-1' } as Device)).toBe(true);
-    expect(predicate({ presetUuid: 'preset-2' } as Device)).toBe(false);
-    expect(predicate({} as Device)).toBe(false);
-  });
-
-  it('patches imprinted device sanitizing secrets', async () => {
-    const payload = {
-      mac: 'mac-4',
-      info: {
-        stratumPassword: 'secret',
-        wifiPassword: 'wifi',
-      },
-    } as Device;
-    db.updateOne.mockResolvedValue(payload);
-
-    await deviceService.patchImprintedDevice('mac-4', payload);
-
-    expect(db.updateOne).toHaveBeenCalledWith(
-      'pluto_core',
-      'devices:imprinted',
-      'mac-4',
-      expect.objectContaining({
-        info: {},
-      }),
-    );
-  });
-
-  it('deletes imprinted device by id', async () => {
-    db.deleteOne.mockResolvedValue(null);
-
-    await deviceService.deleteImprintedDevice('mac-5');
-
-    expect(db.deleteOne).toHaveBeenCalledWith('pluto_core', 'devices:imprinted', 'mac-5');
+      expect(db.deleteOne).toHaveBeenCalledWith('pluto_core', 'devices:imprinted', 'mac-5');
+    });
   });
 });
 
