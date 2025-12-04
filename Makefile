@@ -3,7 +3,7 @@
 
 SHELL := /bin/bash
 COMPOSE_FILE = docker-compose.dev.local.yml
-.PHONY: help setup start stop up down logs build rebuild clean restart status shell lint-apps test-apps lint-app test-app
+.PHONY: help setup start stop up down logs build rebuild clean restart status shell lint-apps test-apps lint-app test-app up-stable down-stable logs-stable up-beta down-beta logs-beta
 
 APPS ?= backend discovery frontend
 
@@ -15,15 +15,7 @@ help: ## Show this help message
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 	@echo ""
-	@echo "Examples:"
-	@echo "  make setup              # Run initial setup"
-	@echo "  make start              # Start all services"
-	@echo "  make logs SERVICE=backend      # View logs for a specific service"
-	@echo "  make shell SERVICE=backend     # Open shell in a service container"
-	@echo "  make lint-apps                 # Lint all default apps ($(APPS))"
-	@echo "  make lint-apps APP=backend     # Lint only the backend"
-	@echo "  make test-apps                 # Run tests for all default apps"
-	@echo "  make test-apps APP=frontend    # Test a single app"
+	@echo "For more information, run 'make <command> --help'"
 
 setup: ## Run initial setup script
 	@echo "Running setup script..."
@@ -145,3 +137,34 @@ test-app:
 	@echo "→ Testing $(APP)..."
 	@cd $(APP) && npm run test
 
+# Production-like local testing (stable release)
+up-stable: ## Start stable release services locally (docker-compose.release.local.yml)
+	@echo "Starting stable release services..."
+	@docker compose -f docker-compose.release.local.yml up
+
+down-stable: ## Stop stable release services
+	@echo "Stopping stable release services..."
+	@docker compose -f docker-compose.release.local.yml down
+
+logs-stable: ## View logs for stable release services (use SERVICE=<name> for specific service)
+	@if [ -z "$(SERVICE)" ]; then \
+		docker compose -f docker-compose.release.local.yml logs -f; \
+	else \
+		docker compose -f docker-compose.release.local.yml logs -f $(SERVICE); \
+	fi
+
+# Production-like local testing (beta release)
+up-beta: ## Start beta release services locally (docker-compose.next.local.yml)
+	@echo "Starting beta release services..."
+	@docker compose -f docker-compose.next.local.yml up
+
+down-beta: ## Stop beta release services
+	@echo "Stopping beta release services..."
+	@docker compose -f docker-compose.next.local.yml down
+
+logs-beta: ## View logs for beta release services (use SERVICE=<name> for specific service)
+	@if [ -z "$(SERVICE)" ]; then \
+		docker compose -f docker-compose.next.local.yml logs -f; \
+	else \
+		docker compose -f docker-compose.next.local.yml logs -f $(SERVICE); \
+	fi
