@@ -59,6 +59,7 @@ services:
     image: ghcr.io/plutomining/pluto-prometheus:1.1.2@sha256:64bdc2c383e17df9925fe4fbe0dd2972b52616dcfb51489f0aa487307f19c53c
     volumes:
       - ${APP_DATA_DIR}/data/prometheus:/prometheus
+      - ${APP_DATA_DIR}/data/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     pid: host
     healthcheck:
       test:
@@ -78,6 +79,7 @@ services:
       - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
     volumes:
       - ${APP_DATA_DIR}/data/grafana:/var/lib/grafana
+      - ${APP_DATA_DIR}/data/grafana/provisioning/datasources/main.yaml:/etc/grafana/provisioning/datasources/main.yaml:ro
     healthcheck:
       test:
         - "CMD-SHELL"
