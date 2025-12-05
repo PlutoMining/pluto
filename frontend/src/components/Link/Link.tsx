@@ -6,8 +6,8 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { As, Link as ChakraLink, Flex, useToken } from "@chakra-ui/react";
-import React, { ReactElement } from "react";
+import { Link as ChakraLink, Flex, useToken } from "@chakra-ui/react";
+import React, { ReactElement, ElementType } from "react";
 
 interface LinkProps {
   label: string;
@@ -21,7 +21,7 @@ interface LinkProps {
   textDecoration?: string;
   isDisabled?: boolean;
   isExternal?: boolean;
-  as?: As;
+  as?: ElementType;
 }
 
 const Link: React.FC<LinkProps> = ({
