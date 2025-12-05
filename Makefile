@@ -58,7 +58,7 @@ clean: ## Remove volumes and data directories (WARNING: destructive)
 		echo "Stopping services..."; \
 		docker compose -f $(COMPOSE_FILE) down -v; \
 		echo "Removing data directories..."; \
-		rm -rf data/prometheus/* data/grafana/* data/leveldb/*; \
+		rm -rf data/prometheus/* data/prometheus-*/* data/grafana/* data/grafana-*/* data/leveldb/* data/leveldb-*/*; \
 		echo "Clean complete."; \
 	else \
 		echo "Clean cancelled."; \
