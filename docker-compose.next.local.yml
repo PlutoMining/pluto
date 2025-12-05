@@ -64,13 +64,15 @@ services:
     environment:
       - PORT=7675
       - DETECT_MOCK_DEVICES=true
+      - MOCK_DISCOVERY_HOST=http://localhost:7670
+      - MOCK_DEVICE_HOST=172.17.0.1
       # - MOCK_DISCOVERY_HOST=http://172.17.0.1:7670
     volumes:
       # - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
       # - ./common/db:/common/db:ro # Monta il modulo in read-only
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       # - ./discovery:/home/node/app/
-      - ./data/leveldb:/home/node/app/data
+      - ./data/leveldb-next:/home/node/app/data
     user: "1000:1000"
 
   backend:
@@ -90,7 +92,7 @@ services:
     environment:
       - PORT=7676
       - AUTO_LISTEN=true
-      # - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7675
+      - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7675
       - GF_HOST=http://pluto-next_grafana_1:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
@@ -100,8 +102,8 @@ services:
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       # - ./backend:/home/node/app/
       # - ./grafana/templates:/home/node/app/grafana_templates/
-      - ./data/leveldb:/home/node/app/data
-      - ./data/grafana:/home/node/app/grafana
+      - ./data/leveldb-next:/home/node/app/data
+      - ./data/grafana-next:/home/node/app/grafana
     depends_on:
       prometheus:
         condition: service_healthy
@@ -138,11 +140,12 @@ services:
     user: "1000:1000"
 
   prometheus:
-    image: prom/prometheus:v2.53.1
+    build:
+      context: .
+      dockerfile: prometheus/Dockerfile.next
     container_name: pluto-next_prometheus_1
     volumes:
-      - ./data/prometheus:/prometheus
-      - ./prometheus/prometheus.next.yml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus-next:/prometheus
     # ports:
     #   - "9090:9090"
     pid: host
@@ -156,7 +159,9 @@ services:
     user: "65534:65534"
 
   grafana:
-    image: grafana/grafana:11.1.2
+    build:
+      context: .
+      dockerfile: grafana/Dockerfile.next
     container_name: pluto-next_grafana_1
     # ports:
     #   - "7778:3000"
@@ -166,10 +171,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
     volumes:
-      - ./data/grafana:/var/lib/grafana
-      - ./grafana/grafana.next.ini:/etc/grafana/grafana.ini
-      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
-      - ./grafana/datasource.next.yaml:/etc/grafana/provisioning/datasources/main.yaml
+      - ./data/grafana-next:/var/lib/grafana
     healthcheck:
       test:
         - "CMD-SHELL"

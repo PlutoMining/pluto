@@ -67,6 +67,7 @@ services:
       - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
       - ./common/db:/home/node/common/db # Monta il modulo (writable per development)
       - ./common/logger:/home/node/common/logger # Monta il modulo (writable per development)
+      - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./discovery:/home/node/app/
       - ./data/leveldb:/home/node/app/data
     user: "1000:1000"
@@ -101,6 +102,7 @@ services:
       - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
       - ./common/db:/home/node/common/db # Monta il modulo (writable per development)
       - ./common/logger:/home/node/common/logger # Monta il modulo (writable per development)
+      - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./backend:/home/node/app/
       - ./grafana/templates:/home/node/app/grafana_templates/
       - ./data/leveldb:/home/node/app/data
@@ -134,6 +136,7 @@ services:
     volumes:
       - ./common/utils:/home/node/common/utils # Monta il modulo (writable per development)
       - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
+      - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./frontend:/home/node/app/
       - ./umbrel-apps/pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
     user: "1000:1000"

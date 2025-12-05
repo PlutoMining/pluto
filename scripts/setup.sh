@@ -57,60 +57,70 @@ echo ""
 # Create data directories with specific ownership
 echo -e "${BLUE}Creating data directories...${NC}"
 
-# Prometheus data directory (UID 65534)
-if [ ! -d "$PROJECT_ROOT/data/prometheus" ]; then
-    mkdir -p "$PROJECT_ROOT/data/prometheus"
-    print_status "Created data/prometheus directory"
-else
-    print_status "data/prometheus directory already exists"
-fi
-if [ "$EUID" -eq 0 ] || sudo -n true 2>/dev/null; then
-    sudo chown -R 65534:65534 "$PROJECT_ROOT/data/prometheus" 2>/dev/null || print_warning "Could not set ownership for data/prometheus (may need sudo)"
-    print_status "Set ownership of data/prometheus to 65534:65534"
-else
-    print_warning "Skipping ownership change for data/prometheus (requires sudo)"
-fi
+# Function to create and set ownership for a directory
+setup_directory() {
+    local dir_path="$1"
+    local uid="$2"
+    local gid="${3:-$uid}"
+    local description="$4"
 
-# Grafana data directory (UID 472)
-if [ ! -d "$PROJECT_ROOT/data/grafana" ]; then
-    mkdir -p "$PROJECT_ROOT/data/grafana"
-    print_status "Created data/grafana directory"
-else
-    print_status "data/grafana directory already exists"
-fi
+    if [ ! -d "$dir_path" ]; then
+        mkdir -p "$dir_path"
+        print_status "Created $description directory"
+    else
+        print_status "$description directory already exists"
+    fi
 
-if [ ! -d "$PROJECT_ROOT/data/grafana/dashboards" ]; then
-    mkdir -p "$PROJECT_ROOT/data/grafana/dashboards"
-    print_status "Created data/grafana/dashboards directory"
-else
-    print_status "data/grafana/dashboards directory already exists"
-fi
+    if [ "$EUID" -eq 0 ] || sudo -n true 2>/dev/null; then
+        sudo chown -R "$uid:$gid" "$dir_path" 2>/dev/null || print_warning "Could not set ownership for $description (may need sudo)"
+        print_status "Set ownership of $description to $uid:$gid"
+    else
+        print_warning "Skipping ownership change for $description (requires sudo)"
+    fi
+}
 
-if [ "$EUID" -eq 0 ] || sudo -n true 2>/dev/null; then
-    # Set ownership of main grafana directory to grafana user (472)
-    sudo chown -R 472:472 "$PROJECT_ROOT/data/grafana" 2>/dev/null || print_warning "Could not set ownership for data/grafana (may need sudo)"
-    print_status "Set ownership of data/grafana to 472:472"
-    
-    # Backend needs to write dashboard files, so make dashboards directory writable by backend user (1000)
-    sudo chown -R 1000:1000 "$PROJECT_ROOT/data/grafana/dashboards" 2>/dev/null || print_warning "Could not set ownership for data/grafana/dashboards (may need sudo)"
-    print_status "Set ownership of data/grafana/dashboards to 1000:1000 (for backend writes)"
-else
-    print_warning "Skipping ownership change for data/grafana (requires sudo)"
-fi
+# Function to setup Grafana directory with dashboards subdirectory
+setup_grafana_directory() {
+    local dir_path="$1"
+    local description="$2"
 
-# LevelDB data directory (UID 1000)
-if [ ! -d "$PROJECT_ROOT/data/leveldb" ]; then
-    mkdir -p "$PROJECT_ROOT/data/leveldb"
-    print_status "Created data/leveldb directory"
-else
-    print_status "data/leveldb directory already exists"
-fi
-if [ "$EUID" -eq 0 ] || sudo -n true 2>/dev/null; then
-    sudo chown -R 1000:1000 "$PROJECT_ROOT/data/leveldb" 2>/dev/null || print_warning "Could not set ownership for data/leveldb (may need sudo)"
-    print_status "Set ownership of data/leveldb to 1000:1000"
-else
-    print_warning "Skipping ownership change for data/leveldb (requires sudo)"
-fi
+    setup_directory "$dir_path" 472 472 "$description"
+
+    local dashboards_path="$dir_path/dashboards"
+    if [ ! -d "$dashboards_path" ]; then
+        if [ "$EUID" -eq 0 ] || sudo -n true 2>/dev/null; then
+            sudo mkdir -p "$dashboards_path" 2>/dev/null || print_warning "Could not create $description/dashboards (may need sudo)"
+            # Backend needs to write dashboard files, so set ownership to backend user (1000)
+            sudo chown -R 1000:1000 "$dashboards_path" 2>/dev/null || print_warning "Could not set ownership for $description/dashboards (may need sudo)"
+            print_status "Created $description/dashboards directory with ownership 1000:1000"
+        else
+            mkdir -p "$dashboards_path" 2>/dev/null || print_warning "Could not create $description/dashboards (may need sudo)"
+            print_status "Created $description/dashboards directory"
+        fi
+    else
+        print_status "$description/dashboards directory already exists"
+        # Ensure ownership is correct even if directory already exists
+        if [ "$EUID" -eq 0 ] || sudo -n true 2>/dev/null; then
+            sudo chown -R 1000:1000 "$dashboards_path" 2>/dev/null || print_warning "Could not set ownership for $description/dashboards (may need sudo)"
+            print_status "Set ownership of $description/dashboards to 1000:1000 (for backend writes)"
+        fi
+    fi
+}
+
+# Setup directories for dev environment (no suffix)
+setup_directory "$PROJECT_ROOT/data/prometheus" 65534 65534 "data/prometheus"
+setup_grafana_directory "$PROJECT_ROOT/data/grafana" "data/grafana"
+setup_directory "$PROJECT_ROOT/data/leveldb" 1000 1000 "data/leveldb"
+
+# Setup directories for next environment (-next suffix)
+setup_directory "$PROJECT_ROOT/data/prometheus-next" 65534 65534 "data/prometheus-next"
+setup_grafana_directory "$PROJECT_ROOT/data/grafana-next" "data/grafana-next"
+setup_directory "$PROJECT_ROOT/data/leveldb-next" 1000 1000 "data/leveldb-next"
+
+# Setup directories for release environment (-release suffix)
+setup_directory "$PROJECT_ROOT/data/prometheus-release" 65534 65534 "data/prometheus-release"
+setup_grafana_directory "$PROJECT_ROOT/data/grafana-release" "data/grafana-release"
+setup_directory "$PROJECT_ROOT/data/leveldb-release" 1000 1000 "data/leveldb-release"
 
 echo ""
 
