@@ -95,14 +95,14 @@ update_local_compose() {
   local new_image="${registry}/pluto-${service}:${new_version}@sha256:${image_sha}"
 
   # Update the image line for the service
-  # Match GitHub registry format (ghcr.io/plutomining/pluto-SERVICE) - current format
+  # Match GitHub registry format (ghcr.io/plutomining/pluto-SERVICE) with any version
   # Also match broken references with partial @ or @sha256:
   if [[ "$(uname)" == "Darwin" ]]; then
     # macOS uses BSD sed
-    sed -i '' -E "s|ghcr\.io/plutomining/pluto-${service}:${new_version}(@sha256:[^[:space:]]*)?(@[^[:space:]]*)?|${new_image}|g" "$compose_file"
+    sed -i '' -E "s|ghcr\.io/plutomining/pluto-${service}:[^@[:space:]]+(@sha256:[^[:space:]]*)?(@[^[:space:]]*)?|${new_image}|g" "$compose_file"
   else
     # Linux uses GNU sed
-    sed -i -E "s|ghcr\.io/plutomining/pluto-${service}:${new_version}(@sha256:[^[:space:]]*)?(@[^[:space:]]*)?|${new_image}|g" "$compose_file"
+    sed -i -E "s|ghcr\.io/plutomining/pluto-${service}:[^@[:space:]]+(@sha256:[^[:space:]]*)?(@[^[:space:]]*)?|${new_image}|g" "$compose_file"
   fi
 }
 

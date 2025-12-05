@@ -120,8 +120,13 @@ compute_bundle_fingerprint() {
 
   # Extract all service image lines and sort them for stability.
   # Format: service=image-ref
+  # Services are indented with 2 spaces in the compose file.
   awk '
-    $1 ~ /^[a-zA-Z0-9_-]+:$/ { svc=substr($1, 1, length($1)-1) }
+    /^  [a-zA-Z0-9_-]+:$/ {
+      # Extract service name from $1 (e.g., "backend:" -> "backend")
+      svc=$1
+      gsub(":", "", svc)
+    }
     $1 == "image:" && svc != "" {
       img=$2
       gsub("\"", "", img)
@@ -135,10 +140,84 @@ update_compose_images() {
   for svc in "${!NEW_IMAGES[@]}"; do
     img="${NEW_IMAGES[$svc]}"
     # Replace the image: line under the given service.
-    # This is a simple sed-based replacement; it assumes the standard
-    # structure generated/maintained by this project.
-    sed -i -E "/^${svc}:/,/^[a-zA-Z0-9_-]+:|^$/s|^( +)image:.*|\\1image: ${img}|" "$COMPOSE"
+    # Flexible pattern that works with any indentation level.
+    # Range: from service line (with optional leading spaces) to next service or empty line.
+    # Preserves indentation of the image: line.
+    if [[ "$(uname)" == "Darwin" ]]; then
+      # macOS uses BSD sed
+      sed -i '' -E "/^[[:space:]]*${svc}:/,/^[[:space:]]*[a-zA-Z0-9_-]+:|^$/s|^( +)image:.*|\\1image: ${img}|" "$COMPOSE"
+    else
+      # Linux uses GNU sed
+      sed -i -E "/^[[:space:]]*${svc}:/,/^[[:space:]]*[a-zA-Z0-9_-]+:|^$/s|^( +)image:.*|\\1image: ${img}|" "$COMPOSE"
+    fi
   done
+}
+
+get_current_image_ref() {
+  local svc=$1
+  local file=$2
+  awk -v svc="$svc" '
+    /^  [a-zA-Z0-9_-]+:$/ {
+      # Extract service name from $1 (e.g., "backend:" -> "backend")
+      current_svc=$1
+      gsub(":", "", current_svc)
+    }
+    $1 == "image:" && current_svc == svc {
+      img=$2
+      gsub("\"", "", img)
+      print img
+      exit
+    }
+  ' "$file"
+}
+
+extract_version_from_image_ref() {
+  local image_ref="$1"
+  # Extract version from image reference like: ghcr.io/plutomining/pluto-backend:1.2.3@sha256:...
+  # or ghcr.io/plutomining/pluto-backend:1.2.3-beta.0@sha256:...
+  echo "$image_ref" | sed -E 's|.*:([0-9]+\.[0-9]+\.[0-9]+(-[^@]+)?)@.*|\1|' | head -1
+}
+
+extract_version_from_compose() {
+  local compose_file="$1"
+  local service="$2"
+  # Extract version from image line like: image: ghcr.io/plutomining/pluto-backend:1.1.2@sha256:...
+  grep -A 20 "^  ${service}:" "$compose_file" 2>/dev/null | \
+    grep -E "^\s+image:" | \
+    sed -E 's|.*:([0-9]+\.[0-9]+\.[0-9]+(-[^@]+)?)@.*|\1|' | \
+    head -1
+}
+
+# Compare two semver versions and return the change type: "major", "minor", "patch", or "none"
+compare_semver_change() {
+  local old_version="$1"
+  local new_version="$2"
+
+  # Remove any pre-release suffixes for comparison
+  local old_base="${old_version%%-*}"
+  local new_base="${new_version%%-*}"
+
+  if [[ "$old_base" == "$new_base" ]]; then
+    echo "none"
+    return 0
+  fi
+
+  # Parse versions
+  local old_major old_minor old_patch
+  local new_major new_minor new_patch
+
+  IFS='.' read -r old_major old_minor old_patch <<<"$old_base"
+  IFS='.' read -r new_major new_minor new_patch <<<"$new_base"
+
+  if [[ "$old_major" != "$new_major" ]]; then
+    echo "major"
+  elif [[ "$old_minor" != "$new_minor" ]]; then
+    echo "minor"
+  elif [[ "$old_patch" != "$new_patch" ]]; then
+    echo "patch"
+  else
+    echo "none"
+  fi
 }
 
 compare_fingerprints() {
@@ -150,65 +229,57 @@ compare_fingerprints() {
   tmp="$(mktemp)"
   cp "$COMPOSE" "$tmp"
   local svc img
+  local has_changes=false
+  
+  # Check if any service image references actually differ
+  # This is the primary check - if image references differ, we should update
   for svc in "${!NEW_IMAGES[@]}"; do
     img="${NEW_IMAGES[$svc]}"
-    sed -i -E "/^${svc}:/,/^[a-zA-Z0-9_-]+:|^$/s|^( +)image:.*|\\1image: ${img}|" "$tmp"
+    local current_img
+    current_img=$(get_current_image_ref "$svc" "$COMPOSE")
+    
+    if [[ -z "$current_img" ]]; then
+      # Service not found in compose file - this is a change
+      has_changes=true
+      log "Service $svc not found in compose file - will add: $img"
+    elif [[ "$current_img" != "$img" ]]; then
+      # Image reference differs - this is a change
+      has_changes=true
+      log "Service $svc image will change: $current_img -> $img"
+    fi
+    
+    if [[ "$(uname)" == "Darwin" ]]; then
+      # macOS uses BSD sed
+      sed -i '' -E "/^[[:space:]]*${svc}:/,/^[[:space:]]*[a-zA-Z0-9_-]+:|^$/s|^( +)image:.*|\\1image: ${img}|" "$tmp"
+    else
+      # Linux uses GNU sed
+      sed -i -E "/^[[:space:]]*${svc}:/,/^[[:space:]]*[a-zA-Z0-9_-]+:|^$/s|^( +)image:.*|\\1image: ${img}|" "$tmp"
+    fi
   done
+  
   new="$(compute_bundle_fingerprint "$tmp" | sha256sum | awk '{print $1}')"
   rm -f "$tmp"
 
-  if [[ "$cur" == "$new" ]]; then
+  # If we have explicit image changes, always treat as different
+  # This ensures version tags are updated even if SHA256 is identical (e.g., due to Docker caching)
+  if [[ "$has_changes" == "true" ]]; then
+    if [[ "$cur" == "$new" ]]; then
+      log "Warning: Image references differ but bundle fingerprint is identical"
+      log "This means the new image has the same SHA256 as the existing one."
+      log "Possible causes:"
+      log "  1. Docker layer caching - code changes didn't affect final image layers"
+      log "  2. The compose file already contains the exact same image reference"
+      log "  3. Registry returned cached/stale manifest data"
+      log "Proceeding with update anyway since image references differ."
+    fi
+    echo "different"
+  elif [[ "$cur" == "$new" ]]; then
     echo "same"
   else
     echo "different"
   fi
 }
 
-bump_stable_version() {
-  local current="$1"
-  local base="$2"
-
-  if [[ -z "$current" ]]; then
-    echo "$base"
-    return
-  fi
-
-  # Compare semver-like X.Y.Z using sort -V
-  local higher
-  higher=$(printf "%s\n%s\n" "$current" "$base" | sort -V | tail -n1)
-  if [[ "$higher" == "$base" && "$base" != "$current" ]]; then
-    echo "$base"
-  else
-    # same base (or base < current) -> bump patch
-    local major minor patch
-    IFS='.' read -r major minor patch <<<"$current"
-    patch=$((patch + 1))
-    echo "${major}.${minor}.${patch}"
-  fi
-}
-
-bump_beta_version() {
-  local current="$1"
-  local base="$2"
-
-  # current expected: X.Y.Z-beta.N
-  local cur_base cur_suffix
-  cur_base="${current%%-*}"
-  cur_suffix="${current#*-}"
-
-  if [[ "$cur_base" != "$base" || -z "$cur_suffix" ]]; then
-    echo "${base}-beta.0"
-    return
-  fi
-
-  if [[ "$cur_suffix" =~ ^beta\.([0-9]+)$ ]]; then
-    local n="${BASH_REMATCH[1]}"
-    n=$((n + 1))
-    echo "${base}-beta.${n}"
-  else
-    echo "${base}-beta.0"
-  fi
-}
 
 main() {
   parse_args "$@"
@@ -219,32 +290,132 @@ main() {
   diff=$(compare_fingerprints)
   if [[ "$diff" == "same" ]]; then
     log "Bundle unchanged; leaving app version and compose file as-is."
+    log "Comparison details:"
+    for svc in "${!NEW_IMAGES[@]}"; do
+      local current_img
+      current_img=$(get_current_image_ref "$svc" "$COMPOSE" 2>/dev/null || echo "(not found)")
+      if [[ "$current_img" == "${NEW_IMAGES[$svc]}" ]]; then
+        log "  $svc: unchanged ($current_img)"
+      else
+        log "  $svc: $current_img -> ${NEW_IMAGES[$svc]}"
+      fi
+    done
+    log "All image references match exactly (same tag and SHA256)."
     exit 0
   fi
 
-  local current_version
-  current_version=$(get_current_app_version)
-  if [[ -z "$current_version" ]]; then
+  # Step 1: Extract current versions from docker-compose.yml
+  log "Extracting current versions from docker-compose.yml..."
+  local -A current_versions
+  local -A new_versions
+  local -A version_changes
+  local svc current_version new_version change_type
+
+  for svc in "${!NEW_IMAGES[@]}"; do
+    current_version=$(extract_version_from_compose "$COMPOSE" "$svc")
+    if [[ -z "$current_version" || "$current_version" == "unknown" ]]; then
+      err "Could not extract version for service ${svc} from ${COMPOSE}"
+    fi
+    current_versions["$svc"]="$current_version"
+    log "  ${svc}: current version ${current_version}"
+  done
+
+  # Step 2: Extract new versions from image references
+  log ""
+  log "Extracting new versions from image references..."
+  for svc in "${!NEW_IMAGES[@]}"; do
+    new_version=$(extract_version_from_image_ref "${NEW_IMAGES[$svc]}")
+    if [[ -z "$new_version" ]]; then
+      err "Could not extract version from image reference for service ${svc}: ${NEW_IMAGES[$svc]}"
+    fi
+    new_versions["$svc"]="$new_version"
+    current_version="${current_versions[$svc]}"
+
+    # Determine change type
+    change_type=$(compare_semver_change "$current_version" "$new_version")
+    version_changes["$svc"]="$change_type"
+
+    if [[ "$change_type" != "none" ]]; then
+      log "  ${svc}: ${current_version} -> ${new_version} (${change_type} change)"
+    else
+      log "  ${svc}: ${current_version} (no change)"
+    fi
+  done
+
+  # Step 3: Determine highest semver change type across all services
+  log ""
+  local highest_change="none"
+  for svc in "${!NEW_IMAGES[@]}"; do
+    change_type="${version_changes[$svc]}"
+    case "$change_type" in
+      major)
+        highest_change="major"
+        ;;
+      minor)
+        if [[ "$highest_change" != "major" ]]; then
+          highest_change="minor"
+        fi
+        ;;
+      patch)
+        if [[ "$highest_change" != "major" && "$highest_change" != "minor" ]]; then
+          highest_change="patch"
+        fi
+        ;;
+    esac
+  done
+
+  # Step 4: Calculate new app version based on highest change
+  local current_app_version next_version
+  current_app_version=$(get_current_app_version)
+  if [[ -z "$current_app_version" ]]; then
     err "Could not determine current app version from $MANIFEST"
   fi
 
-  # Derive base version from current_version for now (you can extend this later
-  # to accept an explicit --base-version if desired).
-  local base_version
-  if [[ "$CHANNEL" == "stable" ]]; then
-    base_version="$current_version"
+  # If bundle changed but no version changes, still bump patch
+  if [[ "$highest_change" == "none" ]]; then
+    log ""
+    log "Bundle changed (digests updated) but versions unchanged. Bumping patch version."
+    highest_change="patch"
   else
-    base_version="${current_version%%-*}"
+    log ""
+    log "Highest change type: ${highest_change}"
   fi
 
-  local next_version
+  # Parse current app version and bump accordingly
+  local major minor patch
+  IFS='.' read -r major minor patch <<<"${current_app_version%%-*}"
+
+  case "$highest_change" in
+    major)
+      major=$((major + 1))
+      minor=0
+      patch=0
+      ;;
+    minor)
+      minor=$((minor + 1))
+      patch=0
+      ;;
+    patch)
+      patch=$((patch + 1))
+      ;;
+  esac
+
   if [[ "$CHANNEL" == "stable" ]]; then
-    next_version="$(bump_stable_version "$current_version" "$base_version")"
+    next_version="${major}.${minor}.${patch}"
   else
-    next_version="$(bump_beta_version "$current_version" "$base_version")"
+    # For beta, append -beta.0 or increment beta number
+    local beta_suffix="${current_app_version#*-}"
+    if [[ "$beta_suffix" =~ ^beta\.([0-9]+)$ ]]; then
+      local beta_num="${BASH_REMATCH[1]}"
+      beta_num=$((beta_num + 1))
+      next_version="${major}.${minor}.${patch}-beta.${beta_num}"
+    else
+      next_version="${major}.${minor}.${patch}-beta.0"
+    fi
   fi
 
-  log "Current app version: $current_version"
+  log ""
+  log "Current app version: $current_app_version"
   log "New app version:     $next_version"
 
   # Update manifest version
