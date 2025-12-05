@@ -7,7 +7,8 @@
 */
 
 import React from "react";
-import { Flex, Box, usePrefersReducedMotion, keyframes, useToken } from "@chakra-ui/react";
+import { keyframes } from "@emotion/react";
+import { Flex, Box, usePrefersReducedMotion, useToken } from "@chakra-ui/react";
 
 export const CircularProgressWithDots = () => {
   const [accentColor] = useToken("colors", ["accent-color"]);
