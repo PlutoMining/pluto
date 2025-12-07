@@ -83,7 +83,7 @@ fi
 chmod 755 data 2>/dev/null || true
 
 # Install dependencies if node_modules doesn't exist or if critical dependencies are missing
-if [ ! -d "node_modules" ] || [ ! -f "node_modules/nodemon/package.json" ]; then
+if [ ! -d "node_modules" ] || [ ! -f "node_modules/nodemon/package.json" ] || [ ! -f "node_modules/tsx/package.json" ]; then
   echo "Installing dependencies in app..."
   # Retry logic
   for i in 1 2 3; do
