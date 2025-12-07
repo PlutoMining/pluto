@@ -69,57 +69,45 @@ docker compose -f docker-compose.dev.local.yml down
 
 ## Release Environment
 
-### Configuration
+The release environment uses pre-built Docker images hosted on GitHub Container Registry. The service configurations are tailored for deployment in production environments like Umbrel.
 
-The release environment uses pre-built Docker images hosted on GitHub Container Registry. The service configurations, such as environment variables and volume mounts, are tailored for deployment in production environments like Umbrel.
+### Quick Start
 
-The actual release compose files are located in:
-- `umbrel-apps/pluto/docker-compose.yml` (stable releases)
-- `umbrel-apps/pluto-next/docker-compose.yml` (beta releases)
+**Stable release:**
+```bash
+scripts/release.sh --bump-version --update-manifests
+```
 
-For local testing of production-like images, use:
-- `docker-compose.release.local.yml` (stable releases)
-- `docker-compose.next.local.yml` (beta releases)
+**Beta release:**
+```bash
+GITHUB_TOKEN=your_token scripts/beta-release.sh --bump-version --update-manifests
+```
 
-### Setup and Start
+### Local Testing
 
-For Umbrel deployment, the compose files in `umbrel-apps/` are used automatically by Umbrel.
-
-For local testing of release images:
+For local testing of production-like images:
 
 **Stable release:**
 ```bash
 make up-stable
-# or
-docker compose -f docker-compose.release.local.yml up -d
+make logs-stable SERVICE=backend
+make down-stable
 ```
 
 **Beta release:**
 ```bash
 make up-beta
-# or
-docker compose -f docker-compose.next.local.yml up -d
-```
-
-### Stop Services
-
-**Stable release:**
-```bash
-make down-stable
-# or
-docker compose -f docker-compose.release.local.yml down
-```
-
-**Beta release:**
-```bash
+make logs-beta SERVICE=backend
 make down-beta
-# or
-docker compose -f docker-compose.next.local.yml down
 ```
+
+These commands use:
+- `docker-compose.release.local.yml` (stable) - automatically updated by `scripts/release.sh`
+- `docker-compose.next.local.yml` (beta) - automatically updated by `scripts/beta-release.sh`
 
 ### Service Images
 
-In the release setup, Pluto services are pulled from **GitHub Container Registry** under the `ghcr.io/plutomining` namespace. Exact tags (and image digests) are pinned in the Umbrel app manifests (see `umbrel-apps/pluto` and `umbrel-apps/pluto-next`) and may evolve over time with new releases, but they follow the pattern:
+Pluto services are pulled from **GitHub Container Registry** under the `ghcr.io/plutomining` namespace:
 
 - `ghcr.io/plutomining/pluto-mock:<version>`
 - `ghcr.io/plutomining/pluto-discovery:<version>`
@@ -128,18 +116,17 @@ In the release setup, Pluto services are pulled from **GitHub Container Registry
 - `ghcr.io/plutomining/pluto-prometheus:<version>`
 - `ghcr.io/plutomining/pluto-grafana:<version>`
 
-The monitoring stack still relies on upstream base images:
-
+The monitoring stack uses upstream base images:
 - `prom/prometheus:v2.53.1`
 - `grafana/grafana:11.1.2`
 
 ### Service Ports
 
-- **Mock Service**: `7770` (Main mock service port)
+- **Mock Service**: `7770`
 - **Backend**: `7776`
 - **Frontend**: `7777`
-- **Prometheus**: `9090` (If exposed)
-- **Grafana**: `3000` (If exposed)
+- **Prometheus**: `9090` (if exposed)
+- **Grafana**: `3000` (if exposed)
 
 ### Volume Mapping
 
@@ -149,164 +136,18 @@ The release configuration uses external directories for persistent data storage:
 - Grafana: `/home/umbrel/umbrel/app-data/pluto/data/grafana`
 - Backend Data: `/home/umbrel/umbrel/app-data/pluto/data/leveldb`
 
-### Stable vs Beta (pluto-next) Releases
+### Release Documentation
 
-Both release scripts support full automation with common options:
+For detailed information about the release process, see the [Release Flow Documentation](docs/release-flow.md):
 
-**Common options (both scripts):**
-- `--skip-login` - Skip Docker login prompt (useful for CI/CD)
-- `--bump-version` - Automatically bump package.json versions
-- `--update-manifests` - Update umbrel-app manifests after building images
-- `--sync-to-umbrel` - Sync manifests to Umbrel device (requires `--update-manifests`)
-- `--dry-run` - Print actions without executing
-
-**Stable releases (`scripts/release.sh`):**
-- Builds and pushes stable images for the `pluto` app
-- Requires `main` branch
-- Bumps versions with patch increment (e.g., `1.1.2` → `1.1.3`)
-- Automatically updates `docker-compose.release.local.yml` with new image references
-
-**Beta releases (`scripts/beta-release.sh`):**
-- Builds and pushes beta images for the `pluto-next` app
-- Detects changed services relative to `origin/main` (or use `--services`)
-- Bumps versions to beta (e.g., `1.1.2` → `1.1.3-beta.0`)
-- Automatically updates `docker-compose.next.local.yml` with new image references
-- **Enforces pre-release checks**: branch alignment, all commits pushed, CI passing
-- Beta-specific options: `--services`, `--app-version`, `--diff-base`, `--tag-suffix`
-
-#### Examples
-
-**Stable release:**
-```bash
-# Fully automated: build, bump versions, update manifests, sync to device
-scripts/release.sh --bump-version --update-manifests --sync-to-umbrel
-
-# For CI/CD (skip interactive login)
-scripts/release.sh --skip-login --bump-version --update-manifests --sync-to-umbrel
-
-# Interactive version prompts
-scripts/release.sh
-
-# Preview without executing
-scripts/release.sh --dry-run
-```
-
-**Beta release:**
-```bash
-# Fully automated: build changed services, bump versions, update manifests, sync to device
-# Note: Requires GITHUB_TOKEN env var for CI checks, or will prompt for it
-GITHUB_TOKEN=your_token scripts/beta-release.sh --bump-version --update-manifests --sync-to-umbrel
-
-# Build specific services only
-scripts/beta-release.sh --services "backend,frontend" --bump-version --update-manifests --sync-to-umbrel
-
-# For CI/CD (skip interactive login, CI check still runs)
-GITHUB_TOKEN=your_token scripts/beta-release.sh --skip-login --services backend --bump-version --update-manifests --sync-to-umbrel
-
-# Skip CI check (not recommended, only if CI unavailable)
-scripts/beta-release.sh --skip-ci-check --bump-version --update-manifests --sync-to-umbrel
-
-# Preview without executing
-scripts/beta-release.sh --dry-run
-```
-
-**Environment overrides:**
-
-- `DOCKER_REGISTRY`: default `ghcr.io/plutomining`
-- `BETA_DIFF_BASE`: default `origin/main` (beta-release.sh only)
-- `BETA_TAG_SUFFIX`: default `beta` (beta-release.sh only)
-- `GITHUB_TOKEN`: GitHub Personal Access Token for CI status checks (beta-release.sh only). Token needs `repo` scope. If not set, script will prompt for it.
-
-**Configuration via `.env` file:**
-
-You can create a `.env` file in the project root to avoid interactive prompts:
-
-```bash
-# .env file (not committed to git)
-GITHUB_USERNAME=your_username
-GITHUB_TOKEN=your_personal_access_token
-```
-
-The scripts will automatically load these values, with command-line environment variables taking precedence. This is especially useful for CI/CD environments or to avoid repeated prompts during development.
-
-#### Pre-release checks for beta releases
-
-The `beta-release.sh` script enforces several safety checks before building images:
-
-1. **Branch validation**: Must not be on `main` branch (beta releases come from feature branches)
-2. **Branch alignment**: Branch must be up-to-date with `origin/main` (prevents releasing from outdated branches)
-3. **All commits pushed**: All local commits must be pushed to remote (prevents releasing unpublished code)
-4. **Uncommitted files**: Warns if working directory has uncommitted changes (user can confirm to proceed)
-5. **CI status**: Verifies all CI tests are passing:
-   - Blocks if CI is running, failed, or cancelled
-   - Only allows release if CI passed
-   - Requires `GITHUB_TOKEN` environment variable (or prompts for it)
-   - Can be skipped with `--skip-ci-check` (not recommended)
-
-These checks ensure beta releases only happen from tested, up-to-date branches.
-
-#### Deploying to Umbrel
-
-```bash
-# Sync both stable and beta (default)
-scripts/sync-umbrel-apps.sh
-
-# Sync only stable
-APPS_TO_SYNC=pluto scripts/sync-umbrel-apps.sh
-
-# Sync only beta
-APPS_TO_SYNC=pluto-next scripts/sync-umbrel-apps.sh
-```
-
-#### Local testing with production-like images
-
-After running the release scripts, you can test the exact production images locally using the updated compose files. The release scripts automatically update these files with the latest image references:
-
-**For stable releases:**
-```bash
-# Start stable release services locally
-make up-stable
-
-# View logs (optionally specify SERVICE=<name>)
-make logs-stable SERVICE=backend
-
-# Stop services
-make down-stable
-```
-
-**For beta releases:**
-```bash
-# Start beta release services locally
-make up-beta
-
-# View logs (optionally specify SERVICE=<name>)
-make logs-beta SERVICE=backend
-
-# Stop services
-make down-beta
-```
-
-These commands use:
-- `docker-compose.release.local.yml` (stable) - automatically updated by `scripts/release.sh`
-- `docker-compose.next.local.yml` (beta) - automatically updated by `scripts/beta-release.sh`
-
-This allows you to test the exact same images that will be deployed to Umbrel, but run locally for faster iteration and debugging.
-
-#### Script Architecture
-
-All release and deployment scripts share a common library (`scripts/lib/common.sh`) that provides:
-
-- **Logging functions**: `log()` and `err()` for consistent output formatting
-- **Docker operations**: `get_image_sha()`, `get_image_sha_safe()`, `image_exists()` for image management
-- **GitHub integration**: `get_github_repo()` for repository detection
-- **Environment management**: `load_env_file()` for loading `.env` files with proper variable precedence
-- **Utility functions**: `command_exists()` for dependency checking
-
-This shared library ensures consistency across all scripts and makes maintenance easier. Each script sets a `SCRIPT_NAME` variable before sourcing the library to enable proper logging prefixes.
-
-#### Installing via the Pluto community app store
-
-In addition to syncing manifests directly to a local Umbrel box, Pluto publishes its Umbrel apps to a dedicated community app store at `https://github.com/PlutoMining/umbrel-community-app-store`.
+- [Release Overview](docs/release/overview.md) - High-level overview
+- [Stable Releases](docs/release/stable-releases.md) - Creating stable releases
+- [Beta Releases](docs/release/beta-releases.md) - Creating beta releases
+- [Community Store](docs/release/community-store.md) - Publishing to Umbrel community app store
+- [Local Testing](docs/release/local-testing.md) - Testing and deploying locally
+- [Scripts Reference](docs/release/scripts.md) - Detailed script documentation
+- [Changelog Generation](docs/release/changelog.md) - Automatic changelog generation
+- [Troubleshooting](docs/release/troubleshooting.md) - Common issues and solutions
 
 ## Service Details
 
