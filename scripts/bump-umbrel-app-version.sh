@@ -116,23 +116,17 @@ get_current_app_version() {
 
 compute_bundle_fingerprint() {
   local file=$1
-  local -a entries=()
-
   # Extract all service image lines and sort them for stability.
   # Format: service=image-ref
-  # Services are indented with 2 spaces in the compose file.
+  # Works with any indentation style (spaces or tabs)
   awk '
-    /^  [a-zA-Z0-9_-]+:$/ {
-      # Extract service name from $1 (e.g., "backend:" -> "backend")
-      svc=$1
-      gsub(":", "", svc)
-    }
+    $1 ~ /^[a-zA-Z0-9_-]+:$/ { svc=substr($1, 1, length($1)-1) }
     $1 == "image:" && svc != "" {
       img=$2
       gsub("\"", "", img)
       printf "%s=%s\n", svc, img
     }
-  ' "$file" | sort
+  ' "$file" | sort | sha256sum | awk '{print $1}'
 }
 
 update_compose_images() {
@@ -156,11 +150,11 @@ update_compose_images() {
 get_current_image_ref() {
   local svc=$1
   local file=$2
+  # Extract image reference for a service, works with any indentation style
   awk -v svc="$svc" '
-    /^  [a-zA-Z0-9_-]+:$/ {
+    $1 ~ /^[a-zA-Z0-9_-]+:$/ {
       # Extract service name from $1 (e.g., "backend:" -> "backend")
-      current_svc=$1
-      gsub(":", "", current_svc)
+      current_svc=substr($1, 1, length($1)-1)
     }
     $1 == "image:" && current_svc == svc {
       img=$2
@@ -182,8 +176,9 @@ extract_version_from_compose() {
   local compose_file="$1"
   local service="$2"
   # Extract version from image line like: image: ghcr.io/plutomining/pluto-backend:1.1.2@sha256:...
-  grep -A 20 "^  ${service}:" "$compose_file" 2>/dev/null | \
-    grep -E "^\s+image:" | \
+  # Uses POSIX-compliant [[:space:]] character class for portability
+  grep -A 20 "^[[:space:]]*${service}:" "$compose_file" 2>/dev/null | \
+    grep -E "^[[:space:]]+image:" | \
     sed -E 's|.*:([0-9]+\.[0-9]+\.[0-9]+(-[^@]+)?)@.*|\1|' | \
     head -1
 }
@@ -222,7 +217,7 @@ compare_semver_change() {
 
 compare_fingerprints() {
   local cur new
-  cur="$(compute_bundle_fingerprint "$COMPOSE" | sha256sum | awk '{print $1}')"
+  cur="$(compute_bundle_fingerprint "$COMPOSE")"
 
   # Create a temp copy with new images applied to compute the target fingerprint.
   local tmp
@@ -257,7 +252,7 @@ compare_fingerprints() {
     fi
   done
   
-  new="$(compute_bundle_fingerprint "$tmp" | sha256sum | awk '{print $1}')"
+  new="$(compute_bundle_fingerprint "$tmp")"
   rm -f "$tmp"
 
   # If we have explicit image changes, always treat as different
