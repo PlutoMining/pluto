@@ -12,6 +12,10 @@ RUN npm ci --prefix /home/node/common/utils
 RUN npm ci --prefix /home/node/common/interfaces
 RUN npm ci
 
+# Copy tooling directory (needed for tsconfig.base.json)
+RUN mkdir -p /home/node/tooling
+COPY ./tooling /home/node/tooling
+
 # Copy the rest of the files and build the application
 COPY ./frontend .
 

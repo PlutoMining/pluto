@@ -47,7 +47,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: ghcr.io/plutomining/pluto-discovery:1.1.1@sha256:c503ac0711f3dfc87a1f8c4e081b9c819219dba59abf4107cc4646363e7078e0
+    image: ghcr.io/plutomining/pluto-discovery:1.1.2@sha256:0a68b82c33df70a6be0a1493c142f1f6bf9a03747bad6fe3b7c2cf75f52c9984
     container_name: pluto_discovery_1
     network_mode: "host"
     # ports:
@@ -64,13 +64,14 @@ services:
     environment:
       - PORT=7775
       - DETECT_MOCK_DEVICES=true
-      # - MOCK_DISCOVERY_HOST=http://172.17.0.1:7770
+      - MOCK_DISCOVERY_HOST=http://localhost:7770
+      - MOCK_DEVICE_HOST=172.17.0.1
     volumes:
       # - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
       # - ./common/db:/common/db:ro # Monta il modulo in read-only
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       # - ./discovery:/home/node/app/
-      - ./data/leveldb:/home/node/app/data
+      - ./data/leveldb-release:/home/node/app/data
     user: "1000:1000"
 
   backend:
@@ -90,7 +91,7 @@ services:
     environment:
       - PORT=7776
       - AUTO_LISTEN=true
-      # - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7775
+      - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7775
       - GF_HOST=http://pluto_grafana_1:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
@@ -100,8 +101,8 @@ services:
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       # - ./backend:/home/node/app/
       # - ./grafana/templates:/home/node/app/grafana_templates/
-      - ./data/leveldb:/home/node/app/data
-      - ./data/grafana:/home/node/app/grafana
+      - ./data/leveldb-release:/home/node/app/data
+      - ./data/grafana-release:/home/node/app/grafana
     depends_on:
       prometheus:
         condition: service_healthy
@@ -141,7 +142,7 @@ services:
     image: prom/prometheus:v2.53.1
     container_name: pluto_prometheus_1
     volumes:
-      - ./data/prometheus:/prometheus
+      - ./data/prometheus-release:/prometheus
       - ./prometheus/prometheus.release.yml:/etc/prometheus/prometheus.yml
     # ports:
     #   - "9090:9090"
@@ -166,7 +167,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
     volumes:
-      - ./data/grafana:/var/lib/grafana
+      - ./data/grafana-release:/var/lib/grafana
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
       - ./grafana/datasource.release.yaml:/etc/grafana/provisioning/datasources/main.yaml

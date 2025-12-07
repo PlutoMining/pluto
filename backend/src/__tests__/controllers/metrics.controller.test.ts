@@ -22,24 +22,26 @@ describe('metrics.controller', () => {
     jest.clearAllMocks();
   });
 
-  it('streams metrics on success', async () => {
-    register.metrics.mockResolvedValue('# HELP');
-    const res = mockRes();
+  describe('getMetrics', () => {
+    it('streams metrics on success', async () => {
+      register.metrics.mockResolvedValue('# HELP');
+      const res = mockRes();
 
-    await metricsController.getMetrics({} as Request, res);
+      await metricsController.getMetrics({} as Request, res);
 
-    expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain');
-    expect(res.end).toHaveBeenCalledWith('# HELP');
-  });
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain');
+      expect(res.end).toHaveBeenCalledWith('# HELP');
+    });
 
-  it('handles errors collecting metrics', async () => {
-    register.metrics.mockRejectedValue(new Error('boom'));
-    const res = mockRes();
+    it('handles errors collecting metrics', async () => {
+      register.metrics.mockRejectedValue(new Error('boom'));
+      const res = mockRes();
 
-    await metricsController.getMetrics({} as Request, res);
+      await metricsController.getMetrics({} as Request, res);
 
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.end).toHaveBeenCalledWith('Failed to collect metrics');
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.end).toHaveBeenCalledWith('Failed to collect metrics');
+    });
   });
 });
 

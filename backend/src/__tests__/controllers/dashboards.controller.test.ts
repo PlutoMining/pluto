@@ -28,49 +28,51 @@ describe('dashboards.controller', () => {
     jest.clearAllMocks();
   });
 
-  it('returns enriched dashboards', async () => {
-    const req = {} as Request;
-    const res = mockRes();
-    fs.readdir.mockResolvedValue(['a.json', 'ignore.txt']);
-    fs.readFile.mockResolvedValue(JSON.stringify({ uid: 'abc' }));
-    grafanaService.publishDashboard.mockResolvedValue({ accessToken: 'token' });
+  describe('getDashboards', () => {
+    it('returns enriched dashboards', async () => {
+      const req = {} as Request;
+      const res = mockRes();
+      fs.readdir.mockResolvedValue(['a.json', 'ignore.txt']);
+      fs.readFile.mockResolvedValue(JSON.stringify({ uid: 'abc' }));
+      grafanaService.publishDashboard.mockResolvedValue({ accessToken: 'token' });
 
-    await dashboardsController.getDashboards(req, res);
+      await dashboardsController.getDashboards(req, res);
 
-    expect(grafanaService.publishDashboard).toHaveBeenCalledWith('abc');
-    expect(res.status).toHaveBeenCalledWith(200);
-    const response = res.json.mock.calls[0][0];
-    expect(response[0]).toMatchObject({
-      name: 'a',
-      uid: 'abc',
-      grafanaData: { accessToken: 'token' },
-      publicUrl: '/grafana/public-dashboards/token?orgId=1',
+      expect(grafanaService.publishDashboard).toHaveBeenCalledWith('abc');
+      expect(res.status).toHaveBeenCalledWith(200);
+      const response = res.json.mock.calls[0][0];
+      expect(response[0]).toMatchObject({
+        name: 'a',
+        uid: 'abc',
+        grafanaData: { accessToken: 'token' },
+        publicUrl: '/grafana/public-dashboards/token?orgId=1',
+      });
     });
-  });
 
-  it('skips files that fail to parse and keeps others', async () => {
-    const req = {} as Request;
-    const res = mockRes();
-    fs.readdir.mockResolvedValue(['bad.json']);
-    fs.readFile.mockRejectedValue(new Error('bad'));
+    it('skips files that fail to parse and keeps others', async () => {
+      const req = {} as Request;
+      const res = mockRes();
+      fs.readdir.mockResolvedValue(['bad.json']);
+      fs.readFile.mockRejectedValue(new Error('bad'));
 
-    grafanaService.publishDashboard.mockResolvedValue({ accessToken: 'token' });
+      grafanaService.publishDashboard.mockResolvedValue({ accessToken: 'token' });
 
-    await dashboardsController.getDashboards(req, res);
+      await dashboardsController.getDashboards(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith([]);
-  });
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith([]);
+    });
 
-  it('handles directory read errors', async () => {
-    const req = {} as Request;
-    const res = mockRes();
-    fs.readdir.mockRejectedValue(new Error('fail'));
+    it('handles directory read errors', async () => {
+      const req = {} as Request;
+      const res = mockRes();
+      fs.readdir.mockRejectedValue(new Error('fail'));
 
-    await dashboardsController.getDashboards(req, res);
+      await dashboardsController.getDashboards(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to read dashboard files' });
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to read dashboard files' });
+    });
   });
 });
 

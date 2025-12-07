@@ -9,7 +9,7 @@ This README provides information on both the **development** and **release** con
 ## Prerequisites
 
 - Docker and Docker Compose installed on your system.
-- Access to Docker Hub for pulling the necessary images.
+- Access to a container registry for pulling the Pluto images (by default **GitHub Container Registry** at `ghcr.io/plutomining`).
 - (Optional) Umbrel setup for deploying the application.
 
 ## Service Architecture
@@ -32,17 +32,31 @@ The project comprises several interdependent services:
 - The development environment uses locally built Docker images with `Dockerfile.development` for each service.
 - Configurations are set using environment variables or `.env` files.
 - The services run in host mode for ease of debugging and development.
+- The development compose file is `docker-compose.dev.local.yml`.
+- A Makefile is provided for convenient command shortcuts (see `make help` for all available commands).
 
 ### Build and Start
 
+Using Makefile (recommended):
 ```bash
-docker-compose -f docker-compose.development.yml up --build
+make up
+```
+
+Or using Docker Compose directly:
+```bash
+docker compose -f docker-compose.dev.local.yml up --build
 ```
 
 ### Stop Services
 
+Using Makefile (recommended):
 ```bash
-docker-compose -f docker-compose.development.yml down
+make down
+```
+
+Or using Docker Compose directly:
+```bash
+docker compose -f docker-compose.dev.local.yml down
 ```
 
 ### Service Ports
@@ -55,47 +69,64 @@ docker-compose -f docker-compose.development.yml down
 
 ## Release Environment
 
-### Configuration
+The release environment uses pre-built Docker images hosted on GitHub Container Registry. The service configurations are tailored for deployment in production environments like Umbrel.
 
-The release environment uses pre-built Docker images hosted on Docker Hub, which are defined in the `docker-compose.yml` file. The service configurations, such as environment variables and volume mounts, are tailored for deployment in production environments like Umbrel.
+### Quick Start
 
-### Setup and Start
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://your-repo-url.git
-   cd your-repo-directory
-   ```
-
-2. Start the services with Docker Compose:
-   ```bash
-   docker-compose up -d
-   ```
-
-### Stop Services
-
+**Stable release:**
 ```bash
-docker-compose down
+scripts/release.sh --bump-version --update-manifests
 ```
+
+**Beta release:**
+```bash
+GITHUB_TOKEN=your_token scripts/beta-release.sh --bump-version --update-manifests
+```
+
+### Local Testing
+
+For local testing of production-like images:
+
+**Stable release:**
+```bash
+make up-stable
+make logs-stable SERVICE=backend
+make down-stable
+```
+
+**Beta release:**
+```bash
+make up-beta
+make logs-beta SERVICE=backend
+make down-beta
+```
+
+These commands use:
+- `docker-compose.release.local.yml` (stable) - automatically updated by `scripts/release.sh`
+- `docker-compose.next.local.yml` (beta) - automatically updated by `scripts/beta-release.sh`
 
 ### Service Images
 
-- `whirmill/pluto-mock:0.4.0`
-- `whirmill/pluto-discovery:0.4.0`
-- `whirmill/pluto-backend:0.4.0`
-- `whirmill/pluto-frontend:0.4.3`
+Pluto services are pulled from **GitHub Container Registry** under the `ghcr.io/plutomining` namespace:
+
+- `ghcr.io/plutomining/pluto-mock:<version>`
+- `ghcr.io/plutomining/pluto-discovery:<version>`
+- `ghcr.io/plutomining/pluto-backend:<version>`
+- `ghcr.io/plutomining/pluto-frontend:<version>`
+- `ghcr.io/plutomining/pluto-prometheus:<version>`
+- `ghcr.io/plutomining/pluto-grafana:<version>`
+
+The monitoring stack uses upstream base images:
 - `prom/prometheus:v2.53.1`
 - `grafana/grafana:11.1.2`
-- `whirmill/pluto-init:0.0.1`
 
 ### Service Ports
 
-- **Mock Service**: `7770` (Main mock service port)
+- **Mock Service**: `7770`
 - **Backend**: `7776`
 - **Frontend**: `7777`
-- **Prometheus**: `9090` (If exposed)
-- **Grafana**: `3000` (If exposed)
+- **Prometheus**: `9090` (if exposed)
+- **Grafana**: `3000` (if exposed)
 
 ### Volume Mapping
 
@@ -104,6 +135,19 @@ The release configuration uses external directories for persistent data storage:
 - Prometheus: `/home/umbrel/umbrel/app-data/pluto/data/prometheus`
 - Grafana: `/home/umbrel/umbrel/app-data/pluto/data/grafana`
 - Backend Data: `/home/umbrel/umbrel/app-data/pluto/data/leveldb`
+
+### Release Documentation
+
+For detailed information about the release process, see the [Release Flow Documentation](docs/release-flow.md):
+
+- [Release Overview](docs/release/overview.md) - High-level overview
+- [Stable Releases](docs/release/stable-releases.md) - Creating stable releases
+- [Beta Releases](docs/release/beta-releases.md) - Creating beta releases
+- [Community Store](docs/release/community-store.md) - Publishing to Umbrel community app store
+- [Local Testing](docs/release/local-testing.md) - Testing and deploying locally
+- [Scripts Reference](docs/release/scripts.md) - Detailed script documentation
+- [Changelog Generation](docs/release/changelog.md) - Automatic changelog generation
+- [Troubleshooting](docs/release/troubleshooting.md) - Common issues and solutions
 
 ## Service Details
 
@@ -163,14 +207,29 @@ The release configuration uses external directories for persistent data storage:
 ## Troubleshooting
 
 1. Check logs for any service issues:
+
+   Using Makefile:
    ```bash
-   docker-compose logs <service_name>
+   make logs SERVICE=<service_name>
    ```
-2. Ensure the necessary environment variables are correctly set, either in the `.env` files or directly in `docker-compose.yml`.
+
+   Or using Docker Compose directly:
+   ```bash
+   docker compose -f docker-compose.dev.local.yml logs <service_name>
+   ```
+
+2. Ensure the necessary environment variables are correctly set, either in the `.env` files or directly in the compose files.
 
 3. If services fail to start, verify that the required Docker volumes have correct permissions:
    ```bash
    sudo chown -R <user>:<group> /path/to/volume
+   ```
+
+4. View service status:
+   ```bash
+   make status
+   # or
+   docker compose -f docker-compose.dev.local.yml ps
    ```
 
 ## License
