@@ -43,6 +43,10 @@ jobs:
         working-directory: discovery
         run: npm run lint
 
+      - name: Build TypeScript
+        working-directory: discovery
+        run: npm run build
+
       - name: Run tests with coverage
         working-directory: discovery
         run: npm run test
