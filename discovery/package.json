@@ -5,8 +5,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
-    "dev:debug": "nodemon --watch 'src/**/*.ts' --exec 'node --inspect-brk -r ts-node/register' src/index.ts",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'tsx' src/index.ts",
+    "dev:debug": "nodemon --watch 'src/**/*.ts' --exec 'tsx --inspect-brk' src/index.ts",
     "lint": "eslint --ext .ts src",
     "lint:fix": "npm run lint -- --fix",
     "test": "jest --runInBand",
@@ -39,7 +39,7 @@
     "jest-environment-node": "^29.7.0",
     "nodemon": "^3.1.4",
     "ts-jest": "^29.2.5",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.5.4"
   }
 }
