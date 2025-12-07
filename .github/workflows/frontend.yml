@@ -43,6 +43,10 @@ jobs:
         working-directory: frontend
         run: npm run lint
 
+      - name: Build Next.js application
+        working-directory: frontend
+        run: npm run build
+
       - name: Run tests with coverage
         working-directory: frontend
         run: npm run test
