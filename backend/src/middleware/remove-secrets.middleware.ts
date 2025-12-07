@@ -7,7 +7,7 @@
 */
 
 import { NextFunction, Request, Response } from "express";
-import { redactSecrets } from "@/utils/redact-secrets";
+import { redactSecrets } from "../utils/redact-secrets";
 
 // Middleware per rimuovere i campi segreti dalla risposta
 export const removeSecretsMiddleware = (req: Request, res: Response, next: NextFunction) => {
