@@ -37,6 +37,8 @@ export interface DeviceInfoLegacy {
   stratumUser: string;
   wifiPassword?: string;
   stratumPassword?: string;
+  stratumProtocolVersion?: 'v1' | 'v2';
+  stratumAuthorityKey?: string;
   version: string;
   boardVersion: string;
   runningPartition: string;
@@ -86,6 +88,8 @@ export interface DeviceInfoNew {
   stratumUser: string;
   wifiPassword?: string;
   stratumPassword?: string;
+  stratumProtocolVersion?: 'v1' | 'v2';
+  stratumAuthorityKey?: string;
   version: string;
   runningPartition: string;
   flipscreen: number;

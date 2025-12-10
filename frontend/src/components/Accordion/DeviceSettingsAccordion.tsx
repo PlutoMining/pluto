@@ -35,7 +35,7 @@ import {
   useTheme,
 } from "@chakra-ui/react";
 import { Device, Preset } from "@pluto/interfaces";
-import { validateDomain, validateTCPPort } from "@pluto/utils";
+import { validateDomain, validateTCPPort, validateStratumV2URL, validateBase58Check, isStratumV2URL, parseStratumURL } from "@pluto/utils";
 import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { AlertInterface, AlertStatus } from "../Alert/interfaces";
@@ -539,6 +539,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     stratumPort: "",
     stratumUser: "",
     stratumPassword: "",
+    stratumAuthorityKey: "",
     fanspeed: "",
   });
 
@@ -647,6 +648,10 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const validateFieldByName = useCallback((name: string, value: string) => {
     switch (name) {
       case "stratumURL":
+        // Support both V1 and V2 formats
+        if (isStratumV2URL(value)) {
+          return validateStratumV2URL(value);
+        }
         return validateDomain(value, { allowIP: true });
       case "stratumPort":
         const numericRegex = /^\d+$/;
@@ -654,6 +659,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
       case "stratumUser":
         // return validateBitcoinAddress(value);
         return !value.includes(".");
+      case "stratumAuthorityKey":
+        return validateBase58Check(value);
       case "fanspeed":
         return validatePercentage(value);
       case "workerName":
@@ -689,6 +696,52 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value, type } = e.target;
 
+      // Auto-detect protocol version when URL changes
+      if (name === "stratumURL" && isStratumV2URL(value)) {
+        try {
+          const parsed = parseStratumURL(value);
+          const updatedDevice = {
+            ...device,
+            info: {
+              ...device.info,
+              stratumURL: value,
+              stratumProtocolVersion: "v2",
+              stratumAuthorityKey: parsed.authorityKey || device.info.stratumAuthorityKey || "",
+              stratumPort: parsed.port || device.info.stratumPort || 0,
+            },
+          };
+          setDevice(updatedDevice);
+          validateField(name, value);
+          return;
+        } catch (error) {
+          // If parsing fails, just update URL and let validation handle it
+          const updatedDevice = {
+            ...device,
+            info: {
+              ...device.info,
+              stratumURL: value,
+              stratumProtocolVersion: "v2",
+            },
+          };
+          setDevice(updatedDevice);
+          validateField(name, value);
+          return;
+        }
+      } else if (name === "stratumURL") {
+        // V1 URL detected
+        const updatedDevice = {
+          ...device,
+          info: {
+            ...device.info,
+            stratumURL: value,
+            stratumProtocolVersion: "v1",
+          },
+        };
+        setDevice(updatedDevice);
+        validateField(name, value);
+        return;
+      }
+
       validateField(name, value);
 
       const isCheckbox = type === "checkbox";
@@ -703,7 +756,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               : 0
             : name === "stratumPort"
             ? parseInt(value.replace(/\D/g, ""), 10) || 0 // Mantieni solo numeri nell'input
-            : ["wifiPass", "stratumPassword"].includes(name)
+            : ["wifiPass", "stratumPassword", "stratumAuthorityKey"].includes(name)
             ? value
             : parseInt(value) || value,
         },
@@ -1153,16 +1206,30 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                           defaultValue={selectedPreset.configuration.stratumURL}
                         />
                       </Flex>
-                      <Flex flex={1}>
-                        <Input
-                          isDisabled={true}
-                          type="number"
-                          label="Stratum Port"
-                          name="stratumPort"
-                          id={`${selectedPreset.uuid}-stratumPort`}
-                          defaultValue={selectedPreset.configuration.stratumPort}
-                        />
-                      </Flex>
+                      {selectedPreset.configuration.stratumProtocolVersion !== "v2" && (
+                        <Flex flex={1}>
+                          <Input
+                            isDisabled={true}
+                            type="number"
+                            label="Stratum Port"
+                            name="stratumPort"
+                            id={`${selectedPreset.uuid}-stratumPort`}
+                            defaultValue={selectedPreset.configuration.stratumPort}
+                          />
+                        </Flex>
+                      )}
+                      {selectedPreset.configuration.stratumProtocolVersion === "v2" && (
+                        <Flex flex={1}>
+                          <Input
+                            isDisabled={true}
+                            type="text"
+                            label="Authority Key (V2)"
+                            name="stratumAuthorityKey"
+                            id={`${selectedPreset.uuid}-stratumAuthorityKey`}
+                            defaultValue={selectedPreset.configuration.stratumAuthorityKey}
+                          />
+                        </Flex>
+                      )}
                       <Flex flex={2}>
                         <Input
                           isDisabled={true}
@@ -1175,6 +1242,12 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                         />
                       </Flex>
                     </Flex>
+                    {(selectedPreset.configuration.stratumProtocolVersion === "v2" || 
+                      isStratumV2URL(selectedPreset.configuration.stratumURL || "")) && (
+                      <Text fontSize="xs" color="gray.500">
+                        Protocol: Stratum V2
+                      </Text>
+                    )}
                   </>
                 )}
               </Flex>
@@ -1193,24 +1266,51 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                     label="Stratum URL"
                     name="stratumURL"
                     id={`${device.mac}-stratumUrl`}
-                    placeholder="Add your stratum URL"
+                    placeholder={
+                      device.info.stratumProtocolVersion === "v2"
+                        ? "stratum2+tcp://pool.com:port/authority_key"
+                        : "Add your stratum URL"
+                    }
                     defaultValue={device.info.stratumURL}
                     onChange={handleChange}
                     error={deviceError.stratumURL}
                   />
                 </Flex>
-                <Flex flex={1}>
-                  <Input
-                    type="number"
-                    label="Stratum Port"
-                    name="stratumPort"
-                    id={`${device.mac}-stratumPort`}
-                    placeholder="Add your stratum port"
-                    defaultValue={device.info.stratumPort}
-                    onChange={handleChange}
-                    error={deviceError.stratumPort}
-                  />
-                </Flex>
+                {device.info.stratumProtocolVersion !== "v2" && (
+                  <Flex flex={1}>
+                    <Input
+                      type="number"
+                      label="Stratum Port"
+                      name="stratumPort"
+                      id={`${device.mac}-stratumPort`}
+                      placeholder="Add your stratum port"
+                      defaultValue={device.info.stratumPort}
+                      onChange={handleChange}
+                      error={deviceError.stratumPort}
+                    />
+                  </Flex>
+                )}
+                {device.info.stratumProtocolVersion === "v2" && (
+                  <>
+                    <Flex flex={1}>
+                      <Input
+                        type="text"
+                        label="Authority Key (V2)"
+                        name="stratumAuthorityKey"
+                        id={`${device.mac}-stratumAuthorityKey`}
+                        placeholder="Base58-check encoded authority key"
+                        defaultValue={device.info.stratumAuthorityKey}
+                        onChange={handleChange}
+                        error={deviceError.stratumAuthorityKey}
+                      />
+                    </Flex>
+                    <Flex flex={1} alignItems="flex-end" paddingBottom="0.5rem">
+                      <Text fontSize="xs" color="gray.500">
+                        SV2 devices route through translator/JDC automatically
+                      </Text>
+                    </Flex>
+                  </>
+                )}
                 <Flex flex={2}>
                   <Input
                     type="text"

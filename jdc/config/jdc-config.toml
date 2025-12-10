@@ -1,0 +1,48 @@
+# SV2 Job Declarator Client (JDC) Configuration
+# Schema adjusted to match jd_client_sv2 expectations.
+
+# SRI JDC config (simplified from upstream template)
+listening_address = "0.0.0.0:34265"
+
+# Version support
+max_supported_version = 2
+min_supported_version = 2
+
+# Auth keys for encrypted downstream connections
+authority_public_key = "9auqWEzQDVyd2oe1JVGFLMLHZtCo2FFqZwtKA5gd9xbuEu7PH72"
+authority_secret_key = "mkDLTBBRxdBv998612qipDYoTK3YUrqLe8uWw7gu3iXbSrn2n"
+cert_validity_sec = 3600
+
+# User identity/username for pool connection
+user_identity = "plutomining"
+
+# Difficulty / share targeting
+shares_per_minute = 6
+share_batch_size = 10
+
+# Mode: FULLTEMPLATE or COINBASEONLY
+mode = "FULLTEMPLATE"
+jdc_signature = "pluto"
+
+# Coinbase output (descriptor) used for solo/fallback
+coinbase_reward_script = "addr(1BitcoinEaterAddressDontSendf59kuE)"
+
+# Logging
+log_level = "info"
+
+# Protocol Extensions (optional)
+supported_extensions = []
+required_extensions = []
+
+# Upstreams list (backup endpoints supported)
+[[upstreams]]
+authority_pubkey = "9auqWEzQDVyd2oe1JVGFLMLHZtCo2FFqZwtKA5gd9xbuEu7PH72"
+pool_address = "75.119.150.111"
+pool_port = 43333
+jds_address = "75.119.150.111"
+jds_port = 43334
+
+# Hosted Sv2 Template Provider config (required for JDC)
+[template_provider_type.Sv2Tp]
+address = "75.119.150.111:8442"
+public_key = "9bwHCYnjhbHm4AS3pWg9MtAH83mzWohoJJJDELYBqZhDNqszDLc"

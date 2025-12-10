@@ -15,6 +15,7 @@ import dashboardsRoutes from "./routes/dashboards.routes";
 import devicesRoutes from "./routes/devices.routes";
 import presetsRoutes from "./routes/presets.routes";
 import socketRoutes from "./routes/socket.routes";
+import translatorRoutes from "./routes/translator.routes";
 import { listenToDevices } from "./services/device.service";
 import { createGrafanaOverviewDashboard } from "./services/grafana.service";
 import { removeSecretsMiddleware } from "./middleware/remove-secrets.middleware";
@@ -37,6 +38,7 @@ app.use(dashboardsRoutes);
 app.use(devicesRoutes);
 app.use(presetsRoutes);
 app.use(socketRoutes);
+app.use(translatorRoutes);
 
 server.listen(port, async () => {
   if (autoListen) {

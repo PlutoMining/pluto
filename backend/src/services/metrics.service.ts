@@ -8,6 +8,7 @@
 
 import { DeviceInfo, ExtendedDeviceInfo } from "@pluto/interfaces";
 import { logger } from "@pluto/logger";
+import { extractPoolIdentifier } from "@pluto/utils";
 import client from "prom-client";
 
 const poolMap = new Map<string, string>();
@@ -272,9 +273,10 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
       acc: { accepted: { [pool: string]: number }; rejected: { [pool: string]: number } },
       device
     ) => {
+      // Extract pool identifier (handles both V1 and V2 URLs)
+      const poolIdentifier = extractPoolIdentifier(device.stratumURL, device.stratumPort);
       const pool =
-        poolMap.get(`${device.stratumURL}:${device.stratumPort}`) ||
-        `${device.stratumURL}:${device.stratumPort}`;
+        poolMap.get(poolIdentifier) || poolIdentifier;
       acc.accepted[pool] = (acc.accepted[pool] || 0) + device.sharesAccepted;
       acc.rejected[pool] = (acc.rejected[pool] || 0) + device.sharesRejected;
       return acc;

@@ -148,6 +148,7 @@ export const generateSystemInfo = (
     stratumURL: "solo.ckpool.org",
     stratumPort: 3333,
     stratumUser: `bc1asdasdasdasdasasdasdasdasdasdasd.${hostname}`,
+    stratumProtocolVersion: "v1",
     version: firmwareVersion, // Usa la versione firmware dinamica
     boardVersion: "401",
     runningPartition: "factory",
@@ -215,6 +216,7 @@ export const generateSystemInfoAlt = (
     stratumURL: "solo.ckpool.org",
     stratumPort: 3333,
     stratumUser: `bc1asdasdasdasdasasdasdasdasdasdasd.${hostname}`,
+    stratumProtocolVersion: "v1",
     version: firmwareVersion,
     runningPartition: "ota_1",
     flipscreen: getRandomInt(0, 1),
@@ -242,6 +244,17 @@ export const generateSystemInfoAlt = (
   };
 };
 
+/**
+ * Example: Creating a V2 mock device
+ * Pass systemInfo with V2 configuration:
+ * {
+ *   stratumURL: "stratum2+tcp://pool.example.com:34254/9bXiEd8boQVhq7WddEcERUL5tyyJVFYdU8th3HfbNXK3Yw6GRXh",
+ *   stratumProtocolVersion: "v2",
+ *   stratumAuthorityKey: "9bXiEd8boQVhq7WddEcERUL5tyyJVFYdU8th3HfbNXK3Yw6GRXh",
+ *   stratumPort: 34254,
+ *   // ... other fields
+ * }
+ */
 export const generateFakeLog = (): string => {
   const logs = [
     "System started",

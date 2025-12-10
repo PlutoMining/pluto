@@ -18,6 +18,7 @@ import {
   useToken,
 } from "@chakra-ui/react";
 import { Preset } from "@pluto/interfaces";
+import { isStratumV2URL } from "@pluto/utils";
 import { MouseEvent } from "react";
 import { HostnameBadge } from "../Badge";
 import Button from "../Button/Button";
@@ -85,16 +86,32 @@ export const PresetAccordion: React.FC<PresetProps> = ({
                 defaultValue={preset.configuration.stratumURL}
               />
             </Flex>
-            <Flex flex={1}>
-              <Input
-                isDisabled={true}
-                type="number"
-                label="Stratum Port"
-                name="stratumPort"
-                id={`${preset.uuid}-stratumPort`}
-                defaultValue={preset.configuration.stratumPort}
-              />
-            </Flex>
+            {(preset.configuration.stratumProtocolVersion !== "v2" && 
+              !isStratumV2URL(preset.configuration.stratumURL || "")) && (
+              <Flex flex={1}>
+                <Input
+                  isDisabled={true}
+                  type="number"
+                  label="Stratum Port"
+                  name="stratumPort"
+                  id={`${preset.uuid}-stratumPort`}
+                  defaultValue={preset.configuration.stratumPort}
+                />
+              </Flex>
+            )}
+            {(preset.configuration.stratumProtocolVersion === "v2" || 
+              isStratumV2URL(preset.configuration.stratumURL || "")) && (
+              <Flex flex={1}>
+                <Input
+                  isDisabled={true}
+                  type="text"
+                  label="Authority Key (V2)"
+                  name="stratumAuthorityKey"
+                  id={`${preset.uuid}-stratumAuthorityKey`}
+                  defaultValue={preset.configuration.stratumAuthorityKey}
+                />
+              </Flex>
+            )}
             <Flex flex={2}>
               <Input
                 isDisabled={true}
@@ -106,6 +123,17 @@ export const PresetAccordion: React.FC<PresetProps> = ({
               />
             </Flex>
           </Flex>
+          {(preset.configuration.stratumProtocolVersion === "v2" || 
+            isStratumV2URL(preset.configuration.stratumURL || "")) && (
+            <Text fontSize="xs" color="gray.500">
+              Protocol: Stratum V2
+            </Text>
+          )}
+          {preset.configuration.stratumProtocolVersion === "v1" && (
+            <Text fontSize="xs" color="gray.500">
+              Protocol: Stratum V1
+            </Text>
+          )}
           <Text fontFamily={"accent"} fontWeight={"600"} textTransform={"uppercase"}>
             Associated Devices
           </Text>

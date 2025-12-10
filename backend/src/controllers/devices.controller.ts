@@ -10,7 +10,9 @@ import { logger } from "@pluto/logger";
 import { Request, Response } from "express";
 import * as deviceService from "../services/device.service";
 import * as presetsService from "../services/presets.service";
+import * as translatorService from "../services/translator.service";
 import { Device, DeviceFrequencyOptions, DeviceVoltageOptions } from "@pluto/interfaces";
+import { isStratumV2URL, buildStratumV2URL } from "@pluto/utils";
 import axios from "axios";
 
 export const discoverDevices = async (req: Request, res: Response) => {
@@ -261,12 +263,65 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
       const preset = await presetsService.getPreset(payload.presetUuid);
 
       if (preset) {
+        // Auto-detect protocol version if not explicitly set
+        if (!payload.info.stratumProtocolVersion) {
+          payload.info.stratumProtocolVersion = 
+            isStratumV2URL(preset.configuration.stratumURL || "") ? 'v2' : 'v1';
+        }
+        
+        // Handle V1 fields
         payload.info.stratumPort = preset.configuration.stratumPort;
         payload.info.stratumURL = preset.configuration.stratumURL;
         // payload.info.stratumUser = preset.configuration.stratumUser;
         payload.info.stratumPassword = preset.configuration.stratumPassword;
+        
+        // Handle V2 fields
+        if (preset.configuration.stratumProtocolVersion === 'v2' || 
+            payload.info.stratumProtocolVersion === 'v2') {
+          payload.info.stratumAuthorityKey = preset.configuration.stratumAuthorityKey;
+        }
       } else {
         return res.status(400).json({ error: "Associated Preset id not available" });
+      }
+    }
+
+    // If SV2 is enabled, route through translator/JDC and update their configs
+    if (payload.info.stratumProtocolVersion === 'v2') {
+      try {
+        // Update translator config with SV2 pool settings
+        await translatorService.updateTranslatorConfig(payload);
+        
+        // Update JDC config if JDC is enabled
+        if (process.env.ENABLE_JDC === 'true') {
+          await translatorService.updateJDCConfig(payload);
+        }
+
+        // Get connection URL (translator/JDC endpoint for SV2)
+        const connectionURL = translatorService.getDeviceConnectionURL(payload);
+        
+        // Route device to translator/JDC instead of direct pool
+        // Device connects as SV1 to translator, or SV2 to JDC
+        const useJDC = process.env.ENABLE_JDC === 'true';
+        if (useJDC) {
+          // For JDC, device connects as SV2
+          payload.info.stratumURL = buildStratumV2URL(
+            connectionURL.url,
+            connectionURL.port,
+            payload.info.stratumAuthorityKey || ''
+          );
+        } else {
+          // For translator, device connects as SV1
+          payload.info.stratumURL = connectionURL.url;
+          payload.info.stratumPort = connectionURL.port;
+          // Clear V2-specific fields for translator (device sees it as SV1)
+          payload.info.stratumProtocolVersion = 'v1';
+        }
+        
+        logger.info(`Routing device ${payload.mac} through ${useJDC ? 'JDC' : 'translator'} for SV2 pool`);
+      } catch (error) {
+        logger.error(`Error configuring translator/JDC for device ${payload.mac}:`, error);
+        // Continue with direct connection if translator/JDC setup fails
+        logger.warn(`Falling back to direct SV2 connection for device ${payload.mac}`);
       }
     }
 

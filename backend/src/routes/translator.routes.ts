@@ -6,9 +6,15 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-// index.ts
-export * from "./arrays";
-export * from "./promises";
-export * from "./strings";
-export * from "./validators";
-export * from "./stratum-url-parser";
+import { Router } from "express";
+import {
+  getTranslatorStatus,
+  getJDCStatus,
+} from "../controllers/translator.controller";
+
+const router = Router();
+
+router.get("/translator/status", getTranslatorStatus);
+router.get("/jdc/status", getJDCStatus);
+
+export default router;

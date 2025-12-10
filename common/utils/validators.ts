@@ -77,3 +77,74 @@ export const validateDomain = (domain: string, options: ValidationOptions = {}) 
   // Test del dominio o dell'IP
   return finalCompiledRegex.test(domain);
 };
+
+/**
+ * Validates a Stratum V2 URL format
+ * Format: stratum2+tcp://host:port/authority_key
+ */
+export const validateStratumV2URL = (url: string): boolean => {
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+
+  // Check for V2 URL prefix
+  if (!url.startsWith('stratum2+tcp://') && !url.startsWith('stratum2+ssl://')) {
+    return false;
+  }
+
+  // Validate format: stratum2+tcp://host:port/authority_key
+  const v2Regex = /^stratum2\+tcp:\/\/([^:]+):(\d+)\/(.+)$/;
+  const v2SslRegex = /^stratum2\+ssl:\/\/([^:]+):(\d+)\/(.+)$/;
+  
+  const match = url.match(v2Regex) || url.match(v2SslRegex);
+  if (!match) {
+    return false;
+  }
+
+  // Validate port
+  const port = parseInt(match[2], 10);
+  if (isNaN(port) || port < 0 || port > 65535) {
+    return false;
+  }
+
+  // Validate host (domain or IP)
+  const host = match[1];
+  if (!validateDomain(host, { allowIP: true })) {
+    return false;
+  }
+
+  // Validate authority key (base58-check)
+  const authorityKey = match[3];
+  if (!validateBase58Check(authorityKey)) {
+    return false;
+  }
+
+  return true;
+};
+
+/**
+ * Validates a base58-check encoded string
+ * Base58 uses: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
+ * (excludes 0, O, I, l to avoid confusion)
+ */
+export const validateBase58Check = (value: string): boolean => {
+  if (!value || typeof value !== 'string') {
+    return false;
+  }
+
+  // Base58 alphabet (no 0, O, I, l)
+  const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$/;
+  
+  // Check if string contains only base58 characters
+  if (!base58Regex.test(value)) {
+    return false;
+  }
+
+  // Authority keys are typically 50-60 characters (base58-check encoded public keys)
+  // Allow a reasonable range
+  if (value.length < 20 || value.length > 100) {
+    return false;
+  }
+
+  return true;
+};

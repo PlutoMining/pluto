@@ -13,7 +13,7 @@ import Button from "@/components/Button/Button";
 import { Input } from "@/components/Input/Input";
 import { Box, Flex, SimpleGrid, Text, useDisclosure, useToken, VStack } from "@chakra-ui/react";
 import { Preset } from "@pluto/interfaces";
-import { validateDomain, validateTCPPort } from "@pluto/utils";
+import { validateDomain, validateTCPPort, validateStratumV2URL, validateBase58Check, isStratumV2URL, parseStratumURL, buildStratumV2URL } from "@pluto/utils";
 import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -43,6 +43,8 @@ export const PresetEditor = ({
       stratumPort: "",
       stratumUser: "",
       stratumPassword: "",
+      stratumProtocolVersion: "",
+      stratumAuthorityKey: "",
     },
   });
 
@@ -54,6 +56,8 @@ export const PresetEditor = ({
       stratumPort: "",
       stratumUser: "",
       stratumPassword: "",
+      stratumProtocolVersion: "v1",
+      stratumAuthorityKey: "",
     },
   });
 
@@ -74,6 +78,10 @@ export const PresetEditor = ({
         setPresets(data.data);
         const newData = data.data.find((p: { uuid: string }) => p.uuid === preset.uuid);
         if (newData) {
+          // Auto-detect protocol version if not set
+          const protocolVersion = newData.configuration?.stratumProtocolVersion || 
+            (isStratumV2URL(newData.configuration?.stratumURL || "") ? "v2" : "v1");
+          
           setPreset((prevPreset) => ({
             ...prevPreset,
             ...newData,
@@ -81,6 +89,7 @@ export const PresetEditor = ({
             configuration: {
               ...prevPreset.configuration,
               ...newData.configuration,
+              stratumProtocolVersion: protocolVersion,
             },
           }));
         }
@@ -95,6 +104,10 @@ export const PresetEditor = ({
   const validateFieldByName = (name: string, value: string) => {
     switch (name) {
       case "stratumURL":
+        // Support both V1 and V2 formats
+        if (isStratumV2URL(value)) {
+          return validateStratumV2URL(value);
+        }
         return validateDomain(value, { allowIP: true });
       case "stratumPort":
         const numericRegex = /^\d+$/;
@@ -102,6 +115,8 @@ export const PresetEditor = ({
       case "stratumUser":
         // return validateBitcoinAddress(value);
         return !value.includes(".");
+      case "stratumAuthorityKey":
+        return validateBase58Check(value);
       default:
         return true;
     }
@@ -138,6 +153,43 @@ export const PresetEditor = ({
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
+    // Auto-detect protocol version when URL changes
+    if (name === "stratumURL" && isStratumV2URL(value)) {
+      try {
+        const parsed = parseStratumURL(value);
+        setPreset((prevPreset) => ({
+          ...prevPreset,
+          configuration: {
+            ...prevPreset.configuration,
+            stratumURL: value,
+            stratumProtocolVersion: "v2",
+            stratumAuthorityKey: parsed.authorityKey || prevPreset.configuration?.stratumAuthorityKey || "",
+            stratumPort: parsed.port || prevPreset.configuration?.stratumPort || "",
+          },
+        }));
+      } catch (error) {
+        // If parsing fails, just update URL and let validation handle it
+        setPreset((prevPreset) => ({
+          ...prevPreset,
+          configuration: {
+            ...prevPreset.configuration,
+            stratumURL: value,
+            stratumProtocolVersion: "v2",
+          },
+        }));
+      }
+    } else if (name === "stratumURL") {
+      // V1 URL detected
+      setPreset((prevPreset) => ({
+        ...prevPreset,
+        configuration: {
+          ...prevPreset.configuration,
+          stratumURL: value,
+          stratumProtocolVersion: "v1",
+        },
+      }));
+    }
+
     validateField(name, value);
 
     if (name === "presetName") {
@@ -145,7 +197,8 @@ export const PresetEditor = ({
         ...prevPreset,
         name: value,
       }));
-    } else {
+    } else if (name !== "stratumURL") {
+      // stratumURL is already handled above
       setPreset((prevPreset) => ({
         ...prevPreset,
         configuration: {
@@ -244,20 +297,37 @@ export const PresetEditor = ({
                   label="Stratum URL"
                   name="stratumURL"
                   id="stratumURL"
-                  placeholder="stratumURL"
+                  placeholder={
+                    preset.configuration?.stratumProtocolVersion === "v2"
+                      ? "stratum2+tcp://pool.com:port/authority_key"
+                      : "pool.com or stratum+tcp://pool.com:port"
+                  }
                   defaultValue={preset.configuration?.stratumURL}
                   onChange={handleChange}
                   error={presetErrors.configuration?.stratumURL}
                 />
-                <Input
-                  label="Stratum Port"
-                  name="stratumPort"
-                  id="stratumPort"
-                  placeholder="stratumPort"
-                  defaultValue={preset.configuration?.stratumPort}
-                  onChange={handleChange}
-                  error={presetErrors.configuration?.stratumPort}
-                />
+                {preset.configuration?.stratumProtocolVersion !== "v2" && (
+                  <Input
+                    label="Stratum Port"
+                    name="stratumPort"
+                    id="stratumPort"
+                    placeholder="stratumPort"
+                    defaultValue={preset.configuration?.stratumPort}
+                    onChange={handleChange}
+                    error={presetErrors.configuration?.stratumPort}
+                  />
+                )}
+                {preset.configuration?.stratumProtocolVersion === "v2" && (
+                  <Input
+                    label="Authority Key (V2)"
+                    name="stratumAuthorityKey"
+                    id="stratumAuthorityKey"
+                    placeholder="Base58-check encoded authority key"
+                    defaultValue={preset.configuration?.stratumAuthorityKey}
+                    onChange={handleChange}
+                    error={presetErrors.configuration?.stratumAuthorityKey}
+                  />
+                )}
                 <Input
                   label="Stratum User"
                   name="stratumUser"
@@ -278,6 +348,16 @@ export const PresetEditor = ({
                   error={presetErrors.configuration?.stratumPassword}
                 />
               </SimpleGrid>
+              {preset.configuration?.stratumProtocolVersion === "v2" && (
+                <Text fontSize="xs" color="gray.500">
+                  Protocol: Stratum V2 (URL includes port and authority key)
+                </Text>
+              )}
+              {preset.configuration?.stratumProtocolVersion === "v1" && (
+                <Text fontSize="xs" color="gray.500">
+                  Protocol: Stratum V1
+                </Text>
+              )}
             </VStack>
           </VStack>
           <Flex gap={"1rem"}>

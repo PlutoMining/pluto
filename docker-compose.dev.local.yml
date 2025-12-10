@@ -187,3 +187,68 @@ services:
       prometheus:
         condition: service_healthy # Attende che prometheus sia in stato "healthy"
     user: "472:472"
+
+  translator:
+    # SV2 Translator Proxy (tProxy) - translates SV1 to SV2
+    # Built from source: https://github.com/stratum-mining/sv2-apps
+    build:
+      context: translator
+      dockerfile: Dockerfile
+      args:
+        # Pin to specific version/tag for reproducibility
+        # Options: main, v0.1.0, or specific commit hash
+        SV2_APPS_VERSION: main
+        SV2_APPS_REPO: https://github.com/stratum-mining/sv2-apps.git
+    ports:
+      - "34255:34255" # SV1 upstream port (miners connect here)
+    environment:
+      - RUST_LOG=info
+      # Translator config will be mounted as TOML file
+      # Environment variables can override config values
+    volumes:
+      - ./translator/config:/etc/translator:ro
+      - ./data/translator:/var/lib/translator
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "nc -z localhost 34255 || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: on-failure
+    depends_on:
+      - backend
+
+  jdc:
+    # SV2 Job Declarator Client (JDC) - improves efficiency and decentralization
+    # Built from source: https://github.com/stratum-mining/sv2-apps
+    build:
+      context: jdc
+      dockerfile: Dockerfile
+      args:
+        # Pin to specific version/tag for reproducibility
+        # Options: main, v0.1.0, or specific commit hash
+        SV2_APPS_VERSION: main
+        SV2_APPS_REPO: https://github.com/stratum-mining/sv2-apps.git
+    ports:
+      - "34265:34265" # JDC listening port (miners connect here)
+    environment:
+      - RUST_LOG=info
+      # JDC config will be mounted as TOML file
+      # Environment variables can override config values
+    volumes:
+      - ./jdc/config:/etc/jdc:ro
+      - ./data/jdc:/var/lib/jdc
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "nc -z localhost 34265 || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: on-failure
+    depends_on:
+      - backend
+      - translator

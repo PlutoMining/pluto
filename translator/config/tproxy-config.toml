@@ -1,0 +1,40 @@
+# SV2 Translator Proxy Configuration (SV1 -> SV2)
+# Based on sv2-apps translator config examples
+
+# SV1 downstream (miners) listener
+downstream_address = "0.0.0.0"
+downstream_port = 34255
+
+# Version support
+max_supported_version = 2
+min_supported_version = 2
+
+# Extranonce2 size for downstream connections
+# Max value for CGminer: 8, Min value: 2
+downstream_extranonce2_size = 4
+
+# User identity/username for pool connection
+# This will be appended with a counter for each mining client (e.g., username.miner1, username.miner2)
+user_identity = "plutomining"
+
+# Aggregate channels: if true, all miners share one upstream channel; if false, each miner gets its own channel
+aggregate_channels = false
+
+# Protocol extensions configuration
+supported_extensions = []
+required_extensions = []
+
+# Difficulty params
+[downstream_difficulty_config]
+# hashes/s of the weakest miner that will be connecting (10 Th/s = 10_000_000_000_000.0)
+min_individual_miner_hashrate = 10_000_000_000_000.0
+# target number of shares per minute the miner should be sending
+shares_per_minute = 6.0
+# enable variable difficulty adjustment (true by default, set to false when using with JDC)
+enable_vardiff = true
+
+# SV2 upstream (pool) connections
+[[upstreams]]
+address = "75.119.150.111"
+port = 43333
+authority_pubkey = "9auqWEzQDVyd2oe1JVGFLMLHZtCo2FFqZwtKA5gd9xbuEu7PH72"

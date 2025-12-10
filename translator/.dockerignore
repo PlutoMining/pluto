@@ -1,0 +1,14 @@
+# Ignore config files (mounted at runtime)
+config/
+*.toml
+
+# Ignore data directories
+data/
+
+# Ignore git
+.git/
+.gitignore
+
+# Ignore documentation
+README.md
+*.md
