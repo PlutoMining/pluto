@@ -1,0 +1,136 @@
+services:
+  mock:
+    build:
+      context: mock
+      dockerfile: Dockerfile.development
+    ports:
+      - "7770:7770"
+      - "7751:7751"
+      - "7752:7752"
+      - "7753:7753"
+      - "7754:7754"
+      - "7755:7755"
+      - "7756:7756"
+      - "7757:7757"
+      - "7758:7758"
+      - "7759:7759"
+      - "7760:7760"
+    pid: host
+    restart: on-failure
+    env_file:
+      - mock/.env.local
+    environment:
+      - LISTING_PORT=7770
+      - PORTS=7751,7752,7753,7754,7755,7756,7757,7758,7759,7760
+      - LOGS_PUB_ENABLED=false
+    volumes:
+      - ./common/logger:/home/node/common/logger
+      - ./common/interfaces:/home/node/common/interfaces
+      - ./mock:/home/node/app/
+    user: "1000:1000"
+
+  discovery:
+    build:
+      context: .
+      dockerfile: discovery/Dockerfile.optimized
+    network_mode: "host"
+    privileged: true
+    pid: host
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    restart: on-failure
+    env_file:
+      - discovery/.env.local
+    environment:
+      - PORT=7775
+      - DETECT_MOCK_DEVICES=true
+    volumes:
+      - ./data/leveldb:/home/node/app/data
+    user: "1000:1000"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.optimized
+    pid: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: on-failure
+    env_file:
+      - backend/.env.local
+    environment:
+      - PORT=7776
+      - AUTO_LISTEN=true
+      - GF_HOST=http://grafana:3000
+      - DELETE_DATA_ON_DEVICE_REMOVE=true
+    volumes:
+      - ./data/leveldb:/home/node/app/data
+      - ./data/grafana:/home/node/app/grafana
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    user: "1000:1000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.optimized
+    ports:
+      - "7777:7777"
+    pid: host
+    restart: on-failure
+    depends_on:
+      - backend
+    environment:
+      - PORT=7777
+      - GF_HOST=http://grafana:3000
+      - BACKEND_DESTINATION_HOST=http://pluto-backend-1:7776
+    volumes:
+      - ./umbrel-apps/pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
+    user: "1000:1000"
+
+  prometheus:
+    build:
+      context: prometheus
+      dockerfile: Dockerfile.development
+    volumes:
+      - ./data/prometheus:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    pid: host
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "wget --spider --quiet http://localhost:9090/-/ready || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    user: "65534:65534"
+
+  grafana:
+    build:
+      context: grafana
+      dockerfile: Dockerfile.development
+    pid: host
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "wget --spider --quiet http://localhost:3000/api/health || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    user: "472:472"
