@@ -9,10 +9,30 @@ COPY ./frontend/package*.json ./
 RUN mkdir -p /home/node/common
 COPY ./common /home/node/common
 
-# Install all dependencies (combine RUN commands for better caching)
-RUN npm ci --prefix /home/node/common/utils && \
-    npm ci --prefix /home/node/common/interfaces && \
-    npm ci
+# Configure npm for better reliability in multi-arch builds (especially ARM64/QEMU)
+# Increase timeout and retries to handle slow network requests in emulated environments
+RUN npm config set fetch-timeout 600000 && \
+    npm config set fetch-retries 10 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
+# Install all dependencies with retry logic for network reliability
+# Retry up to 3 times with exponential backoff for transient network failures in ARM64/QEMU builds
+RUN for i in 1 2 3; do \
+      if npm ci --prefix /home/node/common/utils && \
+         npm ci --prefix /home/node/common/interfaces && \
+         npm ci; then \
+        echo "Dependencies installed successfully on attempt $i"; \
+        exit 0; \
+      else \
+        if [ $i -eq 3 ]; then \
+          echo "All retry attempts failed"; \
+          exit 1; \
+        fi; \
+        echo "Attempt $i failed, retrying in $((i * 10)) seconds..."; \
+        sleep $((i * 10)); \
+      fi; \
+    done
 
 # Copy tooling directory (needed for tsconfig.base.json)
 RUN mkdir -p /home/node/tooling
