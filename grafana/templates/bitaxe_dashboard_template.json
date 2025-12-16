@@ -553,7 +553,7 @@
                             }
                         ]
                     },
-                    "unit": "rotrpm"
+                    "unit": "percent"
                 },
                 "overrides": []
             },
@@ -601,7 +601,7 @@
                     "useBackend": false
                 }
             ],
-            "title": "Fan Speed",
+            "title": "Fan Speed (%)",
             "type": "bargauge"
         },
         {

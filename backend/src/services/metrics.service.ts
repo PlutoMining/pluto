@@ -48,7 +48,7 @@ export const createMetricsForDevice = (hostname: string) => {
 
   const fanSpeedGauge = new client.Gauge({
     name: `${prefix}fanspeed_rpm`,
-    help: "Current fan speed in RPM",
+    help: "Current fan speed in RPM or %",
     registers: [globalRegister],
   });
 
