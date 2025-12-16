@@ -84,6 +84,10 @@ main() {
 
   log "Generating changelog from conventional commits..."
 
+  # Fetch tags to ensure semantic-release can find previous releases
+  log "Fetching tags from remote..."
+  git fetch --tags origin || git fetch --tags || log_warning "Failed to fetch tags, continuing anyway"
+
   # Get current branch
   local current_branch
   current_branch=$(git rev-parse --abbrev-ref HEAD)
@@ -92,6 +96,8 @@ main() {
   local semantic_release_cmd=("npx" "semantic-release")
   local temp_config=""
   local original_config_backup=""
+  
+  # Initialize original_config_backup variable (will be set if we need to backup config)
   
   if $DRY_RUN; then
     semantic_release_cmd+=("--dry-run")
@@ -172,14 +178,168 @@ EOF
     if [[ "$current_branch" != "main" ]]; then
       err "Changelog generation only works on 'main' branch for stable releases. Current branch: $current_branch"
     fi
+    
+    # If --skip-commit is used, disable the git plugin to prevent commits
+    # We only want to generate the changelog, not commit it
+    if $SKIP_COMMIT; then
+      log "Skipping commit - will generate changelog but not commit it"
+      
+      # Backup original config if it exists
+      if [[ -f ".releaserc.json" ]]; then
+        if [[ -z "$original_config_backup" ]]; then
+          original_config_backup=$(mktemp)
+          cp ".releaserc.json" "$original_config_backup"
+        fi
+      fi
+      
+      # Create temporary config without the git plugin
+      temp_config=$(mktemp --suffix=.json)
+      # Use jq to remove the git plugin, or fall back to manual removal if jq is not available
+      if command_exists jq; then
+        # Filter out plugins that are arrays starting with "@semantic-release/git"
+        # Use a more explicit check to avoid "Cannot index string with number" error
+        jq '.plugins |= [.[] | select((type != "array") or (.[0] != "@semantic-release/git"))]' ".releaserc.json" > "$temp_config" || {
+          log_warning "Failed to use jq to remove git plugin, using fallback method"
+          # Fallback: manually create config without git plugin
+          cat > "$temp_config" <<'EOF'
+{
+  "branches": [
+    "main"
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "successComment": false,
+        "releasedLabels": false
+      }
+    ]
+  ],
+  "preset": "angular",
+  "releaseRules": [
+    {
+      "type": "feat",
+      "release": "minor"
+    },
+    {
+      "type": "fix",
+      "release": "patch"
+    },
+    {
+      "type": "perf",
+      "release": "patch"
+    },
+    {
+      "breaking": true,
+      "release": "major"
+    }
+  ],
+  "tagFormat": "v${version}",
+  "dryRun": false
+}
+EOF
+        }
+      else
+        # Fallback: manually create config without git plugin
+        # Read the original config and remove the git plugin entry
+        cat > "$temp_config" <<'EOF'
+{
+  "branches": [
+    "main"
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "successComment": false,
+        "releasedLabels": false
+      }
+    ]
+  ],
+  "preset": "angular",
+  "releaseRules": [
+    {
+      "type": "feat",
+      "release": "minor"
+    },
+    {
+      "type": "fix",
+      "release": "patch"
+    },
+    {
+      "type": "perf",
+      "release": "patch"
+    },
+    {
+      "breaking": true,
+      "release": "major"
+    }
+  ],
+  "tagFormat": "v${version}",
+  "dryRun": false
+}
+EOF
+      fi
+      
+      # Temporarily replace .releaserc.json
+      cp "$temp_config" ".releaserc.json"
+    fi
   fi
 
   # Set environment variables for semantic-release
-  export GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+  # Ensure GITHUB_TOKEN is exported so semantic-release can use it
+  if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+    log_warning "GITHUB_TOKEN not set. GitHub releases will not be created."
+    log_warning "Set GITHUB_TOKEN in .env file or environment variable to enable GitHub releases."
+  else
+    export GITHUB_TOKEN
+    log "GITHUB_TOKEN is set (from .env or environment)"
+  fi
   
-  if [[ -z "$GITHUB_TOKEN" ]] && ! $DRY_RUN; then
-    log "Warning: GITHUB_TOKEN not set. GitHub releases will not be created."
-    log "Set GITHUB_TOKEN environment variable to enable GitHub releases."
+  # If not in script's dry-run mode, tell semantic-release to run for real (not in dry-run)
+  # This prevents semantic-release from automatically detecting non-CI and running in dry-run mode
+  if ! $DRY_RUN; then
+    semantic_release_cmd+=("--no-dry-run")
+    semantic_release_cmd+=("--no-ci")
+  fi
+
+  # Configure git to use GITHUB_TOKEN for authentication if available
+  # This prevents git from prompting for credentials when semantic-release pushes tags
+  if [[ -n "$GITHUB_TOKEN" ]]; then
+    local remote_url
+    remote_url=$(git config --get remote.origin.url 2>/dev/null || echo "")
+    
+    if [[ -n "$remote_url" ]]; then
+      # If remote is HTTPS, configure git to use the token via URL rewrite
+      if [[ "$remote_url" =~ ^https:// ]]; then
+        # Extract host and path (e.g., github.com/user/repo)
+        local host_path
+        host_path=$(echo "$remote_url" | sed -E 's|^https://([^/]+)/(.+)$|\1/\2|' | sed 's|\.git$||')
+        
+        # Configure git to rewrite HTTPS URLs to include the token
+        # This makes git operations use the token automatically
+        git config --local url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/" || true
+      elif [[ "$remote_url" =~ ^git@ ]]; then
+        # For SSH remotes, GITHUB_TOKEN isn't needed (uses SSH keys)
+        log "Using SSH remote, GITHUB_TOKEN not needed for git operations"
+      fi
+    fi
   fi
 
   # Run semantic-release
@@ -199,6 +359,11 @@ EOF
   if [[ -n "$original_config_backup" && -f "$original_config_backup" ]]; then
     cp "$original_config_backup" ".releaserc.json"
     rm -f "$original_config_backup"
+  fi
+  
+  # Clean up git URL rewrite configuration if we added it
+  if [[ -n "$GITHUB_TOKEN" ]]; then
+    git config --local --unset url."https://${GITHUB_TOKEN}@github.com/".insteadOf 2>/dev/null || true
   fi
   
   if [[ $exit_code -eq 0 ]]; then

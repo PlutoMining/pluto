@@ -22,7 +22,7 @@ services:
     user: "1000:1000"
 
   backend:
-    image: ghcr.io/plutomining/pluto-backend:1.1.2@sha256:9757b7ba547b55f975513b5fe8d7b91dd532f3a862c7fa7fb4f72ee98bed1758
+    image: ghcr.io/plutomining/pluto-backend:1.1.3@sha256:9fb428da13c0bc56c9906d9aaf8583595ee294caf8c9469ff05f2eb7a7742f6e
     pid: host
     restart: on-failure
     environment:
@@ -71,7 +71,7 @@ services:
     user: "65534:65534"
 
   grafana:
-    image: ghcr.io/plutomining/pluto-grafana:1.1.3@sha256:a268c8cd80f109a37afab74d6c1bc03beb093b795b4720ce2c5bdab326656640
+    image: ghcr.io/plutomining/pluto-grafana:1.1.4@sha256:79764fce6f92879453ed1ae01489d9db4e27891a0137327ffc5083833619622b
     pid: host
     environment:
       - GF_SECURITY_ADMIN_USER=admin
