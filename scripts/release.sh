@@ -200,53 +200,21 @@ generate_changelog() {
   log_step "Generating changelog from conventional commits..."
 
   if $DRY_RUN; then
-    log "[dry-run] Would generate changelog using semantic-release"
+    log "[dry-run] Would generate changelog using generate-changelog.sh --skip-commit"
     return 0
   fi
 
-  # Check if semantic-release is available
-  if [[ ! -d "node_modules/semantic-release" ]]; then
-    log_warning "semantic-release not found. Installing dependencies..."
-    if ! npm install --silent >/dev/null 2>&1; then
-      log_warning "Failed to install dependencies. Skipping changelog generation."
-      return 0
-    fi
-  fi
-
-  # For stable releases, we're on main branch - semantic-release will work
-  # Note: With squash-and-merge, the PR title should follow conventional commits
-  # for semantic-release to detect the change type correctly
-  local current_branch
-  current_branch=$(git rev-parse --abbrev-ref HEAD)
-  
-  if [[ "$current_branch" != "main" ]]; then
-    log_warning "Not on main branch ($current_branch). Changelog generation may not work as expected."
-    log_warning "For stable releases, changelog should be generated on main after PR merge."
-    log_warning "Skipping changelog generation for this release."
-    return 0
-  fi
-
-  # Run changelog generation
-  if command_exists npx; then
-    local changelog_cmd=("npx" "semantic-release")
-    
-    # Set GITHUB_TOKEN if available
-    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-      export GITHUB_TOKEN
-    fi
-
-    if "${changelog_cmd[@]}" >/dev/null 2>&1; then
-      if [[ -f "CHANGELOG.md" ]]; then
-        log_success "Changelog generated successfully"
-      else
-        log "No changes detected - changelog is up to date"
-      fi
+  # Use the dedicated changelog script with --skip-commit to avoid commit failures
+  # on protected branches. All changes will be left uncommitted for PR workflow.
+  if "${SCRIPT_ROOT}/scripts/generate-changelog.sh" --skip-commit; then
+    if [[ -f "CHANGELOG.md" ]]; then
+      log_success "Changelog generated successfully (not committed)"
     else
-      log_warning "Changelog generation failed. Continuing without changelog update."
-      log_warning "Note: With squash-and-merge, ensure PR titles follow conventional commits."
+      log "No changes detected - changelog is up to date"
     fi
   else
-    log_warning "npx not found. Skipping changelog generation."
+    log_warning "Changelog generation failed. Continuing without changelog update."
+    log_warning "Note: With squash-and-merge, ensure PR titles follow conventional commits."
   fi
 }
 
@@ -496,6 +464,39 @@ main() {
   # Generate changelog automatically after successful release
   if ! $DRY_RUN; then
     generate_changelog
+    
+    # Inform user about uncommitted changes for PR workflow
+    if ! $SKIP_CHANGELOG && [[ -f "CHANGELOG.md" ]]; then
+      # Get the new version from the first service that was updated
+      local release_version=""
+      for service in "${AVAILABLE_SERVICES[@]}"; do
+        if [[ -v service_versions["$service"] ]]; then
+          release_version="${service_versions[$service]}"
+          break
+        fi
+      done
+      
+      log ""
+      log "Release completed successfully!"
+      log "All changes have been left uncommitted for PR workflow:"
+      log "  - package.json files (version bumps)"
+      if $UPDATE_MANIFESTS; then
+        log "  - umbrel-app.yml and docker-compose.yml (manifest updates)"
+      fi
+      log "  - CHANGELOG.md (changelog updates)"
+      log ""
+      if [[ -n "$release_version" ]]; then
+        log "Next steps:"
+        log "  1. Create a branch: git checkout -b chore/release-v${release_version}"
+        log "  2. Commit changes: git add . && git commit -m 'chore(release): bump versions to v${release_version}'"
+        log "  3. Push and create PR: git push origin chore/release-v${release_version}"
+      else
+        log "Next steps:"
+        log "  1. Create a branch: git checkout -b chore/release-$(date +%Y%m%d)"
+        log "  2. Commit changes: git add . && git commit -m 'chore(release): update release files'"
+        log "  3. Push and create PR: git push origin chore/release-$(date +%Y%m%d)"
+      fi
+    fi
   fi
 
   # Print summary

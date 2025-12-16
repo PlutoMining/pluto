@@ -11,8 +11,10 @@ After a successful release on the `main` branch, the scripts automatically:
 1. Analyze commits since the last release tag (or all commits if no tags exist yet)
 2. Generate `CHANGELOG.md` based on conventional commit messages
 3. Create a git tag (e.g., `v1.0.0`) to mark the release
-4. Commit the changelog update (if changes were made)
+4. **Leave changelog uncommitted** (uses `--skip-commit` to work with protected branches)
 5. Optionally create a GitHub release with the changelog
+
+**Note**: The changelog is generated but not committed automatically. All release changes (package.json, manifests, CHANGELOG.md) are left uncommitted for PR workflow. See [Stable Releases](./stable-releases.md) for the complete post-release workflow.
 
 ### Preventing Duplicates
 
@@ -58,11 +60,15 @@ You can also generate the changelog independently:
 scripts/generate-changelog.sh --dry-run
 
 # Generate changelog without committing (must be on main branch)
+# This is the default behavior when called from release.sh
 scripts/generate-changelog.sh --skip-commit
 
 # Generate and commit changelog (must be on main branch)
+# Note: This will fail on protected branches - use --skip-commit instead
 scripts/generate-changelog.sh
 ```
+
+**Important**: When called from `release.sh`, changelog generation uses `--skip-commit` by default to work with protected branches. All changes are left uncommitted for PR workflow.
 
 ### Testing Changelog Generation
 
