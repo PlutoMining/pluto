@@ -1,0 +1,89 @@
+# Stage 1: Build
+FROM node:24-alpine AS builder
+
+# Set the working directory
+WORKDIR /home/node/app
+
+# Copy package.json and package-lock.json and install dependencies
+COPY ./frontend/package*.json ./
+RUN mkdir -p /home/node/common
+COPY ./common /home/node/common
+
+# Configure npm for better reliability in multi-arch builds (especially ARM64/QEMU)
+# Increase timeout and retries to handle slow network requests in emulated environments
+RUN npm config set fetch-timeout 600000 && \
+    npm config set fetch-retries 10 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
+# Install all dependencies with retry logic for network reliability
+# Retry up to 3 times with exponential backoff for transient network failures in ARM64/QEMU builds
+RUN for i in 1 2 3; do \
+      if npm ci --prefix /home/node/common/utils && \
+         npm ci --prefix /home/node/common/interfaces && \
+         npm ci; then \
+        echo "Dependencies installed successfully on attempt $i"; \
+        exit 0; \
+      else \
+        if [ $i -eq 3 ]; then \
+          echo "All retry attempts failed"; \
+          exit 1; \
+        fi; \
+        echo "Attempt $i failed, retrying in $((i * 10)) seconds..."; \
+        sleep $((i * 10)); \
+      fi; \
+    done
+
+# Copy tooling directory (needed for tsconfig.base.json)
+RUN mkdir -p /home/node/tooling
+COPY ./tooling /home/node/tooling
+
+# Copy the rest of the files and build the application
+COPY ./frontend .
+
+# Compile TypeScript modules and build frontend (combine RUN commands)
+RUN npm run build --prefix /home/node/common/utils && \
+    npm run build --prefix /home/node/common/interfaces && \
+    npm run build
+
+# Stage 2: Runtime (using Next.js standalone output)
+FROM node:24-alpine
+
+# Set the working directory
+WORKDIR /home/node/app
+
+# Copy Next.js standalone output (includes only necessary files and dependencies)
+# The standalone build automatically includes file: dependencies and their required node_modules
+COPY --from=builder /home/node/app/.next/standalone ./
+COPY --from=builder /home/node/app/.next/static ./.next/static
+COPY --from=builder /home/node/app/public ./public
+
+# Ensure common packages are accessible for file: dependency resolution
+# Next.js standalone should include these in node_modules, but we ensure dist files are accessible
+# for subpath imports (@pluto/utils/strings, etc.)
+RUN mkdir -p /home/node/common/utils /home/node/common/interfaces
+COPY --from=builder /home/node/common/utils/dist /home/node/common/utils/dist
+COPY --from=builder /home/node/common/interfaces/dist /home/node/common/interfaces/dist
+# Copy utils dist JS files to root for subpath imports
+COPY --from=builder /home/node/common/utils/dist/strings.js /home/node/common/utils/strings.js
+COPY --from=builder /home/node/common/utils/dist/arrays.js /home/node/common/utils/arrays.js
+COPY --from=builder /home/node/common/utils/dist/promises.js /home/node/common/utils/promises.js
+COPY --from=builder /home/node/common/utils/dist/validators.js /home/node/common/utils/validators.js
+
+# Change ownership to allow access for the `node` user
+RUN chown -R node:node /home/node
+
+# Switch to the `node` user
+USER node
+
+# Expose the port (will be overridden by docker-compose PORT env var)
+EXPOSE 3000
+
+# Set environment variable for production
+ENV NODE_ENV=production
+ENV HOSTNAME="0.0.0.0"
+# PORT will be set by docker-compose environment variable
+
+# Start the application using the standalone server
+# Next.js standalone server.js automatically respects PORT environment variable
+CMD ["node", "server.js"]

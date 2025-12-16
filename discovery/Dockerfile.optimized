@@ -1,0 +1,77 @@
+# Stage 1: Build
+FROM node:24-alpine AS builder
+
+# Set the working directory
+WORKDIR /home/node/app
+
+# Copy package.json and package-lock.json and install dependencies
+COPY ./discovery/package*.json ./
+RUN mkdir -p /home/node/common
+COPY ./common /home/node/common
+
+# Install all dependencies (combine RUN commands for better caching)
+RUN npm ci --prefix /home/node/common/db && \
+    npm ci --prefix /home/node/common/interfaces && \
+    npm ci --prefix /home/node/common/logger && \
+    npm ci
+
+# Copy tooling directory (needed for tsconfig.base.json)
+RUN mkdir -p /home/node/tooling
+COPY ./tooling /home/node/tooling
+
+# Copy the rest of the files and build the application
+COPY ./discovery .
+
+# Compile TypeScript modules and build discovery (combine RUN commands)
+RUN npm run build --prefix /home/node/common/db && \
+    npm run build --prefix /home/node/common/interfaces && \
+    npm run build --prefix /home/node/common/logger && \
+    npm run build
+
+# Stage 2: Runtime
+FROM node:24-alpine
+
+# Install arp-scan and libcap in a single layer
+# Use --no-scripts to skip trigger execution (fixes QEMU emulation issues in ARM64 builds)
+# Triggers are mainly for busybox setup which isn't critical - packages install correctly
+RUN apk add --no-cache --no-scripts arp-scan libcap
+
+# Set the working directory
+WORKDIR /home/node/app
+
+# Copy package files first for better layer caching
+COPY ./discovery/package*.json ./
+
+# Install only production dependencies
+ENV NODE_ENV=production
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Copy files from the build stage
+COPY --from=builder /home/node/app/dist ./dist
+
+# Copy built outputs and package files, then prune to production-only dependencies
+# This preserves file: dependency resolution while removing dev deps
+RUN mkdir -p /home/node/common/db /home/node/common/interfaces /home/node/common/logger
+COPY --from=builder /home/node/common/db/dist /home/node/common/db/dist
+COPY --from=builder /home/node/common/interfaces/dist /home/node/common/interfaces/dist
+COPY --from=builder /home/node/common/logger/dist /home/node/common/logger/dist
+COPY --from=builder /home/node/common/db/package*.json /home/node/common/db/
+COPY --from=builder /home/node/common/interfaces/package*.json /home/node/common/interfaces/
+COPY --from=builder /home/node/common/logger/package*.json /home/node/common/logger/
+# Copy node_modules from builder (includes all deps) then prune dev dependencies
+COPY --from=builder /home/node/common/db/node_modules /home/node/common/db/node_modules
+COPY --from=builder /home/node/common/logger/node_modules /home/node/common/logger/node_modules
+# Prune dev dependencies to reduce size
+RUN npm prune --omit=dev --prefix /home/node/common/db && \
+    npm prune --omit=dev --prefix /home/node/common/logger && \
+    npm cache clean --force
+
+# Change ownership and set capabilities in a single layer
+RUN chown -R node:node /home/node && \
+    setcap cap_net_raw,cap_net_admin=eip /usr/bin/arp-scan
+
+# Switch to the `node` user
+USER node
+
+# Start the application
+CMD ["npm", "start"]
