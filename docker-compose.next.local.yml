@@ -79,7 +79,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: ghcr.io/plutomining/pluto-backend:1.1.2@sha256:9757b7ba547b55f975513b5fe8d7b91dd532f3a862c7fa7fb4f72ee98bed1758
+    image: ghcr.io/plutomining/pluto-backend:1.1.3-beta.0@sha256:8458391957c809806f20504025ff04b508d97493ace5bde527329b1be0e21918
     container_name: pluto-next_backend_1
     # ports:
     #   - "7676:7676"

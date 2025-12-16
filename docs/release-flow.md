@@ -16,6 +16,7 @@ There is also an optional **direct-to-device** flow for internal testing on a lo
 **Stable release:**
 ```bash
 scripts/release.sh --bump-version --update-manifests
+# After script completes, create PR to commit changes (package.json, manifests, CHANGELOG.md)
 ```
 
 **Beta release:**
@@ -29,7 +30,8 @@ GITHUB_TOKEN=your_token scripts/beta-release.sh --bump-version --update-manifest
 
 Stable releases are built from the `main` branch and published to the `pluto` app. They use semantic versioning (e.g., `1.2.3`) and are intended for production use.
 
-See [Stable Releases Guide](./release/stable-releases.md) for detailed instructions.
+See [Stable Releases Guide](./release/stable-rel
+eases.md) for detailed instructions.
 
 ### Beta Releases
 

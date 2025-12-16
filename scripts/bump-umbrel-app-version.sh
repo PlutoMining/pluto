@@ -398,13 +398,23 @@ main() {
   if [[ "$CHANNEL" == "stable" ]]; then
     next_version="${major}.${minor}.${patch}"
   else
-    # For beta, append -beta.0 or increment beta number
-    local beta_suffix="${current_app_version#*-}"
-    if [[ "$beta_suffix" =~ ^beta\.([0-9]+)$ ]]; then
-      local beta_num="${BASH_REMATCH[1]}"
-      beta_num=$((beta_num + 1))
-      next_version="${major}.${minor}.${patch}-beta.${beta_num}"
+    # For beta, check if base version changed
+    local current_base="${current_app_version%%-*}"
+    local new_base="${major}.${minor}.${patch}"
+
+    if [[ "$current_base" == "$new_base" ]]; then
+      # Base version unchanged - increment beta number
+      local beta_suffix="${current_app_version#*-}"
+      if [[ "$beta_suffix" =~ ^beta\.([0-9]+)$ ]]; then
+        local beta_num="${BASH_REMATCH[1]}"
+        beta_num=$((beta_num + 1))
+        next_version="${major}.${minor}.${patch}-beta.${beta_num}"
+      else
+        # No beta suffix found, start at beta.0
+        next_version="${major}.${minor}.${patch}-beta.0"
+      fi
     else
+      # Base version changed - reset beta to 0
       next_version="${major}.${minor}.${patch}-beta.0"
     fi
   fi

@@ -48,7 +48,7 @@ export const createMetricsForDevice = (hostname: string) => {
 
   const fanSpeedGauge = new client.Gauge({
     name: `${prefix}fanspeed_rpm`,
-    help: "Current fan speed in RPM",
+    help: "Current fan speed in RPM or %",
     registers: [globalRegister],
   });
 
@@ -241,7 +241,10 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   const totalPower = devicesData.reduce((acc, device) => acc + device.power, 0);
   const sharesAccepted = devicesData.reduce((acc, device) => acc + device.sharesAccepted, 0);
   const sharesRejected = devicesData.reduce((acc, device) => acc + device.sharesRejected, 0);
-  const efficiency = totalHashrate / totalPower;
+  // Fleet efficiency (J/TH) is computed with the same formula used for single devices:
+  // efficiency (J / TH) = power (W) / (hashrate GH/s / 1000)
+  const efficiency =
+    totalPower > 0 && totalHashrate > 0 ? totalPower / (totalHashrate / 1000) : 0;
 
   // Aggiorna le metriche aggregate
   totalHardwareGauge.set(totalDevices);
