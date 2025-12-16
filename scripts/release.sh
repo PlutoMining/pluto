@@ -27,6 +27,8 @@ DRY_RUN=false
 SKIP_CHANGELOG=false
 VERBOSE=false
 QUIET=false
+CUSTOM_SERVICES=()
+DIFF_BASE="${RELEASE_DIFF_BASE:-HEAD~1}"
 
 APP_ID="pluto"
 APP_DIR="umbrel-apps/pluto"
@@ -45,6 +47,8 @@ Options:
   --update-manifests           Update pluto umbrel-app manifests after building images
   --sync-to-umbrel             Sync manifests to Umbrel device (requires --update-manifests)
   --skip-changelog             Skip automatic changelog generation
+  --services "svc1,svc2"       Comma-separated list of services to release (override auto-detection)
+  --diff-base <ref>            Git ref to detect changes from (default: HEAD~1)
   --verbose                    Enable verbose logging
   --quiet                      Minimal output (errors only)
   --dry-run                    Print actions without building/pushing or editing files
@@ -72,6 +76,31 @@ check_git_branch() {
   if [[ "$branch" != "main" ]]; then
     err "You must be on the 'main' branch to release."
   fi
+}
+
+# Function to detect which services have changed
+detect_changed_services() {
+  command_exists git || err "git is required"
+  git fetch -q origin || true
+  
+  # Try to detect changes, but handle case where DIFF_BASE might not exist
+  if ! git rev-parse --verify "${DIFF_BASE}" >/dev/null 2>&1; then
+    # If DIFF_BASE doesn't exist, check if we can use origin/main
+    if git rev-parse --verify "origin/main" >/dev/null 2>&1; then
+      DIFF_BASE="origin/main"
+    else
+      # If nothing works, return all services (fallback behavior)
+      log_warning "Could not determine diff base '${DIFF_BASE}'. Processing all services."
+      echo "${AVAILABLE_SERVICES[@]}"
+      return 0
+    fi
+  fi
+
+  git diff --name-only "${DIFF_BASE}...HEAD" \
+    | awk -F/ '
+      /^(backend|discovery|frontend|grafana|prometheus)\// {print $1}
+    ' \
+    | sort -u
 }
 
 # Function to update docker-compose.release.local.yml with new image references
@@ -301,10 +330,31 @@ main() {
     log "Skipping Docker login..."
   fi
 
+  # Determine which services to process
+  local target_services=()
+  if [[ ${#CUSTOM_SERVICES[@]} -gt 0 ]]; then
+    target_services=("${CUSTOM_SERVICES[@]}")
+    log "Using custom services: ${target_services[*]}"
+  else
+    mapfile -t target_services < <(detect_changed_services)
+    if [[ ${#target_services[@]} -eq 0 ]]; then
+      log_warning "No changed services detected since ${DIFF_BASE}."
+      log_warning "This might mean:"
+      log_warning "  1. No services were modified in recent commits"
+      log_warning "  2. The diff base '${DIFF_BASE}' is incorrect"
+      log_warning ""
+      log_warning "Use --services to explicitly specify services, or --diff-base to change the comparison point."
+      log_warning "Processing all services as fallback..."
+      target_services=("${AVAILABLE_SERVICES[@]}")
+    else
+      log "Detected changed services: ${target_services[*]}"
+    fi
+  fi
+
   # Get and set versions for each service
   declare -A service_versions
   declare -A service_current_versions
-  for service in "${AVAILABLE_SERVICES[@]}"; do
+  for service in "${target_services[@]}"; do
     if [[ ! -d "$service" ]]; then
       log "Skipping service '$service' (directory not found)"
       continue
@@ -336,7 +386,7 @@ main() {
   done
 
   # Build and publish images for each service
-  for service in "${AVAILABLE_SERVICES[@]}"; do
+  for service in "${target_services[@]}"; do
     if [[ ! -v service_versions["$service"] ]]; then
       continue
     fi
@@ -388,7 +438,7 @@ main() {
 
   # Update docker-compose.release.local.yml with new image references
   log "Updating docker-compose.release.local.yml..."
-  for service in "${AVAILABLE_SERVICES[@]}"; do
+  for service in "${target_services[@]}"; do
     if [[ ! -v service_versions["$service"] ]]; then
       continue
     fi
@@ -416,7 +466,7 @@ main() {
 
     # Build image refs string for bump-umbrel-app-version.sh
     local images_arg=()
-    for service in "${AVAILABLE_SERVICES[@]}"; do
+    for service in "${target_services[@]}"; do
       if [[ ! -v service_versions["$service"] ]]; then
         continue
       fi
@@ -469,7 +519,7 @@ main() {
     if ! $SKIP_CHANGELOG && [[ -f "CHANGELOG.md" ]]; then
       # Get the new version from the first service that was updated
       local release_version=""
-      for service in "${AVAILABLE_SERVICES[@]}"; do
+      for service in "${target_services[@]}"; do
         if [[ -v service_versions["$service"] ]]; then
           release_version="${service_versions[$service]}"
           break
@@ -502,7 +552,7 @@ main() {
   # Print summary
   if ! $QUIET; then
     local summary_items=()
-    for service in "${AVAILABLE_SERVICES[@]}"; do
+    for service in "${target_services[@]}"; do
       if [[ -v service_versions["$service"] ]]; then
         local version="${service_versions[$service]}"
         summary_items+=("$service: v$version")
