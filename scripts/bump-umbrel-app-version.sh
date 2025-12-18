@@ -427,6 +427,19 @@ main() {
   sed -i -E "s/version: \".*\"/version: \"${next_version}\"/" "$MANIFEST"
   sed -i -E "s/Version .*/Version ${next_version}/" "$MANIFEST" || true
 
+  # Update root package.json version to match app version
+  local root_package_json="${SCRIPT_ROOT}/package.json"
+  if [[ -f "$root_package_json" ]]; then
+    if [[ "$(uname)" == "Darwin" ]]; then
+      # macOS uses BSD sed
+      sed -i '' -E "s/\"version\": \"[^\"]+\"/\"version\": \"${next_version}\"/" "$root_package_json"
+    else
+      # Linux uses GNU sed
+      sed -i -E "s/\"version\": \"[^\"]+\"/\"version\": \"${next_version}\"/" "$root_package_json"
+    fi
+    log "Updated root package.json version to ${next_version}"
+  fi
+
   # Update compose images
   update_compose_images
 
