@@ -1,5 +1,11 @@
 # Stable Releases
 
+> **This guide is for project maintainers who need to PUBLISH stable releases to the Docker registry.**
+>
+> Running `release.sh` will **build and push Docker images to the public registry** (`ghcr.io/plutomining`), making them available to all Pluto users. This is NOT for running the software locally.
+>
+> **For local development, use `make up` instead.** See the [Development Environment](../../README.md#development-environment).
+
 Stable releases are built from the `main` branch and published to the `pluto` app. They use semantic versioning (e.g., `1.2.3`) and are intended for production use.
 
 ## Prerequisites

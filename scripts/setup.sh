@@ -168,6 +168,28 @@ setup_env_file "$PROJECT_ROOT/discovery"
 setup_env_file "$PROJECT_ROOT/frontend"
 setup_env_file "$PROJECT_ROOT/mock"
 
+# Also create .env.next.local files for beta testing environment
+# These are used by docker-compose.next.local.yml
+setup_env_file_next() {
+    local service_dir="$1"
+    local env_file="$service_dir/.env.next.local"
+    local template_file="$service_dir/.env.tpl"
+
+    if [ ! -f "$env_file" ]; then
+        if [ -f "$template_file" ]; then
+            cp "$template_file" "$env_file"
+            print_status "Created $env_file from template"
+        else
+            print_warning "$template_file not found, skipping $env_file creation"
+        fi
+    else
+        print_status "$env_file already exists"
+    fi
+}
+
+setup_env_file_next "$PROJECT_ROOT/backend"
+setup_env_file_next "$PROJECT_ROOT/discovery"
+
 echo ""
 
 # Verify required files exist

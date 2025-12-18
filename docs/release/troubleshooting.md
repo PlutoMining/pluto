@@ -43,6 +43,48 @@ Common issues and solutions for the release process.
 - Use `git commit --no-verify` to bypass (not recommended)
 - Fix the commit message: `git commit --amend`
 
+## Local Testing Issues
+
+### Prometheus fails with "permission denied"
+
+**Problem**: Prometheus container exits with error:
+```
+Error opening query log file" file=/prometheus/queries.active err="open /prometheus/queries.active: permission denied"
+panic: Unable to create mmap-ed active query log
+```
+
+**Cause**: The data directories don't exist or have incorrect ownership. Prometheus runs as user `65534:65534` (nobody) and needs write access to its data directory.
+
+**Solution**: Run the setup script before starting services:
+```bash
+make setup
+```
+
+Or fix manually:
+```bash
+# Create directory if missing
+mkdir -p data/prometheus-release
+
+# Set correct ownership
+sudo chown -R 65534:65534 data/prometheus-release
+```
+
+The same applies to other data directories:
+- `data/grafana-release` → owned by `472:472`
+- `data/leveldb-release` → owned by `1000:1000`
+
+### Services fail to start after fresh clone
+
+**Problem**: Services fail immediately after cloning the repository.
+
+**Solution**: Always run setup first:
+```bash
+make setup
+make up        # for development
+make up-stable # for stable release testing
+make up-beta   # for beta release testing
+```
+
 ## Docker Build
 
 ### Docker build fails
@@ -63,6 +105,45 @@ Common issues and solutions for the release process.
 - This is expected behavior - script skips rebuild if version unchanged and image exists
 - To force rebuild, bump the version first
 - Or manually delete the image from registry if needed
+
+### Cross-architecture build fails with "exec format error"
+
+**Problem**: Multi-platform Docker build fails with error like:
+```
+exec /bin/sh: exec format error
+```
+
+This typically occurs on the `linux/arm64` build step when running on an `amd64` machine (or vice versa).
+
+**Cause**: The release scripts build for both `linux/amd64` and `linux/arm64` platforms. When Docker buildx builds for a non-native architecture, it requires QEMU emulation to execute binaries for that architecture.
+
+**Solutions**:
+
+1. **Quick fix - Install QEMU via Docker** (recommended, works on any system):
+   ```bash
+   docker run --privileged --rm tonistiigi/binfmt --install all
+   ```
+   This registers the necessary QEMU handlers for cross-platform builds. You only need to run this once (or after a system restart).
+
+2. **Fedora/RHEL**:
+   ```bash
+   sudo dnf install qemu-user-static
+   sudo systemctl restart systemd-binfmt
+   ```
+
+3. **Ubuntu/Debian**:
+   ```bash
+   sudo apt-get install qemu-user-static
+   sudo systemctl restart systemd-binfmt
+   ```
+
+4. **macOS**: Docker Desktop includes QEMU support by default. If you encounter this issue, try restarting Docker Desktop.
+
+**Verification**: After installing QEMU, verify it's working:
+```bash
+docker buildx ls
+```
+You should see platforms like `linux/amd64`, `linux/arm64`, `linux/arm/v7` listed.
 
 ## Beta Releases
 

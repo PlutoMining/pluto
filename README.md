@@ -35,6 +35,21 @@ The project comprises several interdependent services:
 - The development compose file is `docker-compose.dev.local.yml`.
 - A Makefile is provided for convenient command shortcuts (see `make help` for all available commands).
 
+### Initial Setup
+
+Before starting services for the first time, run the setup script to create data directories with correct permissions and initialize environment files:
+
+```bash
+make setup
+```
+
+This will:
+- Create data directories for Prometheus, Grafana, and LevelDB with correct ownership
+- Copy `.env.tpl` files to `.env.local` for each service
+- Set executable permissions on entrypoint scripts
+
+> **Note**: This step requires `sudo` to set correct directory ownership. If you skip this step, services like Prometheus may fail with "permission denied" errors.
+
 ### Build and Start
 
 Using Makefile (recommended):
@@ -67,43 +82,59 @@ docker compose -f docker-compose.dev.local.yml down
 - **Prometheus**: [http://localhost:9090](http://localhost:9090)
 - **Grafana**: [http://localhost:3000](http://localhost:3000)
 
-## Release Environment
+## Publishing Releases (Maintainers Only)
 
-The release environment uses pre-built Docker images hosted on GitHub Container Registry. The service configurations are tailored for deployment in production environments like Umbrel.
+> **WARNING: This section is for project maintainers who need to PUBLISH new versions to the Docker registry.**
+>
+> **If you just want to run Pluto locally, use the [Development Environment](#development-environment) section above.**
+>
+> The release scripts (`release.sh` and `beta-release.sh`) build Docker images and **push them to the public GitHub Container Registry**. They do NOT simply "run the software on your machine".
 
-### Quick Start
+### What Release Scripts Do
 
-**Stable release:**
+The release scripts perform the following actions:
+1. **Build** multi-architecture Docker images (amd64 + arm64)
+2. **Push** images to `ghcr.io/plutomining` (public registry)
+3. **Update** version numbers in package.json files
+4. **Update** Umbrel app manifests
+
+This is the publishing workflow for making new versions available to all Pluto users.
+
+### Publishing Commands
+
+**Stable release (from `main` branch):**
 ```bash
 scripts/release.sh --bump-version --update-manifests
 ```
 
-**Beta release:**
+**Beta release (from feature branch):**
 ```bash
 GITHUB_TOKEN=your_token scripts/beta-release.sh --bump-version --update-manifests
 ```
 
-### Local Testing
+### Testing Published Images Locally
 
-For local testing of production-like images:
+After publishing, maintainers can test the exact published images locally before they reach users:
 
-**Stable release:**
+**Test stable release images:**
 ```bash
 make up-stable
 make logs-stable SERVICE=backend
 make down-stable
 ```
 
-**Beta release:**
+**Test beta release images:**
 ```bash
 make up-beta
 make logs-beta SERVICE=backend
 make down-beta
 ```
 
-These commands use:
-- `docker-compose.release.local.yml` (stable) - automatically updated by `scripts/release.sh`
-- `docker-compose.next.local.yml` (beta) - automatically updated by `scripts/beta-release.sh`
+These commands pull and run the published images from the registry:
+- `docker-compose.release.local.yml` (stable) - uses images published by `scripts/release.sh`
+- `docker-compose.next.local.yml` (beta) - uses images published by `scripts/beta-release.sh`
+
+> **Note**: These commands require the images to already exist in the registry. For local development without publishing, use `make up` instead.
 
 ### Service Images
 
@@ -220,9 +251,15 @@ For detailed information about the release process, see the [Release Flow Docume
 
 2. Ensure the necessary environment variables are correctly set, either in the `.env` files or directly in the compose files.
 
-3. If services fail to start, verify that the required Docker volumes have correct permissions:
+3. If services fail to start with permission errors, run the setup script:
    ```bash
-   sudo chown -R <user>:<group> /path/to/volume
+   make setup
+   ```
+   This creates data directories with correct ownership. If you need to fix permissions manually:
+   ```bash
+   sudo chown -R 65534:65534 data/prometheus*    # Prometheus
+   sudo chown -R 472:472 data/grafana*           # Grafana
+   sudo chown -R 1000:1000 data/leveldb*         # Backend/Discovery
    ```
 
 4. View service status:

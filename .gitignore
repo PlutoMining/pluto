@@ -7,7 +7,6 @@
 !/scripts/sync-umbrel-apps.sh
 !/scripts/bump-umbrel-app-version.sh
 !/scripts/beta-release.sh
-!/scripts/local-publish.sh
 !/scripts/setup.sh
 
 .env

@@ -1,10 +1,33 @@
 # Local Testing and Deployment
 
-This guide covers testing releases locally and deploying directly to Umbrel devices for internal testing.
+> **This guide is for maintainers who want to test PUBLISHED images before they reach users.**
+>
+> **If you want to run Pluto for local development, use `make up` instead.** See the [Development Environment](../../README.md#development-environment) section in the README.
 
-## Local Testing with Production Images
+This guide covers:
+1. Testing published release images locally (after running `release.sh` or `beta-release.sh`)
+2. Deploying directly to Umbrel devices for internal testing
 
-After running the release scripts, you can test the exact production images locally using the updated compose files.
+## Prerequisites
+
+Before testing locally, ensure you've run the initial setup:
+
+```bash
+make setup
+```
+
+This creates the required data directories with correct permissions:
+- `data/prometheus-release` (owned by `65534:65534` for Prometheus)
+- `data/grafana-release` (owned by `472:472` for Grafana)
+- `data/leveldb-release` (owned by `1000:1000` for backend/discovery)
+
+> **Note**: Skipping this step will cause Prometheus to fail with "permission denied" errors when trying to write to its data directory.
+
+## Local Testing with Published Images
+
+After running the release scripts (which **publish images to the registry**), you can pull and test those exact published images locally before they reach end users.
+
+> **Note**: These commands pull images from `ghcr.io/plutomining`. The images must already be published to the registry.
 
 ### Stable Releases
 
@@ -79,17 +102,6 @@ This single command will:
 - Update `pluto` manifests with new image references
 - Sync manifests to your Umbrel device and reinstall the app
 
-**Two-step process:**
-```bash
-# Build/push images first (with optional version bumping)
-scripts/release.sh --bump-version
-
-# Update local manifests and sync to Umbrel device
-scripts/local-publish.sh --channel stable --sync-to-umbrel
-```
-
-Use the two-step process if you want more control over the process or prefer interactive version prompts.
-
 #### Beta Release
 
 **Fully automated (recommended for testing):**
@@ -111,17 +123,6 @@ This single command will:
 - Build and push Docker images
 - Update `pluto-next` manifests with new image references
 - Sync manifests to your Umbrel device and reinstall the app
-
-**Two-step process:**
-```bash
-# Build/push images first (with optional version bumping)
-scripts/beta-release.sh --services backend --bump-version
-
-# Update local manifests and sync to Umbrel device
-scripts/local-publish.sh --channel beta --sync-to-umbrel
-```
-
-Use the two-step process if you want more control or are updating multiple services.
 
 ### Manual Sync
 
@@ -162,38 +163,3 @@ You can set these in a `.env` file or export them before running the script.
 3. **Reinstalls apps**: Installs apps from the updated manifests
 
 This ensures your Umbrel device is running the exact same images as defined in the manifests.
-
-## Local Publish Script
-
-The `local-publish.sh` script is a wrapper that simplifies updating local Umbrel manifests.
-
-### Usage
-
-```bash
-scripts/local-publish.sh --channel stable|beta [--sync-to-umbrel]
-```
-
-### What It Does
-
-1. **Infers parameters** from the `--channel` flag:
-   - App name (`pluto` for stable, `pluto-next` for beta)
-   - Manifest and compose file paths
-
-2. **Reads service versions** from each service's `package.json`:
-   - `backend`, `discovery`, `frontend`, `grafana`, `prometheus`
-
-3. **Resolves image digests** automatically:
-   - Builds image tags: `ghcr.io/plutomining/pluto-<service>:<version>`
-   - Uses `docker buildx imagetools inspect` to get SHA256 digests
-
-4. **Updates manifests** using the same version-bump logic as the community store:
-   - Calls `scripts/bump-umbrel-app-version.sh` internally
-   - Bumps app version in `umbrel-app.yml` if the image bundle changed
-   - Updates `docker-compose.yml` with new image refs pinned to digests
-
-5. **Optionally syncs to device** (if `--sync-to-umbrel` is passed):
-   - Runs `scripts/sync-umbrel-apps.sh` to rsync manifests and reinstall apps
-
-Without `--sync-to-umbrel`, the script only updates local manifests. You can then manually run `scripts/sync-umbrel-apps.sh` later if needed.
-
-This gives you a fast, automated inner loop for testing new builds before pushing anything to the community store.
