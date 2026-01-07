@@ -589,6 +589,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         const deviceToUpdate = selectedPreset
           ? {
               ...device,
+              presetUuid: selectedPreset.uuid,
               info: {
                 ...device.info,
                 stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
