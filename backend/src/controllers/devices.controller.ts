@@ -239,12 +239,20 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
   try {
     const { id }: { id: string } = req.params as any;
 
+    logger.info("patchDeviceSystemInfo called", {
+      mac: id,
+      bodyKeys: Object.keys(req.body || {}),
+      hasPresetUuid: !!(req.body as any)?.presetUuid,
+      presetUuid: (req.body as any)?.presetUuid,
+    });
+
     // Ottieni la lista dei dispositivi e trova il dispositivo corrispondente al MAC
     const devices = await deviceService.getImprintedDevices();
 
     const device = devices.find((d) => id === d.mac);
 
     if (!device) {
+      logger.error("Device not found in patchDeviceSystemInfo", { mac: id });
       return res.status(404).json({ error: "Device not found" });
     }
 
@@ -252,6 +260,7 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
     const deviceIp = device.ip;
 
     if (!deviceIp) {
+      logger.error("Device IP not available", { mac: id });
       return res.status(400).json({ error: "Device IP not available" });
     }
 
@@ -261,17 +270,47 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
       const preset = await presetsService.getPreset(payload.presetUuid);
 
       if (preset) {
-        payload.info.stratumPort = preset.configuration.stratumPort;
+        logger.info("Applying preset to device", {
+          mac: payload.mac,
+          presetUuid: payload.presetUuid,
+          presetName: preset.name,
+          presetPort: preset.configuration.stratumPort,
+          presetPortType: typeof preset.configuration.stratumPort,
+        });
+
+        // Ensure we forward correct types to the miner API.
+        // Bitaxe expects a numeric port; if we pass a string (as stored in presets),
+        // the firmware can treat it as 0, effectively disabling the port.
+        const presetPort = preset.configuration.stratumPort;
+
+        payload.info.stratumPort =
+          typeof presetPort === "number" ? presetPort : Number(presetPort) || 0;
         payload.info.stratumURL = preset.configuration.stratumURL;
         // payload.info.stratumUser = preset.configuration.stratumUser;
         payload.info.stratumPassword = preset.configuration.stratumPassword;
+
+        logger.info("Final system info payload to device", {
+          mac: payload.mac,
+          stratumPort: payload.info.stratumPort,
+          stratumURL: payload.info.stratumURL,
+        });
       } else {
+        logger.error("Preset not found", { presetUuid: payload.presetUuid });
         return res.status(400).json({ error: "Associated Preset id not available" });
       }
     }
 
     // Invia la richiesta PATCH per aggiornare le informazioni di sistema
     const patchUrl = `http://${deviceIp}/api/system`; // Assumendo che l'endpoint sia /api/system
+
+    logger.info("Sending PATCH to device", {
+      url: patchUrl,
+      stratumPort: payload.info.stratumPort,
+      stratumURL: payload.info.stratumURL,
+      stratumUser: payload.info.stratumUser,
+      hasPassword: !!payload.info.stratumPassword,
+    });
+
     const response = await axios.patch(patchUrl, payload.info); // Passa i dati nel body
 
     // Inoltra la risposta del dispositivo al client

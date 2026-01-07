@@ -21,6 +21,7 @@ jest.mock('@/services/presets.service', () => ({
 jest.mock('@pluto/logger', () => ({
   logger: {
     error: jest.fn(),
+    info: jest.fn(),
   },
 }));
 
@@ -123,6 +124,17 @@ describe('devices.controller', () => {
 
       expect(res.status).toHaveBeenCalledWith(404);
     });
+
+    it('handles service errors', async () => {
+      const req = { body: { macs: ['xx'] } } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.imprintDevices.mockRejectedValue(new Error('service error'));
+
+      await deviceController.imprintDevices(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to process the request' });
+    });
   });
 
   describe('imprintDevice', () => {
@@ -148,6 +160,17 @@ describe('devices.controller', () => {
 
       expect(res.status).toHaveBeenCalledWith(404);
     });
+
+    it('handles service errors', async () => {
+      const req = { body: { mac: 'new' } } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockRejectedValue(new Error('service error'));
+
+      await deviceController.imprintDevice(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to process the request' });
+    });
   });
 
   describe('getImprintedDevices', () => {
@@ -162,6 +185,21 @@ describe('devices.controller', () => {
 
       const payload = res.json.mock.calls[0][0];
       expect(payload.data[0].info.frequencyOptions).toBeDefined();
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it('handles unknown ASICModel with empty options', async () => {
+      const req = { query: {} } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([
+        { mac: 'x', info: { ASICModel: 'UNKNOWN_MODEL' } },
+      ] as unknown as Device[]);
+
+      await deviceController.getImprintedDevices(req, res as unknown as Response);
+
+      const payload = res.json.mock.calls[0][0];
+      expect(payload.data[0].info.frequencyOptions).toEqual([]);
+      expect(payload.data[0].info.coreVoltageOptions).toEqual([]);
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
@@ -252,6 +290,17 @@ describe('devices.controller', () => {
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
+
+    it('returns 200 when device deleted', async () => {
+      const req = { params: { id: 'mac' } } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.deleteImprintedDevice.mockResolvedValue({ mac: 'mac' });
+
+      await deviceController.deleteImprintedDevice(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Device deleted successfully', data: { mac: 'mac' } });
+    });
   });
 
   describe('putListenDevices', () => {
@@ -332,10 +381,40 @@ describe('devices.controller', () => {
         details: { message: 'down' },
       });
     });
+
+    it('handles non-axios errors', async () => {
+      const req = { params: { id: 'mac' } } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.2' }] as unknown as Device[]);
+      mockedAxios.post.mockRejectedValue(new Error('generic error'));
+      axiosIsAxiosError.mockReturnValue(false);
+
+      await deviceController.restartDevice(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to process the request' });
+    });
+
+    it('handles axios errors without response status', async () => {
+      const req = { params: { id: 'mac' } } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.2' }] as unknown as Device[]);
+      const axiosError = new Error('network') as any;
+      mockedAxios.post.mockRejectedValue(axiosError);
+      axiosIsAxiosError.mockReturnValue(true);
+
+      await deviceController.restartDevice(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Failed to restart the device',
+        details: 'network',
+      });
+    });
   });
 
   describe('patchDeviceSystemInfo', () => {
-    it('updates via preset data', async () => {
+    it('updates via preset data with number port', async () => {
       const req = {
         params: { id: 'mac' },
         body: { presetUuid: 'preset', info: {}, mac: 'mac' },
@@ -343,6 +422,7 @@ describe('devices.controller', () => {
       const res = createMockResponse();
       deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.3' }] as unknown as Device[]);
       presetsService.getPreset.mockResolvedValue({
+        name: 'Test Preset',
         configuration: { stratumPort: 4444, stratumURL: 'pool', stratumPassword: 'secret' },
       });
       mockedAxios.patch.mockResolvedValue({ status: 200 });
@@ -356,6 +436,67 @@ describe('devices.controller', () => {
       }));
       expect(res.status).toHaveBeenCalledWith(200);
     });
+
+    it('converts string port to number from preset', async () => {
+      const req = {
+        params: { id: 'mac' },
+        body: { presetUuid: 'preset', info: {}, mac: 'mac' },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.3' }] as unknown as Device[]);
+      presetsService.getPreset.mockResolvedValue({
+        name: 'Test Preset',
+        configuration: { stratumPort: '3333', stratumURL: 'pool.example.com', stratumPassword: 'pass' },
+      });
+      mockedAxios.patch.mockResolvedValue({ status: 200 });
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      expect(mockedAxios.patch).toHaveBeenCalledWith('http://10.0.0.3/api/system', expect.objectContaining({
+        stratumPort: 3333,
+        stratumURL: 'pool.example.com',
+        stratumPassword: 'pass',
+      }));
+    });
+
+    it('defaults to 0 when preset port is invalid', async () => {
+      const req = {
+        params: { id: 'mac' },
+        body: { presetUuid: 'preset', info: {}, mac: 'mac' },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.3' }] as unknown as Device[]);
+      presetsService.getPreset.mockResolvedValue({
+        name: 'Test Preset',
+        configuration: { stratumPort: '', stratumURL: 'pool', stratumPassword: 'secret' },
+      });
+      mockedAxios.patch.mockResolvedValue({ status: 200 });
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      expect(mockedAxios.patch).toHaveBeenCalledWith('http://10.0.0.3/api/system', expect.objectContaining({
+        stratumPort: 0,
+      }));
+    });
+
+    it('updates without preset', async () => {
+      const req = {
+        params: { id: 'mac' },
+        body: { info: { stratumPort: 5555, stratumURL: 'custom.pool.com' }, mac: 'mac' },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.3' }] as unknown as Device[]);
+      mockedAxios.patch.mockResolvedValue({ status: 200 });
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      expect(mockedAxios.patch).toHaveBeenCalledWith('http://10.0.0.3/api/system', expect.objectContaining({
+        stratumPort: 5555,
+        stratumURL: 'custom.pool.com',
+      }));
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
 
     it('returns 404 when device missing', async () => {
       const req = { params: { id: 'mac' }, body: { info: {} } } as unknown as Request;
@@ -383,7 +524,9 @@ describe('devices.controller', () => {
       const req = { params: { id: 'mac' }, body: { info: {} } } as unknown as Request;
       const res = createMockResponse();
       deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.3' }] as unknown as Device[]);
-      mockedAxios.patch.mockRejectedValue(Object.assign(new Error('network'), { response: { status: 502, data: 'bad' } }));
+      const axiosError = new Error('network') as any;
+      axiosError.response = { status: 502, data: 'bad' };
+      mockedAxios.patch.mockRejectedValue(axiosError);
       axiosIsAxiosError.mockReturnValue(true);
 
       await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
@@ -393,6 +536,36 @@ describe('devices.controller', () => {
         error: 'Failed to update device system info',
         details: 'bad',
       });
+    });
+
+    it('handles axios errors without response', async () => {
+      const req = { params: { id: 'mac' }, body: { info: {} } } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.3' }] as unknown as Device[]);
+      const axiosError = new Error('network error') as any;
+      mockedAxios.patch.mockRejectedValue(axiosError);
+      axiosIsAxiosError.mockReturnValue(true);
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Failed to update device system info',
+        details: 'network error',
+      });
+    });
+
+    it('handles non-axios errors', async () => {
+      const req = { params: { id: 'mac' }, body: { info: {} } } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.3' }] as unknown as Device[]);
+      mockedAxios.patch.mockRejectedValue(new Error('generic error'));
+      axiosIsAxiosError.mockReturnValue(false);
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to process the request' });
     });
 
     it('rejects when preset missing', async () => {
@@ -410,5 +583,36 @@ describe('devices.controller', () => {
       expect(res.json).toHaveBeenCalledWith({ error: 'Associated Preset id not available' });
     });
   });
+
+  describe('getDevicesByPresetId', () => {
+    it('returns devices by preset id', async () => {
+      const req = { params: { presetId: 'preset-123' } } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getDevicesByPresetId.mockResolvedValue([
+        { mac: 'aa:bb:cc', presetUuid: 'preset-123' },
+      ] as unknown as Device[]);
+
+      await deviceController.getDevicesByPresetId(req, res as unknown as Response);
+
+      expect(deviceService.getDevicesByPresetId).toHaveBeenCalledWith('preset-123');
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Devices by preset retrieved successfully',
+        data: [{ mac: 'aa:bb:cc', presetUuid: 'preset-123' }],
+      });
+    });
+
+    it('handles errors', async () => {
+      const req = { params: { presetId: 'preset-123' } } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getDevicesByPresetId.mockRejectedValue(new Error('fail'));
+
+      await deviceController.getDevicesByPresetId(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to process the request' });
+    });
+  });
+
 });
 
