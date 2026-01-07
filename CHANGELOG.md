@@ -1,3 +1,11 @@
+# 1.3.5 (2026-01-07)
+
+
+### Bug Fixes
+
+* **backend:** ensure port is passed as number if needed ([#14](https://github.com/PlutoMining/pluto/issues/14)) ([9fdbd96](https://github.com/PlutoMining/pluto/commit/9fdbd96795fab7984cb165e6740cf47c5d8ffe3a))
+
+
 # 1.3.4 (2025-12-16)
 
 
