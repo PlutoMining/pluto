@@ -31,8 +31,13 @@ RUN npm run build
 # Stage 2: Runtime
 FROM node:24-alpine
 
-# Install arp-scan
-RUN apk add --no-cache arp-scan libcap
+# Install arp-scan and libcap
+# Note: In ARM64 QEMU emulation, busybox triggers may fail, but packages install correctly
+# We update apk first, install packages, and verify installation succeeded
+RUN apk update && \
+    apk add --no-cache arp-scan libcap 2>&1 || true && \
+    test -f /usr/bin/arp-scan && (test -f /usr/sbin/setcap || test -f /sbin/setcap) && \
+    apk cache clean
 
 # Set the working directory
 WORKDIR /home/node/app

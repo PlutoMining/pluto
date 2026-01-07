@@ -133,7 +133,7 @@ services:
       - GF_HOST=http://pluto-next_grafana_1:3000
       - BACKEND_DESTINATION_HOST=http://pluto-next_backend_1:7676
     volumes:
-      - ./app-stores/umbrelOS/community/pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
+      - ./umbrel-apps/pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
     #   - ./common/utils:/common/utils:ro # Monta il modulo in read-only
     #   - ./common/interfaces:/common/interfaces:ro # Monta il modulo in read-only
     #   - ./frontend:/home/node/app/

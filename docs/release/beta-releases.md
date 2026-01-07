@@ -1,5 +1,11 @@
 # Beta Releases
 
+> **This guide is for project maintainers who need to PUBLISH beta releases to the Docker registry.**
+>
+> Running `beta-release.sh` will **build and push Docker images to the public registry** (`ghcr.io/plutomining`), making them available to beta testers via the `pluto-next` Umbrel app. This is NOT for running the software locally.
+>
+> **For local development, use `make up` instead.** See the [Development Environment](../../README.md#development-environment).
+
 Beta releases are built from feature branches and published to the `pluto-next` app. They use pre-release versioning (e.g., `1.2.3-beta.0`) and are intended for testing new features before stable release.
 
 ## Prerequisites

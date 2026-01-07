@@ -1,5 +1,11 @@
 # Release Scripts Reference
 
+> **These scripts are for project maintainers who need to PUBLISH releases to the Docker registry.**
+>
+> The release scripts (`release.sh`, `beta-release.sh`) **push images to the public registry**. They do NOT simply run the software locally.
+>
+> **For local development, use `make up` instead.** See the [Development Environment](../../README.md#development-environment).
+
 This document provides detailed documentation for all release-related scripts.
 
 ## Script Architecture
@@ -40,6 +46,7 @@ scripts/release.sh [options]
 **Requirements**:
 - Must be on `main` branch
 - Docker and Docker Buildx installed
+- QEMU emulation for cross-architecture builds (see [Troubleshooting](./troubleshooting.md#cross-architecture-build-fails-with-exec-format-error))
 - Access to GitHub Container Registry
 
 **See**: [Stable Releases Guide](./stable-releases.md)
@@ -74,29 +81,11 @@ scripts/beta-release.sh [options]
 - Branch must be up-to-date with `origin/main`
 - All commits pushed to remote
 - CI tests passing
+- Docker and Docker Buildx installed
+- QEMU emulation for cross-architecture builds (see [Troubleshooting](./troubleshooting.md#cross-architecture-build-fails-with-exec-format-error))
 - `GITHUB_TOKEN` environment variable (for CI checks)
 
 **See**: [Beta Releases Guide](./beta-releases.md)
-
-### `scripts/local-publish.sh`
-
-Automated wrapper to update local Umbrel manifests and optionally sync to device.
-
-**Location**: Main Pluto repository (`PlutoMining/pluto`)
-
-**Usage**:
-```bash
-scripts/local-publish.sh --channel stable|beta [--sync-to-umbrel]
-```
-
-**What it does**:
-- Infers all parameters from the `--channel` flag
-- Reads service versions from `package.json` files
-- Resolves image digests automatically
-- Updates manifests using `bump-umbrel-app-version.sh`
-- Optionally syncs to Umbrel device
-
-**See**: [Local Testing Guide](./local-testing.md)
 
 ### `scripts/bump-umbrel-app-version.sh`
 
@@ -121,7 +110,7 @@ scripts/bump-umbrel-app-version.sh \
 - Bumps app version in `umbrel-app.yml` accordingly
 - Updates `docker-compose.yml` with new image references pinned to digests
 
-**Used by**: `local-publish.sh`, `release.sh`, and `beta-release.sh`
+**Used by**: `release.sh` and `beta-release.sh`
 
 ### `scripts/sync-umbrel-apps.sh`
 

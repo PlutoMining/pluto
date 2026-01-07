@@ -1,5 +1,13 @@
 # Release Process Overview
 
+> **This documentation is for project maintainers who need to PUBLISH new versions.**
+>
+> **If you just want to run Pluto locally for development or testing, see the [Development Environment](../../README.md#development-environment) section in the README.**
+
+## What "Release" Means
+
+"Release" in this context means **publishing Docker images to the public registry** so that Umbrel users worldwide can install or update Pluto. It does NOT mean "running the software on your local machine".
+
 Pluto uses a two-stage release process:
 
 1. **Publish Docker images** (source of truth: `PlutoMining/pluto`)

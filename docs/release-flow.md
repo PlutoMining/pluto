@@ -1,6 +1,16 @@
 # Pluto Release Flow
 
+> **This documentation is for project maintainers who need to PUBLISH new versions to the Docker registry.**
+>
+> **If you just want to run Pluto locally:**
+> - For **development**: Use `make up` (see [Development Environment](../README.md#development-environment))
+> - For **Umbrel users**: Install Pluto from the Umbrel app store
+
 This document provides an overview of the Pluto release process. For detailed guides, see the [Release Documentation](./release/).
+
+## What "Release" Means
+
+"Release" in this context means **building and publishing Docker images to the public GitHub Container Registry** (`ghcr.io/plutomining`). These scripts do NOT simply run the software locally - they publish new versions that become available to all Pluto users worldwide.
 
 ## Overview
 
@@ -30,8 +40,7 @@ GITHUB_TOKEN=your_token scripts/beta-release.sh --bump-version --update-manifest
 
 Stable releases are built from the `main` branch and published to the `pluto` app. They use semantic versioning (e.g., `1.2.3`) and are intended for production use.
 
-See [Stable Releases Guide](./release/stable-rel
-eases.md) for detailed instructions.
+See [Stable Releases Guide](./release/stable-releases.md) for detailed instructions.
 
 ### Beta Releases
 
@@ -75,8 +84,7 @@ The update script resolves image digests, computes bundle fingerprints, and bump
 For internal testing, you can deploy directly to a local Umbrel device:
 
 - Use `--sync-to-umbrel` flag with release scripts
-- Or use `scripts/local-publish.sh` for manual updates
-- Or use `scripts/sync-umbrel-apps.sh` to sync manifests
+- Or use `scripts/sync-umbrel-apps.sh` to sync manifests manually
 
 ## Scripts Summary
 
@@ -84,7 +92,6 @@ For internal testing, you can deploy directly to a local Umbrel device:
 
 - `scripts/release.sh` - Build and push stable images
 - `scripts/beta-release.sh` - Build and push beta images
-- `scripts/local-publish.sh` - Update local manifests and optionally sync to device
 - `scripts/bump-umbrel-app-version.sh` - Low-level helper for updating manifests
 - `scripts/sync-umbrel-apps.sh` - Sync manifests to Umbrel device
 - `scripts/generate-changelog.sh` - Generate changelog from commits
