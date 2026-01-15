@@ -24,6 +24,13 @@ export function BarChartCard({
   xKey: string;
   yKey: string;
 }) {
+  const tooltipContentStyle: React.CSSProperties = {
+    backgroundColor: "hsl(var(--secondary))",
+    border: "1px solid hsl(var(--border))",
+    borderRadius: 0,
+    color: "hsl(var(--secondary-foreground))",
+  };
+
   return (
     <Card className="rounded-none">
       <CardHeader>
@@ -33,10 +40,23 @@ export function BarChartCard({
         <div className="h-[260px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
-              <XAxis dataKey={xKey} />
-              <YAxis />
-              <Tooltip />
+              <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" opacity={0.25} />
+              <XAxis
+                dataKey={xKey}
+                axisLine={{ stroke: "hsl(var(--border))" }}
+                tickLine={{ stroke: "hsl(var(--border))" }}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+              />
+              <YAxis
+                axisLine={{ stroke: "hsl(var(--border))" }}
+                tickLine={{ stroke: "hsl(var(--border))" }}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+              />
+              <Tooltip
+                contentStyle={tooltipContentStyle}
+                labelStyle={{ color: "hsl(var(--muted-foreground))" }}
+                cursor={{ fill: "hsl(var(--foreground))", opacity: 0.06 }}
+              />
               <Bar dataKey={yKey} fill="hsl(var(--primary))" />
             </BarChart>
           </ResponsiveContainer>

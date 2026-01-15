@@ -29,6 +29,13 @@ export function LineChartCard({
   points: Point[];
   unit?: string;
 }) {
+  const tooltipContentStyle: React.CSSProperties = {
+    backgroundColor: "hsl(var(--secondary))",
+    border: "1px solid hsl(var(--border))",
+    borderRadius: 0,
+    color: "hsl(var(--secondary-foreground))",
+  };
+
   return (
     <Card className="rounded-none">
       <CardHeader>
@@ -38,10 +45,23 @@ export function LineChartCard({
         <div className="h-[220px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
-              <XAxis dataKey="t" tickFormatter={formatTime} />
-              <YAxis />
+              <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" opacity={0.25} />
+              <XAxis
+                dataKey="t"
+                tickFormatter={formatTime}
+                axisLine={{ stroke: "hsl(var(--border))" }}
+                tickLine={{ stroke: "hsl(var(--border))" }}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+              />
+              <YAxis
+                axisLine={{ stroke: "hsl(var(--border))" }}
+                tickLine={{ stroke: "hsl(var(--border))" }}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+              />
               <Tooltip
+                contentStyle={tooltipContentStyle}
+                labelStyle={{ color: "hsl(var(--muted-foreground))" }}
+                cursor={{ stroke: "hsl(var(--foreground))", opacity: 0.2 }}
                 labelFormatter={(l) => formatTime(Number(l))}
                 formatter={(value: any) => [`${Number(value).toFixed(2)}${unit ? ` ${unit}` : ""}`]}
               />
