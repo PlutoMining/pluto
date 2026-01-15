@@ -42,6 +42,7 @@ export default function MonitoringClient({ id }: { id: string }) {
   const [power, setPower] = useState<Array<{ t: number; v: number }>>([]);
   const [efficiency, setEfficiency] = useState<Array<{ t: number; v: number }>>([]);
   const [temp, setTemp] = useState<Array<{ t: number; v: number }>>([]);
+  const [vrTemp, setVrTemp] = useState<Array<{ t: number; v: number }>>([]);
   const [fan, setFan] = useState<Array<{ t: number; v: number }>>([]);
   const [coreVActual, setCoreVActual] = useState<Array<{ t: number; v: number }>>([]);
   const [coreV, setCoreV] = useState<Array<{ t: number; v: number }>>([]);
@@ -109,17 +110,20 @@ export default function MonitoringClient({ id }: { id: string }) {
         power: `${host}_power_watts`,
         efficiency: `${host}_power_watts/(${host}_hashrate_ghs/1000)`,
         temp: `${host}_temperature_celsius`,
+        vrTemp: `${host}_vr_temperature_celsius`,
         fan: `${host}_fanspeed_rpm`,
         coreVActual: `${host}_core_voltage_actual_volts`,
         coreV: `${host}_core_voltage_volts`,
         voltage: `${host}_voltage_volts`,
       };
 
-      const [hashrateRes, powerRes, effRes, tempRes, fanRes, coreVaRes, coreVRes, voltRes] = await Promise.all([
+      const [hashrateRes, powerRes, effRes, tempRes, vrTempRes, fanRes, coreVaRes, coreVRes, voltRes] =
+        await Promise.all([
         promQueryRange(queries.hashrate, start, end, step),
         promQueryRange(queries.power, start, end, step),
         promQueryRange(queries.efficiency, start, end, step),
         promQueryRange(queries.temp, start, end, step),
+        promQueryRange(queries.vrTemp, start, end, step),
         promQueryRange(queries.fan, start, end, step),
         promQueryRange(queries.coreVActual, start, end, step),
         promQueryRange(queries.coreV, start, end, step),
@@ -130,6 +134,7 @@ export default function MonitoringClient({ id }: { id: string }) {
       setPower(matrixToSeries((powerRes as any).data.result)[0]?.points ?? []);
       setEfficiency(matrixToSeries((effRes as any).data.result)[0]?.points ?? []);
       setTemp(matrixToSeries((tempRes as any).data.result)[0]?.points ?? []);
+      setVrTemp(matrixToSeries((vrTempRes as any).data.result)[0]?.points ?? []);
       setFan(matrixToSeries((fanRes as any).data.result)[0]?.points ?? []);
       setCoreVActual(matrixToSeries((coreVaRes as any).data.result)[0]?.points ?? []);
       setCoreV(matrixToSeries((coreVRes as any).data.result)[0]?.points ?? []);
@@ -175,7 +180,7 @@ export default function MonitoringClient({ id }: { id: string }) {
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4 tablet:grid-cols-4">
+      <div className="mt-4 grid gap-4 tablet:grid-cols-5">
         <Card className="rounded-none">
           <CardHeader>
             <CardTitle>Hashrate</CardTitle>
@@ -210,7 +215,15 @@ export default function MonitoringClient({ id }: { id: string }) {
             <CardTitle>Temp</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="font-accent text-xl text-foreground">{device?.info.temp ?? "-"} °C</p>
+            <p className="font-accent text-xl text-foreground">{formatNumber(device?.info.temp, 1)} °C</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-none">
+          <CardHeader>
+            <CardTitle>VR Temp</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-accent text-xl text-foreground">{formatNumber(device?.info.vrTemp, 1)} °C</p>
           </CardContent>
         </Card>
       </div>
@@ -220,9 +233,10 @@ export default function MonitoringClient({ id }: { id: string }) {
         <LineChartCard title="Power" points={power} unit="W" />
       </div>
 
-      <div className="mt-4 grid gap-4 tablet:grid-cols-2">
+      <div className="mt-4 grid gap-4 tablet:grid-cols-3">
         <LineChartCard title="Efficiency" points={efficiency} unit="W/TH" />
         <LineChartCard title="Temperature" points={temp} unit="°C" />
+        <LineChartCard title="VR Temperature" points={vrTemp} unit="°C" />
       </div>
 
       <div className="mt-4 grid gap-4 tablet:grid-cols-2">

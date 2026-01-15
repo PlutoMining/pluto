@@ -112,7 +112,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
             highlightRight
           />
           <Row label="Power" value={`${device.info.power.toFixed(2)} W`} />
-          <Row label="Temp." value={`${device.info.temp}°C`} />
+          <Row label="Temp." value={`${formatTemperature(device.info.temp)} °C`} />
+          <Row label="VR Temp." value={`${formatTemperature(device.info.vrTemp)} °C`} />
           <Row label="Difficulty" value={`${device.info.bestSessionDiff}`} />
           <Row label="Best Difficulty" value={`${device.info.bestDiff}`} />
           <Row label="Uptime" value={formatDetailedTime(device.info.uptimeSeconds)} />
@@ -147,4 +148,9 @@ function Row({
       )}
     </div>
   );
+}
+
+function formatTemperature(value: number | undefined | null) {
+  if (!Number.isFinite(value)) return "N/A";
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }

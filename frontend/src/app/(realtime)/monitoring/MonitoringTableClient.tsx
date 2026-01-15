@@ -18,6 +18,11 @@ import axios from "axios";
 import NextLink from "next/link";
 import { ChangeEvent, useEffect, useState } from "react";
 
+function formatTemperature(value: number | undefined | null) {
+  if (!Number.isFinite(value)) return "N/A";
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
 export default function MonitoringTableClient() {
   const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
 
@@ -117,6 +122,9 @@ export default function MonitoringTableClient() {
                       Temp
                     </th>
                     <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                      VR Temp
+                    </th>
+                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
                       Difficulty
                     </th>
                     <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
@@ -149,12 +157,10 @@ export default function MonitoringTableClient() {
                         {device.info.power.toFixed(2)} W
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {device.info.temp
-                          ? Number.isInteger(device.info.temp)
-                            ? device.info.temp
-                            : device.info.temp.toFixed(1)
-                          : "N/A"}{" "}
-                        °C
+                        {formatTemperature(device.info.temp)} °C
+                      </td>
+                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                        {formatTemperature(device.info.vrTemp)} °C
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
                         {device.info.bestSessionDiff}
