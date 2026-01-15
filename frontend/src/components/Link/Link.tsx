@@ -4,16 +4,19 @@
  * it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation, version 3.
  * See <https://www.gnu.org/licenses/>.
-*/
+ */
 
-import { Link as ChakraLink, Flex, useToken } from "@chakra-ui/react";
-import React, { ReactElement, ElementType } from "react";
+import React, { ElementType, ReactElement } from "react";
+import NextLink from "next/link";
+
+import { cn } from "@/lib/utils";
 
 interface LinkProps {
   label: string;
   href: string;
   leftIcon?: ReactElement;
   rightIcon?: ReactElement;
+  className?: string;
   fontWeight?: string | number;
   fontSize?: string;
   fontFamily?: string;
@@ -29,6 +32,7 @@ const Link: React.FC<LinkProps> = ({
   href,
   leftIcon,
   rightIcon,
+  className,
   fontWeight = 400,
   fontFamily = "heading",
   fontSize = "13px",
@@ -38,27 +42,47 @@ const Link: React.FC<LinkProps> = ({
   isExternal,
   as,
 }) => {
-  const [textColor] = useToken("colors", ["body-text"]);
-  return (
-    <ChakraLink
-      {...(as ? {} : { as })}
-      {...(isDisabled && href !== undefined ? {} : { href })}
-      fontFamily={fontFamily}
-      fontSize={fontSize}
-      fontWeight={fontWeight}
-      color={isDisabled ? textColor : color}
-      textDecoration={textDecoration}
-      pointerEvents={isDisabled ? "none" : "auto"} // Disables the pointer events
-      cursor={isDisabled ? "not-allowed" : "pointer"} // Change cursor to 'not-allowed'
-      _hover={{ textDecoration: isDisabled ? "none" : "underline" }} // Disable hover effect when disabled
-      isExternal={isExternal}
-    >
-      <Flex alignItems={"center"} gap={"0.25rem"}>
-        {leftIcon && leftIcon}
+  if (isDisabled) {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 opacity-60",
+          fontFamily === "accent" ? "font-accent" : "font-heading",
+          className
+        )}
+        style={{ fontWeight, fontSize, textDecoration, color }}
+      >
+        {leftIcon}
         {label}
-        {rightIcon && rightIcon}
-      </Flex>
-    </ChakraLink>
+        {rightIcon}
+      </span>
+    );
+  }
+
+  const Component: any = as ?? (isExternal ? "a" : NextLink);
+
+  const externalProps = isExternal
+    ? {
+        target: "_blank",
+        rel: "noreferrer",
+      }
+    : {};
+
+  return (
+    <Component
+      href={href}
+      {...externalProps}
+      className={cn(
+        "inline-flex items-center gap-1 hover:underline",
+        fontFamily === "accent" ? "font-accent" : "font-heading",
+        className
+      )}
+      style={{ fontWeight, fontSize, textDecoration, color }}
+    >
+      {leftIcon}
+      {label}
+      {rightIcon}
+    </Component>
   );
 };
 

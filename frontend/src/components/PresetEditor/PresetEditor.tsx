@@ -11,7 +11,7 @@ import Alert from "@/components/Alert/Alert";
 import { AlertInterface, AlertStatus } from "@/components/Alert/interfaces";
 import Button from "@/components/Button/Button";
 import { Input } from "@/components/Input/Input";
-import { Box, Flex, SimpleGrid, Text, useDisclosure, useToken, VStack } from "@chakra-ui/react";
+import { useDisclosure } from "@/hooks/useDisclosure";
 import { Preset } from "@pluto/interfaces";
 import { validateDomain, validateTCPPort } from "@pluto/utils";
 import axios from "axios";
@@ -165,6 +165,7 @@ export const PresetEditor = ({
 
     // console.log(updatedPreset);
 
+    setIsSaveLoading(true);
     const promise = axios.post("/api/presets", updatedPreset);
 
     promise
@@ -179,6 +180,9 @@ export const PresetEditor = ({
           message: "An error occurred while saving the preset. Please try again.",
         });
         onOpenAlert();
+      })
+      .finally(() => {
+        setIsSaveLoading(false);
       });
   }, [preset, onOpenAlert]);
 
@@ -223,9 +227,9 @@ export const PresetEditor = ({
         <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
       )}
 
-      <Box p={0} pt={"1rem"}>
-        <Flex as="form" flexDir={"column"} gap={"2rem"}>
-          <VStack spacing={4} align="stretch">
+      <div className="pt-4">
+        <form className="flex flex-col gap-8">
+          <div className="flex flex-col gap-4">
             <Input
               label="Pool Preset Name"
               name="presetName"
@@ -235,11 +239,10 @@ export const PresetEditor = ({
               onChange={handleChange}
               error={presetErrors.name}
             />
-            <VStack align={"stretch"} spacing={4}>
-              <Text fontFamily={"heading"} fontWeight={500} fontSize={"14px"}>
-                Settings
-              </Text>
-              <SimpleGrid columns={{ mobile: 1, tablet: 2, desktop: 4 }} spacing={8}>
+
+            <div className="flex flex-col gap-4">
+              <p className="font-heading text-sm font-medium">Settings</p>
+              <div className="grid grid-cols-1 gap-8 tablet:grid-cols-2 desktop:grid-cols-4">
                 <Input
                   label="Stratum URL"
                   name="stratumURL"
@@ -277,10 +280,11 @@ export const PresetEditor = ({
                   onChange={handleChange}
                   error={presetErrors.configuration?.stratumPassword}
                 />
-              </SimpleGrid>
-            </VStack>
-          </VStack>
-          <Flex gap={"1rem"}>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-4">
             {onCloseModal && <Button variant="outlined" onClick={onCloseModal} label="Cancel" />}
             <Button
               isLoading={isSaveLoading}
@@ -289,9 +293,9 @@ export const PresetEditor = ({
               label="Save Preset"
               disabled={isPresetValid()}
             />
-          </Flex>
-        </Flex>
-      </Box>
+          </div>
+        </form>
+      </div>
     </>
   );
 };

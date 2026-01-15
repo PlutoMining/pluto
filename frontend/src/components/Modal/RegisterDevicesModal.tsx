@@ -6,26 +6,6 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import {
-  Box,
-  Checkbox as ChakraCheckbox,
-  Flex,
-  Heading,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay,
-  Tab,
-  TabList,
-  TabPanel,
-  TabPanels,
-  Tabs,
-  Text,
-  useToken,
-  VStack,
-} from "@chakra-ui/react";
 import { Device } from "@pluto/interfaces";
 import { isValidIp, isValidMac } from "@pluto/utils";
 import axios from "axios";
@@ -35,6 +15,8 @@ import { AddIcon } from "../icons/AddIcon";
 import { Input } from "../Input/Input";
 import { CircularProgressWithDots } from "../ProgressBar/CircularProgressWithDots";
 import { RegisterDeviceTable } from "../Table";
+import { Modal } from "@/components/ui/modal";
+import { cn } from "@/lib/utils";
 
 interface RegisterDevicesModalProps {
   isOpen: boolean;
@@ -140,7 +122,7 @@ function ModalBodyContent({
 
   const registerDevice = async () => {
     try {
-      const response = await axios.patch(`/api/devices/imprint`, {
+      await axios.patch(`/api/devices/imprint`, {
         mac: discoveredDevices?.find((d) => d.ip === ipAndMacAddress.ipAddress)?.mac,
       });
       await onDevicesChanged();
@@ -158,7 +140,7 @@ function ModalBodyContent({
       if (selectedDevices && selectedDevices.length > 0) {
         // Registra i dispositivi selezionati inviando le informazioni necessarie, in sequenza
         for (const device of selectedDevices) {
-          const response = await axios.patch(`/api/devices/imprint`, {
+          await axios.patch(`/api/devices/imprint`, {
             mac: device.mac,
           });
         }
@@ -224,253 +206,158 @@ function ModalBodyContent({
     return hasErrorFields(errors) || hasEmptyFields(ipAndMacAddress);
   }, [errors, ipAndMacAddress]);
 
-  const [borderColor] = useToken("colors", ["border-color"]);
-  const [bgColor] = useToken("colors", ["input-bg"]);
-  const [accentColor] = useToken("colors", ["accent-color"]);
-
   return (
-    <Box p={0} pt={"1rem"} height={"100%"}>
-      <Flex
-        flexDir={"column"}
-        gap={"2rem"}
-        borderRadius={0}
-        p={{ base: "0.5rem", tablet: "1rem" }}
-        borderWidth={"1px"}
-        borderColor={"border-color"}
-        h={"100%"}
-      >
-        <VStack spacing={4} align="stretch" h={"100%"}>
-          <Tabs onChange={(index) => setTabIndex(index)} variant="unstyled" h={"100%"}>
-            <TabList>
-              <Tab
-                fontFamily={"heading"}
-                fontSize={"sm"}
-                _selected={{
-                  _after: {
-                    content: '""',
-                    width: "32px",
-                    height: "2px",
-                    backgroundColor: "accent-color",
-                    display: "block",
-                    position: "absolute",
-                    bottom: "8px",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    borderRadius: "3px",
-                  },
-                  fontWeight: 700,
-                }}
-                position="relative"
-              >
-                Manually
-              </Tab>
-              <Tab
-                fontFamily={"heading"}
-                fontSize={"sm"}
-                _selected={{
-                  _after: {
-                    content: '""',
-                    width: "32px",
-                    height: "2px",
-                    backgroundColor: "accent-color",
-                    display: "block",
-                    position: "absolute",
-                    bottom: "8px",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    borderRadius: "3px",
-                  },
-                  fontWeight: 700,
-                }}
-                position="relative"
-              >
-                Auto discovery
-              </Tab>
-            </TabList>
+    <div className="mt-6 flex h-full flex-col gap-4">
+      <div className="flex gap-6 border-b border-border pb-2">
+        <button
+          type="button"
+          onClick={() => setTabIndex(0)}
+          className={cn(
+            "relative pb-2 font-heading text-sm",
+            tabIndex === 0 ? "font-bold" : "text-muted-foreground"
+          )}
+        >
+          Manually
+          {tabIndex === 0 ? (
+            <span className="absolute -bottom-[1px] left-1/2 h-0.5 w-8 -translate-x-1/2 bg-primary" />
+          ) : null}
+        </button>
+        <button
+          type="button"
+          onClick={() => setTabIndex(1)}
+          className={cn(
+            "relative pb-2 font-heading text-sm",
+            tabIndex === 1 ? "font-bold" : "text-muted-foreground"
+          )}
+        >
+          Auto discovery
+          {tabIndex === 1 ? (
+            <span className="absolute -bottom-[1px] left-1/2 h-0.5 w-8 -translate-x-1/2 bg-primary" />
+          ) : null}
+        </button>
+      </div>
 
-            <TabPanels height={"calc(100% - 2.5rem)"} overflow={"scroll"}>
-              <TabPanel>
-                <VStack alignItems={"start"} spacing={"1rem"}>
-                  <Flex w={"100%"} gap={"1rem"} flexDirection={{ base: "column", mobileL: "row" }}>
-                    <Flex flex={1}>
-                      <Input
-                        label="IP Address"
-                        name="ipAddress"
-                        id="ipAddress"
-                        placeholder="IP address"
-                        value={ipAndMacAddress.ipAddress}
-                        onChange={handleChange}
-                        error={errors.ipAddress}
-                      />
-                    </Flex>
-                    <Flex flex={1}>
-                      <Input
-                        label="MAC Address"
-                        name="macAddress"
-                        id="macAddress"
-                        placeholder="MAC Address"
-                        value={ipAndMacAddress.macAddress}
-                        onChange={handleChange}
-                        error={errors.macAddress}
-                      />
-                    </Flex>
-                  </Flex>
+      <div className="flex-1 overflow-y-auto">
+        {tabIndex === 0 ? (
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-4 mobileL:grid-cols-2">
+              <Input
+                label="IP Address"
+                name="ipAddress"
+                id="ipAddress"
+                placeholder="IP address"
+                value={ipAndMacAddress.ipAddress}
+                onChange={handleChange}
+                error={errors.ipAddress}
+              />
+              <Input
+                label="MAC Address"
+                name="macAddress"
+                id="macAddress"
+                placeholder="MAC Address"
+                value={ipAndMacAddress.macAddress}
+                onChange={handleChange}
+                error={errors.macAddress}
+              />
+            </div>
 
-                  {/* Mostra errore di ricerca */}
-                  {searchError && <Text color="error-color">{searchError}</Text>}
+            {searchError ? <p className="text-sm text-destructive">{searchError}</p> : null}
 
-                  <Flex align={"start"}>
+            <div>
+              <Button
+                variant="primary"
+                onClick={searchDevice}
+                isLoading={isLoadingData}
+                disabled={areManuallySearchFieldsValid()}
+                label="Search"
+              />
+            </div>
+
+            {discoveredDevices ? (
+              discoveredDevices.length > 0 && ipAndMacAddress.macAddress ? (
+                <div className="mt-2 flex flex-col gap-4">
+                  <p className="font-heading text-sm font-bold text-foreground">
+                    Result for {ipAndMacAddress.macAddress}
+                  </p>
+                  <RegisterDeviceTable
+                    devices={discoveredDevices}
+                    onChange={handleCheckbox}
+                    allChecked={allChecked}
+                    checkedItems={checkedFetchedItems}
+                    handleAllCheckbox={handleAllCheckbox}
+                    selectedTab={tabIndex}
+                  />
+                  <div className="flex gap-4">
+                    <Button variant="outlined" onClick={onClose} label="Cancel" />
                     <Button
                       variant="primary"
-                      onClick={searchDevice}
-                      isLoading={isLoadingData}
-                      disabled={areManuallySearchFieldsValid()}
-                      label="Search"
-                    ></Button>
-                  </Flex>
-                  <Box w={"100%"}>
-                    {discoveredDevices && (
-                      <Box>
-                        {discoveredDevices.length > 0 && ipAndMacAddress.macAddress ? (
-                          <Flex flexDir={"column"} gap={"1rem"} mt={"1rem"}>
-                            <Text
-                              color={"text-color"}
-                              fontFamily={"heading"}
-                              fontSize={"sm"}
-                              fontWeight={"700"}
-                            >
-                              Result for {ipAndMacAddress.macAddress}
-                            </Text>
-                            <RegisterDeviceTable
-                              devices={discoveredDevices}
-                              onChange={handleCheckbox}
-                              allChecked={allChecked}
-                              checkedItems={checkedFetchedItems}
-                              handleAllCheckbox={handleAllCheckbox}
-                              selectedTab={tabIndex}
-                            />
-                            <Flex align={"start"}>
-                              <Flex gap={"1rem"}>
-                                <Button
-                                  variant="outlined"
-                                  onClick={onClose}
-                                  label="Cancel"
-                                ></Button>
-                                <Button
-                                  variant="primary"
-                                  onClick={() => registerDevice()}
-                                  rightIcon={<AddIcon color={bgColor} />}
-                                  disabled={discoveredDevices.length !== 1}
-                                  label="Add device"
-                                ></Button>
-                              </Flex>
-                            </Flex>
-                          </Flex>
-                        ) : (
-                          <Text>No device found</Text>
-                        )}
-                      </Box>
-                    )}
-                  </Box>
-                </VStack>
-              </TabPanel>
-              <TabPanel height={"100%"}>
-                {isLoadingData ? (
-                  <Flex
-                    w={"100%"}
-                    alignItems={"center"}
-                    flexDirection={"column"}
-                    gap={"1rem"}
-                    m={"2rem auto"}
-                  >
-                    <CircularProgressWithDots />
-                    <Heading fontWeight={400} fontSize={"24px"}>
-                      Looking for Devices...
-                    </Heading>
-                  </Flex>
-                ) : (
-                  <VStack h={"100%"}>
-                    {discoveredDevices && discoveredDevices.length > 0 ? (
-                      <Box as={Flex} flexDir={"column"} gap={"1rem"} w={"100%"} h={"100%"}>
-                        <Flex alignItems={"center"} justify={"space-between"} gap={"1rem"}>
-                          <Text fontSize="12px">
-                            “{discoveredDevices?.length}” new devices found
-                          </Text>
-                          <ChakraCheckbox
-                            borderRadius={0}
-                            display={{ base: "flex", tablet: "none" }}
-                            gap={"0.5rem"}
-                            flexDirection="row-reverse" // Posiziona il testo a sinistra e la checkbox a destra
-                            alignItems="center" // Allinea verticalmente checkbox e testo
-                            borderColor={borderColor}
-                            sx={{
-                              "& .chakra-checkbox__control": {
-                                height: "1rem",
-                                width: "1rem",
-                                borderRadius: 0,
-                                bg: "bgColor",
-                                borderColor: borderColor,
-                              },
-                              "& .chakra-checkbox__control[data-checked]": {
-                                bg: accentColor,
-                                borderColor: borderColor,
-                                color: borderColor,
-                              },
-                              "& .chakra-checkbox__control[data-checked]:hover": {
-                                bg: accentColor,
-                                borderColor: borderColor,
-                                color: borderColor,
-                              },
-                              "& .chakra-checkbox__control:focus": {
-                                borderColor: borderColor,
-                              },
-                            }}
-                            isChecked={allChecked}
-                            onChange={(e) => handleAllCheckbox(e.target.checked)}
-                          >
-                            <Text fontSize="xs">Select all</Text>
-                          </ChakraCheckbox>
-                        </Flex>
+                      onClick={() => registerDevice()}
+                      rightIcon={<AddIcon color="currentColor" />}
+                      disabled={discoveredDevices.length !== 1}
+                      label="Add device"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No device found</p>
+              )
+            ) : null}
+          </div>
+        ) : isLoadingData ? (
+          <div className="mx-auto my-8 flex flex-col items-center gap-4">
+            <CircularProgressWithDots />
+            <p className="font-heading text-2xl font-normal">Looking for Devices...</p>
+          </div>
+        ) : (
+          <div className="flex h-full flex-col gap-4">
+            {discoveredDevices && discoveredDevices.length > 0 ? (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-xs text-muted-foreground">
+                    “{discoveredDevices.length}” new devices found
+                  </p>
+                  <label className="flex items-center gap-2 tablet:hidden">
+                    <span className="text-xs text-muted-foreground">Select all</span>
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded-none border border-input bg-background accent-primary"
+                      checked={allChecked}
+                      onChange={(e) => handleAllCheckbox(e.target.checked)}
+                    />
+                  </label>
+                </div>
 
-                        <RegisterDeviceTable
-                          devices={discoveredDevices}
-                          onChange={handleCheckbox}
-                          allChecked={allChecked}
-                          checkedItems={checkedFetchedItems}
-                          handleAllCheckbox={handleAllCheckbox}
-                          selectedTab={tabIndex}
-                        />
+                <RegisterDeviceTable
+                  devices={discoveredDevices}
+                  onChange={handleCheckbox}
+                  allChecked={allChecked}
+                  checkedItems={checkedFetchedItems}
+                  handleAllCheckbox={handleAllCheckbox}
+                  selectedTab={tabIndex}
+                />
 
-                        <Flex align={"start"}>
-                          <Flex gap={"1rem"}>
-                            <Button variant="outlined" onClick={onClose} label="Cancel"></Button>
-                            <Button
-                              variant="primary"
-                              onClick={() => registerDevices()}
-                              rightIcon={<AddIcon color={bgColor} />}
-                              disabled={
-                                checkedFetchedItems.filter((el) => el === true).length === 0
-                              }
-                              label={`Add ${
-                                checkedFetchedItems.filter((el) => el === true).length > 0
-                                  ? checkedFetchedItems.filter((el) => el === true).length
-                                  : ""
-                              } device`}
-                            ></Button>
-                          </Flex>
-                        </Flex>
-                      </Box>
-                    ) : (
-                      <Text>No device found.</Text>
-                    )}
-                  </VStack>
-                )}
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
-        </VStack>
-      </Flex>
-    </Box>
+                <div className="flex gap-4">
+                  <Button variant="outlined" onClick={onClose} label="Cancel" />
+                  <Button
+                    variant="primary"
+                    onClick={() => registerDevices()}
+                    rightIcon={<AddIcon color="currentColor" />}
+                    disabled={checkedFetchedItems.filter((el) => el === true).length === 0}
+                    label={`Add ${
+                      checkedFetchedItems.filter((el) => el === true).length > 0
+                        ? checkedFetchedItems.filter((el) => el === true).length
+                        : ""
+                    } device`}
+                  />
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No device found.</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -479,45 +366,25 @@ export const RegisterDevicesModal: React.FC<RegisterDevicesModalProps> = ({
   onClose,
   onDevicesChanged,
 }) => {
-  const [primaryColor] = useToken("colors", ["primary-color"]);
-
   return (
-    <Modal onClose={onClose} size={"full)"} isOpen={isOpen}>
-      <ModalOverlay boxShadow={"0px -39px 39px 0px #00988817"} />
-      <ModalContent
-        bg={"bg-color"}
-        borderRadius={0}
-        height={{
-          base: "calc(100% - 8.5rem)",
-          tablet: "calc(100% - 10.5rem)",
-          tabletL: "calc(100% - 9.5rem)",
-        }}
-        top={"1.5rem"}
-        overflow={"scroll"}
-        borderColor={"border-color"}
-        borderTopWidth={"1px"}
-        borderBottomWidth={"1px"}
-      >
-        <Box
-          maxW="container.desktop"
-          margin={"0 auto"}
-          p={"2rem"}
-          w={"100%"}
-          h={"100%"}
-          overflow={"hidden"}
-        >
-          <ModalHeader p={0} fontFamily={"heading"} fontWeight={400} fontSize={"2rem"}>
-            Add a new Device
-          </ModalHeader>
-          <ModalCloseButton color={primaryColor} />
-          <ModalBody p={0} height={"calc(100% - 5rem)"}>
-            <ModalBodyContent
-              onClose={onClose}
-              onDevicesChanged={onDevicesChanged}
-            ></ModalBodyContent>
-          </ModalBody>
-        </Box>
-      </ModalContent>
+    <Modal open={isOpen} onClose={onClose} variant="sheet">
+      <div className="w-full max-w-[1440px] border border-border bg-card text-card-foreground">
+        <div className="relative mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto p-6 tablet:p-8">
+          <div className="flex items-start justify-between gap-6">
+            <h2 className="font-heading text-2xl font-medium">Add a new Device</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-primary hover:opacity-80"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+
+          <ModalBodyContent onClose={onClose} onDevicesChanged={onDevicesChanged} />
+        </div>
+      </div>
     </Modal>
   );
 };

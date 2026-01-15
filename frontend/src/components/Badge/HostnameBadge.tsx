@@ -6,7 +6,8 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { Badge as ChakraBadge, Flex, Text, useToken } from "@chakra-ui/react";
+import React from "react";
+
 import Link from "../Link/Link";
 
 export interface DeviceStatusBadgeProps {
@@ -17,38 +18,22 @@ export interface DeviceStatusBadgeProps {
 }
 
 export const HostnameBadge: React.FC<DeviceStatusBadgeProps> = ({ mac, hostname, ip, tracing }) => {
-  const [badgeBg] = useToken("colors", ["badge-bg"]);
-  const [badgeBorder] = useToken("colors", ["badge-border"]);
-  const [badgeColor] = useToken("colors", ["badge-color"]);
-  const [badgeIpColor] = useToken("colors", ["badge-ip-color"]);
   return (
-    <ChakraBadge
+    <div
       key={mac}
-      backgroundColor={badgeBg}
-      fontSize={"xs"}
-      borderRadius={0}
-      padding={"4px 6px"}
-      fontFamily={"body"}
-      border={`1px solid ${badgeBorder}`}
+      className="inline-flex items-center gap-1 border border-border bg-muted px-3 py-1"
     >
-      <Flex alignItems={"center"} gap={"0.25rem"} p={"5px 8px"} height={"21.5px"}>
-        <Text fontWeight={500} textTransform={"capitalize"} color={badgeColor}>
-          {hostname}
-        </Text>
-        <Text fontWeight={500} color={"primary-color"}>
-          {" - "}
-        </Text>
-        <Link
-          isExternal={true}
-          href={ip}
-          label={ip}
-          fontFamily="accent"
-          fontWeight={400}
-          color={badgeIpColor}
-          textDecoration="underline"
-          isDisabled={tracing ? false : true}
-        />
-      </Flex>
-    </ChakraBadge>
+      <span className="font-body text-xs font-medium capitalize text-foreground">{hostname}</span>
+      <span className="font-body text-xs font-medium text-primary">-</span>
+      <Link
+        isExternal={true}
+        href={ip.startsWith("http") ? ip : `http://${ip}`}
+        label={ip}
+        fontFamily="accent"
+        fontWeight={400}
+        className="text-xs text-muted-foreground underline"
+        isDisabled={tracing ? false : true}
+      />
+    </div>
   );
 };

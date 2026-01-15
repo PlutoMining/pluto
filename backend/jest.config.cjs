@@ -19,8 +19,6 @@ module.exports = {
     '<rootDir>/src/index.ts',
     '<rootDir>/src/config/',
     '<rootDir>/src/routes/',
-    '<rootDir>/src/services/grafana.service.ts',
     '<rootDir>/src/services/tracing.service.ts',
   ],
 };
-

@@ -95,7 +95,6 @@ services:
       - PORT=7776
       - AUTO_LISTEN=true
       # - DISCOVERY_SERVICE_HOST=http://host.docker.internal:7775
-      - GF_HOST=http://grafana:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
       - ./common/utils:/home/node/common/utils # Monta il modulo (writable per development)
@@ -104,13 +103,9 @@ services:
       - ./common/logger:/home/node/common/logger # Monta il modulo (writable per development)
       - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./backend:/home/node/app/
-      - ./grafana/templates:/home/node/app/grafana_templates/
       - ./data/leveldb:/home/node/app/data
-      - ./data/grafana:/home/node/app/grafana
     depends_on:
       prometheus:
-        condition: service_healthy
-      grafana:
         condition: service_healthy
     user: "1000:1000"
 
@@ -131,7 +126,6 @@ services:
     #   - frontend/.env.local
     environment:
       - PORT=7777
-      - GF_HOST=http://grafana:3000
       - BACKEND_DESTINATION_HOST=http://pluto-backend-1:7776
     volumes:
       - ./common/utils:/home/node/common/utils # Monta il modulo (writable per development)
@@ -145,6 +139,11 @@ services:
     build:
       context: prometheus
       dockerfile: Dockerfile.development
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--storage.tsdb.retention.size=5GB"
     volumes:
       - ./data/prometheus:/prometheus
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -159,31 +158,3 @@ services:
       timeout: 5s
       retries: 5
     user: "65534:65534"
-
-  grafana:
-    build:
-      context: grafana
-      dockerfile: Dockerfile.development
-    # ports:
-    #   - "7778:3000"
-    pid: host
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
-    volumes:
-      - ./data/grafana:/var/lib/grafana
-      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
-      - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
-    healthcheck:
-      test:
-        - "CMD-SHELL"
-        - "wget --spider --quiet http://localhost:3000/api/health || exit 1"
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      prometheus:
-        condition: service_healthy # Attende che prometheus sia in stato "healthy"
-    user: "472:472"

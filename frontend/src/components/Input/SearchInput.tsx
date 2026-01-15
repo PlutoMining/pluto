@@ -4,17 +4,13 @@
  * it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation, version 3.
  * See <https://www.gnu.org/licenses/>.
-*/
+ */
 
-import { ChangeEventHandler } from "react";
-import {
-  Input as ChakraInput,
-  InputGroup,
-  InputLeftElement,
-  useTheme,
-  useToken,
-} from "@chakra-ui/react";
-import React from "react";
+import React, { ChangeEventHandler } from "react";
+
+import { Input as UiInput } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+
 import { SearchIcon } from "../icons/SearchIcon";
 
 interface SearchInputProps {
@@ -30,42 +26,15 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   type = "text",
   onChange,
 }) => {
-  const [borderColor] = useToken("colors", ["border-color"]);
-  const [bgColor] = useToken("colors", ["input-bg"]);
-  const [textColor] = useToken("colors", ["body-text"]);
-
-  // primaryColor
-  const [primaryColor] = useToken("colors", ["cta-bg"]);
-  const [primaryColorHover] = useToken("colors", ["cta-bg-hover"]);
-
   return (
-    <InputGroup height={"40px"}>
-      <InputLeftElement pointerEvents="none">
-        <SearchIcon color={primaryColor} />
-      </InputLeftElement>
-      <ChakraInput
+    <div className="relative">
+      <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-primary" />
+      <UiInput
         type={type}
         placeholder={placeholder}
         onChange={onChange}
-        outline={"none"}
-        backgroundColor={bgColor}
-        borderWidth={"1px"}
-        borderColor={borderColor}
-        color={textColor}
-        borderRadius={0}
-        boxShadow={"none"}
-        _placeholder={{
-          color: textColor,
-        }}
-        _focus={{
-          outline: "none",
-          boxShadow: "none",
-          border: `1px solid ${primaryColor}`,
-        }}
-        _hover={{
-          border: `1px solid ${primaryColorHover}`,
-        }}
+        className={cn("h-10 rounded-none pl-9 font-accent text-[13px]")}
       />
-    </InputGroup>
+    </div>
   );
 };

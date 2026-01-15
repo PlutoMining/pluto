@@ -67,7 +67,7 @@ scripts/release.sh --skip-login --bump-version --update-manifests
 
 ## What It Does
 
-For each service (`backend`, `discovery`, `frontend`, `grafana`, `prometheus`):
+For each service (`backend`, `discovery`, `frontend`, `prometheus`):
 
 1. **Version Management**:
    - Prompts for the version to use (or keeps current if `--bump-version` is not used)
@@ -157,7 +157,7 @@ git checkout -b chore/release-v1.3.5
 
 # Stage all changes
 git add backend/package.json discovery/package.json frontend/package.json \
-      grafana/package.json prometheus/package.json
+      prometheus/package.json
 
 # Add manifest files if they were updated
 if [[ -n "$(git status --porcelain umbrel-apps/pluto/)" ]]; then

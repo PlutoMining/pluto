@@ -14,31 +14,6 @@ export function middleware(req: NextRequest) {
 
   const internalApiRoutes = ["/api/app-version", "/api/socket/io"];
 
-  // Handling requests to Grafana
-  if (url.pathname.startsWith("/grafana")) {
-    const grafanaUrl = new URL(`${process.env.GF_HOST!}${url.pathname}`, req.url);
-
-    // Create the response by rewriting the URL
-    const response = NextResponse.rewrite(grafanaUrl);
-
-    if (!url.pathname.startsWith("/grafana/public-dashboards")) {
-      // Add custom headers for requests to Grafana
-      response.headers.set("X-WEBAUTH-USER", "admin");
-    }
-
-    // Add header to allow iframe loading
-    response.headers.set("X-Frame-Options", "ALLOWALL");
-
-    // Set Content-Security-Policy to allow iframes from any origin
-    response.headers.set("Content-Security-Policy", "frame-ancestors 'self' *;");
-
-    if (url.pathname.includes("/api") && !url.pathname.includes("api/user/auth-tokens/rotate")) {
-      response.headers.set("Origin", process.env.GF_HOST!);
-    }
-
-    return response;
-  }
-
   // Handling requests to the backend API
   if (url.pathname.startsWith("/api")) {
     // Check if the route is in the list of internal routes
@@ -64,6 +39,6 @@ export function middleware(req: NextRequest) {
 
 // Matcher configuration to handle both routes
 export const config = {
-  matcher: ["/grafana/:path*", "/api/:path*"],
+  matcher: ["/api/:path*"],
   dynamic: "force-dynamic",
 };

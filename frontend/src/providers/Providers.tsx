@@ -8,14 +8,8 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import theme from "@/theme/theme";
-import { ChakraProvider } from "@chakra-ui/react";
-import { SocketProvider } from "./SocketProvider";
+import { ThemeProvider } from "./ThemeProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <ChakraProvider theme={theme}>
-      <SocketProvider>{children}</SocketProvider>
-    </ChakraProvider>
-  );
+  return <ThemeProvider>{children}</ThemeProvider>;
 }

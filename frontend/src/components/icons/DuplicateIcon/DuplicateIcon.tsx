@@ -1,4 +1,3 @@
-import { useToken } from "@chakra-ui/react";
 import React from "react";
 
 interface DuplicateIconProps {
@@ -8,17 +7,15 @@ interface DuplicateIconProps {
 }
 
 export const DuplicateIcon = ({
-  color = "cta-icon-color",
+  color = "currentColor",
   w = "24",
   h = "24",
 }: DuplicateIconProps) => {
-  const [strokeColor] = useToken("colors", [color]);
-
   return (
     <svg width={w} height={h} viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M10 6.29688V3.29688H21V14.2969H18M4 10.2969H15V21.2969H4V10.2969Z"
-        stroke={strokeColor}
+        stroke={color}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"

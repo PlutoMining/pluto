@@ -18,7 +18,6 @@ make setup
 
 This creates the required data directories with correct permissions:
 - `data/prometheus-release` (owned by `65534:65534` for Prometheus)
-- `data/grafana-release` (owned by `472:472` for Grafana)
 - `data/leveldb-release` (owned by `1000:1000` for backend/discovery)
 
 > **Note**: Skipping this step will cause Prometheus to fail with "permission denied" errors when trying to write to its data directory.

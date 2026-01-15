@@ -6,7 +6,6 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { Table, TableContainer, Tbody, Td, Th, Thead, Tooltip, Tr } from "@chakra-ui/react";
 import { Device } from "@pluto/interfaces";
 import { DeviceStatusBadge } from "../Badge";
 import { getMinerName } from "@/utils/minerMap";
@@ -20,270 +19,87 @@ interface DeviceTableProps {
 
 export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceFunction }) => {
   return (
-    <TableContainer display={{ base: "none", tablet: "block" }}>
-      <Table variant="simple" sx={{ borderCollapse: "collapse", width: "100%" }}>
-        <Thead>
-          <Tr backgroundColor={"th-bg"} h={"40px"}>
-            <Th
-              borderBottomColor={"border-color"}
-              p={"8px 0 8px 12px"}
-              borderRadius={0}
-              color={"th-color"}
-              textTransform={"uppercase"}
-              fontSize={"xs"}
-              maxW={"140px"}
-              fontFamily={"accent"}
-              fontWeight={400}
-            >
+    <div className="hidden tablet:block overflow-x-auto">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="h-10 bg-muted">
+            <th className="max-w-[140px] border-b border-border p-3 text-left font-accent text-xs font-normal uppercase text-muted-foreground">
               Hostname
-            </Th>
-            <Th
-              borderColor={"border-color"}
-              p={0}
-              borderRadius={0}
-              color={"th-color"}
-              textTransform={"uppercase"}
-              fontSize={"xs"}
-              textAlign={"center"}
-              fontFamily={"accent"}
-              fontWeight={400}
-            >
+            </th>
+            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
               Date added
-            </Th>
-            <Th
-              borderColor={"border-color"}
-              p={0}
-              borderRadius={0}
-              color={"th-color"}
-              textTransform={"uppercase"}
-              fontSize={"xs"}
-              textAlign={"center"}
-              fontFamily={"accent"}
-              fontWeight={400}
-            >
+            </th>
+            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
               IP
-            </Th>
-            <Th
-              borderColor={"border-color"}
-              p={0}
-              borderRadius={0}
-              color={"th-color"}
-              textTransform={"uppercase"}
-              fontSize={"xs"}
-              textAlign={"center"}
-              fontFamily={"accent"}
-              fontWeight={400}
-            >
+            </th>
+            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
               Mac Address
-            </Th>
-            <Th
-              borderColor={"border-color"}
-              p={0}
-              borderRadius={0}
-              color={"th-color"}
-              textTransform={"uppercase"}
-              fontSize={"xs"}
-              textAlign={"center"}
-              fontFamily={"accent"}
-              fontWeight={400}
-            >
+            </th>
+            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
               Miner
-            </Th>
-            <Th
-              borderColor={"border-color"}
-              p={0}
-              borderRadius={0}
-              color={"th-color"}
-              textTransform={"uppercase"}
-              fontSize={"xs"}
-              textAlign={"center"}
-              fontFamily={"accent"}
-              fontWeight={400}
-            >
+            </th>
+            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
               ASIC
-            </Th>
-            <Th
-              borderColor={"border-color"}
-              p={0}
-              borderRadius={0}
-              color={"th-color"}
-              textTransform={"uppercase"}
-              fontSize={"xs"}
-              textAlign={"center"}
-              fontFamily={"accent"}
-              fontWeight={400}
-            >
+            </th>
+            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
               Uptime
-            </Th>
-            <Th
-              borderColor={"border-color"}
-              p={0}
-              borderRadius={0}
-              color={"th-color"}
-              textTransform={"uppercase"}
-              fontSize={"xs"}
-              textAlign={"center"}
-              fontFamily={"accent"}
-              fontWeight={400}
-            >
+            </th>
+            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
               FW v.
-            </Th>
-            <Th
-              borderColor={"border-color"}
-              p={0}
-              borderRadius={0}
-              color={"th-color"}
-              textTransform={"uppercase"}
-              fontSize={"xs"}
-              textAlign={"center"}
-              fontFamily={"accent"}
-              fontWeight={400}
-            >
+            </th>
+            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
               Status
-            </Th>
-            <Th borderColor={"border-color"} borderRadius={0}></Th>
-          </Tr>
-        </Thead>
-        <Tbody>
+            </th>
+            <th className="border-b border-border p-3" />
+          </tr>
+        </thead>
+        <tbody>
           {devices.map((device) => (
-            <Tr key={`registered-device-${device.mac}`} backgroundColor={"td-bg"}>
-              <Td
-                borderTopWidth={"1px"}
-                borderBottomWidth={0}
-                borderColor={"border-color"}
-                fontSize={"13px"}
-                textAlign={"left"}
-                p={"12px"}
-                maxW={"140px"}
-                wordBreak={"normal"}
-                whiteSpace={"break-spaces"}
-                fontWeight="400"
-                fontFamily={"accent"}
-              >
+            <tr key={`registered-device-${device.mac}`} className="bg-card">
+              <td className="max-w-[140px] border-t border-border p-3 font-accent text-[13px] font-normal">
                 {device.info.hostname}
-              </Td>
-              <Td
-                borderTopWidth={"1px"}
-                borderBottomWidth={0}
-                borderColor={"border-color"}
-                fontSize={"13px"}
-                textAlign={"center"}
-                p={"12px"}
-                fontWeight="400"
-                fontFamily={"accent"}
-              >
+              </td>
+              <td className="border-t border-border p-3 text-center font-accent text-[13px] font-normal">
                 {convertIsoTomMdDYy(device.createdAt!)}
-              </Td>
-              <Td
-                borderTopWidth={"1px"}
-                borderBottomWidth={0}
-                borderColor={"border-color"}
-                fontSize={"13px"}
-                textAlign={"center"}
-                p={"12px"}
-                fontWeight="400"
-                fontFamily={"accent"}
-              >
+              </td>
+              <td className="border-t border-border p-3 text-center font-accent text-[13px] font-normal">
                 {device.ip}
-              </Td>
-              <Td
-                borderTopWidth={"1px"}
-                borderBottomWidth={0}
-                borderColor={"border-color"}
-                fontSize={"13px"}
-                textAlign={"center"}
-                p={"12px"}
-                fontWeight="400"
-                fontFamily={"accent"}
-              >
+              </td>
+              <td className="border-t border-border p-3 text-center font-accent text-[13px] font-normal">
                 {device.mac}
-              </Td>
-              <Td
-                borderTopWidth={"1px"}
-                borderBottomWidth={0}
-                borderColor={"border-color"}
-                fontSize={"13px"}
-                textAlign={"center"}
-                p={"12px"}
-                width={"125px"}
-                maxWidth={"125px"}
-                wordBreak={"normal"}
-                whiteSpace={"break-spaces"}
-                fontWeight="400"
-                fontFamily={"accent"}
-              >
+              </td>
+              <td className="w-[125px] max-w-[125px] border-t border-border p-3 text-center font-accent text-[13px] font-normal">
                 {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
-              </Td>
-              <Td
-                borderTopWidth={"1px"}
-                borderBottomWidth={0}
-                borderColor={"border-color"}
-                fontSize={"13px"}
-                textAlign={"center"}
-                p={"12px 8px"}
-                fontWeight="400"
-                fontFamily={"accent"}
-              >
+              </td>
+              <td className="border-t border-border p-3 text-center font-accent text-[13px] font-normal">
                 {device.info.ASICModel}
-              </Td>
-              <Td
-                borderTopWidth={"1px"}
-                borderBottomWidth={0}
-                borderColor={"border-color"}
-                fontSize={"13px"}
-                textAlign={"center"}
-                p={"12px"}
-                fontWeight="400"
-                fontFamily={"accent"}
+              </td>
+              <td
+                className="border-t border-border p-3 text-center font-accent text-[13px] font-normal"
+                title={formatDetailedTime(device.info.uptimeSeconds)}
               >
-                <Tooltip
-                  label={formatDetailedTime(device.info.uptimeSeconds)}
-                  aria-label={formatDetailedTime(device.info.uptimeSeconds)}
-                >
-                  {formatTime(device.info.uptimeSeconds)}
-                </Tooltip>
-              </Td>
-              <Td
-                borderTopWidth={"1px"}
-                borderBottomWidth={0}
-                borderColor={"border-color"}
-                fontSize={"13px"}
-                textAlign={"center"}
-                p={"12px"}
-                fontWeight="400"
-                fontFamily={"accent"}
-              >
+                {formatTime(device.info.uptimeSeconds)}
+              </td>
+              <td className="border-t border-border p-3 text-center font-accent text-[13px] font-normal">
                 {device.info.version}
-              </Td>
-              <Td
-                borderTopWidth={"1px"}
-                borderBottomWidth={0}
-                borderColor={"border-color"}
-                textAlign={"center"}
-                p={"12px"}
-              >
+              </td>
+              <td className="border-t border-border p-3 text-center">
                 <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
-              </Td>
-              <Td
-                borderTopWidth={"1px"}
-                borderBottomWidth={0}
-                borderColor={"border-color"}
-                p={"12px"}
-                maxWidth={{ tablet: "14px", desktop: "unset" }}
-                width={{ tablet: "14px", desktop: "unset" }}
-                fontWeight="500"
-              >
-                <DeleteIcon
-                  h={"20"}
-                  w={"14px"}
-                  color={"body-text"}
+              </td>
+              <td className="border-t border-border p-3 text-center">
+                <button
+                  type="button"
                   onClick={() => removeDeviceFunction(device.mac)}
-                />
-              </Td>
-            </Tr>
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label={`Remove ${device.info.hostname}`}
+                >
+                  <DeleteIcon h={"20"} w={"14px"} />
+                </button>
+              </td>
+            </tr>
           ))}
-        </Tbody>
-      </Table>
-    </TableContainer>
+        </tbody>
+      </table>
+    </div>
   );
 };
