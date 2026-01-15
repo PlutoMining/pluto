@@ -58,6 +58,12 @@ export const createMetricsForDevice = (hostname: string) => {
     registers: [globalRegister],
   });
 
+  const vrTempGauge = new client.Gauge({
+    name: `${prefix}vr_temperature_celsius`,
+    help: "Current voltage regulator temperature in Celsius",
+    registers: [globalRegister],
+  });
+
   const hashRateGauge = new client.Gauge({
     name: `${prefix}hashrate_ghs`,
     help: "Current hash rate in GH/s",
@@ -119,6 +125,7 @@ export const createMetricsForDevice = (hostname: string) => {
       if (data.current) currentGauge.set(data.current / 1000); // Assume current in milliamps
       if (data.fanSpeedRpm || data.fanspeed) fanSpeedGauge.set(data.fanSpeedRpm || data.fanspeed);
       if (data.temp) tempGauge.set(data.temp);
+      if (data.vrTemp) vrTempGauge.set(data.vrTemp);
       if (data.hashRate || data.hashRate_10m) hashRateGauge.set(data.hashRate || data.hashRate_10m);
       if (data.sharesAccepted) sharesAcceptedGauge.set(data.sharesAccepted);
       if (data.sharesRejected) sharesRejectedGauge.set(data.sharesRejected);

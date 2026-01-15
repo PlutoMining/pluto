@@ -69,6 +69,7 @@ describe('metrics.service', () => {
         current: 6000,
         fanSpeedRpm: 1200,
         temp: 45,
+        vrTemp: 70,
         hashRate: 800,
         sharesAccepted: 10,
         sharesRejected: 1,
@@ -89,6 +90,7 @@ describe('metrics.service', () => {
       expect(gaugeInstances.get('rig_current_amps')?.set).toHaveBeenCalledWith(6);
       expect(gaugeInstances.get('rig_fanspeed_rpm')?.set).toHaveBeenCalledWith(1200);
       expect(gaugeInstances.get('rig_temperature_celsius')?.set).toHaveBeenCalledWith(45);
+      expect(gaugeInstances.get('rig_vr_temperature_celsius')?.set).toHaveBeenCalledWith(70);
       expect(gaugeInstances.get('rig_hashrate_ghs')?.set).toHaveBeenCalledWith(800);
       expect(gaugeInstances.get('rig_efficiency')?.set).toHaveBeenCalledWith(1200 / (800 / 1000));
     });
