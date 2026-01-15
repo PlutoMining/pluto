@@ -139,14 +139,25 @@ describe('metrics.service', () => {
       expect(gaugeInstances.get('hardware_offline')?.set).toHaveBeenCalledWith(1);
       expect(gaugeInstances.get('total_hashrate')?.set).toHaveBeenCalledWith(75);
       expect(gaugeInstances.get('average_hashrate')?.set).toHaveBeenCalledWith(37.5);
-      expect(gaugeInstances.get('shares_by_pool_accepted')?.set).toHaveBeenCalledWith(8);
-      expect(gaugeInstances.get('shares_by_pool_rejected')?.set).toHaveBeenCalledWith(3);
 
       const firmwareGauge = gaugeInstances.get('firmware_version_distribution');
-      const poolGauge = gaugeInstances.get('shares_by_pool_accepted');
+      const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');
+      const rejectedGauge = gaugeInstances.get('shares_by_pool_rejected');
       expect(firmwareGauge?.labels).toHaveBeenCalled();
-      expect(poolGauge?.labels).toHaveBeenCalled();
+
+      expect(acceptedGauge?.labels).toHaveBeenCalledWith('Ocean Main');
+      expect(acceptedGauge?.labels).toHaveBeenCalledWith('custom:1234');
+      const acceptedSet = acceptedGauge?.labels.mock.results[0].value.set as jest.Mock | undefined;
+      expect(acceptedSet).toBeDefined();
+      expect(acceptedSet).toHaveBeenCalledWith(5);
+      expect(acceptedSet).toHaveBeenCalledWith(3);
+
+      expect(rejectedGauge?.labels).toHaveBeenCalledWith('Ocean Main');
+      expect(rejectedGauge?.labels).toHaveBeenCalledWith('custom:1234');
+      const rejectedSet = rejectedGauge?.labels.mock.results[0].value.set as jest.Mock | undefined;
+      expect(rejectedSet).toBeDefined();
+      expect(rejectedSet).toHaveBeenCalledWith(1);
+      expect(rejectedSet).toHaveBeenCalledWith(2);
     });
   });
 });
-

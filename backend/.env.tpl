@@ -13,10 +13,10 @@ AUTO_LISTEN=true
 # For local: use localhost (e.g., http://localhost:7775)
 DISCOVERY_SERVICE_HOST=http://host.docker.internal:7775
 
-# Grafana host URL
-# For Docker: use service name (e.g., http://grafana:3000)
-# For local: use localhost (e.g., http://localhost:3001)
-GF_HOST=http://grafana:3000
+# Prometheus host URL
+# For Docker: use service name (e.g., http://prometheus:9090)
+# For local: use localhost (e.g., http://localhost:9090)
+PROMETHEUS_HOST=http://prometheus:9090
 
-# Delete Grafana dashboards and metrics when device is removed
+# Delete Prometheus metrics when device is removed
 DELETE_DATA_ON_DEVICE_REMOVE=false

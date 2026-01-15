@@ -6,18 +6,8 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  Flex,
-  useToken,
-} from "@chakra-ui/react";
 import Button from "../Button/Button";
+import { Modal } from "@/components/ui/modal";
 
 interface BasicModalProps {
   isOpen: boolean;
@@ -41,34 +31,34 @@ export const BasicModal: React.FC<BasicModalProps> = ({
   secondaryAction,
   secondaryActionLabel,
 }) => {
-  const [borderColor] = useToken("colors", ["border-color"]);
-  const [bgColor] = useToken("colors", ["item-bg"]);
-  const [textColor] = useToken("colors", ["body-text"]);
-
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered>
-      <ModalOverlay />
-      <ModalContent
-        bg={bgColor}
-        borderRadius={0}
-        borderWidth={"1px"}
-        borderColor={borderColor}
-        color={textColor}
-      >
-        <ModalHeader>{title}</ModalHeader>
-        <ModalCloseButton />
-        {body && <ModalBody>{body}</ModalBody>}
-        <ModalFooter as={Flex} gap={"1rem"}>
-          {secondaryActionLabel && (
+    <Modal open={isOpen} onClose={onClose}>
+      <div className="w-full max-w-lg border border-border bg-card p-4 text-card-foreground">
+        <div className="flex items-start justify-between gap-4">
+          <h2 className="font-heading text-lg font-medium">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        {body ? <div className="mt-3 font-body text-sm text-muted-foreground">{body}</div> : null}
+
+        <div className="mt-6 flex items-center justify-end gap-4">
+          {secondaryActionLabel ? (
             <Button
               onClick={secondaryAction || onClose}
               variant="outlined"
               label={secondaryActionLabel}
-            ></Button>
-          )}
-          <Button variant="primary" onClick={primaryAction} label={primaryActionLabel}></Button>
-        </ModalFooter>
-      </ModalContent>
+            />
+          ) : null}
+          <Button variant="primary" onClick={primaryAction} label={primaryActionLabel} />
+        </div>
+      </div>
     </Modal>
   );
 };

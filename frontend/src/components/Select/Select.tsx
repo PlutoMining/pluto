@@ -4,12 +4,11 @@
  * it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation, version 3.
  * See <https://www.gnu.org/licenses/>.
-*/
+ */
 
-import { ChangeEventHandler } from "react";
-import { FormControl, FormLabel, Select as ChakraSelect, useToken } from "@chakra-ui/react";
-import React from "react";
-import { text } from "d3";
+import React, { ChangeEventHandler } from "react";
+
+import { cn } from "@/lib/utils";
 
 interface SelectProps {
   label: string;
@@ -30,64 +29,29 @@ export const Select: React.FC<SelectProps> = ({
   optionValues = [],
   onChange,
 }) => {
-  const [borderColor] = useToken("colors", ["border-color"]);
-  const [bgColor] = useToken("colors", ["input-bg"]);
-  const [textColor] = useToken("colors", ["body-text"]);
-  const [inputLabelColor] = useToken("colors", ["input-label-color"]);
-
-  // primaryColor
-  const [primaryColor] = useToken("colors", ["cta-bg"]);
-  const [primaryColorHover] = useToken("colors", ["cta-bg-hover"]);
-
   return (
-    <FormControl>
-      <FormLabel
-        htmlFor={name}
-        fontWeight={600}
-        fontSize={"xs"}
-        fontFamily={"body"}
-        textTransform={"uppercase"}
-        color={inputLabelColor}
-      >
+    <div className="grid gap-1.5">
+      <label htmlFor={name} className={cn("text-xs font-semibold uppercase", "font-body")}>
         {label}
-      </FormLabel>
-      <ChakraSelect
-        fontFamily={"accent"}
-        fontWeight={400}
-        fontSize={"13px"}
+      </label>
+      <select
         id={id}
         name={name}
         onChange={onChange}
         value={value}
         defaultValue={defaultValue}
-        outline={"none"}
-        backgroundColor={bgColor}
-        borderWidth={"1px"}
-        borderColor={borderColor}
-        color={textColor}
-        iconColor={primaryColor}
-        borderRadius={0}
-        height={"40px"}
-        boxShadow={"none"}
-        _focus={{
-          outline: "none",
-          boxShadow: "none",
-          border: `1px solid ${primaryColor}`,
-          iconColor: primaryColor,
-        }}
-        _hover={{
-          border: `1px solid ${primaryColorHover}`,
-          iconColor: primaryColorHover,
-        }}
+        className={cn(
+          "h-10 w-full rounded-none border border-input bg-background px-3",
+          "font-accent text-[13px] text-foreground",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        )}
       >
-        {optionValues &&
-          Array.isArray(optionValues) &&
-          optionValues.map((elem, index) => (
-            <option key={`option-${index}-${elem.value}`} value={elem.value}>
-              {elem.label}
-            </option>
-          ))}
-      </ChakraSelect>
-    </FormControl>
+        {optionValues.map((elem, index) => (
+          <option key={`option-${index}-${elem.value}`} value={elem.value}>
+            {elem.label}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 };

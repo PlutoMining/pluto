@@ -2,7 +2,7 @@
 
 ## Overview
 
-Pluto is an open-source control platform designed for managing and monitoring open-source bitcoin mining devices such as Bitaxe, NerdAxe, and other similar miners. The platform provides a comprehensive interface for controlling multiple miners, collecting performance metrics, and visualizing data in real-time. Pluto leverages microservices architecture and Docker for modularity, ease of development, and deployment. It provides a comprehensive system for backend processing, frontend visualization, and monitoring. The project is intended to run on Umbrel or similar environments with service dependencies such as `Prometheus` and `Grafana` for monitoring.
+Pluto is an open-source control platform designed for managing and monitoring open-source bitcoin mining devices such as Bitaxe, NerdAxe, and other similar miners. The platform provides a comprehensive interface for controlling multiple miners, collecting performance metrics, and visualizing data in real-time. Pluto leverages microservices architecture and Docker for modularity, ease of development, and deployment. It provides a comprehensive system for backend processing, frontend visualization, and monitoring. The project is intended to run on Umbrel or similar environments with `Prometheus` for metrics storage.
 
 This README provides information on both the **development** and **release** configurations of the Pluto project.
 
@@ -21,9 +21,7 @@ The project comprises several interdependent services:
 3. **discovery**: Discovers devices on the network and interfaces with the mock service for simulating device communication.
 4. **backend**: Core processing service that interfaces with the discovery service and handles data management.
 5. **frontend**: User interface for interacting with the system.
-6. **prometheus**: Metrics collection and monitoring.
-7. **grafana**: Visualization and dashboard service for monitoring the system.
-8. **prometheus-init, grafana-init, leveldb-init**: Initialization containers that prepare the required volumes for Prometheus, Grafana, and LevelDB, respectively.
+6. **prometheus**: Metrics storage and monitoring.
 
 ## Development Environment
 
@@ -44,7 +42,7 @@ make setup
 ```
 
 This will:
-- Create data directories for Prometheus, Grafana, and LevelDB with correct ownership
+- Create data directories for Prometheus and LevelDB with correct ownership
 - Copy `.env.tpl` files to `.env.local` for each service
 - Set executable permissions on entrypoint scripts
 
@@ -80,7 +78,6 @@ docker compose -f docker-compose.dev.local.yml down
 - **Backend**: [http://localhost:7776](http://localhost:7776)
 - **Frontend**: [http://localhost:7777](http://localhost:7777)
 - **Prometheus**: [http://localhost:9090](http://localhost:9090)
-- **Grafana**: [http://localhost:3000](http://localhost:3000)
 
 ## Publishing Releases (Maintainers Only)
 
@@ -145,11 +142,9 @@ Pluto services are pulled from **GitHub Container Registry** under the `ghcr.io/
 - `ghcr.io/plutomining/pluto-backend:<version>`
 - `ghcr.io/plutomining/pluto-frontend:<version>`
 - `ghcr.io/plutomining/pluto-prometheus:<version>`
-- `ghcr.io/plutomining/pluto-grafana:<version>`
 
 The monitoring stack uses upstream base images:
 - `prom/prometheus:v2.53.1`
-- `grafana/grafana:11.1.2`
 
 ### Service Ports
 
@@ -157,14 +152,12 @@ The monitoring stack uses upstream base images:
 - **Backend**: `7776`
 - **Frontend**: `7777`
 - **Prometheus**: `9090` (if exposed)
-- **Grafana**: `3000` (if exposed)
 
 ### Volume Mapping
 
 The release configuration uses external directories for persistent data storage:
 
 - Prometheus: `/home/umbrel/umbrel/app-data/pluto/data/prometheus`
-- Grafana: `/home/umbrel/umbrel/app-data/pluto/data/grafana`
 - Backend Data: `/home/umbrel/umbrel/app-data/pluto/data/leveldb`
 
 ### Release Documentation
@@ -225,16 +218,6 @@ For detailed information about the release process, see the [Release Flow Docume
 - **Volumes**:
   - `/prometheus`: Data storage for Prometheus.
 
-### grafana
-
-- **Role**: Visualization and dashboard service.
-- **Environment Variables**:
-  - `GF_SECURITY_ADMIN_USER`: Grafana admin username.
-  - `GF_SECURITY_ADMIN_PASSWORD`: Grafana admin password.
-  - `GF_INSTALL_PLUGINS`: Plugins to be installed in Grafana.
-- **Volumes**:
-  - `/var/lib/grafana`: Data storage for Grafana.
-
 ## Troubleshooting
 
 1. Check logs for any service issues:
@@ -258,7 +241,6 @@ For detailed information about the release process, see the [Release Flow Docume
    This creates data directories with correct ownership. If you need to fix permissions manually:
    ```bash
    sudo chown -R 65534:65534 data/prometheus*    # Prometheus
-   sudo chown -R 472:472 data/grafana*           # Grafana
    sudo chown -R 1000:1000 data/leveldb*         # Backend/Discovery
    ```
 

@@ -239,8 +239,6 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   const averageHashrate = totalDevices > 0 ? totalHashrate / totalDevices : 0;
 
   const totalPower = devicesData.reduce((acc, device) => acc + device.power, 0);
-  const sharesAccepted = devicesData.reduce((acc, device) => acc + device.sharesAccepted, 0);
-  const sharesRejected = devicesData.reduce((acc, device) => acc + device.sharesRejected, 0);
   // Fleet efficiency (J/TH) is computed with the same formula used for single devices:
   // efficiency (J / TH) = power (W) / (hashrate GH/s / 1000)
   const efficiency =
@@ -253,8 +251,6 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   totalHashrateGauge.set(totalHashrate);
   averageHashrateGauge.set(averageHashrate);
   totalPowerGauge.set(totalPower);
-  sharesByPoolAcceptedGauge.set(sharesAccepted);
-  sharesByPoolRejectedGauge.set(sharesRejected);
   totalEfficiencyGauge.set(efficiency);
 
   // Conta il numero di dispositivi per ciascuna versione firmware

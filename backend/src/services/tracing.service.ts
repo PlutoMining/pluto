@@ -15,7 +15,6 @@ import { Server as ServerIO } from "socket.io";
 import WebSocket from "ws";
 import { config } from "../config/environment";
 import { sanitizeHostname } from "@pluto/utils/strings";
-import { createGrafanaDeviceDashboard, deleteGrafanaDashboard } from "./grafana.service"; // Aggiunta funzione per rimuovere dashboard
 import {
   createMetricsForDevice,
   deleteMetricsForDevice,
@@ -90,15 +89,11 @@ export async function updateOriginalIpsListeners(newDevices: Device[], traceLogs
 
       if (config.deleteDataOnDeviceRemove) {
         try {
-          // Rimuovi la dashboard di Grafana
-          await deleteGrafanaDashboard(ipMap[existingIp].info?.hostname!);
-          logger.info(`Deleted Grafana dashboard for hostname ${existingIp}`);
-
           // Rimuovi le metriche di Prometheus
           deleteMetricsForDevice(sanitizeHostname(ipMap[existingIp].info?.hostname!));
           logger.info(`Deleted Prometheus metrics for IP ${existingIp}`);
         } catch (err) {
-          logger.error(`Failed to delete Grafana dashboard for hostname ${existingIp}:`, err);
+          logger.error(`Failed to delete Prometheus metrics for IP ${existingIp}:`, err);
         }
       }
 
@@ -214,8 +209,6 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
       ipMap[device.ip].info = response.data;
       ipMap[device.ip].tracing = true;
 
-      // Crea o aggiorna la dashboard Grafana
-      await createGrafanaDeviceDashboard(extendedDevice);
     } catch (error: any) {
       const extendedDevice = { ...device, tracing: false };
 
