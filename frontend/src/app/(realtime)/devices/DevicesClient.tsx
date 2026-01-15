@@ -167,9 +167,9 @@ export default function DevicesClient() {
 
         {registeredDevices ? (
           registeredDevices.length > 0 ? (
-            <div className="flex flex-col gap-4 border border-border bg-card p-4">
+            <div className="border border-border bg-card text-card-foreground">
               <DeviceTable devices={registeredDevices} removeDeviceFunction={removeRegisteredDevice} />
-              <div className="tablet:hidden">
+              <div className="tablet:hidden border-t border-border">
                 <DeviceAccordion removeFunction={removeRegisteredDevice} devices={registeredDevices} />
               </div>
             </div>
