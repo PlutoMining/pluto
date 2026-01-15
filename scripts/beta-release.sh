@@ -443,16 +443,23 @@ build_and_push_service() {
     tags+=(-t "${image_base}:${TAG_SUFFIX}")
   fi
 
+  # Prefer Dockerfile.optimized if it exists, otherwise use Dockerfile
+  local dockerfile="${service}/Dockerfile"
+  if [[ -f "${service}/Dockerfile.optimized" ]]; then
+    dockerfile="${service}/Dockerfile.optimized"
+    log "Using optimized Dockerfile for ${service}"
+  fi
+
   if $DRY_RUN; then
-    log "[dry-run] Would build docker image for ${service} with tags ${tags[*]}"
+    log "[dry-run] Would build docker image for ${service} with tags ${tags[*]} using ${dockerfile}"
     return
   fi
 
   log_progress "Building ${service} (${version})"
-  
+
   if retry_command 2 docker buildx build --platform linux/amd64,linux/arm64 \
       "${tags[@]}" \
-      -f "${service}/Dockerfile" . --push; then
+      -f "${dockerfile}" . --push; then
     log_progress_done
     log_success "Built and pushed ${service}:${version}"
   else

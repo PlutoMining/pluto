@@ -1,0 +1,79 @@
+# Stage 1: Build
+FROM node:24-alpine AS builder
+
+# Set the working directory
+WORKDIR /home/node/app
+
+# Copy package.json and package-lock.json and install dependencies
+COPY ./backend/package*.json ./
+RUN mkdir -p /home/node/common
+COPY ./common /home/node/common
+
+# Install all dependencies (combine RUN commands for better caching)
+RUN npm ci --prefix /home/node/common/utils && \
+    npm ci --prefix /home/node/common/db && \
+    npm ci --prefix /home/node/common/interfaces && \
+    npm ci --prefix /home/node/common/logger && \
+    npm ci
+
+# Copy tooling directory (needed for tsconfig.base.json)
+RUN mkdir -p /home/node/tooling
+COPY ./tooling /home/node/tooling
+
+# Copy the rest of the files and build the application
+COPY ./backend .
+
+# Compile TypeScript modules in the common folder (combine RUN commands)
+RUN npm run build --prefix /home/node/common/utils && \
+    npm run build --prefix /home/node/common/db && \
+    npm run build --prefix /home/node/common/interfaces && \
+    npm run build --prefix /home/node/common/logger && \
+    npm run build
+
+# Stage 2: Runtime
+FROM node:24-alpine
+
+# Set the working directory
+WORKDIR /home/node/app
+
+# Copy common packages first (needed for file: dependency resolution)
+RUN mkdir -p /home/node/common/db /home/node/common/interfaces /home/node/common/logger /home/node/common/utils
+COPY --from=builder /home/node/common/db/dist /home/node/common/db/dist
+COPY --from=builder /home/node/common/interfaces/dist /home/node/common/interfaces/dist
+COPY --from=builder /home/node/common/logger/dist /home/node/common/logger/dist
+COPY --from=builder /home/node/common/utils/dist /home/node/common/utils/dist
+COPY --from=builder /home/node/common/db/package*.json /home/node/common/db/
+COPY --from=builder /home/node/common/interfaces/package*.json /home/node/common/interfaces/
+COPY --from=builder /home/node/common/logger/package*.json /home/node/common/logger/
+COPY --from=builder /home/node/common/utils/package*.json /home/node/common/utils/
+# Copy utils dist JS files to root for subpath imports (@pluto/utils/strings, etc.)
+COPY --from=builder /home/node/common/utils/dist/strings.js /home/node/common/utils/strings.js
+COPY --from=builder /home/node/common/utils/dist/arrays.js /home/node/common/utils/arrays.js
+COPY --from=builder /home/node/common/utils/dist/promises.js /home/node/common/utils/promises.js
+COPY --from=builder /home/node/common/utils/dist/validators.js /home/node/common/utils/validators.js
+
+# Install production dependencies for common packages (needed for runtime)
+RUN npm ci --omit=dev --prefix /home/node/common/db && \
+    npm ci --omit=dev --prefix /home/node/common/logger && \
+    npm cache clean --force
+
+# Copy package files and install backend production dependencies
+# (file: dependencies can now resolve since common packages exist)
+COPY ./backend/package*.json ./
+ENV NODE_ENV=production
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Copy built application from builder stage
+COPY --from=builder /home/node/app/dist ./dist
+
+# Copy grafana dashboard templates
+COPY ./grafana/templates ./grafana_templates
+
+# Change ownership to allow access for the `node` user
+RUN chown -R node:node /home/node
+
+# Switch to the `node` user
+USER node
+
+# Start the application
+CMD ["npm", "start"]

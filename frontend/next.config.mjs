@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable standalone output for smaller Docker images
+  output: 'standalone',
   // async rewrites() {
   //   // const grafanaDestinationHost = process.env.GF_HOST;
   //   const backendDestinationHost = process.env.BACKEND_DESTINATION_HOST;
