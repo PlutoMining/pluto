@@ -11,8 +11,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { NoDeviceAddedSection } from "@/components/Section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChartCard } from "@/components/charts/BarChartCard";
 import { LineChartCard } from "@/components/charts/LineChartCard";
+import { PieChartCard } from "@/components/charts/PieChartCard";
+import { TreemapChartCard } from "@/components/charts/TreemapChartCard";
 import { TimeRangeSelect } from "@/components/charts/TimeRangeSelect";
 import {
   TIME_RANGES,
@@ -49,7 +50,9 @@ export default function OverviewClient() {
   const [effSeries, setEffSeries] = useState<Array<{ t: number; v: number }>>([]);
 
   const [firmwareData, setFirmwareData] = useState<Array<{ version: string; count: number }>>([]);
-  const [sharesByPool, setSharesByPool] = useState<Array<{ pool: string; accepted: number; rejected: number }>>([]);
+  const [sharesByPool, setSharesByPool] = useState<
+    Array<{ pool: string; accepted: number; rejected: number; total: number }>
+  >([]);
 
   const rangeSeconds = useMemo(
     () => TIME_RANGES.find((r) => r.key === range)?.seconds ?? 3600,
@@ -131,19 +134,57 @@ export default function OverviewClient() {
       });
 
       const pools = new Set([...acceptedByPool.keys(), ...rejectedByPool.keys()]);
-      setSharesByPool(
-        Array.from(pools)
-          .map((pool) => ({
+      const allPools = Array.from(pools)
+        .map((pool) => {
+          const accepted = acceptedByPool.get(pool) ?? 0;
+          const rejected = rejectedByPool.get(pool) ?? 0;
+          return {
             pool,
-            accepted: acceptedByPool.get(pool) ?? 0,
-            rejected: rejectedByPool.get(pool) ?? 0,
-          }))
-          .sort((a, b) => b.accepted - a.accepted)
-      );
+            accepted,
+            rejected,
+            total: accepted + rejected,
+          };
+        })
+        .filter((r) => r.total > 0)
+        .sort((a, b) => b.total - a.total);
+
+      const MAX_SLICES = 8;
+      if (allPools.length <= MAX_SLICES) {
+        setSharesByPool(allPools);
+      } else {
+        const top = allPools.slice(0, MAX_SLICES - 1);
+        const rest = allPools.slice(MAX_SLICES - 1);
+        const other = rest.reduce(
+          (acc, r) => {
+            acc.accepted += r.accepted;
+            acc.rejected += r.rejected;
+            acc.total += r.total;
+            return acc;
+          },
+          { pool: "Other", accepted: 0, rejected: 0, total: 0 }
+        );
+        setSharesByPool([...top, other]);
+      }
     };
 
     load().catch((e) => console.error(e));
   }, [rangeSeconds, range]);
+
+  const firmwareTreemapData = useMemo(() => {
+    const data = firmwareData.filter((r) => Number.isFinite(r.count) && r.count > 0);
+    const MAX_TILES = 12;
+    if (data.length <= MAX_TILES) return data;
+
+    const top = data.slice(0, MAX_TILES - 1);
+    const rest = data.slice(MAX_TILES - 1);
+    const otherCount = rest.reduce((acc, r) => acc + r.count, 0);
+    return [...top, { version: "Other", count: otherCount }];
+  }, [firmwareData]);
+
+  const firmwareTotal = useMemo(
+    () => firmwareData.reduce((acc, r) => acc + (Number.isFinite(r.count) ? r.count : 0), 0),
+    [firmwareData]
+  );
 
   if (devices.length === 0) {
     return (
@@ -190,27 +231,64 @@ export default function OverviewClient() {
 
       <div className="mt-4 grid gap-4 tablet:grid-cols-2">
         <LineChartCard title="Total hashrate" points={hashrateSeries} unit="GH/s" />
-        <LineChartCard title="Total power" points={powerSeries} unit="W" />
+        <LineChartCard title="Total power" points={powerSeries} unit="W" curve="step" />
       </div>
 
       <div className="mt-4 grid gap-4 tablet:grid-cols-2">
         <LineChartCard title="Total efficiency" points={effSeries} unit="W/TH" />
-        <BarChartCard title="Firmware distribution" data={firmwareData} xKey="version" yKey="count" />
+        <TreemapChartCard
+          title="Firmware distribution"
+          data={firmwareTreemapData}
+          nameKey="version"
+          valueKey="count"
+          valueDigits={0}
+          renderTooltip={(row) => {
+            const pct = firmwareTotal > 0 ? (row.count / firmwareTotal) * 100 : 0;
+            return (
+              <div className="flex flex-col gap-0.5">
+                <div>
+                  <span className="text-muted-foreground">Share:</span>{" "}
+                  <span className="text-foreground">{formatNumber(pct, 1)}%</span>
+                </div>
+              </div>
+            );
+          }}
+        />
       </div>
 
       <div className="mt-4 grid gap-4">
-        <BarChartCard
-          title="Shares by pool (accepted)"
-          data={sharesByPool}
-          xKey="pool"
-          yKey="accepted"
-        />
-        <BarChartCard
-          title="Shares by pool (rejected)"
-          data={sharesByPool}
-          xKey="pool"
-          yKey="rejected"
-        />
+        <Card className="rounded-none">
+          <CardHeader>
+            <CardTitle>Shares by pool</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 tablet:grid-cols-2">
+              {sharesByPool.map((pool) => {
+                const donutData = [
+                  { kind: "Accepted", value: pool.accepted },
+                  { kind: "Rejected", value: pool.rejected },
+                ].filter((r) => r.value > 0);
+
+                if (donutData.length === 0) return null;
+
+                return (
+                  <PieChartCard
+                    key={pool.pool}
+                    title={pool.pool}
+                    hideHeader
+                    data={donutData}
+                    nameKey="kind"
+                    valueKey="value"
+                    valueDigits={0}
+                    colors={["hsl(var(--chart-1))", "hsl(var(--destructive))"]}
+                    centerLabelTitle="Pool"
+                    centerLabel={pool.pool}
+                  />
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
