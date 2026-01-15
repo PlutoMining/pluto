@@ -25,7 +25,7 @@ export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({ devices, remov
   return (
     <>
       {devices && devices.length > 0 ? (
-        <div className="flex flex-col border border-border bg-card">
+        <div className="flex flex-col bg-card">
           {devices.map((device, index) => (
             <details
               key={`device-settings-${device.mac}`}
@@ -45,16 +45,16 @@ export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({ devices, remov
 const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction }) => {
   return (
     <>
-      <summary className="flex cursor-pointer items-center justify-between gap-4 bg-muted p-4">
+      <summary className="flex cursor-pointer items-center justify-between gap-4 bg-card px-4 py-3 hover:bg-muted">
         <div className="flex items-center gap-4">
-          <span className="text-muted-foreground">▾</span>
+          <span className="text-primary">▾</span>
           <span className="font-body text-sm font-semibold capitalize">{device.info.hostname}</span>
           <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
         </div>
 
         <button
           type="button"
-          className="font-accent text-sm font-medium uppercase underline"
+          className="font-accent text-sm font-medium uppercase text-foreground underline"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();

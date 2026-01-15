@@ -19,74 +19,76 @@ interface DeviceTableProps {
 
 export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceFunction }) => {
   return (
-    <div className="hidden tablet:block overflow-x-auto">
+    <div className="hidden overflow-x-auto tablet:block">
       <table className="w-full border-collapse">
         <thead>
-          <tr className="h-10 bg-muted">
-            <th className="max-w-[140px] border-b border-border p-3 text-left font-accent text-xs font-normal uppercase text-muted-foreground">
+          <tr className="bg-muted">
+            <th className="max-w-[140px] border-b border-border px-4 py-3 text-left align-middle font-accent text-xs font-semibold uppercase text-muted-foreground">
               Hostname
             </th>
-            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+            <th className="border-b border-border px-4 py-3 text-center align-middle font-accent text-xs font-semibold uppercase text-muted-foreground">
               Date added
             </th>
-            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+            <th className="border-b border-border px-4 py-3 text-center align-middle font-accent text-xs font-semibold uppercase text-muted-foreground">
               IP
             </th>
-            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+            <th className="border-b border-border px-4 py-3 text-center align-middle font-accent text-xs font-semibold uppercase text-muted-foreground">
               Mac Address
             </th>
-            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+            <th className="border-b border-border px-4 py-3 text-center align-middle font-accent text-xs font-semibold uppercase text-muted-foreground">
               Miner
             </th>
-            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+            <th className="border-b border-border px-4 py-3 text-center align-middle font-accent text-xs font-semibold uppercase text-muted-foreground">
               ASIC
             </th>
-            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+            <th className="border-b border-border px-4 py-3 text-center align-middle font-accent text-xs font-semibold uppercase text-muted-foreground">
               Uptime
             </th>
-            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+            <th className="border-b border-border px-4 py-3 text-center align-middle font-accent text-xs font-semibold uppercase text-muted-foreground">
               FW v.
             </th>
-            <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+            <th className="border-b border-border px-4 py-3 text-center align-middle font-accent text-xs font-semibold uppercase text-muted-foreground">
               Status
             </th>
-            <th className="border-b border-border p-3" />
+            <th className="w-12 border-b border-border px-4 py-3 text-right align-middle">
+              <span className="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody>
           {devices.map((device) => (
             <tr key={`registered-device-${device.mac}`} className="bg-card">
-              <td className="max-w-[140px] border-t border-border p-3 font-accent text-[13px] font-normal">
+              <td className="max-w-[140px] border-t border-border px-4 py-3 font-accent text-[13px] font-normal">
                 {device.info.hostname}
               </td>
-              <td className="border-t border-border p-3 text-center font-accent text-[13px] font-normal">
+              <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
                 {convertIsoTomMdDYy(device.createdAt!)}
               </td>
-              <td className="border-t border-border p-3 text-center font-accent text-[13px] font-normal">
+              <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
                 {device.ip}
               </td>
-              <td className="border-t border-border p-3 text-center font-accent text-[13px] font-normal">
+              <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
                 {device.mac}
               </td>
-              <td className="w-[125px] max-w-[125px] border-t border-border p-3 text-center font-accent text-[13px] font-normal">
+              <td className="w-[125px] max-w-[125px] border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
                 {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
               </td>
-              <td className="border-t border-border p-3 text-center font-accent text-[13px] font-normal">
+              <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
                 {device.info.ASICModel}
               </td>
               <td
-                className="border-t border-border p-3 text-center font-accent text-[13px] font-normal"
+                className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal"
                 title={formatDetailedTime(device.info.uptimeSeconds)}
               >
                 {formatTime(device.info.uptimeSeconds)}
               </td>
-              <td className="border-t border-border p-3 text-center font-accent text-[13px] font-normal">
+              <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
                 {device.info.version}
               </td>
-              <td className="border-t border-border p-3 text-center">
+              <td className="border-t border-border px-4 py-3 text-center">
                 <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
               </td>
-              <td className="border-t border-border p-3 text-center">
+              <td className="border-t border-border px-4 py-3 text-right">
                 <button
                   type="button"
                   onClick={() => removeDeviceFunction(device.mac)}

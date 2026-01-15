@@ -300,50 +300,58 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           </div>
         </div>
 
-        <div className="hidden border border-border border-b-0 bg-muted p-4 tablet:flex">
-          <div className="flex-[8] text-center font-accent text-xs font-semibold uppercase text-muted-foreground">
-            Hostname
+        <div className="border border-border bg-card text-card-foreground">
+          <div className="hidden items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 tablet:flex">
+            <div className="flex flex-[8] items-center gap-3">
+              <div className="hidden w-4 tablet:block" aria-hidden="true" />
+              <span className="select-none text-primary opacity-0" aria-hidden="true">
+                ▾
+              </span>
+              <span className="font-accent text-xs font-semibold uppercase text-muted-foreground">
+                Hostname
+              </span>
+            </div>
+            <div className="flex flex-[5] items-center justify-end gap-4">
+              <span className="font-accent text-xs font-semibold uppercase text-muted-foreground">
+                Status
+              </span>
+              <span className="hidden w-24 shrink-0 tablet:inline-flex" aria-hidden="true" />
+            </div>
           </div>
-          <div className="flex-[5] text-right font-accent text-xs font-semibold uppercase text-muted-foreground">
-            Status
+
+          <div className="flex flex-col">
+            {devices.map((device, index) => {
+              const isOpen = openMacs.includes(device.mac);
+
+              return (
+                <details
+                  key={`device-settings-${device.mac}`}
+                  open={isOpen}
+                  onToggle={(e) => {
+                    const open = (e.currentTarget as HTMLDetailsElement).open;
+                    setOpenMacs((prev) =>
+                      open ? Array.from(new Set([...prev, device.mac])) : prev.filter((m) => m !== device.mac)
+                    );
+                  }}
+                  className={cn("bg-card text-card-foreground", index > 0 ? "border-t border-border" : "")}
+                >
+                  {presets ? (
+                    <AccordionItem
+                      key={device.mac}
+                      device={device}
+                      presets={presets}
+                      setAlert={setAlert}
+                      alert={alert}
+                      onOpenAlert={onOpenAlert}
+                      handleCheckboxChange={handleCheckboxChange}
+                      checkedItems={checkedFetchedItems}
+                      isAccordionOpen={isOpen}
+                    />
+                  ) : null}
+                </details>
+              );
+            })}
           </div>
-        </div>
-
-        <div className="flex flex-col gap-2 tablet:gap-0">
-          {devices.map((device, index) => {
-            const isOpen = openMacs.includes(device.mac);
-
-            return (
-              <details
-                key={`device-settings-${device.mac}`}
-                open={isOpen}
-                onToggle={(e) => {
-                  const open = (e.currentTarget as HTMLDetailsElement).open;
-                  setOpenMacs((prev) =>
-                    open ? Array.from(new Set([...prev, device.mac])) : prev.filter((m) => m !== device.mac)
-                  );
-                }}
-                className={cn(
-                  "border border-border bg-card text-card-foreground",
-                  index > 0 ? "tablet:border-t-0" : ""
-                )}
-              >
-                {presets ? (
-                  <AccordionItem
-                    key={device.mac}
-                    device={device}
-                    presets={presets}
-                    setAlert={setAlert}
-                  alert={alert}
-                  onOpenAlert={onOpenAlert}
-                  handleCheckboxChange={handleCheckboxChange}
-                  checkedItems={checkedFetchedItems}
-                  isAccordionOpen={isOpen}
-                />
-              ) : null}
-              </details>
-            );
-          })}
         </div>
       </div>
 
@@ -766,7 +774,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
   return (
     <>
-      <summary className="flex cursor-pointer items-center justify-between gap-4 bg-muted px-4 py-3">
+      <summary className="flex cursor-pointer items-center justify-between gap-4 bg-card px-4 py-3 hover:bg-muted">
         <div className="flex flex-[8] items-center gap-3">
           <div className="hidden tablet:block" onClick={(e) => e.stopPropagation()}>
             <input
