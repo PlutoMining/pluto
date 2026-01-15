@@ -33,6 +33,13 @@
   --border: 180 1% 80%;
   --input: 180 1% 80%;
   --ring: 174 100% 40%;
+
+  /* Chart palette (shadcn-like) */
+  --chart-1: 174 100% 40%;
+  --chart-2: 210 90% 56%;
+  --chart-3: 270 80% 62%;
+  --chart-4: 25 95% 55%;
+  --chart-5: 140 65% 45%;
 }
 
 .dark {
@@ -63,6 +70,13 @@
   --border: 201 15% 30%;
   --input: 201 15% 30%;
   --ring: 175 100% 54%;
+
+  /* Chart palette (shadcn-like) */
+  --chart-1: 175 100% 54%;
+  --chart-2: 210 90% 60%;
+  --chart-3: 270 80% 68%;
+  --chart-4: 25 95% 60%;
+  --chart-5: 140 65% 50%;
 }
 
 * {

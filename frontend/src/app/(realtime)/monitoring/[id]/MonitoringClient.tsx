@@ -11,6 +11,7 @@ import NextLink from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { LineChartCard } from "@/components/charts/LineChartCard";
+import { MultiLineChartCard } from "@/components/charts/MultiLineChartCard";
 import { TimeRangeSelect } from "@/components/charts/TimeRangeSelect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,23 @@ export default function MonitoringClient({ id }: { id: string }) {
   );
 
   const host = useMemo(() => sanitizeHostname(id), [id]);
+
+  const temperatureSeries = useMemo(
+    () => [
+      { key: "temp", label: "ASIC", color: "hsl(var(--chart-2))", points: temp },
+      { key: "vr", label: "VR", color: "hsl(var(--chart-4))", points: vrTemp },
+    ],
+    [temp, vrTemp]
+  );
+
+  const voltageSeries = useMemo(
+    () => [
+      { key: "voltage", label: "Input", color: "hsl(var(--chart-3))", points: voltage },
+      { key: "coreActual", label: "Core (actual)", color: "hsl(var(--chart-2))", points: coreVActual },
+      { key: "coreTarget", label: "Core (target)", color: "hsl(var(--chart-5))", points: coreV },
+    ],
+    [voltage, coreVActual, coreV]
+  );
 
   useEffect(() => {
     const fetchDevice = async () => {
@@ -230,23 +248,17 @@ export default function MonitoringClient({ id }: { id: string }) {
 
       <div className="mt-4 grid gap-4 tablet:grid-cols-2">
         <LineChartCard title="Hashrate" points={hashrate} unit="GH/s" />
-        <LineChartCard title="Power" points={power} unit="W" />
+        <LineChartCard title="Power" points={power} unit="W" curve="step" />
       </div>
 
-      <div className="mt-4 grid gap-4 tablet:grid-cols-3">
+      <div className="mt-4 grid gap-4 tablet:grid-cols-2">
         <LineChartCard title="Efficiency" points={efficiency} unit="W/TH" />
-        <LineChartCard title="Temperature" points={temp} unit="°C" />
-        <LineChartCard title="VR Temperature" points={vrTemp} unit="°C" />
+        <MultiLineChartCard title="Temperatures" series={temperatureSeries} unit="°C" valueDigits={1} />
       </div>
 
       <div className="mt-4 grid gap-4 tablet:grid-cols-2">
         <LineChartCard title="Fan speed" points={fan} unit="RPM" />
-        <LineChartCard title="Voltage" points={voltage} unit="V" />
-      </div>
-
-      <div className="mt-4 grid gap-4 tablet:grid-cols-2">
-        <LineChartCard title="Core voltage (actual)" points={coreVActual} unit="V" />
-        <LineChartCard title="Core voltage (target)" points={coreV} unit="V" />
+        <MultiLineChartCard title="Voltages" series={voltageSeries} unit="V" valueDigits={3} />
       </div>
     </div>
   );

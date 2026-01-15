@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -20,18 +20,16 @@ function formatTime(t: number) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export function LineChartCard({
+export function AreaChartCard({
   title,
   points,
   unit,
   curve = "monotone",
-  showDots = false,
 }: {
   title: string;
   points: Point[];
   unit?: string;
   curve?: "monotone" | "step" | "stepBefore" | "stepAfter";
-  showDots?: boolean;
 }) {
   const tooltipContentStyle: React.CSSProperties = {
     backgroundColor: "hsl(var(--secondary))",
@@ -39,6 +37,8 @@ export function LineChartCard({
     borderRadius: 0,
     color: "hsl(var(--secondary-foreground))",
   };
+
+  const gradientId = React.useId();
 
   return (
     <Card className="rounded-none">
@@ -48,7 +48,13 @@ export function LineChartCard({
       <CardContent>
         <div className="h-[220px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <AreaChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
               <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" opacity={0.25} />
               <XAxis
                 dataKey="t"
@@ -69,14 +75,15 @@ export function LineChartCard({
                 labelFormatter={(l) => formatTime(Number(l))}
                 formatter={(value: any) => [`${Number(value).toFixed(2)}${unit ? ` ${unit}` : ""}`]}
               />
-              <Line
+              <Area
                 type={curve}
                 dataKey="v"
                 stroke="hsl(var(--chart-1))"
-                dot={showDots ? { r: 2 } : false}
+                fill={`url(#${gradientId})`}
                 strokeWidth={2}
+                dot={false}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </CardContent>
