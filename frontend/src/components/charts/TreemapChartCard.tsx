@@ -49,11 +49,11 @@ export function TreemapChartCard<T extends AnyRecord>({
   };
 
   const Content = React.useCallback(
-    (nodeProps: any) => {
+    (nodeProps: any): React.ReactElement => {
       const { x, y, width, height, index, depth, name, tooltipIndex } = nodeProps ?? {};
 
-      if (!Number.isFinite(width) || !Number.isFinite(height)) return null;
-      if (depth === 0) return null;
+      if (!Number.isFinite(width) || !Number.isFinite(height)) return <g />;
+      if (depth === 0) return <g />;
 
       const fill = colors[(Number(index) || 0) % colors.length];
       const showLabel = width >= 90 && height >= 28;

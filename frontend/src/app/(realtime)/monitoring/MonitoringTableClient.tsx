@@ -16,15 +16,20 @@ import { formatDetailedTime, formatTime } from "@/utils/formatTime";
 import { Device } from "@pluto/interfaces";
 import axios from "axios";
 import NextLink from "next/link";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 function formatTemperature(value: number | undefined | null) {
+  if (value == null) return "N/A";
   if (!Number.isFinite(value)) return "N/A";
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 export default function MonitoringTableClient() {
   const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const searchRequestIdRef = useRef(0);
+  const hasSearchedRef = useRef(false);
 
   useEffect(() => {
     fetchDevicesAndDashboardsAndUpdate();
@@ -75,20 +80,48 @@ export default function MonitoringTableClient() {
     }
   };
 
-  const handleSearch = async (e: ChangeEvent<HTMLInputElement>) => {
-    try {
-      const response = await axios.get<{ data: Device[] }>("/api/devices/imprint", {
-        params: {
-          q: e.target.value,
-        },
-      });
-
-      const discoveredDevices = response.data;
-      setRegisteredDevices(discoveredDevices.data);
-    } catch (error) {
-      console.error("Error searching devices:", error);
-    }
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
+
+  useEffect(() => {
+    const query = searchQuery.trim();
+
+    if (query === "") {
+      if (hasSearchedRef.current) {
+        fetchDevicesAndDashboardsAndUpdate();
+        hasSearchedRef.current = false;
+      }
+      return;
+    }
+
+    hasSearchedRef.current = true;
+
+    const controller = new AbortController();
+    const requestId = ++searchRequestIdRef.current;
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await axios.get<{ data: Device[] }>("/api/devices/imprint", {
+          params: { q: query },
+          signal: controller.signal,
+        });
+
+        if (controller.signal.aborted) return;
+        if (requestId !== searchRequestIdRef.current) return;
+
+        setRegisteredDevices(response.data.data || []);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error("Error searching devices:", error);
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [searchQuery]);
 
   return (
     <div className="container flex-1 py-6">
