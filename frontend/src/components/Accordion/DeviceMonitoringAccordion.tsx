@@ -30,6 +30,10 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
   const { isConnected, socket } = useSocket();
 
   useEffect(() => {
+    setDevices(deviceList || []);
+  }, [deviceList]);
+
+  useEffect(() => {
     const listener = (e: Device) => {
       setDevices((prevDevices) => {
         if (!prevDevices) return prevDevices;
@@ -62,7 +66,7 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
         socket.off("error", listener);
       };
     }
-  }, [isConnected, socket, devices]);
+  }, [isConnected, socket]);
 
   return (
     <>
@@ -151,6 +155,7 @@ function Row({
 }
 
 function formatTemperature(value: number | undefined | null) {
+  if (value == null) return "N/A";
   if (!Number.isFinite(value)) return "N/A";
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
