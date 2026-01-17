@@ -28,6 +28,47 @@ After running the release scripts (which **publish images to the registry**), yo
 
 > **Note**: These commands pull images from `ghcr.io/plutomining`. The images must already be published to the registry.
 
+## Local Testing With Local Builds (No Push)
+
+When you want to test local, unpushed changes in a “pre-release-like” setup, you can run the `next` stack while building images locally (so nothing is pulled from/pushed to the registry).
+
+### Prerequisite
+
+```bash
+make setup
+```
+
+### Run the `next` stack with local builds
+
+```bash
+docker compose -f docker-compose.next.local.yml -f docker-compose.next.local.build.yml up --build --pull=never
+```
+
+> **Docker Desktop note**: `docker-compose.next.local.build.yml` also overrides host-related env vars (e.g. `MOCK_DEVICE_HOST`, `DISCOVERY_SERVICE_HOST`) to use `host.docker.internal` so the stack works on macOS/Windows.
+
+This uses production Dockerfiles for:
+- `mock`
+- `discovery`
+- `backend`
+- `frontend`
+
+And tags them locally as:
+- `pluto-mock:local`
+- `pluto-discovery:local`
+- `pluto-backend:local`
+- `pluto-frontend:local`
+
+### Stop the stack
+
+```bash
+docker compose -f docker-compose.next.local.yml -f docker-compose.next.local.build.yml down
+```
+
+### Ports
+
+- Frontend: `http://localhost:7677`
+- Mock listing: `http://localhost:7670`
+
 ### Stable Releases
 
 ```bash

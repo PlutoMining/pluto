@@ -1,0 +1,37 @@
+services:
+  # Override to build and run LOCAL images (no registry push/pull).
+  #
+  # Usage:
+  #   docker compose -f docker-compose.next.local.yml -f docker-compose.next.local.build.yml up --build
+  #
+  # Notes:
+  # - Keeps the same ports/volumes/env as docker-compose.next.local.yml
+  # - Forces host gateway hostnames that work on Docker Desktop (macOS/Windows)
+
+  mock:
+    build:
+      context: .
+      dockerfile: mock/Dockerfile
+    image: pluto-mock:local
+
+  discovery:
+    build:
+      context: .
+      dockerfile: discovery/Dockerfile
+    image: pluto-discovery:local
+    environment:
+      MOCK_DEVICE_HOST: host.docker.internal
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: pluto-backend:local
+    environment:
+      DISCOVERY_SERVICE_HOST: http://host.docker.internal:7675
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: pluto-frontend:local
