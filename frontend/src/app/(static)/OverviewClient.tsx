@@ -271,6 +271,10 @@ export default function OverviewClient() {
 
                 if (donutData.length === 0) return null;
 
+                const colors = donutData.map((slice) =>
+                  slice.kind === "Rejected" ? "hsl(var(--destructive))" : "hsl(var(--chart-1))"
+                );
+
                 return (
                   <PieChartCard
                     key={pool.pool}
@@ -280,7 +284,7 @@ export default function OverviewClient() {
                     nameKey="kind"
                     valueKey="value"
                     valueDigits={0}
-                    colors={["hsl(var(--chart-1))", "hsl(var(--destructive))"]}
+                    colors={colors}
                     centerLabelTitle="Pool"
                     centerLabel={pool.pool}
                   />
