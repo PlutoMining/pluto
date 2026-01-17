@@ -107,9 +107,10 @@ export function PieChartCard<T extends AnyRecord>({
                 nameKey={nameKey}
                 innerRadius={60}
                 outerRadius={90}
+                minAngle={2}
                 paddingAngle={1}
-                stroke="hsl(var(--background))"
-                strokeWidth={1}
+                stroke="transparent"
+                strokeWidth={0}
                 onMouseEnter={(_, idx) => {
                   if (typeof idx === "number") setActiveIndex(idx);
                 }}
