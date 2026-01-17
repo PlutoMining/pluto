@@ -8,14 +8,8 @@
 
 import React from 'react';
 
-jest.mock('@/theme/theme', () => ({ themeToken: 'pluto-theme' }));
-
-jest.mock('@chakra-ui/react', () => ({
-  ChakraProvider: ({ children }: any) => React.createElement('div', null, children),
-}));
-
-jest.mock('@/providers/SocketProvider', () => ({
-  SocketProvider: ({ children }: any) => React.createElement('div', null, children),
+jest.mock('@/providers/ThemeProvider', () => ({
+  ThemeProvider: ({ children }: any) => React.createElement('div', null, children),
 }));
 
 import { Providers } from '@/providers';
@@ -26,4 +20,3 @@ describe('providers/index', () => {
     expect(typeof Providers).toBe('function');
   });
 });
-

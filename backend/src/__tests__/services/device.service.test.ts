@@ -155,24 +155,40 @@ describe('device.service', () => {
   });
 
   describe('getImprintedDevices', () => {
-    it('filters imprinted devices by exact ip by default', async () => {
+    it('filters imprinted devices by query over ip', async () => {
       db.findMany.mockResolvedValue([]);
 
-      await deviceService.getImprintedDevices({ ip: '10.0.0.1' });
+      await deviceService.getImprintedDevices({ q: '10.0.0.1' });
 
       const predicate = db.findMany.mock.calls[0][2];
       expect(predicate({ ip: '10.0.0.1' } as Device)).toBe(true);
       expect(predicate({ ip: '10.0.0.10' } as Device)).toBe(false);
     });
 
-    it('supports partial ip matching for imprinted devices', async () => {
+    it('supports partial query matching for imprinted devices', async () => {
       db.findMany.mockResolvedValue([]);
 
-      await deviceService.getImprintedDevices({ ip: '10.0', partialMatch: true });
+      await deviceService.getImprintedDevices({ q: '10.0' });
 
       const predicate = db.findMany.mock.calls[0][2];
       expect(predicate({ ip: '10.0.1.5' } as Device)).toBe(true);
       expect(predicate({ ip: '11.0.0.1' } as Device)).toBe(false);
+    });
+
+    it('filters imprinted devices by query over hostname and mac', async () => {
+      db.findMany.mockResolvedValue([]);
+
+      await deviceService.getImprintedDevices({ q: 'S19' });
+
+      const predicate = db.findMany.mock.calls[0][2];
+      expect(predicate({ info: { hostname: 'miner-s19-01' } } as Device)).toBe(true);
+      expect(predicate({ mac: 'aa:bb:cc:dd:ee:ff' } as Device)).toBe(false);
+
+      await deviceService.getImprintedDevices({ q: 'aa:bb' });
+
+      const predicate2 = db.findMany.mock.calls[1][2];
+      expect(predicate2({ mac: 'aa:bb:cc:dd:ee:ff' } as Device)).toBe(true);
+      expect(predicate2({ info: { hostname: 'miner-s19-01' } } as Device)).toBe(false);
     });
   });
 
@@ -233,4 +249,3 @@ describe('device.service', () => {
     });
   });
 });
-

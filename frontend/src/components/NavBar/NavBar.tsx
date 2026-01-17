@@ -5,40 +5,54 @@
  * it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation, version 3.
  * See <https://www.gnu.org/licenses/>.
-*/
+ */
 
-import {
-  Box,
-  Flex,
-  HStack,
-  Link,
-  Slide,
-  Stack,
-  Text,
-  useDisclosure,
-  useToken,
-} from "@chakra-ui/react";
 import axios from "axios";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { cn } from "@/lib/utils";
+
 import { CrossIcon } from "../icons/CrossIcon";
 import { DiscordLogo, GithubLogo } from "../icons/FooterIcons";
 import { HamburgerIcon } from "../icons/HamburgerIcon";
 import { Logo } from "../icons/Logo";
 import { SettingsIcon } from "../icons/SettingsIcon/SettingsIcon";
 
-export const NavBar = () => {
-  const { isOpen, onClose, onToggle } = useDisclosure();
-  const pathname = usePathname();
-  const [version, setVersion] = useState("");
+type NavLink = {
+  key: string;
+  href: string;
+  label: string;
+  match?: (pathname: string) => boolean;
+};
 
+export const NavBar = () => {
+  const pathname = usePathname() ?? "/";
+  const [version, setVersion] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   const slideRef = useRef<HTMLDivElement>(null);
+
+  const links: NavLink[] = useMemo(
+    () => [
+      { key: "dashboard", href: "/", label: "Overview", match: (p) => p === "/" },
+      {
+        key: "monitoring",
+        href: "/monitoring",
+        label: "Monitoring",
+        match: (p) => p === "/monitoring" || p.startsWith("/monitoring/"),
+      },
+      { key: "settings", href: "/device-settings", label: "Device settings", match: (p) => p === "/device-settings" },
+      { key: "presets", href: "/presets", label: "Pool presets", match: (p) => p === "/presets" },
+      { key: "devices", href: "/devices", label: "Your devices", match: (p) => p === "/devices" },
+    ],
+    []
+  );
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (slideRef.current && !slideRef.current.contains(event.target as Node)) {
-        onClose();
+        setIsOpen(false);
       }
     }
 
@@ -47,7 +61,7 @@ export const NavBar = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [onClose]);
+  }, []);
 
   useEffect(() => {
     const getVersion = async () => {
@@ -58,329 +72,102 @@ export const NavBar = () => {
     getVersion();
   }, []);
 
-  const links = [
-    {
-      key: "dashboard",
-      href: "/",
-      component: (pathname?: string | null) => (
-        <Box
-          color={pathname === "/" ? "header-selected" : "header-text"}
-          fontWeight={pathname === "/" ? "700" : "500"}
-          fontFamily={"heading"}
-          fontSize={"sm"}
-          position={"relative"}
-          textTransform={"uppercase"}
-          _after={{
-            display: pathname === "/" ? "block" : "none",
-            content: '""',
-            width: "32px",
-            height: "2px",
-            borderRadius: "3px",
-            backgroundColor: "header-selected-underline",
-            position: "absolute",
-            bottom: "0",
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
-        >
-          Overview
-        </Box>
-      ),
-    },
-    {
-      key: "monitoring",
-      href: "/monitoring",
-      component: (pathname?: string | null) => (
-        <Box
-          color={
-            pathname === "/monitoring" || /^\/monitoring/.test(pathname || "")
-              ? "header-selected"
-              : "header-text"
-          }
-          fontWeight={
-            pathname === "/monitoring" || /^\/monitoring/.test(pathname || "") ? "700" : "500"
-          }
-          fontFamily={"heading"}
-          fontSize={"sm"}
-          position={"relative"}
-          textTransform={"uppercase"}
-          _after={{
-            display:
-              pathname === "/monitoring" || /^\/monitoring/.test(pathname || "") ? "block" : "none",
-            content: '""',
-            width: "32px",
-            height: "2px",
-            borderRadius: "3px",
-            backgroundColor: "header-selected-underline",
-            position: "absolute",
-            bottom: "0",
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
-        >
-          Monitoring
-        </Box>
-      ),
-    },
-    {
-      key: "settings",
-      href: "/device-settings",
-      component: (pathname?: string | null) => (
-        <Box
-          color={pathname === "/device-settings" ? "header-selected" : "header-text"}
-          fontWeight={pathname === "/device-settings" ? "700" : "500"}
-          fontFamily={"heading"}
-          fontSize={"sm"}
-          position={"relative"}
-          textTransform={"uppercase"}
-          _after={{
-            display: pathname === "/device-settings" ? "block" : "none",
-            content: '""',
-            width: "32px",
-            height: "2px",
-            borderRadius: "3px",
-            backgroundColor: "header-selected-underline",
-            position: "absolute",
-            bottom: "0",
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
-        >
-          Device settings
-        </Box>
-      ),
-    },
-    {
-      key: "presets",
-      href: "/presets",
-      component: (pathname?: string | null) => (
-        <Box
-          color={pathname === "/presets" ? "header-selected" : "header-text"}
-          fontWeight={pathname === "/presets" ? "700" : "500"}
-          fontFamily={"heading"}
-          fontSize={"sm"}
-          position={"relative"}
-          textTransform={"uppercase"}
-          _after={{
-            display: pathname === "/presets" ? "block" : "none",
-            content: '""',
-            width: "32px",
-            height: "2px",
-            borderRadius: "3px",
-            backgroundColor: "header-selected-underline",
-            position: "absolute",
-            bottom: "0",
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
-        >
-          Pool presets
-        </Box>
-      ),
-    },
-    {
-      key: "devices",
-      href: "/devices",
-      component: (pathname?: string | null) => (
-        <Box
-          color={pathname === "/devices" ? "header-selected" : "header-text"}
-          textTransform={"uppercase"}
-          fontWeight={pathname === "/devices" ? "700" : "500"}
-          fontFamily={"heading"}
-          fontSize={"sm"}
-          position={"relative"}
-          _after={{
-            display: pathname === "/devices" ? "block" : "none",
-            content: '""',
-            width: "32px",
-            height: "2px",
-            borderRadius: "3px",
-            backgroundColor: "header-selected-underline",
-            position: "absolute",
-            bottom: "0",
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
-        >
-          Your devices
-        </Box>
-      ),
-    },
-  ];
-
-  const [primaryColor] = useToken("colors", ["primary-color"]);
-
   return (
-    <>
-      <Box
-        position={"sticky"}
-        top={0}
-        zIndex={isOpen ? "20" : "10"}
-        bg={"header-bg"}
-        borderBottomWidth={"1px"}
-        borderBottomColor={"border-color"}
-      >
-        <Flex
-          px={{ base: "1rem", tablet: "2rem" }}
-          alignItems="center"
-          maxW="container.desktop"
-          margin={"0 auto"}
-        >
-          <Flex h={16} alignItems="center" gap={"1rem"} justifyContent="space-between" w={"100%"}>
-            <Flex alignItems="center" gap={"1rem"} justify={"space-between"} w={"100%"}>
-              <Flex marginRight={"auto"} gap={"0.5rem"} alignItems={"flex-end"}>
-                <Link as={NextLink} key={`md-nav-link-logo`} href={"/"}>
-                  <Logo />
-                </Link>
-                {version && (
-                  <Text
-                    fontWeight={400}
-                    fontSize={"12px"}
-                    opacity={0.8}
-                    color={"body-text"}
-                    marginBottom={"4px"}
-                  >
-                    V.{version}
-                  </Text>
+    <header className={cn("sticky top-0 z-20 border-b border-border bg-background")}> 
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-4 px-4 tablet:px-8">
+        <div className="flex items-end gap-2 text-foreground">
+          <NextLink href="/" aria-label="Home">
+            <Logo className="text-foreground" />
+          </NextLink>
+          {version ? <span className="mb-1 text-xs font-accent text-muted-foreground">v.{version}</span> : null}
+        </div>
+
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 rounded-md px-3 py-2 tabletL:flex">
+          {links.map((link) => {
+            const active = link.match ? link.match(pathname) : pathname === link.href;
+            return (
+              <NextLink
+                key={link.key}
+                href={link.href}
+                className={cn(
+                  "relative text-sm font-heading uppercase",
+                  active ? "text-foreground" : "text-muted-foreground",
+                  active ? "font-semibold" : "font-medium"
                 )}
-              </Flex>
-              <HStack
-                as="nav"
-                spacing={4}
-                display={{ base: "none", tabletL: "flex" }}
-                p={"0.75rem"}
-                borderRadius={"8px"}
-                fontFamily={"heading"}
-                fontSize={"14px"}
-                fontWeight={"400"}
-                lineHeight={"24px"}
-                position={"absolute"}
-                left={"50%"}
-                transform={"translateX(-50%)"}
-                height={"34px"}
               >
-                {links.map((link) => (
-                  <Link
-                    as={NextLink}
-                    key={`md-nav-link-${link.key}`}
-                    whiteSpace="nowrap"
-                    href={link.href}
-                    _hover={{ textDecoration: "none" }}
-                  >
-                    {link.component(pathname)}
-                  </Link>
-                ))}
-              </HStack>
-              <Flex alignItems="center" gap={"1rem"} color={"#fff"}>
-                <Link
-                  as={NextLink}
-                  key={"md-nav-link-settings"}
-                  href={"/settings"}
-                  whiteSpace={"nowrap"}
-                  _hover={{ textDecoration: "none" }}
-                >
-                  <SettingsIcon color={"body-text"} />
-                </Link>
-              </Flex>
+                {link.label}
+                <span
+                  className={cn(
+                    "absolute -bottom-1 left-1/2 h-[2px] w-8 -translate-x-1/2 rounded",
+                    active ? "bg-primary" : "hidden"
+                  )}
+                />
+              </NextLink>
+            );
+          })}
+        </nav>
 
-              <Box aria-label="Open Menu" display={{ tabletL: "none" }} cursor={"pointer"}>
-                {isOpen ? (
-                  <CrossIcon w={"32"} h={"32"} onClick={onToggle} />
-                ) : (
-                  <HamburgerIcon w={"32"} h={"32"} onClick={onToggle} />
-                )}
-              </Box>
-            </Flex>
-          </Flex>
-        </Flex>
-        {isOpen ? (
-          <Slide
-            direction="right"
-            in={isOpen}
-            style={{
-              position: "fixed",
-              top: "4rem",
-              right: 0,
-              width: "calc(50% + 160px)",
-              maxWidth: "100vw",
-            }}
+        <div className="ml-auto flex items-center gap-4">
+          <NextLink href="/settings" aria-label="Settings" className="text-muted-foreground hover:text-foreground">
+            <SettingsIcon className="h-5 w-5" />
+          </NextLink>
+
+          <button
+            type="button"
+            className="tabletL:hidden"
+            aria-label={isOpen ? "Close menu" : "Open menu"}
+            onClick={() => setIsOpen((v) => !v)}
           >
-            <Box
-              ref={slideRef}
-              bgColor="bg-color"
-              p={"2rem"}
-              borderLeftWidth={"1px"}
-              borderTopWidth={"1px"}
-              borderColor={"border-color"}
-              display={{ tabletL: "none" }}
-              height={{
-                base: "calc(100vh - 7.25rem)",
-                tablet: "calc(100vh - 9.5rem)",
-                tabletL: "calc(100vh - 8.5rem)",
-              }}
-            >
-              <Flex flexDir={"column"} justify={"space-between"} height={"100%"}>
-                <Stack alignItems={"start"} as="nav" spacing={"2rem"}>
-                  {links.map((link) => (
-                    <Link
-                      onClick={() => {
-                        onToggle();
-                      }}
-                      as={NextLink}
-                      key={`sm-nav-link-${link.key}`}
-                      href={link.href}
-                      cursor={"pointer"}
-                      _hover={{ textDecoration: "none" }}
-                      fontWeight={500}
-                      fontFamily={"body"}
-                      textTransform={"uppercase"}
-                    >
-                      {link.component(pathname)}
-                    </Link>
-                  ))}
-                </Stack>
-                <Flex flexDir={"column"} gap={"1rem"}>
-                  <Flex
-                    gap={"1rem"}
-                    justify={"flex-start"}
-                    borderBottomWidth={"0.5px"}
-                    borderBottomColor={"border-color"}
-                    paddingBottom={"1rem"}
-                  >
-                    {/* <MetaLogo target="_blank" /> */}
-                    <GithubLogo
-                      url="https://github.com/PlutoMining/pluto"
-                      target="_blank"
-                      color={primaryColor}
-                    />
-                    <DiscordLogo
-                      url="https://discord.gg/osmu"
-                      target="_blank"
-                      color={primaryColor}
-                    />
-                    {/* <RedditLogo target="_blank" /> */}
-                  </Flex>
-                  <Link
-                    // as={NextLink}
-                    fontFamily={"heading"}
-                    fontSize={"xs"}
-                    color={"footer-text"}
-                    fontWeight={500}
-                    textDecoration={"underline"}
-                  >
-                    Terms & Conditions
-                  </Link>
+            {isOpen ? <CrossIcon className="h-8 w-8 text-foreground" /> : <HamburgerIcon className="h-8 w-8 text-foreground" />}
+          </button>
+        </div>
+      </div>
 
-                  <Text fontSize={"xs"} fontWeight={300} color={"footer-text"}>
-                    © 2024 Pluto. All rights reserved. This open-source application software is
-                    licensed under the Lorem Ipsum License.
-                  </Text>
-                </Flex>
-              </Flex>
-            </Box>
-          </Slide>
-        ) : null}
-      </Box>
-    </>
+      {isOpen ? (
+        <div className="fixed inset-0 z-30 bg-black/30 tabletL:hidden">
+          <div
+            ref={slideRef}
+            className="absolute right-0 top-16 h-[calc(100vh-4rem)] w-[calc(50%+160px)] max-w-[100vw] border-l border-t border-border bg-background p-8"
+          >
+            <div className="flex h-full flex-col justify-between">
+              <div className="flex flex-col gap-8">
+                {links.map((link) => {
+                  const active = link.match ? link.match(pathname) : pathname === link.href;
+                  return (
+                    <NextLink
+                      key={link.key}
+                      href={link.href}
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "font-body text-sm uppercase",
+                        active ? "text-foreground" : "text-muted-foreground"
+                      )}
+                    >
+                      {link.label}
+                    </NextLink>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3 border-b border-border pb-4">
+                  <GithubLogo
+                    url="https://github.com/PlutoMining/pluto"
+                    target="_blank"
+                    className="text-primary"
+                  />
+                  <DiscordLogo url="https://discord.gg/osmu" target="_blank" className="text-primary" />
+                </div>
+
+                <a className="text-xs font-heading text-muted-foreground underline">Terms & Conditions</a>
+                <p className="text-xs font-light text-muted-foreground">
+                  © 2024 Pluto. All rights reserved. This open-source application software is licensed under the AGPL 3.0 License.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </header>
   );
 };

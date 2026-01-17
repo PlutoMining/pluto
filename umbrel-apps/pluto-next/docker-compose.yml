@@ -53,15 +53,11 @@ services:
       - PORT=7676
       - AUTO_LISTEN=true
       - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7675
-      - GF_HOST=http://pluto-next_grafana_1:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
       - ${APP_DATA_DIR}/data/leveldb:/home/node/app/data
-      - ${APP_DATA_DIR}/data/grafana:/home/node/app/grafana
     depends_on:
       prometheus:
-        condition: service_healthy
-      grafana:
         condition: service_healthy
     user: "1000:1000"
 
@@ -73,7 +69,6 @@ services:
       - backend
     environment:
       - PORT=7677
-      - GF_HOST=http://pluto-next_grafana_1:3000
       - BACKEND_DESTINATION_HOST=http://pluto-next_backend_1:7676
     volumes:
       - ${APP_DATA_DIR}/umbrel-app.yml:/tmp/umbrel-app.yml:ro
@@ -81,6 +76,11 @@ services:
 
   prometheus:
     image: ghcr.io/plutomining/pluto-prometheus:1.1.2@sha256:64bdc2c383e17df9925fe4fbe0dd2972b52616dcfb51489f0aa487307f19c53c
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--storage.tsdb.retention.size=5GB"
     volumes:
       - ${APP_DATA_DIR}/data/prometheus:/prometheus
       - ${APP_DATA_DIR}/data/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -93,25 +93,3 @@ services:
       timeout: 5s
       retries: 5
     user: "65534:65534"
-
-  grafana:
-    image: ghcr.io/plutomining/pluto-grafana:1.1.4-beta.0@sha256:fb99f32a668e81fcfa4a899f63346baf6d43c9dd5cff00e700732380f7da0634
-    pid: host
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=${APP_PASSWORD}
-      - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
-    volumes:
-      - ${APP_DATA_DIR}/data/grafana:/var/lib/grafana
-      - ${APP_DATA_DIR}/data/grafana/provisioning/datasources/main.yaml:/etc/grafana/provisioning/datasources/main.yaml:ro
-    healthcheck:
-      test:
-        - "CMD-SHELL"
-        - "wget --spider --quiet http://localhost:3000/api/health || exit 1"
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      prometheus:
-        condition: service_healthy
-    user: "472:472"

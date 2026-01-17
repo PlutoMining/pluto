@@ -58,6 +58,12 @@ export const createMetricsForDevice = (hostname: string) => {
     registers: [globalRegister],
   });
 
+  const vrTempGauge = new client.Gauge({
+    name: `${prefix}vr_temperature_celsius`,
+    help: "Current voltage regulator temperature in Celsius",
+    registers: [globalRegister],
+  });
+
   const hashRateGauge = new client.Gauge({
     name: `${prefix}hashrate_ghs`,
     help: "Current hash rate in GH/s",
@@ -119,6 +125,7 @@ export const createMetricsForDevice = (hostname: string) => {
       if (data.current) currentGauge.set(data.current / 1000); // Assume current in milliamps
       if (data.fanSpeedRpm || data.fanspeed) fanSpeedGauge.set(data.fanSpeedRpm || data.fanspeed);
       if (data.temp) tempGauge.set(data.temp);
+      if (data.vrTemp) vrTempGauge.set(data.vrTemp);
       if (data.hashRate || data.hashRate_10m) hashRateGauge.set(data.hashRate || data.hashRate_10m);
       if (data.sharesAccepted) sharesAcceptedGauge.set(data.sharesAccepted);
       if (data.sharesRejected) sharesRejectedGauge.set(data.sharesRejected);
@@ -239,8 +246,6 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   const averageHashrate = totalDevices > 0 ? totalHashrate / totalDevices : 0;
 
   const totalPower = devicesData.reduce((acc, device) => acc + device.power, 0);
-  const sharesAccepted = devicesData.reduce((acc, device) => acc + device.sharesAccepted, 0);
-  const sharesRejected = devicesData.reduce((acc, device) => acc + device.sharesRejected, 0);
   // Fleet efficiency (J/TH) is computed with the same formula used for single devices:
   // efficiency (J / TH) = power (W) / (hashrate GH/s / 1000)
   const efficiency =
@@ -253,8 +258,6 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   totalHashrateGauge.set(totalHashrate);
   averageHashrateGauge.set(averageHashrate);
   totalPowerGauge.set(totalPower);
-  sharesByPoolAcceptedGauge.set(sharesAccepted);
-  sharesByPoolRejectedGauge.set(sharesRejected);
   totalEfficiencyGauge.set(efficiency);
 
   // Conta il numero di dispositivi per ciascuna versione firmware

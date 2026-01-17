@@ -93,7 +93,6 @@ services:
       - PORT=7676
       - AUTO_LISTEN=true
       - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7675
-      - GF_HOST=http://pluto-next_grafana_1:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
       # - ./common/utils:/common/utils:ro # Monta il modulo in read-only
@@ -101,13 +100,9 @@ services:
       # - ./common/db:/common/db:ro # Monta il modulo in read-only
       # - ./common/logger:/common/logger:ro # Monta il modulo in read-only
       # - ./backend:/home/node/app/
-      # - ./grafana/templates:/home/node/app/grafana_templates/
       - ./data/leveldb-next:/home/node/app/data
-      - ./data/grafana-next:/home/node/app/grafana
     depends_on:
       prometheus:
-        condition: service_healthy
-      grafana:
         condition: service_healthy
     user: "1000:1000"
 
@@ -130,7 +125,6 @@ services:
     #   - frontend/.env.local
     environment:
       - PORT=7677
-      - GF_HOST=http://pluto-next_grafana_1:3000
       - BACKEND_DESTINATION_HOST=http://pluto-next_backend_1:7676
     volumes:
       - ./umbrel-apps/pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
@@ -144,6 +138,11 @@ services:
       context: .
       dockerfile: prometheus/Dockerfile.next
     container_name: pluto-next_prometheus_1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--storage.tsdb.retention.size=5GB"
     volumes:
       - ./data/prometheus-next:/prometheus
     # ports:
@@ -157,29 +156,3 @@ services:
       timeout: 5s
       retries: 5
     user: "65534:65534"
-
-  grafana:
-    build:
-      context: .
-      dockerfile: grafana/Dockerfile.next
-    container_name: pluto-next_grafana_1
-    # ports:
-    #   - "7778:3000"
-    pid: host
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
-    volumes:
-      - ./data/grafana-next:/var/lib/grafana
-    healthcheck:
-      test:
-        - "CMD-SHELL"
-        - "wget --spider --quiet http://localhost:3000/api/health || exit 1"
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      prometheus:
-        condition: service_healthy # Attende che prometheus sia in stato "healthy"
-    user: "472:472"

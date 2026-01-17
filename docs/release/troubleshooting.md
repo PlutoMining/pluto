@@ -70,7 +70,6 @@ sudo chown -R 65534:65534 data/prometheus-release
 ```
 
 The same applies to other data directories:
-- `data/grafana-release` → owned by `472:472`
 - `data/leveldb-release` → owned by `1000:1000`
 
 ### Services fail to start after fresh clone

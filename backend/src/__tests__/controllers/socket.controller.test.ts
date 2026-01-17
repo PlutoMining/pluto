@@ -1,6 +1,12 @@
 import type { Request, Response } from 'express';
 import * as socketController from '@/controllers/socket.controller';
 
+jest.mock('@pluto/logger', () => ({
+  logger: {
+    error: jest.fn(),
+  },
+}));
+
 jest.mock('@/services/tracing.service', () => ({
   startIoHandler: jest.fn(),
 }));
@@ -51,4 +57,3 @@ describe('socket.controller', () => {
     });
   });
 });
-

@@ -79,47 +79,16 @@ setup_directory() {
     fi
 }
 
-# Function to setup Grafana directory with dashboards subdirectory
-setup_grafana_directory() {
-    local dir_path="$1"
-    local description="$2"
-
-    setup_directory "$dir_path" 472 472 "$description"
-
-    local dashboards_path="$dir_path/dashboards"
-    if [ ! -d "$dashboards_path" ]; then
-        if [ "$EUID" -eq 0 ] || sudo -n true 2>/dev/null; then
-            sudo mkdir -p "$dashboards_path" 2>/dev/null || print_warning "Could not create $description/dashboards (may need sudo)"
-            # Backend needs to write dashboard files, so set ownership to backend user (1000)
-            sudo chown -R 1000:1000 "$dashboards_path" 2>/dev/null || print_warning "Could not set ownership for $description/dashboards (may need sudo)"
-            print_status "Created $description/dashboards directory with ownership 1000:1000"
-        else
-            mkdir -p "$dashboards_path" 2>/dev/null || print_warning "Could not create $description/dashboards (may need sudo)"
-            print_status "Created $description/dashboards directory"
-        fi
-    else
-        print_status "$description/dashboards directory already exists"
-        # Ensure ownership is correct even if directory already exists
-        if [ "$EUID" -eq 0 ] || sudo -n true 2>/dev/null; then
-            sudo chown -R 1000:1000 "$dashboards_path" 2>/dev/null || print_warning "Could not set ownership for $description/dashboards (may need sudo)"
-            print_status "Set ownership of $description/dashboards to 1000:1000 (for backend writes)"
-        fi
-    fi
-}
-
 # Setup directories for dev environment (no suffix)
 setup_directory "$PROJECT_ROOT/data/prometheus" 65534 65534 "data/prometheus"
-setup_grafana_directory "$PROJECT_ROOT/data/grafana" "data/grafana"
 setup_directory "$PROJECT_ROOT/data/leveldb" 1000 1000 "data/leveldb"
 
 # Setup directories for next environment (-next suffix)
 setup_directory "$PROJECT_ROOT/data/prometheus-next" 65534 65534 "data/prometheus-next"
-setup_grafana_directory "$PROJECT_ROOT/data/grafana-next" "data/grafana-next"
 setup_directory "$PROJECT_ROOT/data/leveldb-next" 1000 1000 "data/leveldb-next"
 
 # Setup directories for release environment (-release suffix)
 setup_directory "$PROJECT_ROOT/data/prometheus-release" 65534 65534 "data/prometheus-release"
-setup_grafana_directory "$PROJECT_ROOT/data/grafana-release" "data/grafana-release"
 setup_directory "$PROJECT_ROOT/data/leveldb-release" 1000 1000 "data/leveldb-release"
 
 echo ""
@@ -207,12 +176,6 @@ if [ ! -f "$PROJECT_ROOT/prometheus/prometheus.yml" ]; then
 fi
 print_status "prometheus/prometheus.yml exists"
 
-if [ ! -f "$PROJECT_ROOT/grafana/grafana.ini" ]; then
-    print_error "Required file not found: grafana/grafana.ini"
-    exit 1
-fi
-print_status "grafana/grafana.ini exists"
-
 echo ""
 
 # Set executable permissions on entrypoint scripts
@@ -248,4 +211,3 @@ echo "  2. Run 'make build' to build Docker images"
 echo "  3. Run 'make start' to start all services"
 echo ""
 echo "For more information, run 'make help'"
-

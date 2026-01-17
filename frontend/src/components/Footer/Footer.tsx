@@ -5,77 +5,31 @@
  * it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation, version 3.
  * See <https://www.gnu.org/licenses/>.
-*/
+ */
 
-import { Flex, Text } from "@chakra-ui/react";
 import { LoadoutLogo } from "../icons/LoadoutLogo";
-import { DiscordLogo, GithubLogo, MetaLogo, RedditLogo } from "../icons/FooterIcons";
+import { DiscordLogo, GithubLogo } from "../icons/FooterIcons";
 
 export const Footer = () => {
   return (
-    <Flex
-      alignItems={"center"}
-      position={"sticky"}
-      bottom={0}
-      zIndex={"10"}
-      bg={"footer-bg"}
-      fontWeight={400}
-      color={"footer-text"}
-      p={"1rem 0"}
-      borderTopWidth={"1px"}
-      borderTopColor={"border-color"}
-    >
-      <Flex
-        margin={"0 auto"}
-        justify={{ mobile: "flex-start", tablet: "space-between", desktop: "space-between" }}
-        flexDir={{ mobile: "column", tablet: "row", desktop: "row" }}
-        gap={"1rem"}
-        w={"100%"}
-        maxW="container.desktop"
-        p={"0 2rem"}
-      >
-        <Flex
-          display={{ base: "none", tablet: "unset" }}
-          alignItems={{ mobile: "flex-start", tablet: "flex-start", desktop: "center" }}
-          gap={{ mobile: "0.5rem", tablet: "0.5rem", desktop: "1rem" }}
-          flexDir={{ mobile: "column", tablet: "column-reverse", desktop: "row" }}
-        >
-          <Flex
-            alignItems={"center"}
-            gap={"1rem"}
-            justify={{ mobile: "space-between", tablet: "flex-start", desktop: "flex-start" }}
-            w={{ mobile: "100%", tablet: "unset", desktop: "unset" }}
-          >
-            <Text
-              fontFamily={"heading"}
-              fontSize={"xs"}
-              color={"footer-terms-and-conditions"}
-              fontWeight={500}
-            >
-              Terms & Conditions
-            </Text>
-            <Flex gap={"0.5rem"}>
-              {/* <MetaLogo target="_blank" /> */}
-              <GithubLogo
-                url="https://github.com/PlutoMining/pluto"
-                target="_blank"
-              />
-              <DiscordLogo url="https://discord.gg/osmu" target="_blank" />
-              {/* <RedditLogo target="_blank" /> */}
-            </Flex>
-          </Flex>
-          <Text fontSize={"xs"} fontWeight={300} color={"footer-text"}>
-            © 2024 Pluto. All rights reserved. This open-source application software is licensed
-            under the AGPL 3.0 License.
-          </Text>
-        </Flex>
-        <Flex gap={"0.5rem"} align={"center"}>
-          <Text fontSize={"xs"} fontWeight={300} color={"footer-text"}>
-            Designed with love by
-          </Text>
-          <LoadoutLogo url="https://www.loadout.gg/" target="_blank" />
-        </Flex>
-      </Flex>
-    </Flex>
+    <footer className="sticky bottom-0 z-10 border-t border-border bg-background py-4 text-muted-foreground">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-8 tablet:flex-row tablet:items-center tablet:justify-between">
+        <div className="hidden flex-col-reverse gap-2 tablet:flex tablet:flex-col tablet:items-start desktop:flex-row desktop:items-center desktop:gap-4">
+          <div className="flex w-full items-center justify-between gap-4 tablet:w-auto tablet:justify-start">
+            <span className="font-heading text-xs font-medium text-foreground">Terms & Conditions</span>
+            <div className="flex items-center gap-2">
+              <GithubLogo url="https://github.com/PlutoMining/pluto" target="_blank" className="text-primary" />
+              <DiscordLogo url="https://discord.gg/osmu" target="_blank" className="text-primary" />
+            </div>
+          </div>
+          <p className="text-xs font-light">© 2024 Pluto. All rights reserved. This open-source application software is licensed under the AGPL 3.0 License.</p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-light">Designed with love by</span>
+          <LoadoutLogo url="https://www.loadout.gg/" target="_blank" className="text-foreground" />
+        </div>
+      </div>
+    </footer>
   );
 };
