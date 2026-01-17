@@ -16,10 +16,10 @@ import { SearchInput } from "@/components/Input";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import { Modal } from "@/components/ui/modal";
 import { useDisclosure } from "@/hooks/useDisclosure";
-import NextLink from "next/link";
-import { Device } from "@pluto/interfaces";
-import axios from "axios";
-import { ChangeEvent, useCallback, useEffect, useState } from "react";
+	import NextLink from "next/link";
+	import { Device } from "@pluto/interfaces";
+	import axios from "axios";
+	import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 
 export default function DeviceSettingsClient() {
   const { isOpen: isOpenModal, onOpen: onOpenModal, onClose: onCloseModal } = useDisclosure();
@@ -29,8 +29,12 @@ export default function DeviceSettingsClient() {
     onClose: onCloseAlert,
   } = useDisclosure({ defaultIsOpen: false });
 
-  const [alert, setAlert] = useState<AlertInterface>();
-  const [imprintedDevices, setImprintedDevices] = useState<Device[] | undefined>();
+	  const [alert, setAlert] = useState<AlertInterface>();
+	  const [imprintedDevices, setImprintedDevices] = useState<Device[] | undefined>();
+	  const [searchQuery, setSearchQuery] = useState("");
+
+	  const searchRequestIdRef = useRef(0);
+	  const hasSearchedRef = useRef(false);
 
   useEffect(() => {
     fetchImprintedDevices();
@@ -93,20 +97,48 @@ export default function DeviceSettingsClient() {
     [imprintedDevices, onCloseModal, onOpenAlert]
   );
 
-  const handleSearch = async (e: ChangeEvent<HTMLInputElement>) => {
-    try {
-      const response = await axios.get<{ data: Device[] }>("/api/devices/imprint", {
-        params: {
-          q: e.target.value,
-        },
-      });
+	  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+	    setSearchQuery(e.target.value);
+	  };
 
-      const discoveredDevices = response.data;
-      setImprintedDevices(discoveredDevices.data);
-    } catch (error) {
-      console.error("Error searching devices:", error);
-    }
-  };
+	  useEffect(() => {
+	    const query = searchQuery.trim();
+
+	    if (query === "") {
+	      if (hasSearchedRef.current) {
+	        fetchImprintedDevices();
+	        hasSearchedRef.current = false;
+	      }
+	      return;
+	    }
+
+	    hasSearchedRef.current = true;
+
+	    const controller = new AbortController();
+	    const requestId = ++searchRequestIdRef.current;
+
+	    const timeoutId = setTimeout(async () => {
+	      try {
+	        const response = await axios.get<{ data: Device[] }>("/api/devices/imprint", {
+	          params: { q: query },
+	          signal: controller.signal,
+	        });
+
+	        if (controller.signal.aborted) return;
+	        if (requestId !== searchRequestIdRef.current) return;
+
+	        setImprintedDevices(response.data.data || []);
+	      } catch (error) {
+	        if (controller.signal.aborted) return;
+	        console.error("Error searching devices:", error);
+	      }
+	    }, 300);
+
+	    return () => {
+	      clearTimeout(timeoutId);
+	      controller.abort();
+	    };
+	  }, [searchQuery]);
 
   const closeAlert = useCallback(() => {
     setAlert(undefined);
