@@ -28,7 +28,10 @@ export function middleware(req: NextRequest) {
         return NextResponse.rewrite(apiUrl);
       } else {
         console.error("Error: BACKEND_DESTINATION_HOST is not defined");
-        return NextResponse.next(); // Or return a custom error response
+        return NextResponse.json(
+          { error: "BACKEND_DESTINATION_HOST is not defined" },
+          { status: 500, headers: { "cache-control": "no-store" } },
+        );
       }
     }
   }

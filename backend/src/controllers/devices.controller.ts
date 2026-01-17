@@ -97,10 +97,10 @@ export const imprintDevice = async (req: Request, res: Response) => {
 
 export const getImprintedDevices = async (req: Request, res: Response) => {
   try {
-    const data = await deviceService.getImprintedDevices({
-      ip: req.query.q as string,
-      partialMatch: true,
-    });
+    const qRaw = req.query.q;
+    const q = typeof qRaw === "string" ? qRaw : undefined;
+
+    const data = await deviceService.getImprintedDevices({ q });
 
     const enrichedDevices = data.map((device) => {
       const frequencyOptions = DeviceFrequencyOptions[device.info.ASICModel] || [];

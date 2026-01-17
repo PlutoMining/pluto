@@ -1,4 +1,49 @@
 services:
+  node_modules_permissions:
+    image: node:24-alpine
+    user: "0:0"
+    command:
+      - sh
+      - -lc
+      - |
+        set -e
+        for d in \
+          /vol/backend_node_modules \
+          /vol/backend_common_logger_node_modules \
+          /vol/backend_common_interfaces_node_modules \
+          /vol/backend_common_db_node_modules \
+          /vol/backend_common_utils_node_modules \
+          /vol/discovery_node_modules \
+          /vol/discovery_common_logger_node_modules \
+          /vol/discovery_common_interfaces_node_modules \
+          /vol/discovery_common_db_node_modules \
+          /vol/mock_node_modules \
+          /vol/mock_common_logger_node_modules \
+          /vol/mock_common_interfaces_node_modules \
+          /vol/frontend_node_modules \
+          /vol/frontend_common_utils_node_modules \
+          /vol/frontend_common_interfaces_node_modules \
+        ; do
+          mkdir -p "$$d"
+          chown -R 1000:1000 "$$d"
+        done
+    volumes:
+      - backend_node_modules:/vol/backend_node_modules
+      - backend_common_logger_node_modules:/vol/backend_common_logger_node_modules
+      - backend_common_interfaces_node_modules:/vol/backend_common_interfaces_node_modules
+      - backend_common_db_node_modules:/vol/backend_common_db_node_modules
+      - backend_common_utils_node_modules:/vol/backend_common_utils_node_modules
+      - discovery_node_modules:/vol/discovery_node_modules
+      - discovery_common_logger_node_modules:/vol/discovery_common_logger_node_modules
+      - discovery_common_interfaces_node_modules:/vol/discovery_common_interfaces_node_modules
+      - discovery_common_db_node_modules:/vol/discovery_common_db_node_modules
+      - mock_node_modules:/vol/mock_node_modules
+      - mock_common_logger_node_modules:/vol/mock_common_logger_node_modules
+      - mock_common_interfaces_node_modules:/vol/mock_common_interfaces_node_modules
+      - frontend_node_modules:/vol/frontend_node_modules
+      - frontend_common_utils_node_modules:/vol/frontend_common_utils_node_modules
+      - frontend_common_interfaces_node_modules:/vol/frontend_common_interfaces_node_modules
+    restart: "no"
   # app_proxy:
   #   image: getumbrel/app-proxy:latest
   #   environment:
@@ -30,6 +75,9 @@ services:
 
     # Container restart policy - restart unless manually stopped
     restart: on-failure
+    depends_on:
+      node_modules_permissions:
+        condition: service_completed_successfully
     env_file:
       - mock/.env.local
     environment:
@@ -40,6 +88,9 @@ services:
       - ./common/logger:/home/node/common/logger # Monta il modulo (writable per development)
       - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
       - ./mock:/home/node/app/
+      - mock_node_modules:/home/node/app/node_modules
+      - mock_common_logger_node_modules:/home/node/common/logger/node_modules
+      - mock_common_interfaces_node_modules:/home/node/common/interfaces/node_modules
     user: "1000:1000"
 
   discovery:
@@ -57,6 +108,9 @@ services:
 
     # Container restart policy - restart unless manually stopped
     restart: on-failure
+    depends_on:
+      node_modules_permissions:
+        condition: service_completed_successfully
     env_file:
       - discovery/.env.local
     environment:
@@ -70,6 +124,10 @@ services:
       - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./discovery:/home/node/app/
       - ./data/leveldb:/home/node/app/data
+      - discovery_node_modules:/home/node/app/node_modules
+      - discovery_common_logger_node_modules:/home/node/common/logger/node_modules
+      - discovery_common_interfaces_node_modules:/home/node/common/interfaces/node_modules
+      - discovery_common_db_node_modules:/home/node/common/db/node_modules
     user: "1000:1000"
 
   backend:
@@ -104,9 +162,25 @@ services:
       - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./backend:/home/node/app/
       - ./data/leveldb:/home/node/app/data
+      - backend_node_modules:/home/node/app/node_modules
+      - backend_common_logger_node_modules:/home/node/common/logger/node_modules
+      - backend_common_interfaces_node_modules:/home/node/common/interfaces/node_modules
+      - backend_common_db_node_modules:/home/node/common/db/node_modules
+      - backend_common_utils_node_modules:/home/node/common/utils/node_modules
     depends_on:
+      node_modules_permissions:
+        condition: service_completed_successfully
       prometheus:
         condition: service_healthy
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "require('net').connect(7776,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 20
     user: "1000:1000"
 
   frontend:
@@ -121,7 +195,10 @@ services:
     # Container restart policy - restart unless manually stopped
     restart: on-failure
     depends_on:
-      - backend
+      node_modules_permissions:
+        condition: service_completed_successfully
+      backend:
+        condition: service_healthy
     # env_file:
     #   - frontend/.env.local
     environment:
@@ -133,6 +210,9 @@ services:
       - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./frontend:/home/node/app/
       - ./umbrel-apps/pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
+      - frontend_node_modules:/home/node/app/node_modules
+      - frontend_common_utils_node_modules:/home/node/common/utils/node_modules
+      - frontend_common_interfaces_node_modules:/home/node/common/interfaces/node_modules
     user: "1000:1000"
 
   prometheus:
@@ -158,3 +238,20 @@ services:
       timeout: 5s
       retries: 5
     user: "65534:65534"
+
+volumes:
+  backend_node_modules:
+  backend_common_logger_node_modules:
+  backend_common_interfaces_node_modules:
+  backend_common_db_node_modules:
+  backend_common_utils_node_modules:
+  discovery_node_modules:
+  discovery_common_logger_node_modules:
+  discovery_common_interfaces_node_modules:
+  discovery_common_db_node_modules:
+  mock_node_modules:
+  mock_common_logger_node_modules:
+  mock_common_interfaces_node_modules:
+  frontend_node_modules:
+  frontend_common_utils_node_modules:
+  frontend_common_interfaces_node_modules:

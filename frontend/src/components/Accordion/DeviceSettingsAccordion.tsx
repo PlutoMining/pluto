@@ -80,6 +80,12 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
     checkedFetchedItems.length > 0 && checkedFetchedItems.every((item) => item.value);
 
   useEffect(() => {
+    setDevices(fetchedDevices || []);
+    setCheckedFetchedItems([]);
+    setOpenMacs([]);
+  }, [fetchedDevices]);
+
+  useEffect(() => {
     fetchPresets();
   }, []);
 
@@ -255,20 +261,20 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   return (
     <>
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="select-all-devices"
-              name="select-all-devices"
-              className="h-4 w-4 rounded-none border border-input bg-background accent-primary"
-              checked={allChecked}
-              onChange={(e) => handleAllCheckbox(e.target.checked)}
-            />
-            <span className="flex items-center gap-1 font-body text-sm">
-              {selectedCount === 0 ? (
-                <span className="text-muted-foreground">Select all</span>
-              ) : (
+	        <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
+	          <label className="flex shrink-0 items-center gap-2">
+	            <input
+	              type="checkbox"
+	              id="select-all-devices"
+	              name="select-all-devices"
+	              className="h-4 w-4 rounded-none border border-input bg-background accent-primary"
+	              checked={allChecked}
+	              onChange={(e) => handleAllCheckbox(e.target.checked)}
+	            />
+	            <span className="flex items-center gap-1 whitespace-nowrap font-body text-sm">
+	              {selectedCount === 0 ? (
+	                <span className="text-muted-foreground">Select all</span>
+	              ) : (
                 <>
                   <span className="font-medium text-foreground">{selectedCount}</span>
                   <span className="text-muted-foreground">/{devices.length}</span>
@@ -276,14 +282,14 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
                     selected
                   </span>
                 </>
-              )}
-            </span>
-          </label>
+	              )}
+	            </span>
+	          </label>
 
-          <div className="flex w-full flex-wrap items-center justify-between gap-4 mobileL:justify-end">
-            <Button
-              onClick={() => setIsSelectPoolPresetModalOpen(true)}
-              variant="text"
+	          <div className="flex w-full flex-wrap items-center justify-between gap-4 mobileL:justify-end tablet:w-auto tablet:flex-1 tablet:justify-end">
+	            <Button
+	              onClick={() => setIsSelectPoolPresetModalOpen(true)}
+	              variant="text"
               icon={<ArrowRightUpIcon color="currentColor" />}
               disabled={!canBulkAct}
               label="Select Pool Preset"
