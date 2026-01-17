@@ -9,18 +9,17 @@
 import { updateOne } from "@pluto/db";
 import { Device, DeviceInfo, ExtendedDeviceInfo } from "@pluto/interfaces";
 import { createCustomLogger, logger } from "@pluto/logger";
+import { asyncForEach, sanitizeHostname } from "@pluto/utils";
 import axios from "axios";
 import { Server as NetServer } from "http";
 import { Server as ServerIO } from "socket.io";
 import WebSocket from "ws";
 import { config } from "../config/environment";
-import { sanitizeHostname } from "@pluto/utils/strings";
 import {
   createMetricsForDevice,
   deleteMetricsForDevice,
   updateOverviewMetrics,
 } from "./metrics.service"; // Aggiunta funzione per rimuovere metriche
-import { asyncForEach } from "@pluto/utils/arrays";
 
 let isListeningLogs = false;
 let ipMap: {
