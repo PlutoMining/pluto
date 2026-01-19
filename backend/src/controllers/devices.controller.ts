@@ -21,6 +21,62 @@ function resolveAsicModelKey(value: unknown): string | undefined {
   return bmMatch?.[0] ?? trimmed;
 }
 
+const WRITABLE_SYSTEM_FIELDS = [
+  "hostname",
+  "frequency",
+  "coreVoltage",
+  "flipscreen",
+  "invertscreen",
+  "invertfanpolarity",
+  "autofanspeed",
+  "fanspeed",
+  "stratumURL",
+  "stratumPort",
+  "stratumUser",
+  "stratumPassword",
+  "wifiPassword",
+  "wifiPass",
+  "autoscreenoff",
+  "overheat_temp",
+] as const;
+
+function pickWritableSystemInfo(info: unknown) {
+  const raw = (info ?? {}) as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+
+  for (const key of WRITABLE_SYSTEM_FIELDS) {
+    if (raw[key] !== undefined) out[key] = raw[key];
+  }
+
+  const coerceNumber = (value: unknown) => {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string") {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : undefined;
+    }
+    return undefined;
+  };
+
+  const coerceNumberField = (key: string) => {
+    if (out[key] === undefined) return;
+    const n = coerceNumber(out[key]);
+    if (n === undefined) {
+      delete out[key];
+      return;
+    }
+    out[key] = n;
+  };
+
+  coerceNumberField("frequency");
+  coerceNumberField("coreVoltage");
+  coerceNumberField("stratumPort");
+  coerceNumberField("fanspeed");
+  coerceNumberField("overheat_temp");
+  coerceNumberField("autoscreenoff");
+
+  return out;
+}
+
 export const discoverDevices = async (req: Request, res: Response) => {
   try {
     const data = await deviceService.discoverDevices({
@@ -326,15 +382,19 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
     // Invia la richiesta PATCH per aggiornare le informazioni di sistema
     const patchUrl = `http://${deviceIp}/api/system`; // Assumendo che l'endpoint sia /api/system
 
+    const systemInfoPatch = pickWritableSystemInfo(payload.info);
+
     logger.info("Sending PATCH to device", {
       url: patchUrl,
       stratumPort: payload.info.stratumPort,
       stratumURL: payload.info.stratumURL,
       stratumUser: payload.info.stratumUser,
       hasPassword: !!payload.info.stratumPassword,
+      frequency: (systemInfoPatch as any).frequency,
+      coreVoltage: (systemInfoPatch as any).coreVoltage,
     });
 
-    const response = await axios.patch(patchUrl, payload.info); // Passa i dati nel body
+    const response = await axios.patch(patchUrl, systemInfoPatch); // Passa solo i campi configurabili nel body
 
     // Inoltra la risposta del dispositivo al client
     res

@@ -8,6 +8,7 @@
 
 import { useSocket } from "@/providers/SocketProvider";
 import { formatDetailedTime } from "@/utils/formatTime";
+import { formatDifficulty } from "@/utils/formatDifficulty";
 import { Device } from "@pluto/interfaces";
 import NextLink from "next/link";
 import { useEffect, useState } from "react";
@@ -89,6 +90,8 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
 };
 
 const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
+  const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
+
   return (
     <>
       <summary className="flex cursor-pointer items-center justify-between gap-4 bg-muted p-4">
@@ -118,8 +121,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
           <Row label="Power" value={`${device.info.power.toFixed(2)} W`} />
           <Row label="Temp." value={`${formatTemperature(device.info.temp)} °C`} />
           <Row label="VR Temp." value={`${formatTemperature(device.info.vrTemp)} °C`} />
-          <Row label="Difficulty" value={`${device.info.bestSessionDiff}`} />
-          <Row label="Best Difficulty" value={`${device.info.bestDiff}`} />
+          <Row label="Current difficulty" value={formatDifficulty(currentDiff)} />
+          <Row label="Best difficulty" value={formatDifficulty(device.info.bestDiff)} />
           <Row label="Uptime" value={formatDetailedTime(device.info.uptimeSeconds)} />
         </div>
       </div>

@@ -24,6 +24,28 @@ interface RegisterDevicesModalProps {
   onDevicesChanged: () => Promise<void>;
 }
 
+function hasEmptyFields(obj: any): boolean {
+  for (const key in obj) {
+    if (typeof obj[key] === "object" && obj[key] !== null) {
+      if (hasEmptyFields(obj[key])) return true;
+    } else if (obj[key] === "") {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hasErrorFields(obj: any): boolean {
+  for (const key in obj) {
+    if (typeof obj[key] === "object" && obj[key] !== null) {
+      if (hasErrorFields(obj[key])) return true;
+    } else if (obj[key] !== "") {
+      return true;
+    }
+  }
+  return false;
+}
+
 function ModalBodyContent({
   onClose,
   onDevicesChanged,
@@ -118,7 +140,7 @@ function ModalBodyContent({
     } finally {
       setIsLoadingData(false);
     }
-  }, [ipAndMacAddress]);
+  }, [errors, ipAndMacAddress]);
 
   const registerDevice = async () => {
     try {
@@ -156,15 +178,15 @@ function ModalBodyContent({
     }
   };
 
-  const handleAllCheckbox = (value: boolean) => {
-    setCheckedFetchedItems(Array.from({ length: checkedFetchedItems.length }, () => value));
-  };
+  const handleAllCheckbox = useCallback((value: boolean) => {
+    setCheckedFetchedItems((prevItems) => Array.from({ length: prevItems.length }, () => value));
+  }, []);
 
-  const handleCheckbox = (index: number) => {
-    setCheckedFetchedItems((checkedFetchedItems) =>
-      checkedFetchedItems.map((value: boolean, i: number) => (i === index ? !value : value))
+  const handleCheckbox = useCallback((index: number) => {
+    setCheckedFetchedItems((prevItems) =>
+      prevItems.map((value: boolean, i: number) => (i === index ? !value : value))
     );
-  };
+  }, []);
 
   const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -173,34 +195,12 @@ function ModalBodyContent({
 
     const errorLabel = value === "" ? `${name} is required` : isValid ? "" : `${name} is not valid`;
 
-    setErrors({ ...errors, [name]: errorLabel });
+    setErrors((prevErrors) => ({ ...prevErrors, [name]: errorLabel }));
     setIpAndMacAddress((prevState) => ({
       ...prevState,
       [name]: value,
     }));
   }, []);
-
-  const hasEmptyFields = (obj: any): boolean => {
-    for (const key in obj) {
-      if (typeof obj[key] === "object" && obj[key] !== null) {
-        if (hasEmptyFields(obj[key])) return true; // Ricorsione per oggetti annidati
-      } else if (obj[key] === "") {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const hasErrorFields = (obj: any): boolean => {
-    for (const key in obj) {
-      if (typeof obj[key] === "object" && obj[key] !== null) {
-        if (hasErrorFields(obj[key])) return true; // Ricorsione per oggetti annidati
-      } else if (obj[key] !== "") {
-        return true;
-      }
-    }
-    return false;
-  };
 
   const areManuallySearchFieldsValid = useCallback(() => {
     return hasErrorFields(errors) || hasEmptyFields(ipAndMacAddress);

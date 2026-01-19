@@ -16,6 +16,8 @@ import { TimeRangeSelect } from "@/components/charts/TimeRangeSelect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSocket } from "@/providers/SocketProvider";
+import { formatDifficulty } from "@/utils/formatDifficulty";
+import { formatDetailedTime, formatTime } from "@/utils/formatTime";
 import {
   TIME_RANGES,
   matrixToSeries,
@@ -198,7 +200,7 @@ export default function MonitoringClient({ id }: { id: string }) {
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4 tablet:grid-cols-5">
+      <div className="mt-4 grid gap-4 tablet:grid-cols-3 desktop:grid-cols-6">
         <Card className="rounded-none">
           <CardHeader>
             <CardTitle>Hashrate</CardTitle>
@@ -230,18 +232,44 @@ export default function MonitoringClient({ id }: { id: string }) {
         </Card>
         <Card className="rounded-none">
           <CardHeader>
-            <CardTitle>Temp</CardTitle>
+            <CardTitle>Temperatures</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="font-accent text-xl text-foreground">{formatNumber(device?.info.temp, 1)} °C</p>
+            <div className="flex flex-col gap-1">
+              <p className="font-accent text-xl text-foreground">
+                {formatNumber(device?.info.temp, 1)}°C{" "}
+                <span className="text-muted-foreground">/</span> {formatNumber(device?.info.vrTemp, 1)}°C
+              </p>
+              <p className="font-accent text-xs text-muted-foreground">ASIC / VR</p>
+            </div>
           </CardContent>
         </Card>
         <Card className="rounded-none">
           <CardHeader>
-            <CardTitle>VR Temp</CardTitle>
+            <CardTitle>Difficulty</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="font-accent text-xl text-foreground">{formatNumber(device?.info.vrTemp, 1)} °C</p>
+            <div className="flex flex-col gap-1">
+              <p className="font-accent text-xl text-foreground">
+                {formatDifficulty((device?.info as any)?.currentDiff ?? device?.info.bestSessionDiff)}
+                <span className="text-muted-foreground"> / </span>
+                {formatDifficulty(device?.info.bestDiff)}
+              </p>
+              <p className="font-accent text-xs text-muted-foreground">Current / Best</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-none">
+          <CardHeader>
+            <CardTitle>Uptime</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p
+              className="font-accent text-xl text-foreground"
+              title={device?.info.uptimeSeconds ? formatDetailedTime(device.info.uptimeSeconds) : "-"}
+            >
+              {device?.info.uptimeSeconds ? formatTime(device.info.uptimeSeconds) : "-"}
+            </p>
           </CardContent>
         </Card>
       </div>

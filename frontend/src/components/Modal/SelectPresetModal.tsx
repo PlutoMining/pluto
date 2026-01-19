@@ -44,7 +44,7 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
         setSelectedPreset(preset);
       }
     },
-    [selectedPreset]
+    [presets]
   );
 
   const handleAction = useCallback(() => {
@@ -93,7 +93,7 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
               id={"select-preset"}
               label="Select Pool Preset"
               name="preset"
-              onChange={(val) => handleChangeOnSelectPreset(val)}
+              onChange={handleChangeOnSelectPreset}
               value={selectedPreset?.uuid || ""}
               optionValues={presets.map((preset) => ({ value: preset.uuid, label: preset.name }))}
             />

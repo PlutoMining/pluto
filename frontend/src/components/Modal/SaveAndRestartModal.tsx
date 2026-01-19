@@ -27,6 +27,10 @@ export const SaveAndRestartModal: React.FC<SaveAndRestartModalProps> = ({ isOpen
     RadioButtonValues.ONLY_SAVE
   );
 
+  const handleCancel = useCallback(() => {
+    onClose("");
+  }, [onClose]);
+
   const handleRadioButtonChange = useCallback((value: string) => {
     setRadioButtonValue(value as RadioButtonValues);
   }, []);
@@ -36,7 +40,7 @@ export const SaveAndRestartModal: React.FC<SaveAndRestartModalProps> = ({ isOpen
   }, [onClose, radioButtonValue]);
 
   return (
-    <Modal open={isOpen} onClose={() => onClose("")}>
+    <Modal open={isOpen} onClose={handleCancel}>
       <div className="w-full max-w-2xl border border-border bg-card p-4 text-card-foreground">
         <h2 className="font-heading text-2xl font-medium">Save or Save&Restart the device?</h2>
 
@@ -69,7 +73,7 @@ export const SaveAndRestartModal: React.FC<SaveAndRestartModalProps> = ({ isOpen
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-4">
-          <Button label="Cancel" variant="outlined" onClick={() => onClose("")} />
+          <Button label="Cancel" variant="outlined" onClick={handleCancel} />
           <Button label="Confirm" variant="primary" onClick={handleAction} />
         </div>
       </div>

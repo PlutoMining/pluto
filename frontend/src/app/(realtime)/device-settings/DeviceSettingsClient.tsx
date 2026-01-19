@@ -16,10 +16,10 @@ import { SearchInput } from "@/components/Input";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import { Modal } from "@/components/ui/modal";
 import { useDisclosure } from "@/hooks/useDisclosure";
-	import NextLink from "next/link";
-	import { Device } from "@pluto/interfaces";
-	import axios from "axios";
-	import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
+import { Device } from "@pluto/interfaces";
+import axios from "axios";
+import NextLink from "next/link";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 
 export default function DeviceSettingsClient() {
   const { isOpen: isOpenModal, onOpen: onOpenModal, onClose: onCloseModal } = useDisclosure();
@@ -29,18 +29,14 @@ export default function DeviceSettingsClient() {
     onClose: onCloseAlert,
   } = useDisclosure({ defaultIsOpen: false });
 
-	  const [alert, setAlert] = useState<AlertInterface>();
-	  const [imprintedDevices, setImprintedDevices] = useState<Device[] | undefined>();
-	  const [searchQuery, setSearchQuery] = useState("");
+  const [alert, setAlert] = useState<AlertInterface>();
+  const [imprintedDevices, setImprintedDevices] = useState<Device[] | undefined>();
+  const [searchQuery, setSearchQuery] = useState("");
 
-	  const searchRequestIdRef = useRef(0);
-	  const hasSearchedRef = useRef(false);
+  const searchRequestIdRef = useRef(0);
+  const hasSearchedRef = useRef(false);
 
-  useEffect(() => {
-    fetchImprintedDevices();
-  }, []);
-
-  const fetchImprintedDevices = async () => {
+  const fetchImprintedDevices = useCallback(async () => {
     try {
       const response = await axios.get<{ data: Device[] }>("/api/devices/imprint");
       const devices = response.data.data;
@@ -49,7 +45,11 @@ export default function DeviceSettingsClient() {
     } catch (error) {
       console.error("Error discovering devices:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchImprintedDevices();
+  }, [fetchImprintedDevices]);
 
   const handleRestartAll = useCallback(
     async (e: { preventDefault: () => void }) => {
@@ -97,48 +97,48 @@ export default function DeviceSettingsClient() {
     [imprintedDevices, onCloseModal, onOpenAlert]
   );
 
-	  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
-	    setSearchQuery(e.target.value);
-	  };
+  const handleSearch = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, []);
 
-	  useEffect(() => {
-	    const query = searchQuery.trim();
+  useEffect(() => {
+    const query = searchQuery.trim();
 
-	    if (query === "") {
-	      if (hasSearchedRef.current) {
-	        fetchImprintedDevices();
-	        hasSearchedRef.current = false;
-	      }
-	      return;
-	    }
+    if (query === "") {
+      if (hasSearchedRef.current) {
+        void fetchImprintedDevices();
+        hasSearchedRef.current = false;
+      }
+      return;
+    }
 
-	    hasSearchedRef.current = true;
+    hasSearchedRef.current = true;
 
-	    const controller = new AbortController();
-	    const requestId = ++searchRequestIdRef.current;
+    const controller = new AbortController();
+    const requestId = ++searchRequestIdRef.current;
 
-	    const timeoutId = setTimeout(async () => {
-	      try {
-	        const response = await axios.get<{ data: Device[] }>("/api/devices/imprint", {
-	          params: { q: query },
-	          signal: controller.signal,
-	        });
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await axios.get<{ data: Device[] }>("/api/devices/imprint", {
+          params: { q: query },
+          signal: controller.signal,
+        });
 
-	        if (controller.signal.aborted) return;
-	        if (requestId !== searchRequestIdRef.current) return;
+        if (controller.signal.aborted) return;
+        if (requestId !== searchRequestIdRef.current) return;
 
-	        setImprintedDevices(response.data.data || []);
-	      } catch (error) {
-	        if (controller.signal.aborted) return;
-	        console.error("Error searching devices:", error);
-	      }
-	    }, 300);
+        setImprintedDevices(response.data.data || []);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error("Error searching devices:", error);
+      }
+    }, 300);
 
-	    return () => {
-	      clearTimeout(timeoutId);
-	      controller.abort();
-	    };
-	  }, [searchQuery]);
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [fetchImprintedDevices, searchQuery]);
 
   const closeAlert = useCallback(() => {
     setAlert(undefined);

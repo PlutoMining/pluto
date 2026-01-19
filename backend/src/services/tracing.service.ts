@@ -46,6 +46,56 @@ function resolveAsicModelKey(value: unknown): string | undefined {
   return bmMatch?.[0] ?? trimmed;
 }
 
+function pickFirstValue<T = unknown>(obj: any, keys: string[]): T | undefined {
+  for (const key of keys) {
+    const value = obj?.[key];
+    if (value !== undefined && value !== null) return value as T;
+  }
+  return undefined;
+}
+
+function coerceFiniteNumber(value: unknown): number | undefined {
+  if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
+  if (typeof value === "string") {
+    const n = Number(value.trim());
+    return Number.isFinite(n) ? n : undefined;
+  }
+  return undefined;
+}
+
+function normalizeSystemInfo(raw: any): any {
+  if (!raw || typeof raw !== "object") return raw;
+
+  const bestDiff = pickFirstValue(raw, ["bestDiff", "best_diff", "bestDifficulty", "best_difficulty"]);
+  const bestSessionDiff = pickFirstValue(raw, [
+    "bestSessionDiff",
+    "best_session_diff",
+    "bestSessionDifficulty",
+    "best_session_difficulty",
+  ]);
+  const currentDiff = pickFirstValue(raw, [
+    "currentDiff",
+    "current_diff",
+    "currentDifficulty",
+    "current_difficulty",
+    "difficulty",
+    "poolDifficulty",
+    "pool_difficulty",
+  ]);
+
+  const uptimeSeconds =
+    pickFirstValue(raw, ["uptimeSeconds", "uptime_seconds", "uptime", "uptime_s"]) ?? raw.uptimeSeconds;
+  const normalizedUptimeSeconds = coerceFiniteNumber(uptimeSeconds);
+
+  return {
+    ...raw,
+    ...(bestDiff !== undefined ? { bestDiff } : {}),
+    ...(bestSessionDiff !== undefined ? { bestSessionDiff } : {}),
+    ...(currentDiff !== undefined ? { currentDiff } : {}),
+    ...(normalizedUptimeSeconds !== undefined ? { uptimeSeconds: normalizedUptimeSeconds } : {}),
+  };
+}
+
 /**
  * Funzione che avvia la gestione dei WebSocket.
  */
@@ -196,8 +246,9 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
     try {
       logger.debug(`Polling system info from ${device.ip}`);
       const response = await axios.get(`http://${device.ip}/api/system/info`);
+      const normalizedInfo = normalizeSystemInfo(response.data);
 
-      const asicModelKey = resolveAsicModelKey(response.data?.ASICModel);
+      const asicModelKey = resolveAsicModelKey(normalizedInfo?.ASICModel);
       const mappedFrequencyOptions =
         (asicModelKey ? DeviceFrequencyOptions[asicModelKey] : undefined) || [];
       const mappedCoreVoltageOptions =
@@ -206,7 +257,7 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
       const extendedDevice: Device = {
         ...device,
         tracing: true,
-        info: response.data,
+        info: normalizedInfo,
       };
 
       // Ensure tuning options are always present in websocket updates (new API omits them).
@@ -236,10 +287,10 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
       ioInstance?.emit("stat_update", updatedDevice);
 
       // Aggiorna le metriche Prometheus con i dati del sistema
-      updatePrometheusMetrics(response.data);
+      updatePrometheusMetrics(normalizedInfo);
 
       // Aggiorna i dati nella mappa ipMap per il dispositivo corrente
-      ipMap[device.ip].info = response.data;
+      ipMap[device.ip].info = normalizedInfo;
       ipMap[device.ip].tracing = true;
 
     } catch (error: any) {

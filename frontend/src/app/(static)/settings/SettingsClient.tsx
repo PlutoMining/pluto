@@ -9,7 +9,7 @@
 
 import { Select } from "@/components/Select";
 import { useTheme } from "next-themes";
-import React, { useEffect, useState } from "react";
+import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
 
 type ColorMode = "system" | "light" | "dark";
 
@@ -38,11 +38,12 @@ export default function SettingsClient() {
     }
   }, [theme]);
 
-  const handleChangeOnColorMode = (val: string) => {
+  const handleColorModeChange = useCallback((e: ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
     const next: ColorMode = val === "light" || val === "dark" || val === "system" ? val : "system";
     setSelectedColorMode(next);
     setTheme(next);
-  };
+  }, [setTheme]);
 
   return (
     <div className="container flex-1 py-6">
@@ -57,7 +58,7 @@ export default function SettingsClient() {
             id={"color-mode"}
             label="Theme"
             name="theme"
-            onChange={(e) => handleChangeOnColorMode(e.target.value)}
+            onChange={handleColorModeChange}
             value={selectedColorMode}
             optionValues={colorModes}
           />

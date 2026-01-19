@@ -92,7 +92,7 @@ export const PresetEditor = ({
     }
   };
 
-  const validateFieldByName = (name: string, value: string) => {
+  const validateFieldByName = useCallback((name: string, value: string) => {
     switch (name) {
       case "stratumURL":
         return validateDomain(value, { allowIP: true });
@@ -105,9 +105,9 @@ export const PresetEditor = ({
       default:
         return true;
     }
-  };
+  }, []);
 
-  const validateField = (name: string, value: string) => {
+  const validateField = useCallback((name: string, value: string) => {
     let label =
       value === ""
         ? `${name} is required.`
@@ -133,9 +133,9 @@ export const PresetEditor = ({
         },
       }));
     }
-  };
+  }, [presets, validateFieldByName]);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
     validateField(name, value);
@@ -154,7 +154,7 @@ export const PresetEditor = ({
         },
       }));
     }
-  };
+  }, [validateField]);
 
   const handleSavePreset = useCallback(() => {
     const uuid = uuidv4();
@@ -184,12 +184,12 @@ export const PresetEditor = ({
       .finally(() => {
         setIsSaveLoading(false);
       });
-  }, [preset, onOpenAlert]);
+  }, [onCloseSuccessfullyModal, onOpenAlert, preset]);
 
-  const closeAlert = () => {
+  const closeAlert = useCallback(() => {
     setAlert(undefined);
     onCloseAlert();
-  };
+  }, [onCloseAlert]);
 
   const hasEmptyFields = (obj: any, excludeKeys: string[]): boolean => {
     for (const key in obj) {

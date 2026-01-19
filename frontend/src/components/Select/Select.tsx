@@ -7,6 +7,7 @@
  */
 
 import React, { ChangeEventHandler, useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 
 import { cn } from "@/lib/utils";
 
@@ -54,7 +55,6 @@ export const Select: React.FC<SelectProps> = ({
     const v = toStringValue(value);
     setSelectedValue(v);
     setCustomDraft(v);
-    setIsCustomMode(false);
   }, [allowCustom, isExternallyControlled, value]);
 
   useEffect(() => {
@@ -63,7 +63,6 @@ export const Select: React.FC<SelectProps> = ({
     const v = toStringValue(defaultValue);
     setSelectedValue(v);
     setCustomDraft(v);
-    setIsCustomMode(false);
   }, [allowCustom, defaultValue, isExternallyControlled]);
 
   const renderedOptions = useMemo(() => {
@@ -100,28 +99,44 @@ export const Select: React.FC<SelectProps> = ({
       return;
     }
 
-    setIsCustomMode(false);
+    const baseValues = new Set(optionValues.map((o) => String(o.value)));
+    const nextIsCustom = e.target.value !== "" && !baseValues.has(String(e.target.value));
+    setIsCustomMode(nextIsCustom);
     setSelectedValue(e.target.value);
     onChange(e);
   };
 
-  const handleCustomInputChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    setCustomDraft(e.target.value);
+  const emitCustomValue = (rawValue: string) => {
+    const value = rawValue.trim();
+    if (!/^-?\d+$/.test(value)) return;
+
+    // Ensure the custom option exists (rendered from selectedValue) before the next paint,
+    // and force the parent onChange to run synchronously so Save/Restart sees fresh state.
+    flushSync(() => {
+      setSelectedValue(value);
+      onChange({
+        target: { name, value, type: "select-one" },
+        currentTarget: { name, value, type: "select-one" },
+      } as unknown as React.ChangeEvent<HTMLSelectElement>);
+    });
   };
 
-  const commitCustomValue = () => {
-    setIsCustomMode(false);
-    if (customDraft === "") return;
-    setSelectedValue(customDraft);
+  const handleCustomInputChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+    const next = e.target.value;
+    setCustomDraft(next);
 
-    const syntheticEvent = {
-      target: {
-        name,
-        value: customDraft,
-        type: "number",
-      },
-    } as unknown as React.ChangeEvent<HTMLSelectElement>;
-    onChange(syntheticEvent);
+    // Keep parent state in sync while typing so "Save" uses the latest value,
+    // but don't force a blur/commit.
+    emitCustomValue(next);
+
+    // Keep custom editor open; selecting a predefined option closes it.
+    setIsCustomMode(true);
+  };
+
+  const commitCustomValue = (rawValue?: string) => {
+    const value = rawValue ?? customDraft;
+    if (value === "") return;
+    emitCustomValue(value);
   };
 
   return (
@@ -133,7 +148,7 @@ export const Select: React.FC<SelectProps> = ({
         id={id}
         name={name}
         onChange={handleSelectChange}
-        value={allowCustom ? (isCustomMode ? CUSTOM_SENTINEL : selectedValue) : value}
+        value={allowCustom ? selectedValue : value}
         defaultValue={allowCustom ? undefined : defaultValue}
         className={cn(
           "h-10 w-full rounded-none border border-input bg-background px-3",
@@ -156,11 +171,11 @@ export const Select: React.FC<SelectProps> = ({
           inputMode="numeric"
           value={customDraft}
           onChange={handleCustomInputChange}
-          onBlur={commitCustomValue}
+          onBlur={(e) => commitCustomValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              commitCustomValue();
+              commitCustomValue((e.currentTarget as HTMLInputElement).value);
             }
             if (e.key === "Escape") {
               e.preventDefault();

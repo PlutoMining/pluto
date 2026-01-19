@@ -885,6 +885,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                   label="Frequency"
                   name="frequency"
                   onChange={handleChange}
+                  value={device.info.frequency}
                   defaultValue={device.info.frequency}
                   optionValues={device.info.frequencyOptions}
                   allowCustom={true}
@@ -894,6 +895,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                   label="Core Voltage"
                   name="coreVoltage"
                   onChange={handleChange}
+                  value={device.info.coreVoltage}
                   defaultValue={device.info.coreVoltage}
                   optionValues={device.info.coreVoltageOptions}
                   allowCustom={true}

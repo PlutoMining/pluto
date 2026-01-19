@@ -94,10 +94,10 @@ export default function PresetsClient() {
     onCloseAlert();
   }, [onCloseAlert]);
 
-  const openDeleteConfirmationModal = (presetUuid: string) => {
+  const openDeleteConfirmationModal = useCallback((presetUuid: string) => {
     setSelectedPresetUuid(presetUuid);
     onDeletePresetModalOpen();
-  };
+  }, [onDeletePresetModalOpen]);
 
   const handleDeletePreset = useCallback(async () => {
     onDeletePresetModalClose();
@@ -134,7 +134,7 @@ export default function PresetsClient() {
         onOpenAlert();
       }
     }
-  }, [closeAlert, onDeletePresetModalClose, onOpenAlert, selectedPresetUuid]);
+  }, [closeAlert, onDeletePresetModalClose, onOpenAlert, presets, selectedPresetUuid]);
 
   const handleNewPreset = useCallback(
     (presetUuid?: string) => (e: MouseEvent<HTMLButtonElement>) => {
@@ -144,7 +144,7 @@ export default function PresetsClient() {
       } else setSelectedPresetUuid(undefined);
       onNewPresetModalOpen();
     },
-    []
+    [onNewPresetModalOpen]
   );
 
   const onNewPresetModalCloseSuccessfully = async () => {

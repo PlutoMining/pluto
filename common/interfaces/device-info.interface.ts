@@ -21,6 +21,7 @@ export interface DeviceInfoLegacy {
   hashRate: number;
   bestDiff: string;
   bestSessionDiff: string;
+  currentDiff?: string;
   freeHeap: number;
   coreVoltage: number;
   coreVoltageActual: number;
@@ -67,6 +68,7 @@ export interface DeviceInfoNew {
   jobInterval: number;
   bestDiff: string;
   bestSessionDiff: string;
+  currentDiff?: string;
   freeHeap: number;
   coreVoltage: number;
   coreVoltageActual: number;

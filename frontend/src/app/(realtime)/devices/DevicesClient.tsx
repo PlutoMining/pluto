@@ -40,9 +40,30 @@ export default function DevicesClient() {
     onClose: onCloseAlert,
   } = useDisclosure({ defaultIsOpen: false });
 
-  useEffect(() => {
-    fetchRegisteredDevices();
+  const fetchRegisteredDevices = useCallback(async () => {
+    try {
+      const response = await axios.get("/api/devices/imprint");
+      const imprintedDevices: Device[] = response.data.data;
+      setRegisteredDevices([...imprintedDevices]);
+      return imprintedDevices;
+    } catch (error) {
+      console.error("Error discovering devices:", error);
+    }
   }, []);
+
+  const putListenDevices = useCallback(async (imprintedDevices?: Device[]) => {
+    try {
+      await axios.put("/api/devices/listen", {
+        macs: imprintedDevices?.map((d) => d.mac),
+      });
+    } catch (error) {
+      console.error("Error updating devices to listen:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchRegisteredDevices();
+  }, [fetchRegisteredDevices]);
 
   const { isConnected, socket } = useSocket();
 
@@ -63,8 +84,8 @@ export default function DevicesClient() {
           ...e,
         };
 
-        return updatedDevices;
-      });
+      return updatedDevices;
+    });
     };
 
     if (isConnected) {
@@ -76,33 +97,12 @@ export default function DevicesClient() {
         socket.off("error", listener);
       };
     }
-  }, [isConnected, socket, registeredDevices]);
-
-  const fetchRegisteredDevices = async () => {
-    try {
-      const response = await axios.get("/api/devices/imprint");
-      const imprintedDevices: Device[] = response.data.data;
-      setRegisteredDevices([...imprintedDevices]);
-      return imprintedDevices;
-    } catch (error) {
-      console.error("Error discovering devices:", error);
-    }
-  };
-
-  const putListenDevices = async (imprintedDevices?: Device[]) => {
-    try {
-      await axios.put("/api/devices/listen", {
-        macs: imprintedDevices?.map((d) => d.mac),
-      });
-    } catch (error) {
-      console.error("Error updating devices to listen:", error);
-    }
-  };
+  }, [isConnected, socket]);
 
   const removeRegisteredDevice = useCallback((deviceId: string) => {
     setDeviceIdToRemove(deviceId);
     onConfirmationModalOpen();
-  }, []);
+  }, [onConfirmationModalOpen]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (deviceIdToRemove) {
@@ -136,12 +136,18 @@ export default function DevicesClient() {
         onOpenAlert();
       }
     }
-  }, [deviceIdToRemove, registeredDevices]);
+  }, [
+    deviceIdToRemove,
+    fetchRegisteredDevices,
+    onConfirmationModalClose,
+    onOpenAlert,
+    putListenDevices,
+  ]);
 
-  const handleDevicesChanged = async () => {
+  const handleDevicesChanged = useCallback(async () => {
     const imprintedDevices = await fetchRegisteredDevices();
     await putListenDevices(imprintedDevices);
-  };
+  }, [fetchRegisteredDevices, putListenDevices]);
 
   const closeAlert = useCallback(() => {
     setAlert(undefined);

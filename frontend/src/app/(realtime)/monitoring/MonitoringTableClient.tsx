@@ -12,11 +12,12 @@ import { DeviceStatusBadge } from "@/components/Badge";
 import { ArrowLeftSmallIcon } from "@/components/icons/ArrowIcon";
 import { SearchInput } from "@/components/Input";
 import { useSocket } from "@/providers/SocketProvider";
+import { formatDifficulty } from "@/utils/formatDifficulty";
 import { formatDetailedTime, formatTime } from "@/utils/formatTime";
 import { Device } from "@pluto/interfaces";
 import axios from "axios";
 import NextLink from "next/link";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 
 function formatTemperature(value: number | undefined | null) {
   if (value == null) return "N/A";
@@ -31,9 +32,20 @@ export default function MonitoringTableClient() {
   const searchRequestIdRef = useRef(0);
   const hasSearchedRef = useRef(false);
 
-  useEffect(() => {
-    fetchDevicesAndDashboardsAndUpdate();
+  const fetchDevicesAndDashboardsAndUpdate = useCallback(async () => {
+    try {
+      const deviceResponse = await axios.get<{ data: Device[] }>("/api/devices/imprint");
+      const fetchedDevices = deviceResponse.data.data;
+
+      setRegisteredDevices(fetchedDevices || []);
+    } catch (error) {
+      console.error("Error discovering devices:", error);
+    }
   }, []);
+
+  useEffect(() => {
+    void fetchDevicesAndDashboardsAndUpdate();
+  }, [fetchDevicesAndDashboardsAndUpdate]);
 
   const { isConnected, socket } = useSocket();
 
@@ -69,27 +81,16 @@ export default function MonitoringTableClient() {
     }
   }, [isConnected, socket]);
 
-  const fetchDevicesAndDashboardsAndUpdate = async () => {
-    try {
-      const deviceResponse = await axios.get<{ data: Device[] }>("/api/devices/imprint");
-      let fetchedDevices = deviceResponse.data.data;
-
-      setRegisteredDevices(fetchedDevices || []);
-    } catch (error) {
-      console.error("Error discovering devices:", error);
-    }
-  };
-
-  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleSearch = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-  };
+  }, []);
 
   useEffect(() => {
     const query = searchQuery.trim();
 
     if (query === "") {
       if (hasSearchedRef.current) {
-        fetchDevicesAndDashboardsAndUpdate();
+        void fetchDevicesAndDashboardsAndUpdate();
         hasSearchedRef.current = false;
       }
       return;
@@ -121,7 +122,7 @@ export default function MonitoringTableClient() {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [searchQuery]);
+  }, [fetchDevicesAndDashboardsAndUpdate, searchQuery]);
 
   return (
     <div className="container flex-1 py-6">
@@ -158,7 +159,7 @@ export default function MonitoringTableClient() {
                       VR Temp
                     </th>
                     <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                      Difficulty
+                      Current difficulty
                     </th>
                     <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
                       Best difficulty
@@ -173,7 +174,10 @@ export default function MonitoringTableClient() {
                   </tr>
                 </thead>
                 <tbody>
-                  {registeredDevices.map((device) => (
+                  {registeredDevices.map((device) => {
+                    const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
+
+                    return (
                     <tr key={device.mac} className="bg-card">
                       <td className="border-t border-border p-3 text-left font-accent text-sm font-normal">
                         {device.info.hostname}
@@ -196,10 +200,10 @@ export default function MonitoringTableClient() {
                         {formatTemperature(device.info.vrTemp)} °C
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {device.info.bestSessionDiff}
+                        {formatDifficulty(currentDiff)}
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {device.info.bestDiff}
+                        {formatDifficulty(device.info.bestDiff)}
                       </td>
                       <td
                         className="border-t border-border p-3 text-center font-accent text-sm font-normal"
@@ -219,7 +223,8 @@ export default function MonitoringTableClient() {
                         </NextLink>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

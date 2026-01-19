@@ -15,6 +15,7 @@ import { LineChartCard } from "@/components/charts/LineChartCard";
 import { PieChartCard } from "@/components/charts/PieChartCard";
 import { TreemapChartCard } from "@/components/charts/TreemapChartCard";
 import { TimeRangeSelect } from "@/components/charts/TimeRangeSelect";
+import { DeviceHeatmapCard } from "@/components/charts/DeviceHeatmapCard";
 import {
   TIME_RANGES,
   matrixToSeries,
@@ -24,6 +25,7 @@ import {
   vectorToNumber,
   type TimeRangeKey,
 } from "@/lib/prometheus";
+import { formatDifficulty, parseDifficulty } from "@/utils/formatDifficulty";
 import type { Device } from "@pluto/interfaces";
 import axios from "axios";
 
@@ -58,6 +60,15 @@ export default function OverviewClient() {
     () => TIME_RANGES.find((r) => r.key === range)?.seconds ?? 3600,
     [range]
   );
+
+  const fleetBestDiff = useMemo(() => {
+    let best = 0;
+    for (const device of devices) {
+      const parsed = parseDifficulty(device.info.bestDiff);
+      if (parsed !== null && Number.isFinite(parsed)) best = Math.max(best, parsed);
+    }
+    return best;
+  }, [devices]);
 
   useEffect(() => {
     const fetchDevices = async () => {
@@ -202,7 +213,7 @@ export default function OverviewClient() {
         <TimeRangeSelect value={range} onChange={setRange} />
       </div>
 
-      <div className="grid gap-4 tablet:grid-cols-3">
+      <div className="grid gap-4 tablet:grid-cols-4">
         <Card className="rounded-none">
           <CardHeader>
             <CardTitle>Total hardware</CardTitle>
@@ -227,6 +238,18 @@ export default function OverviewClient() {
             <p className="font-accent text-2xl text-foreground">{formatNumber(kpis.offline, 0)}</p>
           </CardContent>
         </Card>
+        <Card className="rounded-none">
+          <CardHeader>
+            <CardTitle>Best difficulty</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-accent text-2xl text-foreground">{formatDifficulty(fleetBestDiff)}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-4 grid gap-4">
+        <DeviceHeatmapCard title="Device map" devices={devices} />
       </div>
 
       <div className="mt-4 grid gap-4 tablet:grid-cols-2">

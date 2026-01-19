@@ -514,6 +514,29 @@ describe('devices.controller', () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
+    it('forwards frequency and voltage as numbers', async () => {
+      const req = {
+        params: { id: 'mac' },
+        body: { info: { frequency: '525', coreVoltage: '1150', stratumURL: 'pool', stratumPort: '3333' }, mac: 'mac' },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.3' }] as unknown as Device[]);
+      mockedAxios.patch.mockResolvedValue({ status: 200 });
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      expect(mockedAxios.patch).toHaveBeenCalledWith(
+        'http://10.0.0.3/api/system',
+        expect.objectContaining({
+          frequency: 525,
+          coreVoltage: 1150,
+          stratumPort: 3333,
+          stratumURL: 'pool',
+        })
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
 
     it('returns 404 when device missing', async () => {
       const req = { params: { id: 'mac' }, body: { info: {} } } as unknown as Request;
