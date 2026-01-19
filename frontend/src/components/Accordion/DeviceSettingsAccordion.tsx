@@ -710,7 +710,22 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         if (isAccordionOpen) {
           return { ...prevDevice, tracing: e.tracing }; // Esegui solo l'aggiornamento della proprietà di interesse
         }
-        return e;
+        return {
+          ...e,
+          info: {
+            ...e.info,
+            frequencyOptions:
+              Array.isArray((e.info as any)?.frequencyOptions) &&
+              (e.info as any).frequencyOptions.length > 0
+                ? (e.info as any).frequencyOptions
+                : (prevDevice.info as any)?.frequencyOptions || [],
+            coreVoltageOptions:
+              Array.isArray((e.info as any)?.coreVoltageOptions) &&
+              (e.info as any).coreVoltageOptions.length > 0
+                ? (e.info as any).coreVoltageOptions
+                : (prevDevice.info as any)?.coreVoltageOptions || [],
+          },
+        };
       });
     };
 
@@ -872,6 +887,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                   onChange={handleChange}
                   defaultValue={device.info.frequency}
                   optionValues={device.info.frequencyOptions}
+                  allowCustom={true}
                 />
                 <Select
                   id={`${device.mac}-coreVoltage`}
@@ -880,6 +896,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                   onChange={handleChange}
                   defaultValue={device.info.coreVoltage}
                   optionValues={device.info.coreVoltageOptions}
+                  allowCustom={true}
                 />
               </div>
 

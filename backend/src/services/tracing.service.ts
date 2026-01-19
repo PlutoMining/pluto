@@ -7,7 +7,13 @@
 */
 
 import { updateOne } from "@pluto/db";
-import { Device, DeviceInfo, ExtendedDeviceInfo } from "@pluto/interfaces";
+import {
+  Device,
+  DeviceFrequencyOptions,
+  DeviceInfo,
+  DeviceVoltageOptions,
+  ExtendedDeviceInfo,
+} from "@pluto/interfaces";
 import { createCustomLogger, logger } from "@pluto/logger";
 import { asyncForEach, sanitizeHostname } from "@pluto/utils";
 import axios from "axios";
@@ -31,6 +37,14 @@ let ipMap: {
   };
 } = {}; // Mappa che tiene traccia degli IP attivi
 let ioInstance: ServerIO | undefined = undefined; // Cambiato a undefined invece di null
+
+function resolveAsicModelKey(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const bmMatch = trimmed.match(/BM\d{4}/);
+  return bmMatch?.[0] ?? trimmed;
+}
 
 /**
  * Funzione che avvia la gestione dei WebSocket.
@@ -183,11 +197,31 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
       logger.debug(`Polling system info from ${device.ip}`);
       const response = await axios.get(`http://${device.ip}/api/system/info`);
 
+      const asicModelKey = resolveAsicModelKey(response.data?.ASICModel);
+      const mappedFrequencyOptions =
+        (asicModelKey ? DeviceFrequencyOptions[asicModelKey] : undefined) || [];
+      const mappedCoreVoltageOptions =
+        (asicModelKey ? DeviceVoltageOptions[asicModelKey] : undefined) || [];
+
       const extendedDevice: Device = {
         ...device,
         tracing: true,
         info: response.data,
       };
+
+      // Ensure tuning options are always present in websocket updates (new API omits them).
+      (extendedDevice.info as any).frequencyOptions =
+        mappedFrequencyOptions.length > 0
+          ? mappedFrequencyOptions
+          : Array.isArray((extendedDevice.info as any).frequencyOptions)
+          ? (extendedDevice.info as any).frequencyOptions
+          : [];
+      (extendedDevice.info as any).coreVoltageOptions =
+        mappedCoreVoltageOptions.length > 0
+          ? mappedCoreVoltageOptions
+          : Array.isArray((extendedDevice.info as any).coreVoltageOptions)
+          ? (extendedDevice.info as any).coreVoltageOptions
+          : [];
 
       delete extendedDevice.presetUuid; // @hack to avoid that presetId gets reset
 
@@ -213,6 +247,19 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
 
       logger.error(`Failed to make request to ${device.ip}:`, error);
       ioInstance?.emit("error", { ...extendedDevice, error: error.message });
+
+      // Ensure Prometheus doesn't keep reporting stale values when a device goes offline.
+      updatePrometheusMetrics({
+        power: 0,
+        voltage: 0,
+        current: 0,
+        fanSpeedRpm: 0,
+        fanspeed: 0,
+        temp: 0,
+        vrTemp: 0,
+        hashRate: 0,
+        hashRate_10m: 0,
+      });
 
       // // Se il polling fallisce, aggiorna il dispositivo come offline in ipMap
       // ipMap[device.ip].metrics = {

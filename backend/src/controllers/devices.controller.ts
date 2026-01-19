@@ -13,6 +13,14 @@ import * as presetsService from "../services/presets.service";
 import { Device, DeviceFrequencyOptions, DeviceVoltageOptions } from "@pluto/interfaces";
 import axios from "axios";
 
+function resolveAsicModelKey(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const bmMatch = trimmed.match(/BM\d{4}/);
+  return bmMatch?.[0] ?? trimmed;
+}
+
 export const discoverDevices = async (req: Request, res: Response) => {
   try {
     const data = await deviceService.discoverDevices({
@@ -103,8 +111,23 @@ export const getImprintedDevices = async (req: Request, res: Response) => {
     const data = await deviceService.getImprintedDevices({ q });
 
     const enrichedDevices = data.map((device) => {
-      const frequencyOptions = DeviceFrequencyOptions[device.info.ASICModel] || [];
-      const coreVoltageOptions = DeviceVoltageOptions[device.info.ASICModel] || [];
+      const modelKey = resolveAsicModelKey((device as any)?.info?.ASICModel);
+      const mappedFrequencyOptions = (modelKey ? DeviceFrequencyOptions[modelKey] : undefined) || [];
+      const mappedCoreVoltageOptions = (modelKey ? DeviceVoltageOptions[modelKey] : undefined) || [];
+
+      const frequencyOptions =
+        mappedFrequencyOptions.length > 0
+          ? mappedFrequencyOptions
+          : Array.isArray(device.info.frequencyOptions)
+          ? device.info.frequencyOptions
+          : [];
+
+      const coreVoltageOptions =
+        mappedCoreVoltageOptions.length > 0
+          ? mappedCoreVoltageOptions
+          : Array.isArray(device.info.coreVoltageOptions)
+          ? device.info.coreVoltageOptions
+          : [];
 
       return {
         ...device,

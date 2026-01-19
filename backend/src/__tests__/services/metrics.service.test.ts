@@ -94,6 +94,17 @@ describe('metrics.service', () => {
       expect(gaugeInstances.get('rig_hashrate_ghs')?.set).toHaveBeenCalledWith(800);
       expect(gaugeInstances.get('rig_efficiency')?.set).toHaveBeenCalledWith(1200 / (800 / 1000));
     });
+
+    it('does not keep stale metrics when values become zero', () => {
+      const { updatePrometheusMetrics } = createMetricsForDevice('rig2');
+
+      updatePrometheusMetrics({ power: 100, hashRate: 10 } as unknown as DeviceInfo);
+      updatePrometheusMetrics({ power: 0, hashRate: 0 } as unknown as DeviceInfo);
+
+      expect(gaugeInstances.get('rig2_power_watts')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('rig2_hashrate_ghs')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('rig2_efficiency')?.set).toHaveBeenCalledWith(0);
+    });
   });
 
   describe('deleteMetricsForDevice', () => {
@@ -139,8 +150,8 @@ describe('metrics.service', () => {
       expect(gaugeInstances.get('total_hardware')?.set).toHaveBeenCalledWith(2);
       expect(gaugeInstances.get('hardware_online')?.set).toHaveBeenCalledWith(1);
       expect(gaugeInstances.get('hardware_offline')?.set).toHaveBeenCalledWith(1);
-      expect(gaugeInstances.get('total_hashrate')?.set).toHaveBeenCalledWith(75);
-      expect(gaugeInstances.get('average_hashrate')?.set).toHaveBeenCalledWith(37.5);
+      expect(gaugeInstances.get('total_hashrate')?.set).toHaveBeenCalledWith(50);
+      expect(gaugeInstances.get('average_hashrate')?.set).toHaveBeenCalledWith(25);
 
       const firmwareGauge = gaugeInstances.get('firmware_version_distribution');
       const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');

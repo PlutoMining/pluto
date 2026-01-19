@@ -126,7 +126,7 @@ export default function MonitoringClient({ id }: { id: string }) {
       const queries = {
         hashrate: `${host}_hashrate_ghs`,
         power: `${host}_power_watts`,
-        efficiency: `${host}_power_watts/(${host}_hashrate_ghs/1000)`,
+        efficiency: `${host}_efficiency`,
         temp: `${host}_temperature_celsius`,
         vrTemp: `${host}_vr_temperature_celsius`,
         fan: `${host}_fanspeed_rpm`,

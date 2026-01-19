@@ -188,6 +188,23 @@ describe('devices.controller', () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
+    it('enriches options when ASICModel contains extra text', async () => {
+      const req = { query: {} } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([
+        { mac: 'x', info: { ASICModel: 'Bitaxe BM1397 rev2' } },
+      ] as unknown as Device[]);
+
+      await deviceController.getImprintedDevices(req, res as unknown as Response);
+
+      const payload = res.json.mock.calls[0][0];
+      expect(payload.data[0].info.frequencyOptions).toBeDefined();
+      expect(payload.data[0].info.frequencyOptions.length).toBeGreaterThan(0);
+      expect(payload.data[0].info.coreVoltageOptions).toBeDefined();
+      expect(payload.data[0].info.coreVoltageOptions.length).toBeGreaterThan(0);
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
     it('handles unknown ASICModel with empty options', async () => {
       const req = { query: {} } as unknown as Request;
       const res = createMockResponse();
@@ -615,4 +632,3 @@ describe('devices.controller', () => {
   });
 
 });
-
