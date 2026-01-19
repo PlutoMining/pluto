@@ -52,6 +52,19 @@ describe('prometheus.controller', () => {
       expect(res.json).toHaveBeenCalledWith({ status: 'error', error: 'down' });
     });
 
+    it('falls back to 500 and message when axios error has no response', async () => {
+      const error = { message: 'upstream down' };
+      mockedAxios.isAxiosError.mockReturnValue(true);
+      prometheusService.prometheusQuery.mockRejectedValue(error);
+      const req = { query: { query: 'up' } } as unknown as Request;
+      const res = mockRes();
+
+      await prometheusController.query(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ status: 'error', error: 'upstream down' });
+    });
+
     it('maps validation errors to 400', async () => {
       prometheusService.prometheusQuery.mockRejectedValue(new Error("Missing 'query'"));
       const req = { query: {} } as unknown as Request;
@@ -99,6 +112,21 @@ describe('prometheus.controller', () => {
       await prometheusController.queryRange(req, res);
 
       expect(res.status).toHaveBeenCalledWith(502);
+      expect(res.json).toHaveBeenCalledWith({ status: 'error', error: 'bad gateway' });
+    });
+
+    it('falls back to 500 and message when axios error has no response', async () => {
+      const error = { message: 'bad gateway' };
+      mockedAxios.isAxiosError.mockReturnValue(true);
+      prometheusService.prometheusQueryRange.mockRejectedValue(error);
+      const req = {
+        query: { query: 'up', start: '1', end: '2', step: '15s' },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await prometheusController.queryRange(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ status: 'error', error: 'bad gateway' });
     });
 

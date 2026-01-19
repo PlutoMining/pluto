@@ -9,7 +9,7 @@
     "dev:debug": "nodemon --watch 'src/**/*.ts' --exec 'tsx --inspect-brk' src/index.ts",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint --ext .ts src",
     "lint:fix": "npm run lint -- --fix",
-    "test": "jest --runInBand",
+    "test": "jest",
     "test:watch": "npm run test -- --watch",
     "test:coverage": "npm run test -- --coverage"
   },

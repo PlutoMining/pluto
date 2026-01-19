@@ -13,8 +13,9 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverageFrom: [
-    '<rootDir>/src/utils/formatTime.ts',
-    '<rootDir>/src/utils/minerMap.ts',
+    '<rootDir>/src/hooks/**/*.{ts,tsx}',
+    '<rootDir>/src/lib/**/*.{ts,tsx}',
+    '<rootDir>/src/utils/**/*.{ts,tsx}',
     '<rootDir>/src/providers/**/*.{ts,tsx}',
     '<rootDir>/src/app/api/**/*.{ts,tsx}',
   ],

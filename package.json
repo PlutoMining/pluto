@@ -10,7 +10,12 @@
   "license": "AGPL-3.0",
   "scripts": {
     "changelog": "semantic-release --dry-run",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "test:backend": "npm --prefix backend test",
+    "test:discovery": "npm --prefix discovery test",
+    "test:frontend": "npm --prefix frontend test",
+    "test:all": "bash -lc 'npm --prefix backend test & npm --prefix discovery test & npm --prefix frontend test & wait'",
+    "test:coverage": "bash -lc 'npm --prefix backend run test:coverage & npm --prefix discovery run test:coverage & npm --prefix frontend run test:coverage & wait'"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",

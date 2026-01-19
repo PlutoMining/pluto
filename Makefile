@@ -125,6 +125,18 @@ test-apps: ## Run tests for all apps (override APP=<name> or APPS="a b")
 		done; \
 	fi
 
+test-apps-parallel: ## Run tests in parallel for all apps
+	@pids=(); \
+	failed=0; \
+	for app in $(APPS); do \
+		echo "→ Testing $$app (parallel)..."; \
+		( cd $$app && npm run test ) & pids+=("$$!"); \
+	done; \
+	for pid in "$$\{pids[@]\}"; do \
+		wait $$pid || failed=1; \
+	done; \
+	exit $$failed
+
 test-app:
 	@if [ -z "$(APP)" ]; then \
 		echo "Error: APP parameter required"; \

@@ -42,6 +42,11 @@ describe('discovery.service helpers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedAxios.get.mockReset();
+
+    // Reset shared config mutable object between tests
+    config.detectMockDevices = false;
+    config.mockDiscoveryHost = 'http://mock-discovery';
+    config.mockDeviceHost = undefined;
   });
 
   describe('lookupDiscoveredDevice', () => {
@@ -57,6 +62,13 @@ describe('discovery.service helpers', () => {
       findOne.mockResolvedValue(undefined);
 
       await expect(lookupDiscoveredDevice('cc:dd')).resolves.toBeUndefined();
+    });
+
+
+    it('throws when lookup fails', async () => {
+      findOne.mockRejectedValue(new Error('db error'));
+
+      await expect(lookupDiscoveredDevice('ee:ff')).rejects.toThrow('db error');
     });
   });
 
@@ -81,6 +93,68 @@ describe('discovery.service helpers', () => {
       expect(result).toHaveLength(1);
       expect(result[0].mac).toBe('aa:bb:cc');
     });
+
+
+    it('supports exact (none) and left partial match types', async () => {
+      const devices = [
+        { mac: 'aa:bb:cc', ip: '10.0.0.1', info: { hostname: 'rig-alpha' } },
+        { mac: 'dd:ee:ff', ip: '10.0.0.2', info: { hostname: 'rig-beta' } },
+      ];
+
+      findMany.mockImplementation(async (_db: string, _collection: string, predicate: (device: any) => boolean) => {
+        return devices.filter((device) => predicate(device));
+      });
+
+      const result = await lookupMultipleDiscoveredDevices({
+        macs: ['aa:bb:cc'],
+        ips: ['0.0.1'],
+        partialMatch: { macs: 'none', ips: 'left' },
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].ip).toBe('10.0.0.1');
+    });
+
+    it('returns empty list when IP filter mismatches', async () => {
+      const devices = [{ mac: 'aa:bb:cc', ip: '10.0.0.1', info: { hostname: 'rig-alpha' } }];
+
+      findMany.mockImplementation(async (_db: string, _collection: string, predicate: (device: any) => boolean) => {
+        return devices.filter((device) => predicate(device));
+      });
+
+      const result = await lookupMultipleDiscoveredDevices({
+        macs: ['aa:bb'],
+        ips: ['192.168.1.10'],
+        partialMatch: { macs: 'both', ips: 'none' },
+      });
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('returns empty list when hostname filter mismatches', async () => {
+      const devices = [{ mac: 'aa:bb:cc', ip: '10.0.0.1', info: { hostname: 'rig-alpha' } }];
+
+      findMany.mockImplementation(async (_db: string, _collection: string, predicate: (device: any) => boolean) => {
+        return devices.filter((device) => predicate(device));
+      });
+
+      const result = await lookupMultipleDiscoveredDevices({
+        hostnames: ['rig-gamma'],
+        partialMatch: { hostnames: 'none' },
+      });
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('throws when findMany fails', async () => {
+      findMany.mockRejectedValue(new Error('findMany boom'));
+
+      await expect(
+        lookupMultipleDiscoveredDevices({
+          macs: ['aa:bb'],
+        }),
+      ).rejects.toThrow('findMany boom');
+    });
   });
 
   describe('discoverDevices', () => {
@@ -103,6 +177,37 @@ describe('discovery.service helpers', () => {
         }),
       );
       expect(result).toHaveLength(1);
+    });
+
+
+    it('updates device when it already exists during direct ip lookup', async () => {
+      mockedAxios.get.mockResolvedValue({
+        data: { ASICModel: 'TestModel', mac: 'aa:bb', extra: true },
+      });
+
+      insertOne.mockRejectedValue(new Error('already exists'));
+      updateOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices({ ip: '1.2.3.4' });
+
+      expect(result).toHaveLength(1);
+      expect(updateOne).toHaveBeenCalledWith(
+        'pluto_discovery',
+        'devices:discovered',
+        'aa:bb',
+        expect.objectContaining({
+          ip: '1.2.3.4',
+          mac: 'aa:bb',
+        }),
+      );
+    });
+
+    it('handles non-timeout axios errors during direct ip lookup', async () => {
+      mockedAxios.get.mockRejectedValue(new MockAxiosError('connection refused', 'ECONNREFUSED'));
+
+      const result = await discoverDevices({ ip: '9.9.9.9' });
+
+      expect(result).toEqual([]);
     });
 
     it('scans network interfaces and handles insert/update flows', async () => {
@@ -158,6 +263,94 @@ describe('discovery.service helpers', () => {
       insertOne.mockRejectedValue(new Error('boom'));
 
       const result = await discoverDevices({ ip: '7.7.7.7' });
+
+      expect(result).toEqual([]);
+    });
+
+    it('returns empty array when mock server list is missing', async () => {
+      config.detectMockDevices = true;
+
+      getActiveNetworkInterfaces.mockResolvedValue([]);
+      arpScan.mockResolvedValue([]);
+
+      mockedAxios.get.mockResolvedValueOnce({ data: {} });
+
+      const result = await discoverDevices();
+
+      expect(result).toEqual([]);
+    });
+
+    it('filters arp scan results by partial ip match', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([
+        { ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' },
+        { ip: '192.168.1.50', mac: 'dd:ee:ff', type: 'miner' },
+      ]);
+
+      mockedAxios.get.mockResolvedValueOnce({ data: { ASICModel: 'ModelA' } });
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices({ ip: '10.0', partialMatch: true });
+
+      expect(result).toHaveLength(1);
+      expect(mockedAxios.get).toHaveBeenCalledTimes(1);
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://10.0.0.1/api/system/info', { timeout: 1000 });
+    });
+
+    it('returns empty array when no valid devices remain after filtering', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      const result = await discoverDevices({ ip: '10.0', partialMatch: true });
+
+      expect(result).toEqual([]);
+      expect(mockedAxios.get).not.toHaveBeenCalled();
+    });
+
+    it('keeps discovered device when insert fails unexpectedly during scan', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      mockedAxios.get.mockResolvedValueOnce({ data: { ASICModel: 'ModelA' } });
+      insertOne.mockRejectedValue(new Error('db down'));
+
+      const result = await discoverDevices();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].ip).toBe('10.0.0.1');
+      expect(updateOne).not.toHaveBeenCalled();
+    });
+
+    it('skips device during scan when ASICModel is missing', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      mockedAxios.get.mockResolvedValueOnce({ data: {} });
+
+      const result = await discoverDevices();
+
+      expect(result).toEqual([]);
+      expect(insertOne).not.toHaveBeenCalled();
+    });
+
+    it('handles non-timeout axios error during scan and continues', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      mockedAxios.get.mockRejectedValueOnce(new MockAxiosError('connection refused', 'ECONNREFUSED'));
+
+      const result = await discoverDevices();
+
+      expect(result).toEqual([]);
+    });
+
+    it('logs and skips when request times out during scan', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      mockedAxios.get.mockRejectedValueOnce(new MockAxiosError('timeout', 'ECONNABORTED'));
+
+      const result = await discoverDevices();
 
       expect(result).toEqual([]);
     });
