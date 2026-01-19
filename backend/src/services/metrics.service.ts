@@ -130,7 +130,7 @@ export const createMetricsForDevice = (hostname: string) => {
       setGauge(powerGauge, data.power);
       setGauge(voltageGauge, data.voltage, (v) => v / 1000); // Assume voltage in millivolts
       setGauge(currentGauge, data.current, (c) => c / 1000); // Assume current in milliamps
-      setGauge(fanSpeedGauge, data.fanSpeedRpm ?? data.fanspeed);
+      setGauge(fanSpeedGauge, data.fanSpeedRpm ?? data.fanrpm ?? data.fanspeed);
       setGauge(tempGauge, data.temp);
       setGauge(vrTempGauge, data.vrTemp);
       setGauge(hashRateGauge, hashrate);
@@ -237,6 +237,34 @@ const totalEfficiencyGauge = new client.Gauge({
   registers: [globalRegister],
 });
 
+function normalizePoolKey(stratumURL: unknown, stratumPort: unknown) {
+  const rawUrl = typeof stratumURL === "string" ? stratumURL.trim() : "";
+  const rawPort = typeof stratumPort === "number" ? stratumPort : Number(stratumPort);
+
+  let hostPort = rawUrl;
+
+  hostPort = hostPort.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, "");
+  hostPort = hostPort.split("/")[0] ?? hostPort;
+
+  if (!hostPort) {
+    return Number.isFinite(rawPort) ? `unknown:${rawPort}` : "unknown";
+  }
+
+  const lastColonIdx = hostPort.lastIndexOf(":");
+  if (lastColonIdx > 0 && lastColonIdx < hostPort.length - 1) {
+    const possiblePort = Number(hostPort.slice(lastColonIdx + 1));
+    if (Number.isFinite(possiblePort)) {
+      return `${hostPort.slice(0, lastColonIdx)}:${possiblePort}`;
+    }
+  }
+
+  if (Number.isFinite(rawPort)) {
+    return `${hostPort}:${rawPort}`;
+  }
+
+  return hostPort;
+}
+
 // Funzione per aggiornare tutte le metriche di overview
 export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   const totalDevices = devicesData.length;
@@ -283,9 +311,8 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
       acc: { accepted: { [pool: string]: number }; rejected: { [pool: string]: number } },
       device
     ) => {
-      const pool =
-        poolMap.get(`${device.stratumURL}:${device.stratumPort}`) ||
-        `${device.stratumURL}:${device.stratumPort}`;
+      const poolKey = normalizePoolKey(device.stratumURL, device.stratumPort);
+      const pool = poolMap.get(poolKey) || poolKey;
       acc.accepted[pool] = (acc.accepted[pool] || 0) + device.sharesAccepted;
       acc.rejected[pool] = (acc.rejected[pool] || 0) + device.sharesRejected;
       return acc;

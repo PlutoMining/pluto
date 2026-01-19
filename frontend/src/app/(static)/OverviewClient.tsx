@@ -258,7 +258,7 @@ export default function OverviewClient() {
       </div>
 
       <div className="mt-4 grid gap-4 tablet:grid-cols-2">
-        <LineChartCard title="Total efficiency" points={effSeries} unit="W/TH" />
+        <LineChartCard title="Total efficiency" points={effSeries} unit="J/TH" />
         <TreemapChartCard
           title="Firmware distribution"
           data={firmwareTreemapData}

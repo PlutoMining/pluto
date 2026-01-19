@@ -37,7 +37,7 @@ export function rangeToQueryParams(rangeSeconds: number) {
   return { start, end, step: `${stepSeconds}s` };
 }
 
-async function fetchProm(url: string, params: Record<string, string>) {
+async function fetchProm(url: string, params: Record<string, string>, signal?: AbortSignal) {
   const u = new URL(url, window.location.origin);
   Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v));
 
@@ -46,6 +46,7 @@ async function fetchProm(url: string, params: Record<string, string>) {
     headers: {
       Accept: "application/json",
     },
+    signal,
   });
 
   const json = (await response.json()) as PrometheusResponse;
@@ -57,20 +58,34 @@ async function fetchProm(url: string, params: Record<string, string>) {
   return json;
 }
 
-export async function promQuery(query: string, time?: number) {
-  return fetchProm("/api/prometheus/query", {
-    query,
-    ...(time !== undefined ? { time: String(time) } : {}),
-  });
+export async function promQuery(query: string, time?: number, options?: { signal?: AbortSignal }) {
+  return fetchProm(
+    "/api/prometheus/query",
+    {
+      query,
+      ...(time !== undefined ? { time: String(time) } : {}),
+    },
+    options?.signal
+  );
 }
 
-export async function promQueryRange(query: string, start: number, end: number, step: string) {
-  return fetchProm("/api/prometheus/query_range", {
-    query,
-    start: String(start),
-    end: String(end),
-    step,
-  });
+export async function promQueryRange(
+  query: string,
+  start: number,
+  end: number,
+  step: string,
+  options?: { signal?: AbortSignal }
+) {
+  return fetchProm(
+    "/api/prometheus/query_range",
+    {
+      query,
+      start: String(start),
+      end: String(end),
+      step,
+    },
+    options?.signal
+  );
 }
 
 export function vectorToNumber(result: PrometheusVectorResult[] | undefined, fallback = 0) {

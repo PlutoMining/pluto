@@ -172,5 +172,50 @@ describe('metrics.service', () => {
       expect(rejectedSet).toHaveBeenCalledWith(1);
       expect(rejectedSet).toHaveBeenCalledWith(2);
     });
+
+    it('normalizes pool keys from stratum URLs', () => {
+      const devices: ExtendedDeviceInfo[] = [
+        {
+          mac: 'a',
+          power: 100,
+          hashRate: 50,
+          sharesAccepted: 1,
+          sharesRejected: 0,
+          tracing: true,
+          version: '1.0.0',
+          stratumURL: 'stratum+tcp://192.168.78.28:2018',
+          stratumPort: 2018,
+        } as unknown as ExtendedDeviceInfo,
+        {
+          mac: 'b',
+          power: 0,
+          hashRate_10m: 25,
+          sharesAccepted: 2,
+          sharesRejected: 0,
+          tracing: true,
+          version: 'custom',
+          stratumURL: '',
+          stratumPort: 2018,
+        } as unknown as ExtendedDeviceInfo,
+        {
+          mac: 'c',
+          power: 0,
+          hashRate_10m: 25,
+          sharesAccepted: 3,
+          sharesRejected: 0,
+          tracing: true,
+          version: 'custom',
+          stratumURL: 'solo.ckpool.org',
+          stratumPort: undefined,
+        } as unknown as ExtendedDeviceInfo,
+      ];
+
+      updateOverviewMetrics(devices);
+
+      const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');
+      expect(acceptedGauge?.labels).toHaveBeenCalledWith('192.168.78.28:2018');
+      expect(acceptedGauge?.labels).toHaveBeenCalledWith('unknown:2018');
+      expect(acceptedGauge?.labels).toHaveBeenCalledWith('solo.ckpool.org');
+    });
   });
 });

@@ -122,46 +122,64 @@ export default function MonitoringClient({ id }: { id: string }) {
   }, [isConnected, socket, device]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+
     const load = async () => {
-      const { start, end, step } = rangeToQueryParams(rangeSeconds);
+      try {
+        const { start, end, step } = rangeToQueryParams(rangeSeconds);
 
-      const queries = {
-        hashrate: `${host}_hashrate_ghs`,
-        power: `${host}_power_watts`,
-        efficiency: `${host}_efficiency`,
-        temp: `${host}_temperature_celsius`,
-        vrTemp: `${host}_vr_temperature_celsius`,
-        fan: `${host}_fanspeed_rpm`,
-        coreVActual: `${host}_core_voltage_actual_volts`,
-        coreV: `${host}_core_voltage_volts`,
-        voltage: `${host}_voltage_volts`,
-      };
+        const queries = {
+          hashrate: `${host}_hashrate_ghs`,
+          power: `${host}_power_watts`,
+          efficiency: `${host}_efficiency`,
+          temp: `${host}_temperature_celsius`,
+          vrTemp: `${host}_vr_temperature_celsius`,
+          fan: `${host}_fanspeed_rpm`,
+          coreVActual: `${host}_core_voltage_actual_volts`,
+          coreV: `${host}_core_voltage_volts`,
+          voltage: `${host}_voltage_volts`,
+        };
 
-      const [hashrateRes, powerRes, effRes, tempRes, vrTempRes, fanRes, coreVaRes, coreVRes, voltRes] =
-        await Promise.all([
-        promQueryRange(queries.hashrate, start, end, step),
-        promQueryRange(queries.power, start, end, step),
-        promQueryRange(queries.efficiency, start, end, step),
-        promQueryRange(queries.temp, start, end, step),
-        promQueryRange(queries.vrTemp, start, end, step),
-        promQueryRange(queries.fan, start, end, step),
-        promQueryRange(queries.coreVActual, start, end, step),
-        promQueryRange(queries.coreV, start, end, step),
-        promQueryRange(queries.voltage, start, end, step),
-      ]);
+        const options = { signal: controller.signal };
 
-      setHashrate(matrixToSeries((hashrateRes as any).data.result)[0]?.points ?? []);
-      setPower(matrixToSeries((powerRes as any).data.result)[0]?.points ?? []);
-      setEfficiency(matrixToSeries((effRes as any).data.result)[0]?.points ?? []);
-      setTemp(matrixToSeries((tempRes as any).data.result)[0]?.points ?? []);
-      setVrTemp(matrixToSeries((vrTempRes as any).data.result)[0]?.points ?? []);
-      setFan(matrixToSeries((fanRes as any).data.result)[0]?.points ?? []);
-      setCoreVActual(matrixToSeries((coreVaRes as any).data.result)[0]?.points ?? []);
-      setCoreV(matrixToSeries((coreVRes as any).data.result)[0]?.points ?? []);
-      setVoltage(matrixToSeries((voltRes as any).data.result)[0]?.points ?? []);
+        const [hashrateRes, powerRes, effRes, tempRes, vrTempRes, fanRes, coreVaRes, coreVRes, voltRes] =
+          await Promise.all([
+            promQueryRange(queries.hashrate, start, end, step, options),
+            promQueryRange(queries.power, start, end, step, options),
+            promQueryRange(queries.efficiency, start, end, step, options),
+            promQueryRange(queries.temp, start, end, step, options),
+            promQueryRange(queries.vrTemp, start, end, step, options),
+            promQueryRange(queries.fan, start, end, step, options),
+            promQueryRange(queries.coreVActual, start, end, step, options),
+            promQueryRange(queries.coreV, start, end, step, options),
+            promQueryRange(queries.voltage, start, end, step, options),
+          ]);
+
+        if (cancelled || controller.signal.aborted) return;
+
+        setHashrate(matrixToSeries((hashrateRes as any).data.result)[0]?.points ?? []);
+        setPower(matrixToSeries((powerRes as any).data.result)[0]?.points ?? []);
+        setEfficiency(matrixToSeries((effRes as any).data.result)[0]?.points ?? []);
+        setTemp(matrixToSeries((tempRes as any).data.result)[0]?.points ?? []);
+        setVrTemp(matrixToSeries((vrTempRes as any).data.result)[0]?.points ?? []);
+        setFan(matrixToSeries((fanRes as any).data.result)[0]?.points ?? []);
+        setCoreVActual(matrixToSeries((coreVaRes as any).data.result)[0]?.points ?? []);
+        setCoreV(matrixToSeries((coreVRes as any).data.result)[0]?.points ?? []);
+        setVoltage(matrixToSeries((voltRes as any).data.result)[0]?.points ?? []);
+      } catch (error: any) {
+        if (controller.signal.aborted) return;
+        if (error?.name === "AbortError") return;
+        console.error(error);
+      }
     };
 
-    load().catch((e) => console.error(e));
+    void load();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [host, rangeSeconds]);
 
   return (
@@ -280,7 +298,7 @@ export default function MonitoringClient({ id }: { id: string }) {
       </div>
 
       <div className="mt-4 grid gap-4 tablet:grid-cols-2">
-        <LineChartCard title="Efficiency" points={efficiency} unit="W/TH" />
+        <LineChartCard title="Efficiency" points={efficiency} unit="J/TH" />
         <MultiLineChartCard title="Temperatures" series={temperatureSeries} unit="°C" valueDigits={1} />
       </div>
 

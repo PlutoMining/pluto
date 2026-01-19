@@ -32,7 +32,7 @@ export default function MonitoringTableClient() {
   const searchRequestIdRef = useRef(0);
   const hasSearchedRef = useRef(false);
 
-  const fetchDevicesAndDashboardsAndUpdate = useCallback(async () => {
+  const fetchDevicesAndUpdate = useCallback(async () => {
     try {
       const deviceResponse = await axios.get<{ data: Device[] }>("/api/devices/imprint");
       const fetchedDevices = deviceResponse.data.data;
@@ -44,8 +44,8 @@ export default function MonitoringTableClient() {
   }, []);
 
   useEffect(() => {
-    void fetchDevicesAndDashboardsAndUpdate();
-  }, [fetchDevicesAndDashboardsAndUpdate]);
+    void fetchDevicesAndUpdate();
+  }, [fetchDevicesAndUpdate]);
 
   const { isConnected, socket } = useSocket();
 
@@ -90,7 +90,7 @@ export default function MonitoringTableClient() {
 
     if (query === "") {
       if (hasSearchedRef.current) {
-        void fetchDevicesAndDashboardsAndUpdate();
+        void fetchDevicesAndUpdate();
         hasSearchedRef.current = false;
       }
       return;
@@ -122,7 +122,7 @@ export default function MonitoringTableClient() {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [fetchDevicesAndDashboardsAndUpdate, searchQuery]);
+  }, [fetchDevicesAndUpdate, searchQuery]);
 
   return (
     <div className="container flex-1 py-6">
