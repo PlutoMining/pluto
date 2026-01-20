@@ -19,11 +19,7 @@ type SocketContextType = {
   devices: Device[] | null;
 };
 
-const SocketContext = createContext<SocketContextType>({
-  socket: null,
-  isConnected: false,
-  devices: null,
-});
+const SocketContext = createContext<SocketContextType | undefined>(undefined);
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const [socket, setSocket] = useState<any | null>(null);

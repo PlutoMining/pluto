@@ -19,6 +19,14 @@ module.exports = {
     '!<rootDir>/**/*.test.ts',
     '!<rootDir>/dist/**',
   ],
+  coverageThreshold: {
+    global: {
+      statements: 95,
+      lines: 95,
+      functions: 90,
+      branches: 75,
+    },
+  },
   transform: {
     '^.+\\.ts$': [
       'ts-jest',

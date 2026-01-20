@@ -39,3 +39,20 @@ jest.mock('next/link', () => {
 });
 
 jest.mock('recharts');
+
+// Jest + jsdom doesn't always provide fetch.
+if (!(global as any).fetch) {
+  (global as any).fetch = () => {
+    throw new Error("fetch is not mocked");
+  };
+}
+
+// Some tests intentionally click anchor tags, and jsdom logs a noisy error when it tries to
+// perform real navigation. Filter only that specific message.
+const originalConsoleError = console.error;
+console.error = (...args: any[]) => {
+  if (args.some((arg) => String(arg).includes("Not implemented: navigation"))) {
+    return;
+  }
+  return originalConsoleError(...args);
+};

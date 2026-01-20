@@ -12,6 +12,10 @@ module.exports = {
   },
   collectCoverageFrom: [
     '<rootDir>/src/services/**/*.ts',
+    '<rootDir>/src/controllers/**/*.ts',
+    '<rootDir>/src/routes/**/*.ts',
+    '<rootDir>/src/config/**/*.ts',
+    '!<rootDir>/src/index.ts',
   ],
   coveragePathIgnorePatterns: [
     '<rootDir>/src/services/arpScanWrapper.ts',
@@ -26,11 +30,10 @@ module.exports = {
   },
   coverageThreshold: {
     global: {
-      statements: 80,
-      lines: 80,
-      functions: 80,
-      branches: 65,
+      statements: 95,
+      lines: 95,
+      functions: 95,
+      branches: 80,
     },
   },
 };
-

@@ -52,6 +52,10 @@ describe('prometheus.service', () => {
       await expect(prometheusQuery({ query: 'up', time: 'not-a-number' })).rejects.toThrow("Invalid 'time'");
     });
 
+    it("rejects blank 'time'", async () => {
+      await expect(prometheusQuery({ query: 'up', time: '   ' })).rejects.toThrow("Invalid 'time'");
+    });
+
     it('rejects too-long query', async () => {
       await expect(prometheusQuery({ query: 'x'.repeat(8001) })).rejects.toThrow('Query too long');
     });
@@ -188,6 +192,21 @@ describe('prometheus.service', () => {
       );
     });
 
+    it('accepts numeric step (string seconds)', async () => {
+      mockedAxios.get.mockResolvedValue({ data: { status: 'success' } } as any);
+
+      await prometheusQueryRange({ query: 'up', start: 0, end: 60, step: '15' });
+
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        'http://prom.test/api/v1/query_range',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            step: '15s',
+          }),
+        })
+      );
+    });
+
     it('rejects non-positive step', async () => {
       await expect(
         prometheusQueryRange({
@@ -222,4 +241,3 @@ describe('prometheus.service', () => {
     });
   });
 });
-

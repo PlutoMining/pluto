@@ -18,6 +18,22 @@ import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
+function validateFieldByName(name: string, value: string) {
+  switch (name) {
+    case "stratumURL":
+      return validateDomain(value, { allowIP: true });
+    case "stratumPort": {
+      const numericRegex = /^\d+$/;
+      return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
+    }
+    case "stratumUser":
+      // return validateBitcoinAddress(value);
+      return !value.includes(".");
+    default:
+      return true;
+  }
+}
+
 export const PresetEditor = ({
   presetId,
   onCloseModal,
@@ -92,21 +108,6 @@ export const PresetEditor = ({
     }
   };
 
-  const validateFieldByName = useCallback((name: string, value: string) => {
-    switch (name) {
-      case "stratumURL":
-        return validateDomain(value, { allowIP: true });
-      case "stratumPort":
-        const numericRegex = /^\d+$/;
-        return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
-      case "stratumUser":
-        // return validateBitcoinAddress(value);
-        return !value.includes(".");
-      default:
-        return true;
-    }
-  }, []);
-
   const validateField = useCallback((name: string, value: string) => {
     let label =
       value === ""
@@ -133,7 +134,7 @@ export const PresetEditor = ({
         },
       }));
     }
-  }, [presets, validateFieldByName]);
+  }, [presets]);
 
   const handleChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

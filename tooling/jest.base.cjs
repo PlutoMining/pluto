@@ -5,8 +5,9 @@ const sharedJestConfig = {
   roots: ['<rootDir>/src'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
   clearMocks: true,
-  collectCoverage: true,
+  collectCoverage: false,
   coverageDirectory: '<rootDir>/coverage',
+  coverageReporters: ['lcov', 'text', 'json-summary'],
   verbose: true,
   collectCoverageFrom: [
     '<rootDir>/src/**/*.{ts,tsx}',

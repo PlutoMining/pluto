@@ -10,6 +10,9 @@ on:
     branches:
       - "**"
 
+permissions:
+  contents: read
+
 jobs:
   test-backend:
     name: Lint & Test Backend
@@ -52,5 +55,20 @@ jobs:
 
       - name: Run tests with coverage
         working-directory: ${{ matrix.app }}
-        run: npm run test
+        run: npm run test:coverage
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: backend/coverage/lcov.info
+          flags: backend
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 

@@ -343,12 +343,21 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Device IP not available" });
     }
 
-    const payload: Device = req.body;
+    const payload: Device | undefined = req.body as any;
+    if (!payload || typeof payload !== "object") {
+      throw new Error("Missing payload");
+    }
+
+    const originalInfo = (payload as any).info;
 
     if (payload.presetUuid) {
       const preset = await presetsService.getPreset(payload.presetUuid);
 
       if (preset) {
+        if (!payload.info) {
+          payload.info = {} as any;
+        }
+
         logger.info("Applying preset to device", {
           mac: payload.mac,
           presetUuid: payload.presetUuid,
@@ -382,14 +391,15 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
     // Invia la richiesta PATCH per aggiornare le informazioni di sistema
     const patchUrl = `http://${deviceIp}/api/system`; // Assumendo che l'endpoint sia /api/system
 
-    const systemInfoPatch = pickWritableSystemInfo(payload.info);
+    const systemInfoPatch = pickWritableSystemInfo(payload.info ?? originalInfo);
+    const infoForLog = (payload.info ?? originalInfo) as any;
 
     logger.info("Sending PATCH to device", {
       url: patchUrl,
-      stratumPort: payload.info.stratumPort,
-      stratumURL: payload.info.stratumURL,
-      stratumUser: payload.info.stratumUser,
-      hasPassword: !!payload.info.stratumPassword,
+      stratumPort: infoForLog?.stratumPort,
+      stratumURL: infoForLog?.stratumURL,
+      stratumUser: infoForLog?.stratumUser,
+      hasPassword: !!infoForLog?.stratumPassword,
       frequency: (systemInfoPatch as any).frequency,
       coreVoltage: (systemInfoPatch as any).coreVoltage,
     });

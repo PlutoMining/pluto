@@ -6,7 +6,7 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { Entity } from "./entity.interface";
+import type { Entity } from "./entity.interface";
 
 export interface DeviceInfoLegacy {
   power: number;

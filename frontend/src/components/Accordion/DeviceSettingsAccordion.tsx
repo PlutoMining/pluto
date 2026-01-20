@@ -105,12 +105,10 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 
   const handleAllCheckbox = useCallback(
     (value: boolean) => {
-      const newValues = devices
-        ? Array.from({ length: devices.length || 0 }, (_, i) => ({
-            mac: devices[i].mac,
-            value: value,
-          }))
-        : [];
+      const newValues = Array.from({ length: devices.length }, (_, i) => ({
+        mac: devices[i].mac,
+        value: value,
+      }));
       setCheckedFetchedItems(newValues);
 
       if (value) {
@@ -341,19 +339,17 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
                   }}
                   className={cn("bg-card text-card-foreground", index > 0 ? "border-t border-border" : "")}
                 >
-                  {presets ? (
-                    <AccordionItem
-                      key={device.mac}
-                      device={device}
-                      presets={presets}
-                      setAlert={setAlert}
-                      alert={alert}
-                      onOpenAlert={onOpenAlert}
-                      handleCheckboxChange={handleCheckboxChange}
-                      checkedItems={checkedFetchedItems}
-                      isAccordionOpen={isOpen}
-                    />
-                  ) : null}
+                  <AccordionItem
+                    key={device.mac}
+                    device={device}
+                    presets={presets}
+                    setAlert={setAlert}
+                    alert={alert}
+                    onOpenAlert={onOpenAlert}
+                    handleCheckboxChange={handleCheckboxChange}
+                    checkedItems={checkedFetchedItems}
+                    isAccordionOpen={isOpen}
+                  />
                 </details>
               );
             })}
@@ -387,13 +383,9 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
       <SelectPresetModal
         isOpen={isSelectPoolPresetOpen}
         onClose={() => setIsSelectPoolPresetModalOpen(false)}
-        devices={
-          (devices &&
-            devices.filter((device) =>
-              checkedFetchedItems.some((item) => item.mac === device.mac && item.value === true)
-            )) ||
-          []
-        }
+        devices={devices.filter((device) =>
+          checkedFetchedItems.some((item) => item.mac === device.mac && item.value === true)
+        )}
         presets={presets}
         onCloseSuccessfully={handleCloseSuccessfully}
       />
@@ -415,7 +407,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     info: deviceInfo.info,
   });
 
-  const [deviceError, setDeviceError] = useState<any>({
+  const [deviceError, setDeviceError] = useState<Record<string, string>>({
     hostname: "",
     workerName: "",
     stratumURL: "",
@@ -528,28 +520,30 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     [device, stratumUser.workerName]
   );
 
-  const validateFieldByName = useCallback((name: string, value: string) => {
+  const validatePercentage = (value: string) => {
+    return parseInt(value) <= 100 && parseInt(value) >= 0;
+  };
+
+  const validateFieldByName = (name: string, value: string) => {
     switch (name) {
       case "stratumURL":
         return validateDomain(value, { allowIP: true });
-      case "stratumPort":
+      case "stratumPort": {
         const numericRegex = /^\d+$/;
         return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
+      }
       case "stratumUser":
         // return validateBitcoinAddress(value);
         return !value.includes(".");
       case "fanspeed":
         return validatePercentage(value);
-      case "workerName":
+      case "workerName": {
         const regex = /^[a-zA-Z0-9]+$/;
         return regex.test(value);
+      }
       default:
         return true;
     }
-  }, []);
-
-  const validatePercentage = (value: string) => {
-    return parseInt(value) <= 100 && parseInt(value) >= 0;
   };
 
   const validateField = useCallback(
@@ -622,24 +616,27 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
   const handleRadioButtonChange = (value: string) => {
     setIsPresetRadioButtonSelected(value === RadioButtonStatus.PRESET ? true : false);
-    setDevice((prevDevice) => {
-      if (value === RadioButtonStatus.CUSTOM && prevDevice.presetUuid) {
-        return {
-          ...prevDevice,
+
+    if (value === RadioButtonStatus.CUSTOM) {
+      if (device.presetUuid) {
+        setDevice({
+          ...device,
           presetUuid: null,
-        };
-      } else if (value === RadioButtonStatus.PRESET && selectedPreset) {
-        return {
-          ...prevDevice,
-          presetUuid: selectedPreset?.uuid, // || presets[0].uuid,
-          info: {
-            ...prevDevice.info,
-            stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
-          },
-        };
+        });
       }
-      return prevDevice;
-    });
+      return;
+    }
+
+    if (value === RadioButtonStatus.PRESET && selectedPreset) {
+      setDevice({
+        ...device,
+        presetUuid: selectedPreset.uuid,
+        info: {
+          ...device.info,
+          stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
+        },
+      });
+    }
   };
 
   const handleRestartDevice = useCallback(
@@ -689,7 +686,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
         const updatedDevice = {
           ...device,
-          presetUuid: preset?.uuid || null,
+          presetUuid: preset.uuid,
           info: {
             ...device.info,
             stratumUser: `${preset.configuration.stratumUser}.${stratumUser.workerName}`,
@@ -751,19 +748,17 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     return false;
   };
 
-  const hasErrorFields = (obj: any): boolean => {
-    for (const key in obj) {
-      if (typeof obj[key] === "object" && obj[key] !== null) {
-        if (hasErrorFields(obj[key])) {
-          return true; // Ricorsione per oggetti annidati
-        }
-      } else if (obj[key] !== "") {
-        if (key === "fanspeed" && !(device.info.autofanspeed === 0)) {
-          return false;
-        }
-        return true;
+  const hasErrorFields = (obj: Record<string, string>): boolean => {
+    for (const [key, value] of Object.entries(obj)) {
+      if (value === "") continue;
+
+      if (key === "fanspeed" && device.info.autofanspeed !== 0) {
+        continue;
       }
+
+      return true;
     }
+
     return false;
   };
 

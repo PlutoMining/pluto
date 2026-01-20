@@ -37,8 +37,6 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
   useEffect(() => {
     const listener = (e: Device) => {
       setDevices((prevDevices) => {
-        if (!prevDevices) return prevDevices;
-
         // Trova l'indice del dispositivo da aggiornare
         const deviceIndex = prevDevices.findIndex((device) => device.mac === e.mac);
 

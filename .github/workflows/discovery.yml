@@ -10,6 +10,9 @@ on:
     branches:
       - "**"
 
+permissions:
+  contents: read
+
 jobs:
   test-discovery:
     name: Lint & Test Discovery
@@ -49,5 +52,20 @@ jobs:
 
       - name: Run tests with coverage
         working-directory: discovery
-        run: npm run test
+        run: npm run test:coverage
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: discovery-coverage
+          path: discovery/coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: discovery/coverage/lcov.info
+          flags: discovery
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 

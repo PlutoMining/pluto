@@ -47,6 +47,7 @@ jest.mock('@pluto/logger', () => ({
 
 import promClient from 'prom-client';
 const gaugeInstances = (promClient as unknown as { __gaugeInstances: Map<string, any> }).__gaugeInstances;
+const { logger } = jest.requireMock('@pluto/logger');
 
 import { createMetricsForDevice, deleteMetricsForDevice, register, updateOverviewMetrics } from '@/services/metrics.service';
 
@@ -83,6 +84,8 @@ describe('metrics.service', () => {
 
       updatePrometheusMetrics(payload);
       updatePrometheusMetrics({ fanspeed: 900 } as unknown as DeviceInfo);
+      updatePrometheusMetrics({ fanrpm: 800 } as unknown as DeviceInfo);
+      updatePrometheusMetrics({ hashRate_10m: 100 } as unknown as DeviceInfo);
       updatePrometheusMetrics({} as DeviceInfo);
 
       expect(gaugeInstances.get('rig_power_watts')?.set).toHaveBeenCalledWith(1200);
@@ -115,6 +118,16 @@ describe('metrics.service', () => {
       deleteMetricsForDevice('rig');
 
       expect(removeSpy).toHaveBeenCalled();
+    });
+
+    it('logs errors when deletion fails', () => {
+      jest.spyOn(register, 'getMetricsAsArray').mockImplementationOnce(() => {
+        throw new Error('boom');
+      });
+
+      deleteMetricsForDevice('rig');
+
+      expect(logger.error).toHaveBeenCalled();
     });
   });
 
@@ -216,6 +229,61 @@ describe('metrics.service', () => {
       expect(acceptedGauge?.labels).toHaveBeenCalledWith('192.168.78.28:2018');
       expect(acceptedGauge?.labels).toHaveBeenCalledWith('unknown:2018');
       expect(acceptedGauge?.labels).toHaveBeenCalledWith('solo.ckpool.org');
+    });
+
+    it('handles empty device list', () => {
+      updateOverviewMetrics([] as unknown as ExtendedDeviceInfo[]);
+
+      expect(gaugeInstances.get('total_hardware')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('hardware_online')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('hardware_offline')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('total_hashrate')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('average_hashrate')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('total_power_watts')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('total_efficiency')?.set).toHaveBeenCalledWith(0);
+    });
+
+    it('counts hashrate_10m for online devices and defaults missing values', () => {
+      const devices: ExtendedDeviceInfo[] = [
+        {
+          mac: 'a',
+          tracing: true,
+          power: 50,
+          hashRate: undefined,
+          hashRate_10m: 10,
+          sharesAccepted: 0,
+          sharesRejected: 0,
+          version: undefined,
+          stratumURL: 123,
+          stratumPort: undefined,
+        } as unknown as ExtendedDeviceInfo,
+        {
+          mac: 'b',
+          tracing: true,
+          power: undefined,
+          hashRate: undefined,
+          hashRate_10m: undefined,
+          sharesAccepted: 0,
+          sharesRejected: 0,
+          version: 'v',
+          stratumURL: 'example.com:abc',
+          stratumPort: 123,
+        } as unknown as ExtendedDeviceInfo,
+      ];
+
+      updateOverviewMetrics(devices);
+
+      expect(gaugeInstances.get('total_hashrate')?.set).toHaveBeenCalledWith(10);
+      expect(gaugeInstances.get('total_power_watts')?.set).toHaveBeenCalledWith(50);
+      expect(gaugeInstances.get('total_efficiency')?.set).toHaveBeenCalledWith(50 / (10 / 1000));
+
+      const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');
+      expect(acceptedGauge?.labels).toHaveBeenCalledWith('unknown');
+      expect(acceptedGauge?.labels).toHaveBeenCalledWith('example.com:abc:123');
+
+      const firmwareGauge = gaugeInstances.get('firmware_version_distribution');
+      expect(firmwareGauge?.labels).toHaveBeenCalledWith('unknown');
+      expect(firmwareGauge?.labels).toHaveBeenCalledWith('v');
     });
   });
 });

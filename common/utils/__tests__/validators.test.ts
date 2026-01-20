@@ -28,6 +28,10 @@ describe('validators', () => {
     );
     expect(validateDomain('192.168.0.1', { allowIP: false, requireFQDN: true })).toBe(false);
 
+    // Default options (covers default param + destructuring defaults)
+    expect(validateDomain('example.com')).toBe(true);
+    expect(validateDomain('192.168.0.1')).toBe(true);
+
     expect(validateBitcoinAddress('1BoatSLRHtKNngkdXEeobR76b53LETtpyT')).toBe(true);
     expect(validateBitcoinAddress('3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy')).toBe(true);
     expect(validateBitcoinAddress('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kygt080')).toBe(true);

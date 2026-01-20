@@ -18,8 +18,19 @@ module.exports = {
     '<rootDir>/src/utils/**/*.{ts,tsx}',
     '<rootDir>/src/providers/**/*.{ts,tsx}',
     '<rootDir>/src/app/api/**/*.{ts,tsx}',
+    '<rootDir>/src/pages/api/**/*.ts',
+    '<rootDir>/src/components/**/*.{ts,tsx}',
+    '!<rootDir>/src/components/**/index.ts',
   ],
   coveragePathIgnorePatterns: ['<rootDir>/src/app/(?!api)', '<rootDir>/src/theme/'],
+  coverageThreshold: {
+    global: {
+      statements: 90,
+      lines: 90,
+      functions: 90,
+      branches: 80,
+    },
+  },
   transform: {
     '^.+\\.(t|j)sx?$': [
       'ts-jest',
@@ -29,4 +40,3 @@ module.exports = {
     ],
   },
 };
-

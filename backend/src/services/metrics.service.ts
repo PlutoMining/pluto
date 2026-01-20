@@ -244,7 +244,7 @@ function normalizePoolKey(stratumURL: unknown, stratumPort: unknown) {
   let hostPort = rawUrl;
 
   hostPort = hostPort.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, "");
-  hostPort = hostPort.split("/")[0] ?? hostPort;
+  hostPort = hostPort.split("/")[0];
 
   if (!hostPort) {
     return Number.isFinite(rawPort) ? `unknown:${rawPort}` : "unknown";

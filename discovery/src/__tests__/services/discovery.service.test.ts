@@ -94,6 +94,27 @@ describe('discovery.service helpers', () => {
       expect(result[0].mac).toBe('aa:bb:cc');
     });
 
+    it('defaults to both-sided partial matching when partialMatch keys are missing', async () => {
+      const devices = [
+        { mac: 'aa:bb:cc', ip: '192.168.1.10', info: { hostname: 'rig-alpha' } },
+        { mac: 'dd:ee:ff', ip: '10.0.0.5', info: { hostname: 'rig-beta' } },
+      ];
+
+      findMany.mockImplementation(async (_db: string, _collection: string, predicate: (device: any) => boolean) => {
+        return devices.filter((device) => predicate(device));
+      });
+
+      const result = await lookupMultipleDiscoveredDevices({
+        macs: ['aa:bb'],
+        ips: ['192.168'],
+        hostnames: ['alpha'],
+        partialMatch: {} as any,
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].mac).toBe('aa:bb:cc');
+    });
+
 
     it('supports exact (none) and left partial match types', async () => {
       const devices = [
@@ -179,6 +200,46 @@ describe('discovery.service helpers', () => {
       expect(result).toHaveLength(1);
     });
 
+    it('uses provided mac when direct lookup response lacks mac', async () => {
+      mockedAxios.get.mockResolvedValue({
+        data: { ASICModel: 'TestModel' },
+      });
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices({ ip: '1.2.3.4', mac: 'ff:ee' });
+
+      expect(result).toHaveLength(1);
+      expect(insertOne).toHaveBeenCalledWith(
+        'pluto_discovery',
+        'devices:discovered',
+        'ff:ee',
+        expect.objectContaining({
+          ip: '1.2.3.4',
+          mac: 'ff:ee',
+        }),
+      );
+    });
+
+    it('falls back to unknown mac when direct lookup and options provide none', async () => {
+      mockedAxios.get.mockResolvedValue({
+        data: { ASICModel: 'TestModel' },
+      });
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices({ ip: '1.2.3.4' });
+
+      expect(result).toHaveLength(1);
+      expect(insertOne).toHaveBeenCalledWith(
+        'pluto_discovery',
+        'devices:discovered',
+        'unknown',
+        expect.objectContaining({
+          ip: '1.2.3.4',
+          mac: 'unknown',
+        }),
+      );
+    });
+
 
     it('updates device when it already exists during direct ip lookup', async () => {
       mockedAxios.get.mockResolvedValue({
@@ -204,6 +265,14 @@ describe('discovery.service helpers', () => {
 
     it('handles non-timeout axios errors during direct ip lookup', async () => {
       mockedAxios.get.mockRejectedValue(new MockAxiosError('connection refused', 'ECONNREFUSED'));
+
+      const result = await discoverDevices({ ip: '9.9.9.9' });
+
+      expect(result).toEqual([]);
+    });
+
+    it('handles non-Axios errors during direct ip lookup by stringifying them', async () => {
+      mockedAxios.get.mockRejectedValueOnce('boom');
 
       const result = await discoverDevices({ ip: '9.9.9.9' });
 
@@ -240,6 +309,26 @@ describe('discovery.service helpers', () => {
       expect(updateOne).toHaveBeenCalledTimes(1);
       expect(result).toHaveLength(2);
       expect(result[0].ip).toBe('10.0.0.1');
+    });
+
+    it('handles non-Error arp scan failures without aborting discovery', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockRejectedValueOnce('scan failed');
+
+      const result = await discoverDevices();
+
+      expect(result).toEqual([]);
+      expect(mockedAxios.get).not.toHaveBeenCalled();
+    });
+
+    it('returns empty array when arp scan finds no devices and no ip filter provided', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([]);
+
+      const result = await discoverDevices();
+
+      expect(result).toEqual([]);
+      expect(mockedAxios.get).not.toHaveBeenCalled();
     });
 
     it('returns empty array when ASICModel missing', async () => {
@@ -344,6 +433,17 @@ describe('discovery.service helpers', () => {
       expect(result).toEqual([]);
     });
 
+    it('handles non-Axios errors during scan by stringifying them', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      mockedAxios.get.mockRejectedValueOnce('boom');
+
+      const result = await discoverDevices();
+
+      expect(result).toEqual([]);
+    });
+
     it('logs and skips when request times out during scan', async () => {
       getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
       arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
@@ -377,6 +477,37 @@ describe('discovery.service helpers', () => {
       config.detectMockDevices = false;
       config.mockDeviceHost = undefined;
     });
+
+    it('builds mock device ips from discovery host when mockDeviceHost is unset', async () => {
+      config.detectMockDevices = true;
+      config.mockDiscoveryHost = 'http://mock-host:7000';
+      config.mockDeviceHost = undefined;
+
+      getActiveNetworkInterfaces.mockResolvedValue([]);
+      arpScan.mockResolvedValue([]);
+
+      mockedAxios.get
+        .mockResolvedValueOnce({ data: { servers: [{ port: '9001' }, { port: 0 }, { port: 'wat' }] } })
+        .mockResolvedValueOnce({ data: { ASICModel: 'MockModelA' } })
+        .mockResolvedValueOnce({ data: { ASICModel: 'MockModelB' } })
+        .mockResolvedValueOnce({ data: { ASICModel: 'MockModelC' } });
+
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices();
+
+      expect(result).toHaveLength(3);
+      expect(result[0].ip).toBe('mock-host:9001');
+      expect(result[1].ip).toBe('mock-host:0');
+      expect(result[2].ip).toBe('mock-host:wat');
+    });
+
+    it('returns empty array when discovery fails before scanning completes', async () => {
+      getActiveNetworkInterfaces.mockRejectedValue(new Error('no perms'));
+
+      const result = await discoverDevices();
+
+      expect(result).toEqual([]);
+    });
   });
 });
-

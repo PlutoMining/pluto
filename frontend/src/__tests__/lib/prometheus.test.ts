@@ -1,14 +1,4 @@
-jest.mock('@/lib/prometheus', () => {
-  const original = jest.requireActual('@/lib/prometheus');
-  return {
-    __esModule: true,
-    ...original,
-    promQuery: jest.fn(),
-    promQueryRange: jest.fn(),
-  };
-});
-
-import { matrixToSeries, rangeToQueryParams, vectorToNumber } from '@/lib/prometheus';
+import { matrixToSeries, promQuery, promQueryRange, rangeToQueryParams, vectorToNumber } from '@/lib/prometheus';
 
 describe('prometheus lib', () => {
 
@@ -64,6 +54,111 @@ describe('prometheus lib', () => {
       expect(params.step).toMatch(/^\d+s$/);
 
       (Date.now as jest.Mock).mockRestore();
+    });
+
+    it('falls back to a 1h step for very large ranges', () => {
+      const fixedNowMs = 1700000000 * 1000;
+      jest.spyOn(Date, 'now').mockReturnValue(fixedNowMs);
+
+      // raw step > 3600 means we hit the `?? 3600` fallback.
+      const params = rangeToQueryParams(864000 + 1);
+      expect(params.step).toBe('3600s');
+
+      (Date.now as jest.Mock).mockRestore();
+    });
+  });
+
+  describe('promQuery/promQueryRange (fetchProm)', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('returns json on success', async () => {
+      const fetchSpy = jest.spyOn(global, 'fetch' as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          status: 'success',
+          data: { resultType: 'vector', result: [] },
+        }),
+      } as any);
+
+      const res = await promQuery('up', 1700000000);
+
+      expect(res.status).toBe('success');
+      const [url, init] = fetchSpy.mock.calls[0];
+      expect(String(url)).toContain('/api/prometheus/query');
+      expect(String(url)).toContain('query=up');
+      expect(String(url)).toContain('time=1700000000');
+      expect(init).toMatchObject({
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      });
+    });
+
+    it('throws when response.ok is false', async () => {
+      jest.spyOn(global, 'fetch' as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: async () => ({
+          status: 'success',
+          data: { resultType: 'vector', result: [] },
+        }),
+      } as any);
+
+      await expect(promQuery('up')).rejects.toThrow('Prometheus request failed (500)');
+    });
+
+    it('throws when json.status is error', async () => {
+      jest.spyOn(global, 'fetch' as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          status: 'error',
+          error: 'bad_data',
+          errorType: 'bad_data',
+        }),
+      } as any);
+
+      await expect(promQuery('up')).rejects.toThrow('bad_data');
+    });
+
+    it('passes AbortSignal through to fetch', async () => {
+      const controller = new AbortController();
+      const fetchSpy = jest.spyOn(global, 'fetch' as any).mockImplementation((_url: string, init?: any) => {
+        const signal = init?.signal as AbortSignal | undefined;
+        return new Promise((_resolve, reject) => {
+          signal?.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+        });
+      });
+
+      const promise = promQueryRange('up', 1, 2, '15s', { signal: controller.signal });
+      controller.abort();
+
+      await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
+
+      const init = fetchSpy.mock.calls[0][1];
+      expect(init.signal).toBe(controller.signal);
+    });
+
+    it('passes AbortSignal via promQuery options', async () => {
+      const controller = new AbortController();
+
+      const fetchSpy = jest.spyOn(global, 'fetch' as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          status: 'success',
+          data: { resultType: 'vector', result: [] },
+        }),
+      } as any);
+
+      await promQuery('up', undefined, { signal: controller.signal });
+
+      const init = fetchSpy.mock.calls[0][1];
+      expect(init.signal).toBe(controller.signal);
     });
   });
 });

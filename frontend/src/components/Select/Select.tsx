@@ -133,8 +133,7 @@ export const Select: React.FC<SelectProps> = ({
     setIsCustomMode(true);
   };
 
-  const commitCustomValue = (rawValue?: string) => {
-    const value = rawValue ?? customDraft;
+  const commitCustomValue = (value: string) => {
     if (value === "") return;
     emitCustomValue(value);
   };

@@ -24,7 +24,7 @@ interface RegisterDevicesModalProps {
   onDevicesChanged: () => Promise<void>;
 }
 
-function hasEmptyFields(obj: any): boolean {
+export function hasEmptyFields(obj: any): boolean {
   for (const key in obj) {
     if (typeof obj[key] === "object" && obj[key] !== null) {
       if (hasEmptyFields(obj[key])) return true;
@@ -35,7 +35,7 @@ function hasEmptyFields(obj: any): boolean {
   return false;
 }
 
-function hasErrorFields(obj: any): boolean {
+export function hasErrorFields(obj: any): boolean {
   for (const key in obj) {
     if (typeof obj[key] === "object" && obj[key] !== null) {
       if (hasErrorFields(obj[key])) return true;
@@ -57,8 +57,6 @@ function ModalBodyContent({
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
   const [tabIndex, setTabIndex] = useState(0);
 
-  const [searchError, setSearchError] = useState<string | null>(null);
-
   const [errors, setErrors] = useState({
     ipAddress: "",
     macAddress: "",
@@ -75,7 +73,6 @@ function ModalBodyContent({
 
   useEffect(() => {
     setIpAndMacAddress({ ipAddress: "", macAddress: "" });
-    setSearchError(null);
     setDiscoveredDevices(null);
     if (tabIndex === 1) {
       getDiscoverDevices();
@@ -116,8 +113,6 @@ function ModalBodyContent({
   };
 
   const searchDevice = useCallback(async () => {
-    if (hasErrorFields(errors) || hasEmptyFields(ipAndMacAddress)) return;
-
     try {
       setIsLoadingData(true);
 
@@ -134,13 +129,13 @@ function ModalBodyContent({
         discoveredDevices[0].mac = ipAndMacAddress.macAddress;
       }
 
-      setDiscoveredDevices(discoveredDevices || []);
+      setDiscoveredDevices(discoveredDevices);
     } catch (error) {
       console.error("Error discovering devices:", error);
     } finally {
       setIsLoadingData(false);
     }
-  }, [errors, ipAndMacAddress]);
+  }, [ipAndMacAddress]);
 
   const registerDevice = async () => {
     try {
@@ -157,22 +152,18 @@ function ModalBodyContent({
   const registerDevices = async () => {
     try {
       // Filtra i dispositivi selezionati
-      const selectedDevices = discoveredDevices?.filter((_, index) => checkedFetchedItems[index]);
+      const selectedDevices = discoveredDevices!.filter((_, index) => checkedFetchedItems[index]);
 
-      if (selectedDevices && selectedDevices.length > 0) {
-        // Registra i dispositivi selezionati inviando le informazioni necessarie, in sequenza
-        for (const device of selectedDevices) {
-          await axios.patch(`/api/devices/imprint`, {
-            mac: device.mac,
-          });
-        }
-
-        // Chiamata di callback per notificare che i dispositivi sono stati modificati
-        await onDevicesChanged();
-        onClose();
-      } else {
-        console.warn("No devices selected to register");
+      // Registra i dispositivi selezionati inviando le informazioni necessarie, in sequenza
+      for (const device of selectedDevices) {
+        await axios.patch(`/api/devices/imprint`, {
+          mac: device.mac,
+        });
       }
+
+      // Chiamata di callback per notificare che i dispositivi sono stati modificati
+      await onDevicesChanged();
+      onClose();
     } catch (error) {
       console.error("Error registering devices:", error);
     }
@@ -260,8 +251,6 @@ function ModalBodyContent({
                 error={errors.macAddress}
               />
             </div>
-
-            {searchError ? <p className="text-sm text-destructive">{searchError}</p> : null}
 
             <div>
               <Button

@@ -48,14 +48,15 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
     });
 
     // Inizia ad osservare l'elemento
-    if (boxRef.current) {
-      resizeObserver.observe(boxRef.current);
+    const element = boxRef.current;
+    if (element) {
+      resizeObserver.observe(element);
     }
 
     // Pulisci l'observer quando il componente viene smontato
     return () => {
-      if (boxRef.current) {
-        resizeObserver.unobserve(boxRef.current);
+      if (element) {
+        resizeObserver.unobserve(element);
       }
     };
   }, []);
@@ -189,6 +190,7 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
 
       <div
         className="pointer-events-none absolute bottom-0 left-0 h-[50px] w-full"
+        data-has-scroll={hasScroll ? "true" : "false"}
         style={{
           background: hasScroll ? "linear-gradient(to top, hsl(var(--background)), transparent)" : "none",
         }}

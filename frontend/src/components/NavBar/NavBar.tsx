@@ -24,7 +24,7 @@ type NavLink = {
   key: string;
   href: string;
   label: string;
-  match?: (pathname: string) => boolean;
+  match: (pathname: string) => boolean;
 };
 
 export const NavBar = () => {
@@ -84,7 +84,7 @@ export const NavBar = () => {
 
         <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 rounded-md px-3 py-2 tabletL:flex">
           {links.map((link) => {
-            const active = link.match ? link.match(pathname) : pathname === link.href;
+            const active = link.match(pathname);
             return (
               <NextLink
                 key={link.key}
@@ -132,7 +132,7 @@ export const NavBar = () => {
             <div className="flex h-full flex-col justify-between">
               <div className="flex flex-col gap-8">
                 {links.map((link) => {
-                  const active = link.match ? link.match(pathname) : pathname === link.href;
+                  const active = link.match(pathname);
                   return (
                     <NextLink
                       key={link.key}
