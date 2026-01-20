@@ -9,7 +9,8 @@ jest.mock('next/server', () => ({
   NextResponse: nextResponse,
 }));
 
-const { middleware, config } = require('@/middleware');
+let middleware: (req: any) => any;
+let config: any;
 
 function makeReq(pathname: string, search = '') {
   const url = { pathname, search };
@@ -22,9 +23,12 @@ function makeReq(pathname: string, search = '') {
 }
 
 describe('middleware', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
+    jest.resetModules();
     delete process.env.BACKEND_DESTINATION_HOST;
+
+    ({ middleware, config } = await import('@/middleware'));
   });
 
   it('exposes the expected matcher config', () => {

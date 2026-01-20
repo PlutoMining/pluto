@@ -12,6 +12,8 @@ const socket = {
   off: jest.fn(),
 };
 
+type StatListener = (payload: any) => void;
+
 jest.mock("@/providers/SocketProvider", () => ({
   useSocket: () => ({
     isConnected,
@@ -169,7 +171,7 @@ describe("DeviceSettingsAccordion preset + socket behavior", () => {
 
     expect(socket.on).toHaveBeenCalledWith("stat_update", expect.any(Function));
     const getLatestListener = () =>
-      socket.on.mock.calls.filter((c) => c[0] === "stat_update").slice(-1)[0][1] as Function;
+      socket.on.mock.calls.filter((c) => c[0] === "stat_update").slice(-1)[0][1] as unknown as StatListener;
 
     // When accordion is closed, full device snapshot is applied.
     act(() => {
@@ -304,7 +306,7 @@ describe("DeviceSettingsAccordion preset + socket behavior", () => {
     await waitFor(() => expect((global as any).fetch).toHaveBeenCalledWith("/api/presets"));
 
     const getLatestListener = () =>
-      socket.on.mock.calls.filter((c) => c[0] === "stat_update").slice(-1)[0][1] as Function;
+      socket.on.mock.calls.filter((c) => c[0] === "stat_update").slice(-1)[0][1] as unknown as StatListener;
 
     act(() => {
       getLatestListener()({

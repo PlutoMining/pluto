@@ -39,9 +39,10 @@ const axios = jest.requireMock('axios').default as { get: jest.Mock };
 const socketProvider = jest.requireMock('@/providers/SocketProvider') as { useSocket: jest.Mock };
 
 function createSocket() {
-  const listeners = new Map<string, Function>();
+  type SocketListener = (payload: any) => void;
+  const listeners = new Map<string, SocketListener>();
   return {
-    on: jest.fn((event: string, cb: any) => {
+    on: jest.fn((event: string, cb: SocketListener) => {
       listeners.set(event, cb);
     }),
     off: jest.fn((event: string) => {

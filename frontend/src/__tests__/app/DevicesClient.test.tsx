@@ -108,9 +108,10 @@ const socketProvider = jest.requireMock('@/providers/SocketProvider') as {
 };
 
 function createSocket() {
-  const listeners = new Map<string, Function>();
+  type SocketListener = (payload: any) => void;
+  const listeners = new Map<string, SocketListener>();
   return {
-    on: jest.fn((event: string, cb: any) => {
+    on: jest.fn((event: string, cb: SocketListener) => {
       listeners.set(event, cb);
     }),
     off: jest.fn((event: string) => {

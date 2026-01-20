@@ -22,8 +22,10 @@ describe("icons smoke", () => {
     const iconsDir = path.resolve(__dirname, "../../components/icons");
     const iconFiles = listTsxFiles(iconsDir);
 
+    expect(iconFiles.length).toBeGreaterThan(0);
+
     for (const file of iconFiles) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const mod = require(file);
       const candidates = new Set<any>();
 

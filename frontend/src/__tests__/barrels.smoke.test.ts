@@ -28,8 +28,10 @@ describe('barrel exports smoke', () => {
 
     const files = [...listIndexFiles(componentsDir), ...listIndexFiles(providerDir)];
 
+    expect(files.length).toBeGreaterThan(0);
+
     for (const file of files) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const mod = require(file);
       const descriptors = Object.getOwnPropertyDescriptors(mod ?? {});
       for (const [key, descriptor] of Object.entries(descriptors)) {

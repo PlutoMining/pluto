@@ -1,11 +1,10 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
+import React from "react";
 
 // Override the global auto-mock from jest.setup.ts with a deterministic mock that
 // executes formatter callbacks so we actually cover chart code paths.
 jest.mock("recharts", () => {
-  const React = require("react");
-
   const passthrough = ({ children }: any) => React.createElement(React.Fragment, null, children);
 
   return {

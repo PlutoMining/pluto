@@ -123,13 +123,15 @@ describe("DeviceMonitoringAccordion", () => {
       },
     ] as any;
 
+    type StatListener = (payload: any) => void;
+
     const { unmount } = render(<DeviceMonitoringAccordion devices={devices} />);
 
     expect(socket.on).toHaveBeenCalledWith("stat_update", expect.any(Function));
     expect(socket.on).toHaveBeenCalledWith("error", expect.any(Function));
 
-    const listener = socket.on.mock.calls.find((c) => c[0] === "stat_update")?.[1] as Function;
-    expect(listener).toBeInstanceOf(Function);
+    const listener = socket.on.mock.calls.find((c) => c[0] === "stat_update")?.[1] as unknown as StatListener;
+    expect(typeof listener).toBe("function");
 
     // Unknown device should be ignored.
     act(() => {
