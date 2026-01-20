@@ -69,5 +69,4 @@ jobs:
       - name: Coverage summary (Octocov)
         uses: k1LoW/octocov-action@v1
         with:
-          config: ../.octocov/backend.yml
-          work-dir: backend
+          config: .octocov/backend.yml

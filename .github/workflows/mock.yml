@@ -62,5 +62,4 @@ jobs:
       - name: Coverage summary (Octocov)
         uses: k1LoW/octocov-action@v1
         with:
-          config: ../.octocov/mock.yml
-          work-dir: mock
+          config: .octocov/mock.yml

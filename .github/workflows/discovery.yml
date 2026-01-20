@@ -66,5 +66,4 @@ jobs:
       - name: Coverage summary (Octocov)
         uses: k1LoW/octocov-action@v1
         with:
-          config: ../.octocov/discovery.yml
-          work-dir: discovery
+          config: .octocov/discovery.yml

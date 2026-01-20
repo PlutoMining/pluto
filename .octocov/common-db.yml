@@ -1,6 +1,6 @@
 coverage:
   paths:
-    - .
+    - ../common/db/coverage/lcov.info
   acceptable: diff >= -0.5%
 
 summary:
