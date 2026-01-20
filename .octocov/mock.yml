@@ -1,6 +1,6 @@
 coverage:
   paths:
-    - mock/coverage/lcov.info
+    - coverage/lcov.info
   acceptable: diff >= -0.5%
 
 summary:
