@@ -30,7 +30,6 @@ import type { Device } from "@pluto/interfaces";
 import axios from "axios";
 
 function formatNumber(value: number, digits = 2) {
-  if (!Number.isFinite(value)) return "-";
   return value.toFixed(digits);
 }
 
@@ -192,10 +191,7 @@ export default function OverviewClient() {
     return [...top, { version: "Other", count: otherCount }];
   }, [firmwareData]);
 
-  const firmwareTotal = useMemo(
-    () => firmwareData.reduce((acc, r) => acc + (Number.isFinite(r.count) ? r.count : 0), 0),
-    [firmwareData]
-  );
+  const firmwareTotal = useMemo(() => firmwareData.reduce((acc, r) => acc + r.count, 0), [firmwareData]);
 
   if (devices.length === 0) {
     return (
@@ -291,8 +287,6 @@ export default function OverviewClient() {
                   { kind: "Accepted", value: pool.accepted },
                   { kind: "Rejected", value: pool.rejected },
                 ].filter((r) => r.value > 0);
-
-                if (donutData.length === 0) return null;
 
                 const colors = donutData.map((slice) =>
                   slice.kind === "Rejected" ? "hsl(var(--destructive))" : "hsl(var(--chart-1))"

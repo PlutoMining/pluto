@@ -40,6 +40,15 @@ jest.mock('next/link', () => {
 
 jest.mock('recharts');
 
+jest.mock('next/font/google', () => ({
+  __esModule: true,
+  Azeret_Mono: () => ({
+    style: {
+      fontFamily: 'Azeret Mono',
+    },
+  }),
+}));
+
 // Jest + jsdom doesn't always provide fetch.
 if (!(global as any).fetch) {
   (global as any).fetch = () => {

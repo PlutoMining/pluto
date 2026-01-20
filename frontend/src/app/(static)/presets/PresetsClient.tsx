@@ -63,7 +63,7 @@ export default function PresetsClient() {
       return discoveredDevices;
     } catch (error) {
       console.error("Error discovering preset devices:", error);
-      throw error;
+      return [];
     }
   };
 
@@ -81,7 +81,7 @@ export default function PresetsClient() {
       setPresets(updatedPresets);
     } catch (error) {
       console.error("Error during presets' update:", error);
-      throw error;
+      setPresets([]);
     }
   };
 

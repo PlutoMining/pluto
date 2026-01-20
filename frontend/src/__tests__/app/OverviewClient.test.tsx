@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import OverviewClient from '@/app/(static)/OverviewClient';
 
@@ -36,12 +36,22 @@ jest.mock('@/components/charts/PieChartCard', () => ({
 
 jest.mock('@/components/charts/TreemapChartCard', () => ({
   __esModule: true,
-  TreemapChartCard: ({ title }: any) => <div data-testid="treemap">{title}</div>,
+  TreemapChartCard: ({ title, data, renderTooltip }: any) => (
+    <div data-testid="treemap">
+      <div>{title}</div>
+      <div data-testid="treemap-versions">{(data || []).map((d: any) => d.version).join(',')}</div>
+      {renderTooltip ? <div data-testid="treemap-tooltip">{renderTooltip({ version: 'v1', count: 1 })}</div> : null}
+    </div>
+  ),
 }));
 
 jest.mock('@/components/charts/TimeRangeSelect', () => ({
   __esModule: true,
-  TimeRangeSelect: ({ value }: any) => <div data-testid="time-range">{value}</div>,
+  TimeRangeSelect: ({ value, onChange }: any) => (
+    <button type="button" data-testid="time-range" onClick={() => onChange('not-a-range')}>
+      {value}
+    </button>
+  ),
 }));
 
 jest.mock('@/lib/prometheus', () => {
@@ -58,6 +68,7 @@ const axios = jest.requireMock('axios').default as { get: jest.Mock };
 const prom = jest.requireMock('@/lib/prometheus') as {
   promQuery: jest.Mock;
   promQueryRange: jest.Mock;
+  rangeToQueryParams: jest.Mock;
 };
 
 function vector(value: number) {
@@ -75,6 +86,16 @@ function matrix(points: Array<[number, number]>) {
           values: points.map(([t, v]) => [t, String(v)]),
         },
       ],
+    },
+  };
+}
+
+function matrixNoSeries() {
+  return {
+    status: 'success',
+    data: {
+      resultType: 'matrix',
+      result: [],
     },
   };
 }
@@ -181,5 +202,201 @@ describe('OverviewClient', () => {
     expect(screen.getByTestId('pie-chart')).toHaveTextContent('Pool');
     expect(screen.getByTestId('pie-chart')).toHaveTextContent('Ocean Main');
   });
-});
 
+  it('logs when device discovery fails', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    axios.get.mockRejectedValueOnce(new Error('fail'));
+    prom.promQuery.mockResolvedValue(vector(0));
+    prom.promQueryRange.mockResolvedValue(matrix([]));
+
+    render(<OverviewClient />);
+
+    expect(await screen.findByText('Overview Dashboard')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Error discovering devices:', expect.any(Error));
+    });
+
+    consoleSpy.mockRestore();
+  });
+
+  it('groups long pool lists and collapses firmware into Other', async () => {
+    axios.get.mockResolvedValue({
+      data: {
+        data: [
+          {
+            mac: 'aa',
+            ip: '1.1.1.1',
+            type: 'rig',
+            tracing: true,
+            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', power: 1 },
+          },
+        ],
+      },
+    });
+
+    const firmwareVector = Array.from({ length: 13 }).map((_, i) => ({
+      metric: { version: `v${i + 1}` },
+      value: [1, '1'],
+    }));
+
+    const acceptedPools = Array.from({ length: 9 }).map((_, i) => ({
+      metric: { pool: `pool-${i + 1}` },
+      value: [1, String(i + 1)],
+    }));
+
+    prom.promQuery.mockImplementation((query: string) => {
+      switch (query) {
+        case 'total_hardware':
+        case 'hardware_online':
+        case 'hardware_offline':
+        case 'total_hashrate':
+        case 'total_power_watts':
+        case 'total_efficiency':
+          return Promise.resolve(vector(1));
+        case 'sum by (version) (firmware_version_distribution)':
+          return Promise.resolve({ status: 'success', data: { resultType: 'vector', result: firmwareVector } });
+        case 'sum by (pool) (shares_by_pool_accepted{pool!=""})':
+          return Promise.resolve({ status: 'success', data: { resultType: 'vector', result: acceptedPools } });
+        case 'sum by (pool) (shares_by_pool_rejected{pool!=""})':
+          return Promise.resolve({
+            status: 'success',
+            data: {
+              resultType: 'vector',
+              result: [{ metric: { pool: 'rejected-only' }, value: [1, '2'] }],
+            },
+          });
+        default:
+          return Promise.resolve(vector(0));
+      }
+    });
+
+    prom.promQueryRange.mockResolvedValue(matrix([[1, 1]]));
+
+    render(<OverviewClient />);
+
+    expect(await screen.findByText('Shares by pool')).toBeInTheDocument();
+    expect(screen.getAllByTestId('pie-chart').length).toBeGreaterThan(1);
+    expect(screen.getByText('Other')).toBeInTheDocument();
+
+    const versions = await screen.findByTestId('treemap-versions');
+    expect(versions.textContent).toContain('Other');
+
+    expect(await screen.findByTestId('treemap-tooltip')).toHaveTextContent('Share:');
+  });
+
+  it('falls back to 3600s for unknown range and formats Infinity as dash', async () => {
+    axios.get.mockResolvedValue({
+      data: {
+        data: [
+          {
+            mac: 'aa',
+            ip: '1.1.1.1',
+            type: 'rig',
+            tracing: true,
+            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', power: 1 },
+          },
+        ],
+      },
+    });
+
+    prom.promQuery.mockImplementation((query: string) => {
+      switch (query) {
+        case 'total_hardware':
+          return Promise.resolve(vector(Number.POSITIVE_INFINITY));
+        case 'sum by (version) (firmware_version_distribution)':
+          return Promise.resolve({
+            status: 'success',
+            data: {
+              resultType: 'vector',
+              result: [{ metric: {}, value: [1, '2'] }],
+            },
+          });
+        case 'sum by (pool) (shares_by_pool_accepted{pool!=""})':
+        case 'sum by (pool) (shares_by_pool_rejected{pool!=""})':
+          return Promise.resolve({ status: 'success', data: { resultType: 'vector', result: [] } });
+        default:
+          return Promise.resolve(vector(0));
+      }
+    });
+
+    prom.promQueryRange.mockResolvedValue(matrixNoSeries());
+
+    render(<OverviewClient />);
+    expect(await screen.findByText('Total hardware')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('time-range'));
+
+    await waitFor(() => {
+      const lastCall = prom.rangeToQueryParams.mock.calls.at(-1);
+      expect(lastCall?.[0]).toBe(3600);
+    });
+
+    expect(screen.getByTestId('treemap-versions')).toHaveTextContent('unknown');
+  });
+
+  it('shows 0% firmware share when firmwareTotal is 0', async () => {
+    axios.get.mockResolvedValue({
+      data: {
+        data: [
+          {
+            mac: 'aa',
+            ip: '1.1.1.1',
+            type: 'rig',
+            tracing: true,
+            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', power: 1 },
+          },
+        ],
+      },
+    });
+
+    prom.promQuery.mockImplementation((query: string) => {
+      switch (query) {
+        case 'total_hardware':
+        case 'hardware_online':
+        case 'hardware_offline':
+        case 'total_hashrate':
+        case 'total_power_watts':
+        case 'total_efficiency':
+          return Promise.resolve(vector(1));
+        case 'sum by (version) (firmware_version_distribution)':
+          return Promise.resolve({
+            status: 'success',
+            data: {
+              resultType: 'vector',
+              result: [{ metric: { version: 'bad' }, value: [1, 'NaN'] }],
+            },
+          });
+        case 'sum by (pool) (shares_by_pool_accepted{pool!=""})':
+        case 'sum by (pool) (shares_by_pool_rejected{pool!=""})':
+          return Promise.resolve({ status: 'success', data: { resultType: 'vector', result: [] } });
+        default:
+          return Promise.resolve(vector(0));
+      }
+    });
+
+    prom.promQueryRange.mockResolvedValue(matrix([[1, 1]]));
+
+    render(<OverviewClient />);
+
+    const tooltip = await screen.findByTestId('treemap-tooltip');
+    expect(tooltip).toHaveTextContent('0.0%');
+  });
+
+  it('logs load errors via load().catch', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    axios.get.mockResolvedValue({ data: { data: [] } });
+    prom.promQuery.mockRejectedValueOnce(new Error('prom-fail'));
+    prom.promQueryRange.mockResolvedValue(matrix([[1, 1]]));
+
+    render(<OverviewClient />);
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    consoleSpy.mockRestore();
+  });
+});

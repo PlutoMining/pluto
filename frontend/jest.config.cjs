@@ -11,24 +11,15 @@ module.exports = {
   moduleNameMapper: {
     ...baseConfig.moduleNameMapper,
     '^@/(.*)$': '<rootDir>/src/$1',
+    '\\.(css|less|scss|sass)$': '<rootDir>/jest/styleMock.js',
   },
-  collectCoverageFrom: [
-    '<rootDir>/src/hooks/**/*.{ts,tsx}',
-    '<rootDir>/src/lib/**/*.{ts,tsx}',
-    '<rootDir>/src/utils/**/*.{ts,tsx}',
-    '<rootDir>/src/providers/**/*.{ts,tsx}',
-    '<rootDir>/src/app/api/**/*.{ts,tsx}',
-    '<rootDir>/src/pages/api/**/*.ts',
-    '<rootDir>/src/components/**/*.{ts,tsx}',
-    '!<rootDir>/src/components/**/index.ts',
-  ],
-  coveragePathIgnorePatterns: ['<rootDir>/src/app/(?!api)', '<rootDir>/src/theme/'],
+  collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}', '!<rootDir>/src/**/*.d.ts', '!<rootDir>/src/__tests__/**'],
   coverageThreshold: {
     global: {
-      statements: 90,
-      lines: 90,
-      functions: 90,
-      branches: 80,
+      statements: 100,
+      lines: 100,
+      functions: 100,
+      branches: 100,
     },
   },
   transform: {

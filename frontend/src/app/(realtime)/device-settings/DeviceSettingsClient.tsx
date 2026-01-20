@@ -33,7 +33,6 @@ export default function DeviceSettingsClient() {
   const [imprintedDevices, setImprintedDevices] = useState<Device[] | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const searchRequestIdRef = useRef(0);
   const hasSearchedRef = useRef(false);
 
   const fetchImprintedDevices = useCallback(async () => {
@@ -115,7 +114,6 @@ export default function DeviceSettingsClient() {
     hasSearchedRef.current = true;
 
     const controller = new AbortController();
-    const requestId = ++searchRequestIdRef.current;
 
     const timeoutId = setTimeout(async () => {
       try {
@@ -125,7 +123,6 @@ export default function DeviceSettingsClient() {
         });
 
         if (controller.signal.aborted) return;
-        if (requestId !== searchRequestIdRef.current) return;
 
         setImprintedDevices(response.data.data || []);
       } catch (error) {

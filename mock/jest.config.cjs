@@ -3,7 +3,7 @@ const baseConfig = require('../tooling/jest.base.cjs');
 /** @type {import('jest').Config} */
 module.exports = {
   ...baseConfig,
-  displayName: 'discovery',
+  displayName: 'mock',
   rootDir: __dirname,
   testEnvironment: 'node',
   moduleNameMapper: {
@@ -11,19 +11,11 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverageFrom: [
-    '<rootDir>/src/**/*.ts',
+    '<rootDir>/src/**/*.{ts,js}',
     '!<rootDir>/src/**/*.d.ts',
-    '!<rootDir>/src/**/*.test.ts',
-    '!<rootDir>/src/**/*.spec.ts',
+    '!<rootDir>/src/**/*.test.{ts,js}',
+    '!<rootDir>/src/**/*.spec.{ts,js}',
   ],
-  transform: {
-    '^.+\\.ts$': [
-      'ts-jest',
-      {
-        tsconfig: '<rootDir>/tsconfig.json',
-      },
-    ],
-  },
   coverageThreshold: {
     global: {
       statements: 100,
@@ -31,5 +23,13 @@ module.exports = {
       functions: 100,
       branches: 100,
     },
+  },
+  transform: {
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        tsconfig: '<rootDir>/tsconfig.json',
+      },
+    ],
   },
 };

@@ -13,18 +13,17 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   collectCoverageFrom: [
-    '<rootDir>/strings.ts',
-    '<rootDir>/validators.ts',
+    '<rootDir>/*.ts',
     '!<rootDir>/**/*.d.ts',
     '!<rootDir>/**/*.test.ts',
     '!<rootDir>/dist/**',
   ],
   coverageThreshold: {
     global: {
-      statements: 95,
-      lines: 95,
-      functions: 90,
-      branches: 75,
+      statements: 100,
+      lines: 100,
+      functions: 100,
+      branches: 100,
     },
   },
   transform: {

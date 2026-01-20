@@ -29,7 +29,6 @@ export default function MonitoringTableClient() {
   const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const searchRequestIdRef = useRef(0);
   const hasSearchedRef = useRef(false);
 
   const fetchDevicesAndUpdate = useCallback(async () => {
@@ -99,7 +98,6 @@ export default function MonitoringTableClient() {
     hasSearchedRef.current = true;
 
     const controller = new AbortController();
-    const requestId = ++searchRequestIdRef.current;
 
     const timeoutId = setTimeout(async () => {
       try {
@@ -109,7 +107,6 @@ export default function MonitoringTableClient() {
         });
 
         if (controller.signal.aborted) return;
-        if (requestId !== searchRequestIdRef.current) return;
 
         setRegisteredDevices(response.data.data || []);
       } catch (error) {

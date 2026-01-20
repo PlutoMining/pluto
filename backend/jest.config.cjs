@@ -17,16 +17,10 @@ module.exports = {
   },
   coverageThreshold: {
     global: {
-      statements: 95,
-      lines: 95,
-      functions: 95,
-      branches: 85,
+      statements: 100,
+      lines: 100,
+      functions: 100,
+      branches: 100,
     },
   },
-  coveragePathIgnorePatterns: [
-    '<rootDir>/src/index.ts',
-    '<rootDir>/src/config/',
-    '<rootDir>/src/routes/',
-    '<rootDir>/src/services/tracing.service.ts',
-  ],
 };
