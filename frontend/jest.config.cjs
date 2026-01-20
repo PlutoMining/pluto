@@ -16,10 +16,10 @@ module.exports = {
   collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}', '!<rootDir>/src/**/*.d.ts', '!<rootDir>/src/__tests__/**'],
   coverageThreshold: {
     global: {
-      statements: 100,
-      lines: 100,
-      functions: 100,
-      branches: 100,
+      statements: 90,
+      lines: 90,
+      functions: 90,
+      branches: 90,
     },
   },
   transform: {

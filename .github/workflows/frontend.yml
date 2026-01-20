@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   test-frontend:
@@ -35,6 +36,8 @@ jobs:
             if [ -f "$pkg/package-lock.json" ]; then
               echo "Installing deps for $pkg"
               (cd "$pkg" && npm ci)
+              echo "Building $pkg"
+              (cd "$pkg" && npm run build)
             fi
           done
 
@@ -60,12 +63,7 @@ jobs:
           name: frontend-coverage
           path: frontend/coverage
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+      - name: Coverage summary (Octocov)
+        uses: k1LoW/octocov-action@v1
         with:
-          files: frontend/coverage/lcov.info
-          flags: frontend
-          fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
+          config: .octocov/frontend.yml

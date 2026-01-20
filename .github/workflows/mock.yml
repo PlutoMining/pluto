@@ -1,4 +1,4 @@
-name: Discovery CI
+name: Mock CI
 
 on:
   push:
@@ -15,8 +15,8 @@ permissions:
   actions: write
 
 jobs:
-  test-discovery:
-    name: Lint & Test Discovery
+  test-mock:
+    name: Test Mock
     runs-on: ubuntu-latest
 
     steps:
@@ -28,11 +28,11 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: discovery/package-lock.json
+          cache-dependency-path: mock/package-lock.json
 
       - name: Install shared common packages
         run: |
-          for pkg in common/db common/interfaces common/logger; do
+          for pkg in common/interfaces common/logger; do
             if [ -f "$pkg/package-lock.json" ]; then
               echo "Installing deps for $pkg"
               (cd "$pkg" && npm ci)
@@ -41,29 +41,25 @@ jobs:
             fi
           done
 
-      - name: Install discovery dependencies
-        working-directory: discovery
+      - name: Install mock dependencies
+        working-directory: mock
         run: npm ci
 
-      - name: Run ESLint
-        working-directory: discovery
-        run: npm run lint
-
       - name: Build TypeScript
-        working-directory: discovery
+        working-directory: mock
         run: npm run build
 
       - name: Run tests with coverage
-        working-directory: discovery
+        working-directory: mock
         run: npm run test:coverage
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
-          name: discovery-coverage
-          path: discovery/coverage
+          name: mock-coverage
+          path: mock/coverage
 
       - name: Coverage summary (Octocov)
         uses: k1LoW/octocov-action@v1
         with:
-          config: .octocov/discovery.yml
+          config: .octocov/mock.yml
