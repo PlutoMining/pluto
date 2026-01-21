@@ -47,7 +47,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: ghcr.io/plutomining/pluto-discovery:1.1.2@sha256:0a68b82c33df70a6be0a1493c142f1f6bf9a03747bad6fe3b7c2cf75f52c9984
+    image: ghcr.io/plutomining/pluto-discovery:1.2.0-beta.0@sha256:d89d97a4d4a18adc9584e38ed85096dc2b2f87f2ce07ba00757c6c73dba85c45
     container_name: pluto-next_discovery_1
     network_mode: "host"
     # ports:
@@ -79,7 +79,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: ghcr.io/plutomining/pluto-backend:1.1.4-beta.0@sha256:9b588403f7b8721ebec69d55142faa4dcebad56d65bfc69dbefb85b79ee9fd8c
+    image: ghcr.io/plutomining/pluto-backend:2.0.0-beta.0@sha256:ccc898a77e017688f40bdcc0f51f11bc047855be542e326b98fedfaea50966e8
     container_name: pluto-next_backend_1
     # ports:
     #   - "7676:7676"
@@ -110,7 +110,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: ghcr.io/plutomining/pluto-frontend:1.1.5-beta.0@sha256:4472e069cf102f558d543d173abf29f3b6c19f63ef26cbf7c4dace8efb91c58e
+    image: ghcr.io/plutomining/pluto-frontend:2.0.0-beta.0@sha256:73aa60181db3f67cc22f00c72a5cf67a2236b2c60bc779d4387f0f91c59880cf
     container_name: pluto-next_frontend_1
     ports:
       - "7677:7677" # Map port 7777 on the host to port 7777 on the container
