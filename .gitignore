@@ -2,7 +2,8 @@
 
 /scripts/*
 !/scripts/release.sh
-!/scripts/lib/common.sh
+!/scripts/lib/
+!/scripts/lib/*.sh
 !/scripts/generate-changelog.sh
 !/scripts/sync-umbrel-apps.sh
 !/scripts/bump-umbrel-app-version.sh

@@ -15,6 +15,8 @@ cd "$SCRIPT_ROOT"
 SCRIPT_NAME="release"
 # shellcheck source=scripts/lib/common.sh
 source "${SCRIPT_ROOT}/scripts/lib/common.sh"
+# shellcheck source=scripts/lib/semver.sh
+source "${SCRIPT_ROOT}/scripts/lib/semver.sh"
 
 AVAILABLE_SERVICES=(backend discovery frontend prometheus)
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-ghcr.io/plutomining}"
@@ -39,13 +41,15 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [options]
 
-Build and push stable Docker images for Pluto (pluto app only).
+Build and push stable Docker images for Pluto (pluto app only), using per-service
+semantic versioning and optionally updating Umbrel manifests.
 
 Options:
   --skip-login                 Skip Docker login prompt
-  --bump-version               Automatically bump package.json versions (patch increment)
-  --update-manifests           Update pluto umbrel-app manifests after building images
-  --sync-to-umbrel             Sync manifests to Umbrel device (requires --update-manifests)
+  --bump-version               Automatically bump package.json versions per service based on git history
+                               (major / minor / patch via scripts/lib/semver.sh)
+  --update-manifests           Update pluto Umbrel app manifests after building images
+  --sync-to-umbrel             Sync manifests to Umbrel device (implies --update-manifests)
   --skip-changelog             Skip automatic changelog generation
   --services "svc1,svc2"       Comma-separated list of services to release (override auto-detection)
   --diff-base <ref>            Git ref to detect changes from (default: HEAD~1)
@@ -58,7 +62,7 @@ Examples:
   # Build stable images with interactive version prompts
   scripts/release.sh
 
-  # Build, update manifests, and sync to device
+  # Build, bump versions via SemVer, update manifests, and sync to device
   scripts/release.sh --bump-version --update-manifests --sync-to-umbrel
 EOF
 }
@@ -135,31 +139,79 @@ update_local_compose() {
   fi
 }
 
+###############################################################################
+# Version bumping (uses semver bump level: major / minor / patch)
+###############################################################################
+
 bump_package_version() {
   local service=$1
+  local bump_level=$2  # major|minor|patch
   local package_file="$service/package.json"
   local current_version
   current_version=$(get_current_version "$service")
-  
+
   local new_version
+
   if [[ "$current_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-    # Stable version - bump patch
+    # Stable version - bump according to bump_level
     local major="${BASH_REMATCH[1]}"
     local minor="${BASH_REMATCH[2]}"
     local patch="${BASH_REMATCH[3]}"
-    patch=$((patch + 1))
+
+    case "$bump_level" in
+      major)
+        major=$((major + 1))
+        minor=0
+        patch=0
+        ;;
+      minor)
+        minor=$((minor + 1))
+        patch=0
+        ;;
+      patch)
+        patch=$((patch + 1))
+        ;;
+      *)
+        err "Unsupported bump level '$bump_level' for service '$service'"
+        ;;
+    esac
+
     new_version="${major}.${minor}.${patch}"
   elif [[ "$current_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)- ]]; then
-    # Prerelease version - strip prerelease suffix and bump patch
+    # Prerelease version - strip prerelease suffix and bump base according to bump_level
     local base="${BASH_REMATCH[1]}"
     local major minor patch
     IFS='.' read -r major minor patch <<<"$base"
-    patch=$((patch + 1))
+
+    case "$bump_level" in
+      major)
+        major=$((major + 1))
+        minor=0
+        patch=0
+        ;;
+      minor)
+        minor=$((minor + 1))
+        patch=0
+        ;;
+      patch)
+        patch=$((patch + 1))
+        ;;
+      *)
+        err "Unsupported bump level '$bump_level' for service '$service'"
+        ;;
+    esac
+
     new_version="${major}.${minor}.${patch}"
   else
     err "Cannot parse version '$current_version' for service '$service'"
   fi
-  
+
+  if $DRY_RUN; then
+    log "[dry-run] Would bump $service version: $current_version -> $new_version (level: $bump_level)"
+    echo "$new_version"
+    return
+  fi
+
   # Update package.json
   if [[ "$(uname)" == "Darwin" ]]; then
     # macOS uses BSD sed
@@ -168,8 +220,8 @@ bump_package_version() {
     # Linux uses GNU sed
     sed -i "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
   fi
-  
-  log "Bumped $service version: $current_version -> $new_version"
+
+  log "Bumped $service version: $current_version -> $new_version (level: $bump_level)"
   echo "$new_version"
 }
 
@@ -366,8 +418,16 @@ main() {
     
     local new_version
     if $BUMP_VERSION; then
-      # Automatically bump version
-      new_version=$(bump_package_version "$service")
+      # Automatically bump version based on semantic versioning rules inferred
+      # from git log for this service between DIFF_BASE and HEAD.
+      local bump_level
+      bump_level=$(determine_bump_level_for_service "$service" "$DIFF_BASE")
+      if [[ "$bump_level" == "none" ]]; then
+        # No commits touching this service – in practice this should not happen
+        # for services in target_services, but fall back to patch if it does.
+        bump_level="patch"
+      fi
+      new_version=$(bump_package_version "$service" "$bump_level")
     else
       if $DRY_RUN; then
         log "[dry-run] Would prompt for version for $service (current: $current_version)"
