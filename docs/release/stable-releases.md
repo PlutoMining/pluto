@@ -6,7 +6,7 @@
 >
 > **For local development, use `make up` instead.** See the [Development Environment](../../README.md#development-environment).
 
-Stable releases are built from the `main` branch and published to the `pluto` app. They use semantic versioning (e.g., `1.2.3`) and are intended for production use.
+Stable releases are built from the `main` branch and published to the `pluto` app. They use semantic versioning (e.g., `1.2.3`) and are intended for production use. Per‑service version bumps are derived from git history (major / minor / patch) via `scripts/lib/semver.sh`.
 
 ## Prerequisites
 
@@ -26,7 +26,7 @@ scripts/release.sh
 ```
 
 This will:
-- Prompt for version numbers for each service
+- Prompt for version numbers for each service (no automatic bumping)
 - Build and push Docker images
 - Update local compose files for testing
 
@@ -39,7 +39,10 @@ scripts/release.sh --bump-version --update-manifests --sync-to-umbrel
 ```
 
 This single command will:
-- Automatically bump `package.json` versions (patch increment, e.g., `1.1.2` → `1.1.3`)
+- Automatically bump `package.json` versions per service using **semantic versioning** from git history:
+  - `major` if any commit touching that service has a matching `BREAKING CHANGE:` with a header scope including the service (for example `feat(frontend,backend): ...` is major for `frontend` and `backend`).
+  - `minor` if there is at least one `feat(...)` touching that service.
+  - `patch` if there are only `fix/chore/docs/refactor/test(...)` touching that service.
 - Build and push Docker images
 - Update `pluto` manifests with new image references
 - Sync manifests to your Umbrel device and reinstall the app
@@ -57,7 +60,7 @@ scripts/release.sh --skip-login --bump-version --update-manifests
 ### Common Options
 
 - `--skip-login` - Skip Docker login prompt (useful for CI/CD)
-- `--bump-version` - Automatically bump `package.json` versions (patch increment)
+- `--bump-version` - Automatically bump `package.json` versions **per service** (major / minor / patch) based on git history via `scripts/lib/semver.sh`
 - `--update-manifests` - Update `pluto` umbrel-app manifests after building images
 - `--sync-to-umbrel` - Sync manifests to Umbrel device (requires `--update-manifests`)
 - `--skip-changelog` - Skip automatic changelog generation
@@ -70,8 +73,8 @@ scripts/release.sh --skip-login --bump-version --update-manifests
 For each service (`backend`, `discovery`, `frontend`, `prometheus`):
 
 1. **Version Management**:
-   - Prompts for the version to use (or keeps current if `--bump-version` is not used)
-   - With `--bump-version`: Automatically increments patch version (e.g., `1.1.2` → `1.1.3`)
+   - Without `--bump-version`: prompts for the version to use (or keeps current).
+   - With `--bump-version`: automatically determines **major / minor / patch** per service using `scripts/lib/semver.sh` and bumps versions accordingly.
 
 2. **Image Building**:
    - Builds multi-arch images (linux/amd64, linux/arm64) with `docker buildx`

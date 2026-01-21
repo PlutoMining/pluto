@@ -24,7 +24,7 @@ This shared library ensures consistency across all scripts and makes maintenance
 
 ### `scripts/release.sh`
 
-Builds and pushes stable Docker images for the `pluto` app.
+Builds and pushes **stable** Docker images for the `pluto` app and updates the `pluto` Umbrel manifests.
 
 **Location**: Main Pluto repository (`PlutoMining/pluto`)
 
@@ -35,13 +35,25 @@ scripts/release.sh [options]
 
 **Options**:
 - `--skip-login` - Skip Docker login prompt (useful for CI/CD)
-- `--bump-version` - Automatically bump `package.json` versions (patch increment)
-- `--update-manifests` - Update `pluto` umbrel-app manifests after building images
-- `--sync-to-umbrel` - Sync manifests to Umbrel device (requires `--update-manifests`)
-- `--skip-changelog` - Skip automatic changelog generation
-- `--verbose` - Enable verbose logging with timestamps
-- `--quiet` - Minimal output (errors only)
-- `--dry-run` - Print actions without building/pushing or editing files
+- `--bump-version`
+  - Automatically bump `package.json` versions per service using **semantic versioning** derived from git history via `scripts/lib/semver.sh`:
+    - `major` if any commit touching that service has a matching `BREAKING CHANGE:` with a header scope that includes the service (for example `feat(frontend,backend): ...` is major for `frontend` and `backend`).
+    - `minor` if there is at least one `feat(...)` commit touching that service.
+    - `patch` if there are only `fix/chore/docs/refactor/test(...)` commits touching that service.
+  - The new version becomes the tag used for the built image (for example `2.0.0`).
+- `--update-manifests` - Update `pluto` Umbrel manifests (`umbrel-apps/pluto/umbrel-app.yml`, `umbrel-apps/pluto/docker-compose.yml`) with the newly built images and bump the **app version** accordingly.
+- `--sync-to-umbrel` - Sync `pluto` manifests to an Umbrel device (implies `--update-manifests`).
+- `--skip-changelog` - Skip automatic changelog generation.
+- `--verbose` - Enable verbose logging with timestamps.
+- `--quiet` - Minimal output (errors only).
+- `--dry-run` - Print actions without building/pushing or editing files.
+
+**How version bumping works**:
+
+- Per-service SemVer bump level is computed by `scripts/lib/semver.sh`:
+  - Only commits that actually touched that service’s directory (`backend/`, `frontend/`, `discovery/`, `prometheus/`) are considered.
+  - A `BREAKING CHANGE:` in the body only counts for a service if the commit **header scope** mentions that service (for example `feat(frontend,backend): ...` is major for `frontend` and `backend`, but not for `discovery`).
+  - `feat(...)` → minor, `fix/chore/docs/test/refactor(...)` → patch, everything else defaults to patch.
 
 **Requirements**:
 - Must be on `main` branch
@@ -53,7 +65,7 @@ scripts/release.sh [options]
 
 ### `scripts/beta-release.sh`
 
-Builds and pushes beta Docker images for the `pluto-next` app.
+Builds and pushes **beta** Docker images for the `pluto-next` app and updates the `pluto-next` Umbrel manifests.
 
 **Location**: Main Pluto repository (`PlutoMining/pluto`)
 
@@ -64,17 +76,36 @@ scripts/beta-release.sh [options]
 
 **Options**:
 - `--skip-login` - Skip Docker login prompt (useful for CI/CD)
-- `--bump-version` - Automatically bump `package.json` versions to beta
-- `--update-manifests` - Update `pluto-next` umbrel-app manifests after building images
-- `--sync-to-umbrel` - Sync manifests to Umbrel device (requires `--update-manifests`)
-- `--skip-ci-check` - Skip CI status check (not recommended)
-- `--verbose` - Enable verbose logging with timestamps
-- `--quiet` - Minimal output (errors only)
-- `--dry-run` - Print actions without building/pushing or editing files
-- `--services "svc1,svc2"` - Comma-separated list of services to release (override auto-detection)
-- `--app-version X.Y.Z-pr` - Explicit pluto-next app version to write into umbrel-app.yml
-- `--diff-base <ref>` - Git ref (default: `origin/main`) used to detect changed services
-- `--tag-suffix <suffix>` - Secondary tag pushed alongside the explicit version (default: `beta`)
+- `--bump-version`
+  - Automatically bump `package.json` versions to beta **per service**, using the same SemVer detection logic as `release.sh`:
+    - `major` / `minor` / `patch` is inferred from git history via `scripts/lib/semver.sh`.
+    - The resulting base version is then turned into a prerelease:
+      - If current is `1.2.3` → `1.3.0-beta.0` (for a minor bump).
+      - If current is `1.2.3-beta.0` → `1.2.3-beta.1` (only the beta number increments).
+- `--update-manifests` - Update `pluto-next` Umbrel manifests (`umbrel-apps/pluto-next/umbrel-app.yml`, `umbrel-apps/pluto-next/docker-compose.yml`) with the new beta image refs and bump the **app version** accordingly.
+- `--sync-to-umbrel` - Sync `pluto-next` manifests to an Umbrel device (implies `--update-manifests`).
+- `--skip-ci-check` - Skip CI status check (not recommended).
+- `--verbose` - Enable verbose logging with timestamps.
+- `--quiet` - Minimal output (errors only).
+- `--dry-run` - Print actions without building/pushing or editing files.
+- `--services "svc1,svc2"` - Comma-separated list of services to release (override auto-detection).
+- `--app-version X.Y.Z-pr` - Explicit `pluto-next` app version to write into `umbrel-app.yml` (overrides automatic app version calculation).
+- `--diff-base <ref>` - Git ref (default: `origin/main`) used to detect changed services and derive SemVer bump levels.
+- `--tag-suffix <suffix>` - Secondary tag pushed alongside the explicit version (default: `beta`), for example `pluto-backend:2.0.0-beta.0` and `pluto-backend:beta`.
+
+**How version bumping works**:
+
+- Uses the same `determine_bump_level_for_service` helper as `release.sh`:
+  - Only commits that touched the service directory are considered.
+  - `BREAKING CHANGE:` is only counted as major for services whose **header scope** includes that service (for example `feat(frontend,backend): ...` is major for `frontend` and `backend`).
+  - `feat(...)` → minor, `fix/chore/docs/test/refactor(...)` → patch, everything else defaults to patch.
+- The computed bump level changes the **base version**, then `-beta.N` is applied on top.
+
+**Note on Prometheus in `docker-compose.next.local.yml`**:
+
+- `beta-release.sh` updates `docker-compose.next.local.yml` only for services that use an `image:` line pointing at GHCR (for example `pluto-backend`, `pluto-frontend`, `pluto-discovery`).
+- The `prometheus` service in that compose file currently uses a local `build:` directive (`prometheus/Dockerfile.next`), so there is no `image: ghcr.io/plutomining/pluto-prometheus:...` line for the script to rewrite.
+- To have Prometheus automatically updated from the registry, switch it to use an `image:` line instead of `build:`.
 
 **Requirements**:
 - Must NOT be on `main` branch
@@ -111,6 +142,35 @@ scripts/bump-umbrel-app-version.sh \
 - Updates `docker-compose.yml` with new image references pinned to digests
 
 **Used by**: `release.sh` and `beta-release.sh`
+
+### Sync-only path (no local builds)
+
+Sometimes you already have images published in GHCR and only want to **sync manifests to an Umbrel device** from a clean clone, without running the full release scripts or building locally.
+
+For that workflow:
+
+1. Check out a released commit or tag (for example `v2.0.0`) where the Umbrel manifests are already updated and committed.
+2. If you need to update manifests to point to specific image refs **without** building:
+
+   ```bash
+   scripts/bump-umbrel-app-version.sh \
+     --app pluto|pluto-next \
+     --channel stable|beta \
+     --manifest umbrel-apps/<app>/umbrel-app.yml \
+     --compose umbrel-apps/<app>/docker-compose.yml \
+     --images "backend=ghcr.io/plutomining/pluto-backend:X.Y.Z@sha256:...,frontend=..."
+   ```
+
+   - This does not build images; it only rewrites `umbrel-app.yml` and `docker-compose.yml` based on existing image references.
+
+3. Sync manifests to your Umbrel device:
+
+   ```bash
+   APPS_TO_SYNC="pluto,pluto-next" REMOTE_PATH=/path/to/umbrel/apps UMBEL_HOST=... UMBEL_PASSWORD=... \
+     scripts/sync-umbrel-apps.sh
+   ```
+
+   - This copies the `umbrel-apps/` directory to the device and reinstalls the apps from the committed manifests, which in turn pull the already-published images.
 
 ### `scripts/sync-umbrel-apps.sh`
 
