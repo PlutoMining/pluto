@@ -30,6 +30,3 @@ releaseNotes: >
   - NerdAxe support
 
 submitter: Pluto
-submission:
-defaultUsername: admin
-deterministicPassword: true

@@ -18,7 +18,9 @@ source "${SCRIPT_ROOT}/scripts/lib/common.sh"
 # shellcheck source=scripts/lib/semver.sh
 source "${SCRIPT_ROOT}/scripts/lib/semver.sh"
 
-AVAILABLE_SERVICES=(backend discovery frontend prometheus)
+# NOTE: mock is included so we can publish mock device images for beta testing.
+# It is not part of the Umbrel pluto-next manifest bundle by default.
+AVAILABLE_SERVICES=(backend discovery frontend prometheus mock)
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-ghcr.io/plutomining}"
 DIFF_BASE="${BETA_DIFF_BASE:-origin/main}"
 TAG_SUFFIX="${BETA_TAG_SUFFIX:-beta}"
@@ -140,7 +142,7 @@ detect_changed_services() {
 
   git diff --name-only "${DIFF_BASE}...HEAD" \
     | awk -F/ '
-      /^(backend|discovery|frontend|prometheus)\// {print $1}
+      /^(backend|discovery|frontend|prometheus|mock)\// {print $1}
     ' \
     | sort -u
 }
@@ -408,6 +410,11 @@ bump_package_version() {
     esac
 
     new_version="${major}.${minor}.${patch}-beta.0"
+  elif [[ "$current_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-.+$ ]]; then
+    # Non-beta prerelease (e.g. 0.7.0-rc.2) - keep base version and switch to beta.0.
+    # This avoids unexpected base bumps when migrating prerelease tags.
+    local base="${BASH_REMATCH[1]}"
+    new_version="${base}-beta.0"
   else
     err "Cannot parse version '$current_version' for service '$service'"
   fi
@@ -728,7 +735,7 @@ main() {
   if ! $QUIET; then
     local summary_items=()
     for service in "${target_services[@]}"; do
-      if [[ -v service_versions["$service"] ]]; then
+      if [[ -n "${service_versions[$service]+set}" ]]; then
         local version="${service_versions[$service]}"
         summary_items+=("$service: v$version")
       fi
