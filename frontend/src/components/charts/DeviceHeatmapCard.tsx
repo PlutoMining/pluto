@@ -130,7 +130,6 @@ export function DeviceHeatmapCard({
               typeof item.effectiveTemp === "number" &&
               Number.isFinite(item.effectiveTemp) &&
               item.effectiveTemp >= HOT_THRESHOLD_C;
-              item.effectiveTemp >= HOT_THRESHOLD_C;
 
             const title = [
               item.hostname,
@@ -151,7 +150,6 @@ export function DeviceHeatmapCard({
                 title={title}
                 className={[
                   "group relative block min-h-[86px] border border-border p-3 transition-colors hover:border-foreground",
-                  isHot ? "ring-2 ring-inset" : "",
                   isHot ? "ring-2 ring-inset" : "",
                 ].join(" ")}
                 style={{

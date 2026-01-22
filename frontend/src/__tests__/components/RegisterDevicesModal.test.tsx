@@ -220,7 +220,7 @@ describe("RegisterDevicesModal", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Search" }));
 
-    await screen.findByText("No device found");
+    expect(await screen.findByText("No device found")).toBeInTheDocument();
   });
 
   it("keeps search disabled when validation errors exist", async () => {

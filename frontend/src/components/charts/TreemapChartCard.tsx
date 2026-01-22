@@ -84,7 +84,7 @@ export function TreemapChartCard<T extends AnyRecord>({
       const fill =
         colorMode === "stepped"
           ? steppedColor(rawValue, inferredBreakpoints, palette)
-          : palette[(Number(index) || 0) % palette.length] ?? "hsl(var(--chart-1))";
+          : palette[(Number(index) || 0) % palette.length];
       const labelFill = contrastTextColor(fill) ?? "hsl(0 0% 100%)";
       const labelStroke = labelFill === "#000000" ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)";
       const showLabel = width >= 90 && height >= 28;
@@ -98,7 +98,6 @@ export function TreemapChartCard<T extends AnyRecord>({
             height={height}
             fill={fill}
             stroke="hsl(var(--border))"
-            stroke="hsl(var(--border))"
             strokeWidth={1}
             data-recharts-item-index={tooltipIndex}
           />
@@ -107,8 +106,6 @@ export function TreemapChartCard<T extends AnyRecord>({
               x={x + 8}
               y={y + 18}
               fontSize={12}
-              fill={labelFill}
-              style={{ paintOrder: "stroke", stroke: labelStroke, strokeWidth: 3 }}
               fill={labelFill}
               style={{ paintOrder: "stroke", stroke: labelStroke, strokeWidth: 3 }}
             >

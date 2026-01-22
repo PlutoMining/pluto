@@ -188,7 +188,7 @@ describe("charts coverage", () => {
     expect(computeLinearBreakpoints(NaN, 1, 2)).toEqual([]);
     expect(computeLinearBreakpoints(0, 1, 1)).toEqual([]);
     expect(computeLinearBreakpoints(2, 1, 2)).toEqual([]);
-    expect(computeLinearBreakpoints(0, 10, 3).length).toBe(2);
+    expect(computeLinearBreakpoints(0, 10, 3)).toHaveLength(2);
 
     expect(steppedColor("bad", [], [])).toBe("hsl(var(--muted))");
     expect(steppedColor(0, [1], [])).toBe("hsl(var(--muted))");
@@ -207,8 +207,6 @@ describe("charts coverage", () => {
           unit="V"
           valueDigits={1}
           series={[
-            // Cover legend style branches (solid vs dashed).
-            { key: "a", label: "A", color: "red", strokeDasharray: "3 3", points: [{ t: 0, v: 1.5 }] },
             // Cover legend style branches (solid vs dashed).
             { key: "a", label: "A", color: "red", strokeDasharray: "3 3", points: [{ t: 0, v: 1.5 }] },
             { key: "b", label: "B", color: "blue", points: [{ t: 0, v: 2.5 }] },
@@ -350,23 +348,23 @@ describe("charts coverage", () => {
     expect(screen.getByText("Bar")).toBeInTheDocument();
 
     // MultiLineChartCard legend labels are real DOM.
-    expect(screen.getAllByText("A").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("B").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("A")).not.toHaveLength(0);
+    expect(screen.getAllByText("B")).not.toHaveLength(0);
 
     // Ensure our Tooltip mock ran (and thus exercised formatter closures).
-    expect(screen.getAllByTestId("tooltip").length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId("tooltip")).not.toHaveLength(0);
 
     // Treemap content should render the label for the big node.
-    expect(screen.getAllByText("big").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("big")).not.toHaveLength(0);
 
     // Treemap + Pie both format 12.3, so assert at least one occurrence.
-    expect(screen.getAllByText("12.3").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("12.3")).not.toHaveLength(0);
     expect(screen.getByText("extra:row-1")).toBeInTheDocument();
 
     // PieChartCard center label / tooltip branch.
     expect(screen.getByText("Active")).toBeInTheDocument();
     expect(screen.getByText("row-2")).toBeInTheDocument();
-    expect(screen.getAllByText("12.3").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("12.3")).not.toHaveLength(0);
     expect(screen.getByText("tip:row-1")).toBeInTheDocument();
     expect(screen.getByText("Static")).toBeInTheDocument();
   });

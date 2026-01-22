@@ -86,7 +86,7 @@ export default function MonitoringClient({ id }: { id: string }) {
         points: coreV,
         // Put target on top so both lines are visible (dashes reveal the solid line below).
         strokeDasharray: "5 7",
-        strokeLinecap: "butt",
+        strokeLinecap: "butt" as const,
         strokeOpacity: 1,
         renderOrder: 2,
       },
