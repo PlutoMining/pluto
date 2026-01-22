@@ -203,12 +203,16 @@ load_env_file() {
   local saved_github_username="${GITHUB_USERNAME:-}"
   local saved_github_token="${GITHUB_TOKEN:-}"
   
-  # Save any additional variables that were requested
-  declare -A saved_vars
+  # Save any additional variables that were requested.
+  # Note: macOS ships Bash 3.2 by default, which doesn't support associative arrays.
+  # Use parallel arrays to remain compatible with both Bash 3.x and 4+.
+  local saved_var_names=()
+  local saved_var_values=()
   for var in "${preserve_vars[@]}"; do
     # Use indirect variable reference to check if variable is set
     if [[ -n "${!var:-}" ]]; then
-      saved_vars["$var"]="${!var}"
+      saved_var_names+=("$var")
+      saved_var_values+=("${!var}")
     fi
   done
   
@@ -229,8 +233,12 @@ load_env_file() {
   fi
   
   # Restore additional preserved variables
-  for var in "${!saved_vars[@]}"; do
-    eval "${var}=\"${saved_vars[$var]}\""
+  local i
+  for i in "${!saved_var_names[@]}"; do
+    local name="${saved_var_names[$i]}"
+    local value="${saved_var_values[$i]}"
+    # Avoid eval; printf -v is available in Bash 3.2+
+    printf -v "$name" '%s' "$value"
   done
 }
 
@@ -405,4 +413,3 @@ print_summary() {
   fi
   echo ""
 }
-
