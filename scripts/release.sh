@@ -71,7 +71,8 @@ EOF
 # Function to get the current version from the package.json file
 get_current_version() {
   local service=$1
-  grep '"version":' "$service/package.json" | sed -E 's/.*"version":\s*"([^"]+)".*/\1/'
+  # Avoid PCRE-only escapes (e.g. \s) for portability across BSD/GNU sed.
+  grep -m 1 '"version":' "$service/package.json" | sed -E 's/.*"version":[[:space:]]*"([^"]+)".*/\1/'
 }
 
 # Function to check the current Git branch
