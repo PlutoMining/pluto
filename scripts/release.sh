@@ -388,7 +388,11 @@ main() {
     target_services=("${CUSTOM_SERVICES[@]}")
     log "Using custom services: ${target_services[*]}"
   else
-    mapfile -t target_services < <(detect_changed_services)
+    # mapfile/readarray are not available in macOS' default Bash (3.2).
+    # Read services line-by-line instead for portability.
+    while IFS= read -r service; do
+      [[ -n "$service" ]] && target_services+=("$service")
+    done < <(detect_changed_services)
     if [[ ${#target_services[@]} -eq 0 ]]; then
       log_warning "No changed services detected since ${DIFF_BASE}."
       log_warning "This might mean:"

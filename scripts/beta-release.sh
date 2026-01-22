@@ -593,7 +593,11 @@ main() {
   if [[ ${#CUSTOM_SERVICES[@]} -gt 0 ]]; then
     target_services=("${CUSTOM_SERVICES[@]}")
   else
-    mapfile -t target_services < <(detect_changed_services)
+    # mapfile/readarray are not available in macOS' default Bash (3.2).
+    # Read services line-by-line instead for portability.
+    while IFS= read -r service; do
+      [[ -n "$service" ]] && target_services+=("$service")
+    done < <(detect_changed_services)
   fi
 
   if [[ ${#target_services[@]} -eq 0 ]]; then
