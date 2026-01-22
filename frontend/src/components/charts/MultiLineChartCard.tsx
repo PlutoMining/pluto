@@ -12,14 +12,20 @@ import {
 } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CHART_PALETTE } from "@/components/charts/chartPalette";
 
 type Point = { t: number; v: number };
 
 type Series = {
   key: string;
   label: string;
-  color: string;
+  color?: string;
   points: Point[];
+  strokeWidth?: number;
+  strokeDasharray?: string;
+  strokeOpacity?: number;
+  strokeLinecap?: "butt" | "round" | "square";
+  renderOrder?: number;
 };
 
 function formatTime(t: number) {
@@ -46,13 +52,34 @@ export function MultiLineChartCard({
   series,
   unit,
   valueDigits = 2,
+  colors = CHART_PALETTE,
+  yDomain,
+  allowDataOverflow = false,
 }: {
   title: string;
   series: Series[];
   unit?: string;
   valueDigits?: number;
+  colors?: string[];
+  yDomain?: [number | "auto" | "dataMin" | "dataMax", number | "auto" | "dataMin" | "dataMax"];
+  allowDataOverflow?: boolean;
 }) {
-  const data = React.useMemo(() => mergeSeries(series), [series]);
+  const palette = React.useMemo(() => {
+    return colors.length > 0 ? colors : ["hsl(var(--chart-1))"];
+  }, [colors]);
+
+  const seriesWithColors = React.useMemo(() => {
+    return series.map((s, idx) => ({
+      ...s,
+      color: s.color ?? palette[idx % palette.length],
+    }));
+  }, [series, palette]);
+
+  const renderSeries = React.useMemo(() => {
+    return [...seriesWithColors].sort((a, b) => (a.renderOrder ?? 0) - (b.renderOrder ?? 0));
+  }, [seriesWithColors]);
+
+  const data = React.useMemo(() => mergeSeries(seriesWithColors), [seriesWithColors]);
 
   const tooltipContentStyle: React.CSSProperties = {
     backgroundColor: "hsl(var(--secondary))",
@@ -66,9 +93,17 @@ export function MultiLineChartCard({
       <CardHeader className="flex flex-row items-center justify-between gap-3">
         <CardTitle>{title}</CardTitle>
         <div className="flex flex-wrap items-center gap-3">
-          {series.map((s) => (
+          {seriesWithColors.map((s) => (
             <div key={s.key} className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="h-2 w-2" style={{ backgroundColor: s.color }} />
+              <span
+                className="w-6 border-t"
+                style={{
+                  borderTopColor: s.color,
+                  borderTopWidth: `${s.strokeWidth ?? 2}px`,
+                  borderTopStyle: s.strokeDasharray ? "dashed" : "solid",
+                  opacity: s.strokeOpacity ?? 1,
+                }}
+              />
               <span>{s.label}</span>
             </div>
           ))}
@@ -90,6 +125,8 @@ export function MultiLineChartCard({
                 axisLine={{ stroke: "hsl(var(--border))" }}
                 tickLine={{ stroke: "hsl(var(--border))" }}
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                domain={yDomain}
+                allowDataOverflow={allowDataOverflow}
               />
               <Tooltip
                 contentStyle={tooltipContentStyle}
@@ -97,20 +134,23 @@ export function MultiLineChartCard({
                 cursor={{ stroke: "hsl(var(--foreground))", opacity: 0.2 }}
                 labelFormatter={(l) => formatTime(Number(l))}
                 formatter={(value: any, name: any) => {
-                  const label = series.find((s) => s.key === name)?.label ?? String(name);
+                  const label = seriesWithColors.find((s) => s.key === name)?.label ?? String(name);
                   const num = Number(value);
                   if (!Number.isFinite(num)) return [String(value), label];
                   return [`${num.toFixed(valueDigits)}${unit ? ` ${unit}` : ""}`, label];
                 }}
               />
-              {series.map((s) => (
+              {renderSeries.map((s) => (
                 <Line
                   key={s.key}
                   type="monotone"
                   dataKey={s.key}
                   stroke={s.color}
                   dot={false}
-                  strokeWidth={2}
+                  strokeWidth={s.strokeWidth ?? 2}
+                  strokeDasharray={s.strokeDasharray}
+                  strokeOpacity={s.strokeOpacity}
+                  strokeLinecap={s.strokeLinecap}
                   connectNulls
                 />
               ))}

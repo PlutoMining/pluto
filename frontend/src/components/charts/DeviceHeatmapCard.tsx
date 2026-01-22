@@ -4,31 +4,20 @@ import * as React from "react";
 import NextLink from "next/link";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { computeLinearBreakpoints, PLUTO_HEAT, steppedColor } from "@/components/charts/chartPalette";
 import { formatDifficulty } from "@/utils/formatDifficulty";
 import { formatDetailedTime } from "@/utils/formatTime";
 import type { Device } from "@pluto/interfaces";
 
-function clamp01(n: number) {
-  if (n <= 0) return 0;
-  if (n >= 1) return 1;
-  return n;
-}
+const TEMP_MIN_C = 30;
+const TEMP_MAX_C = 85;
+const HOT_THRESHOLD_C = 75;
 
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
+const TEMP_BREAKPOINTS = computeLinearBreakpoints(TEMP_MIN_C, TEMP_MAX_C, PLUTO_HEAT.length);
 
 function temperatureToColor(tempC: number | null | undefined) {
   if (tempC == null || !Number.isFinite(tempC)) return "hsl(var(--muted))";
-
-  // Map 30°C (green) → 85°C (red)
-  // Use an easing curve so low temps stay greener for longer.
-  const linear = clamp01((tempC - 30) / (85 - 30));
-  const t = Math.pow(linear, 2);
-  const hue = lerp(120, 0, t);
-  const sat = 85;
-  const light = lerp(32, 42, 1 - t);
-  return `hsl(${hue} ${sat}% ${light}%)`;
+  return steppedColor(tempC, TEMP_BREAKPOINTS, PLUTO_HEAT);
 }
 
 function formatMaybeNumber(value: unknown, digits = 1) {
@@ -37,6 +26,25 @@ function formatMaybeNumber(value: unknown, digits = 1) {
   return n.toFixed(digits);
 }
 
+function contrastTextForHeat(bg: string) {
+  // The HEAT ramp is always bright in both themes, so default to dark text.
+  // We'll still switch to white for the darkest reds/oranges.
+  if (!bg.startsWith("#")) {
+    return {
+      color: "hsl(var(--foreground))",
+      shadow: "none",
+    };
+  }
+
+  const hex = bg.replace("#", "");
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  const color = lum > 0.62 ? "#000000" : "#FFFFFF";
+  const shadow = color === "#FFFFFF" ? "0 1px 2px rgba(0,0,0,0.35)" : "0 1px 2px rgba(255,255,255,0.25)";
+  return { color, shadow };
+}
 export function DeviceHeatmapCard({
   title = "Devices",
   devices,
@@ -88,18 +96,25 @@ export function DeviceHeatmapCard({
             <span>Offline / Unknown</span>
           </div>
           <div className="flex items-center gap-2">
-            <span
-              className="h-3 w-16 border border-border"
-              style={{
-                background:
-                  "linear-gradient(90deg, hsl(120 85% 38%) 0%, hsl(60 90% 42%) 50%, hsl(0 85% 42%) 100%)",
-              }}
-            />
-            <span>Temp (30°C → 85°C)</span>
+            <div className="flex items-center gap-1">
+              {PLUTO_HEAT.map((c, idx) => (
+                <span
+                  key={`${c}-${idx}`}
+                  className="h-3 w-3 border border-border"
+                  style={{ background: c }}
+                />
+              ))}
+            </div>
+            <span>
+              Temp ({TEMP_MIN_C}°C → {TEMP_MAX_C}°C)
+            </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="h-3 w-3 border border-border ring-2 ring-destructive ring-inset" />
-            <span>Hot (≥ 75°C)</span>
+            <span
+              className="h-3 w-3 border border-border ring-2 ring-inset"
+              style={{ "--tw-ring-color": PLUTO_HEAT[PLUTO_HEAT.length - 1] } as React.CSSProperties}
+            />
+            <span>Hot (≥ {HOT_THRESHOLD_C}°C)</span>
           </div>
         </div>
       </CardHeader>
@@ -107,11 +122,15 @@ export function DeviceHeatmapCard({
         <div className="grid grid-cols-2 gap-2 mobileL:grid-cols-3 tablet:grid-cols-4 desktop:grid-cols-6">
           {items.map((item) => {
             const bg = item.online ? temperatureToColor(item.effectiveTemp) : "hsl(var(--muted))";
+            const textStyle = item.online
+              ? contrastTextForHeat(bg)
+              : { color: "hsl(var(--muted-foreground))", shadow: "none" };
             const isHot =
               item.online &&
               typeof item.effectiveTemp === "number" &&
               Number.isFinite(item.effectiveTemp) &&
-              item.effectiveTemp >= 75;
+              item.effectiveTemp >= HOT_THRESHOLD_C;
+              item.effectiveTemp >= HOT_THRESHOLD_C;
 
             const title = [
               item.hostname,
@@ -132,9 +151,13 @@ export function DeviceHeatmapCard({
                 title={title}
                 className={[
                   "group relative block min-h-[86px] border border-border p-3 transition-colors hover:border-foreground",
-                  isHot ? "ring-2 ring-destructive ring-inset" : "",
+                  isHot ? "ring-2 ring-inset" : "",
+                  isHot ? "ring-2 ring-inset" : "",
                 ].join(" ")}
-                style={{ backgroundColor: bg }}
+                style={{
+                  backgroundColor: bg,
+                  ...(isHot ? ({ "--tw-ring-color": PLUTO_HEAT[PLUTO_HEAT.length - 1] } as React.CSSProperties) : {}),
+                }}
               >
                 <div
                   className="absolute right-2 top-2 h-2 w-2 rounded-full"
@@ -142,20 +165,20 @@ export function DeviceHeatmapCard({
                   aria-hidden
                 />
                 <div
-                  className="text-sm font-semibold text-white"
-                  style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.35)", strokeWidth: 3 }}
+                  className="text-sm font-semibold"
+                  style={{ color: textStyle.color, textShadow: textStyle.shadow }}
                 >
                   {item.hostname}
                 </div>
                 <div
-                  className="mt-1 font-accent text-xs text-white"
-                  style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.35)", strokeWidth: 3 }}
+                  className="mt-1 font-accent text-xs"
+                  style={{ color: textStyle.color, textShadow: textStyle.shadow }}
                 >
                   {formatMaybeNumber(item.hashrate, 2)} GH/s
                 </div>
                 <div
-                  className="mt-1 flex items-center justify-between gap-2 text-xs text-white"
-                  style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.35)", strokeWidth: 3 }}
+                  className="mt-1 flex items-center justify-between gap-2 text-xs"
+                  style={{ color: textStyle.color, textShadow: textStyle.shadow }}
                 >
                   <span>
                     {formatMaybeNumber(item.temp, 1)}°C

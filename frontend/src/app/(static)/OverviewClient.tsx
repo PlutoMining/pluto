@@ -25,11 +25,14 @@ import {
   vectorToNumber,
   type TimeRangeKey,
 } from "@/lib/prometheus";
+import { useSocket } from "@/providers/SocketProvider";
 import { formatDifficulty, parseDifficulty } from "@/utils/formatDifficulty";
+import { PLUTO_PRIMARY } from "@/components/charts/chartPalette";
 import type { Device } from "@pluto/interfaces";
 import axios from "axios";
 
 function formatNumber(value: number, digits = 2) {
+  if (!Number.isFinite(value)) return "-";
   return value.toFixed(digits);
 }
 
@@ -83,27 +86,69 @@ export default function OverviewClient() {
     fetchDevices();
   }, []);
 
+  const { isConnected, socket } = useSocket();
+
+  useEffect(() => {
+    const listener = (e: Device) => {
+      setDevices((prev) => {
+        if (!prev?.length) return prev;
+
+        const idx = prev.findIndex((d) => d.mac === e.mac);
+        if (idx === -1) return prev;
+
+        const next = [...prev];
+        next[idx] = {
+          ...next[idx],
+          ...e,
+        };
+        return next;
+      });
+    };
+
+    if (isConnected) {
+      socket.on("stat_update", listener);
+      socket.on("error", listener);
+
+      return () => {
+        socket.off("stat_update", listener);
+        socket.off("error", listener);
+      };
+    }
+  }, [isConnected, socket]);
+
+  useEffect(() => {
+    // Keep online/offline KPIs reactive even if the Prometheus polling UI isn't refreshing.
+    if (!devices.length) return;
+
+    const online = devices.filter((d) => d.tracing).length;
+    const total = devices.length;
+
+    setKpis((prev) => ({
+      ...prev,
+      total,
+      online,
+      offline: total - online,
+    }));
+  }, [devices]);
+
   useEffect(() => {
     const load = async () => {
       const { start, end, step } = rangeToQueryParams(rangeSeconds);
 
-      const [total, online, offline, totalHashrate, totalPower, totalEfficiency] = await Promise.all([
-        promQuery("total_hardware"),
-        promQuery("hardware_online"),
-        promQuery("hardware_offline"),
+      const [totalHashrate, totalPower, totalEfficiency] = await Promise.all([
         promQuery("total_hashrate"),
         promQuery("total_power_watts"),
         promQuery("total_efficiency"),
       ]);
 
-      setKpis({
-        total: vectorToNumber((total as any).data.result),
-        online: vectorToNumber((online as any).data.result),
-        offline: vectorToNumber((offline as any).data.result),
+      // Keep online/offline reactive via websocket/device state.
+      // Prometheus is still used for fleet metrics and charts.
+      setKpis((prev) => ({
+        ...prev,
         totalHashrate: vectorToNumber((totalHashrate as any).data.result),
         totalPower: vectorToNumber((totalPower as any).data.result),
         totalEfficiency: vectorToNumber((totalEfficiency as any).data.result),
-      });
+      }));
 
       const [hashrate, power, efficiency] = await Promise.all([
         promQueryRange("total_hashrate", start, end, step),
@@ -182,7 +227,7 @@ export default function OverviewClient() {
 
   const firmwareTreemapData = useMemo(() => {
     const data = firmwareData.filter((r) => Number.isFinite(r.count) && r.count > 0);
-    const MAX_TILES = 12;
+    const MAX_TILES = PLUTO_PRIMARY.length;
     if (data.length <= MAX_TILES) return data;
 
     const top = data.slice(0, MAX_TILES - 1);
@@ -244,10 +289,6 @@ export default function OverviewClient() {
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4">
-        <DeviceHeatmapCard title="Device map" devices={devices} />
-      </div>
-
       <div className="mt-4 grid gap-4 tablet:grid-cols-2">
         <LineChartCard title="Total hashrate" points={hashrateSeries} unit="GH/s" />
         <LineChartCard title="Total power" points={powerSeries} unit="W" curve="step" />
@@ -260,6 +301,8 @@ export default function OverviewClient() {
           data={firmwareTreemapData}
           nameKey="version"
           valueKey="count"
+          colorMode="categorical"
+          colors={PLUTO_PRIMARY}
           valueDigits={0}
           renderTooltip={(row) => {
             const pct = firmwareTotal > 0 ? (row.count / firmwareTotal) * 100 : 0;
@@ -310,6 +353,9 @@ export default function OverviewClient() {
             </div>
           </CardContent>
         </Card>
+      </div>
+      <div className="mt-4 grid gap-4">
+        <DeviceHeatmapCard title="Device map" devices={devices} />
       </div>
     </div>
   );

@@ -4,15 +4,12 @@ import * as React from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CHART_PALETTE } from "@/components/charts/chartPalette";
 
 type AnyRecord = Record<string, any>;
 
 const DEFAULT_COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
+  ...CHART_PALETTE,
   "hsl(50 95% 55%)",
   "hsl(330 85% 62%)",
   "hsl(200 25% 45%)",

@@ -7,7 +7,14 @@
  */
 
 import OverviewClient from "./OverviewClient";
+import { SocketProvider } from "@/providers/SocketProvider";
 
 export default function OverviewPage() {
-  return <OverviewClient />;
+  // Overview is under the (static) group, but we still want real-time online/offline
+  // status updates via websocket.
+  return (
+    <SocketProvider>
+      <OverviewClient />
+    </SocketProvider>
+  );
 }

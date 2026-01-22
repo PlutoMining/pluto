@@ -1,8 +1,12 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 import OverviewClient from '@/app/(static)/OverviewClient';
 
+jest.mock('@/providers/SocketProvider', () => ({
+  __esModule: true,
+  useSocket: jest.fn(),
+}));
 jest.mock('axios', () => ({
   __esModule: true,
   default: {
@@ -65,6 +69,7 @@ jest.mock('@/lib/prometheus', () => {
 });
 
 const axios = jest.requireMock('axios').default as { get: jest.Mock };
+const socketProvider = jest.requireMock('@/providers/SocketProvider') as { useSocket: jest.Mock };
 const prom = jest.requireMock('@/lib/prometheus') as {
   promQuery: jest.Mock;
   promQueryRange: jest.Mock;
@@ -103,6 +108,11 @@ function matrixNoSeries() {
 describe('OverviewClient', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    socketProvider.useSocket.mockReturnValue({
+      isConnected: false,
+      socket: { on: jest.fn(), off: jest.fn() },
+    });
   });
 
   it('renders NoDeviceAddedSection when no devices are present', async () => {
@@ -203,6 +213,90 @@ describe('OverviewClient', () => {
     expect(screen.getByTestId('pie-chart')).toHaveTextContent('Ocean Main');
   });
 
+  it('subscribes to socket updates when connected and updates online/offline KPIs', async () => {
+    const socket = {
+      on: jest.fn(),
+      off: jest.fn(),
+    };
+
+    socketProvider.useSocket.mockReturnValue({ isConnected: true, socket });
+
+    let resolveDevices: ((value: any) => void) | undefined;
+    axios.get.mockReturnValue(
+      new Promise((resolve) => {
+        resolveDevices = resolve;
+      })
+    );
+
+    prom.promQuery.mockImplementation((query: string) => {
+      switch (query) {
+        case 'total_hardware':
+          return Promise.resolve(vector(2));
+        case 'hardware_online':
+          return Promise.resolve(vector(2));
+        case 'hardware_offline':
+          return Promise.resolve(vector(0));
+        default:
+          return Promise.resolve(vector(0));
+      }
+    });
+    prom.promQueryRange.mockResolvedValue(matrix([[1, 1]]));
+
+    const { unmount } = render(<OverviewClient />);
+
+    const listener = socket.on.mock.calls.find((c) => c[0] === 'stat_update')?.[1];
+    expect(typeof listener).toBe('function');
+
+    // Covers the "no devices yet" branch in the socket listener.
+    await act(async () => {
+      listener({ mac: 'xx', tracing: false, info: { hostname: 'x' } });
+    });
+
+    expect(resolveDevices).toBeTruthy();
+    resolveDevices!({
+      data: {
+        data: [
+          {
+            mac: 'aa',
+            ip: '1.1.1.1',
+            type: 'rig',
+            tracing: true,
+            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', power: 1 },
+          },
+          {
+            mac: 'bb',
+            ip: '1.1.1.2',
+            type: 'rig',
+            tracing: true,
+            info: { hostname: 'rig-2', bestDiff: '2', bestSessionDiff: '2', power: 1 },
+          },
+        ],
+      },
+    });
+
+    await screen.findByText('Total hardware');
+
+    const offlineCard = screen.getByText('Offline').closest('.rounded-none');
+    expect(offlineCard).toBeTruthy();
+    expect(within(offlineCard as HTMLElement).getByText('0')).toBeInTheDocument();
+
+    // Covers idx === -1 branch
+    await act(async () => {
+      listener({ mac: 'cc', tracing: false, info: { hostname: 'unknown' } });
+    });
+
+    // Update one device to offline.
+    await act(async () => {
+      listener({ mac: 'aa', tracing: false, info: { hostname: 'rig-1' } });
+    });
+
+    await waitFor(() => {
+      expect(within(offlineCard as HTMLElement).getByText('1')).toBeInTheDocument();
+    });
+
+    unmount();
+    expect(socket.off).toHaveBeenCalled();
+  });
   it('logs when device discovery fails', async () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 

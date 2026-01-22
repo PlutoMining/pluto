@@ -1,6 +1,5 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import React from "react";
 
 // Override the global auto-mock from jest.setup.ts with a deterministic mock that
 // executes formatter callbacks so we actually cover chart code paths.
@@ -102,6 +101,34 @@ jest.mock("recharts", () => {
           })
         );
         nodes.push(content({ x: 0, y: 0, width: 10, height: 10, depth: 0 }));
+
+        // Cover value/payload precedence in TreemapChartCard.
+        nodes.push(
+          content({
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 40,
+            index: 3,
+            depth: 1,
+            name: "withValue",
+            tooltipIndex: 3,
+            value: 123,
+          })
+        );
+        nodes.push(
+          content({
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 40,
+            index: 4,
+            depth: 1,
+            name: "withPayload",
+            tooltipIndex: 4,
+            payload: { [dataKey]: 456 },
+          })
+        );
       }
 
       const rendered = (data ?? []).map((row: any) =>
@@ -127,6 +154,7 @@ import { MultiLineChartCard } from "@/components/charts/MultiLineChartCard";
 import { TreemapChartCard } from "@/components/charts/TreemapChartCard";
 import { BarChartCard } from "@/components/charts/BarChartCard";
 import { PieChartCard } from "@/components/charts/PieChartCard";
+import { computeLinearBreakpoints, contrastTextColor, steppedColor } from "@/components/charts/chartPalette";
 
 describe("charts coverage", () => {
   let consoleErrorSpy: jest.SpyInstance;
@@ -152,6 +180,22 @@ describe("charts coverage", () => {
   });
 
   it("renders chart cards and executes tooltip/formatter callbacks", () => {
+    // Cover chartPalette utility branches.
+    expect(contrastTextColor("hsl(var(--chart-1))")).toBeNull();
+    expect(contrastTextColor("#FFFFFF")).toBe("#000000");
+    expect(contrastTextColor("#000000")).toBe("#FFFFFF");
+
+    expect(computeLinearBreakpoints(NaN, 1, 2)).toEqual([]);
+    expect(computeLinearBreakpoints(0, 1, 1)).toEqual([]);
+    expect(computeLinearBreakpoints(2, 1, 2)).toEqual([]);
+    expect(computeLinearBreakpoints(0, 10, 3).length).toBe(2);
+
+    expect(steppedColor("bad", [], [])).toBe("hsl(var(--muted))");
+    expect(steppedColor(0, [1], [])).toBe("hsl(var(--muted))");
+    expect(steppedColor(0, [1], ["#fff"])).toBe("#fff");
+    expect(steppedColor(10, [1, 2], [])).toBe("hsl(var(--muted))");
+    expect(steppedColor(10, [1, 2], ["a", "b", "c"])).toBe("c");
+
     render(
       <div>
         <LineChartCard title="Line" points={[{ t: 0, v: 1 }]} unit="W" curve="step" showDots={true} />
@@ -163,9 +207,26 @@ describe("charts coverage", () => {
           unit="V"
           valueDigits={1}
           series={[
-            { key: "a", label: "A", color: "red", points: [{ t: 0, v: 1.5 }] },
+            // Cover legend style branches (solid vs dashed).
+            { key: "a", label: "A", color: "red", strokeDasharray: "3 3", points: [{ t: 0, v: 1.5 }] },
+            // Cover legend style branches (solid vs dashed).
+            { key: "a", label: "A", color: "red", strokeDasharray: "3 3", points: [{ t: 0, v: 1.5 }] },
             { key: "b", label: "B", color: "blue", points: [{ t: 0, v: 2.5 }] },
           ]}
+        />
+        <MultiLineChartCard
+          title="MultiAutoColors"
+          valueDigits={1}
+          series={[
+            { key: "a", label: "A", points: [{ t: 0, v: 1.5 }] },
+            { key: "b", label: "B", points: [{ t: 0, v: 2.5 }] },
+          ]}
+        />
+        <MultiLineChartCard
+          title="MultiFallbackColor"
+          valueDigits={1}
+          colors={[]}
+          series={[{ key: "a", label: "A", points: [{ t: 0, v: 1.5 }] }]}
         />
         <MultiLineChartCard
           title="MultiNoUnit"
@@ -179,6 +240,64 @@ describe("charts coverage", () => {
           valueDigits={1}
           data={[{ name: "row-1", value: 12.345 }]}
           renderTooltip={(row) => `extra:${row.name}`}
+        />
+        <TreemapChartCard
+          title="TreeHexCategorical"
+          nameKey="name"
+          valueKey="value"
+          valueDigits={1}
+          colors={["#FFFFFF", "#000000"]}
+          data={[{ name: "row-1", value: 1 }]}
+        />
+        <TreemapChartCard
+          title="TreeNoColors"
+          nameKey="name"
+          valueKey="value"
+          colors={[]}
+          data={[{ name: "row-1", value: 1 }]}
+        />
+        <TreemapChartCard
+          title="TreeSteppedAuto"
+          nameKey="name"
+          valueKey="value"
+          valueDigits={1}
+          colorMode="stepped"
+          colors={["#FFFFFF", "#000000"]}
+          data={[
+            { name: "row-1", value: 1 },
+            { name: "row-2", value: 10 },
+          ]}
+        />
+        <TreemapChartCard
+          title="TreeSteppedSingle"
+          nameKey="name"
+          valueKey="value"
+          valueDigits={1}
+          colorMode="stepped"
+          colors={["#FFFFFF", "#000000"]}
+          data={[{ name: "row-1", value: 1 }]}
+        />
+        <TreemapChartCard
+          title="TreeSteppedNoData"
+          nameKey="name"
+          valueKey="value"
+          valueDigits={1}
+          colorMode="stepped"
+          colors={["#FFFFFF", "#000000"]}
+          data={undefined as any}
+        />
+        <TreemapChartCard
+          title="TreeSteppedExplicit"
+          nameKey="name"
+          valueKey="value"
+          valueDigits={1}
+          colorMode="stepped"
+          breakpoints={[0]}
+          colors={["#FFFFFF", "#000000"]}
+          data={[
+            { name: "row-1", value: 1 },
+            { name: "row-2", value: 10 },
+          ]}
         />
         <TreemapChartCard
           title="TreeNoExtra"

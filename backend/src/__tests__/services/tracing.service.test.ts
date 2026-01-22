@@ -96,6 +96,7 @@ const loadTracingService = async (opts?: { deleteDataOnDeviceRemove?: boolean })
       discoveryServiceHost: "http://discovery.test",
       prometheusHost: "http://prom.test",
       deleteDataOnDeviceRemove: opts?.deleteDataOnDeviceRemove ?? false,
+      systemInfoTimeoutMs: 1500,
     },
   }));
 
@@ -207,7 +208,10 @@ describe("tracing.service", () => {
     await tracingService.updateOriginalIpsListeners([device], false);
     await flushMicrotasks();
 
-    expect(axios.get).toHaveBeenCalledWith("http://10.0.0.1/api/system/info");
+    expect(axios.get).toHaveBeenCalledWith(
+      "http://10.0.0.1/api/system/info",
+      expect.objectContaining({ timeout: 1500 })
+    );
     expect(metricsService.createMetricsForDevice).toHaveBeenCalled();
     expect(metricsService.updateOverviewMetrics).toHaveBeenCalled();
     expect(db.updateOne).toHaveBeenCalled();
@@ -263,6 +267,47 @@ describe("tracing.service", () => {
     expect(metricsService.updateOverviewMetrics).toHaveBeenCalled();
   });
 
+  it("emits an error event even when persisting offline state fails", async () => {
+    const { tracingService, axios, metricsService, db, logger } = await loadTracingService();
+    tracingService.startIoHandler({} as any);
+
+    axios.get.mockRejectedValue(new Error("boom"));
+    db.updateOne.mockRejectedValue(new Error("db boom"));
+
+    const device = makeDevice();
+    await tracingService.updateOriginalIpsListeners([device], false);
+    await flushMicrotasks();
+
+    const io = tracingService.getIoInstance() as any as MockServerIO;
+    expect(io.emitted).toContainEqual({
+      event: "error",
+      payload: expect.objectContaining({ ip: device.ip, tracing: false, error: "boom" }),
+    });
+
+    expect(logger.logger.error).toHaveBeenCalledWith(
+      `Failed to persist offline state for ${device.ip}:`,
+      expect.any(Error)
+    );
+    expect(metricsService.updateOverviewMetrics).toHaveBeenCalled();
+  });
+
+  it("stringifies non-Error polling failures", async () => {
+    const { tracingService, axios, db } = await loadTracingService();
+    tracingService.startIoHandler({} as any);
+
+    axios.get.mockRejectedValue(42);
+    db.updateOne.mockResolvedValue(makeDevice({ tracing: false }));
+
+    const device = makeDevice();
+    await tracingService.updateOriginalIpsListeners([device], false);
+    await flushMicrotasks();
+
+    const io = tracingService.getIoInstance() as any as MockServerIO;
+    expect(io.emitted).toContainEqual({
+      event: "error",
+      payload: expect.objectContaining({ error: "42" }),
+    });
+  });
   it("removes stale devices and optionally deletes Prometheus metrics", async () => {
     const { tracingService, axios, metricsService } = await loadTracingService({
       deleteDataOnDeviceRemove: true,

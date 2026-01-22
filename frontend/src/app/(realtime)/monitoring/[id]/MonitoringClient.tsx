@@ -68,9 +68,28 @@ export default function MonitoringClient({ id }: { id: string }) {
 
   const voltageSeries = useMemo(
     () => [
-      { key: "voltage", label: "Input", color: "hsl(var(--chart-3))", points: voltage },
-      { key: "coreActual", label: "Core (actual)", color: "hsl(var(--chart-2))", points: coreVActual },
-      { key: "coreTarget", label: "Core (target)", color: "hsl(var(--chart-5))", points: coreV },
+      { key: "voltage", label: "Input", color: "hsl(var(--chart-3))", points: voltage, renderOrder: 0 },
+      {
+        key: "coreActual",
+        label: "Core (actual)",
+        color: "hsl(var(--chart-2))",
+        points: coreVActual,
+        // Keep the actual value visible even when it matches the target by
+        // drawing it underneath the dashed target line.
+        strokeOpacity: 1,
+        renderOrder: 1,
+      },
+      {
+        key: "coreTarget",
+        label: "Core (target)",
+        color: "hsl(var(--chart-5))",
+        points: coreV,
+        // Put target on top so both lines are visible (dashes reveal the solid line below).
+        strokeDasharray: "5 7",
+        strokeLinecap: "butt",
+        strokeOpacity: 1,
+        renderOrder: 2,
+      },
     ],
     [voltage, coreVActual, coreV]
   );
@@ -304,7 +323,7 @@ export default function MonitoringClient({ id }: { id: string }) {
 
       <div className="mt-4 grid gap-4 tablet:grid-cols-2">
         <LineChartCard title="Fan speed" points={fan} unit="RPM" />
-        <MultiLineChartCard title="Voltages" series={voltageSeries} unit="V" valueDigits={3} />
+        <MultiLineChartCard title="Voltages" series={voltageSeries} unit="V" valueDigits={3} yDomain={[0, 6]} />
       </div>
     </div>
   );

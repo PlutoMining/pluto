@@ -16,6 +16,7 @@ interface EnvConfig {
   discoveryServiceHost: string;
   prometheusHost: string;
   deleteDataOnDeviceRemove: boolean;
+  systemInfoTimeoutMs: number;
 }
 
 export const config: EnvConfig = {
@@ -24,4 +25,5 @@ export const config: EnvConfig = {
   discoveryServiceHost: process.env.DISCOVERY_SERVICE_HOST!,
   prometheusHost: process.env.PROMETHEUS_HOST || "http://prometheus:9090",
   deleteDataOnDeviceRemove: process.env.DELETE_DATA_ON_DEVICE_REMOVE === "true",
+  systemInfoTimeoutMs: Number(process.env.SYSTEM_INFO_TIMEOUT_MS || 1500),
 };

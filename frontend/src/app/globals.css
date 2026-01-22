@@ -34,7 +34,12 @@
   --input: 180 1% 80%;
   --ring: 174 100% 40%;
 
-  /* Chart palette (shadcn-like) */
+  /*
+   * Chart palette
+   * Reference: `frontend/docs/color-palette.md` (from "Color palette.pdf").
+   * NOTE: charts are currently tuned for UI readability; don't change these
+   * tokens lightly because they affect ALL chart components.
+   */
   --chart-1: 174 100% 40%;
   --chart-2: 210 90% 56%;
   --chart-3: 270 80% 62%;
@@ -71,7 +76,7 @@
   --input: 201 15% 30%;
   --ring: 175 100% 54%;
 
-  /* Chart palette (shadcn-like) */
+  /* Chart palette */
   --chart-1: 175 100% 54%;
   --chart-2: 210 90% 60%;
   --chart-3: 270 80% 68%;

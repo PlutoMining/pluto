@@ -188,7 +188,11 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
 
     try {
       logger.debug(`Polling system info from ${device.ip}`);
-      const response = await axios.get(`http://${device.ip}/api/system/info`);
+      // Without an explicit timeout, axios can hang for a long time on network errors,
+      // making offline/online transitions feel sluggish.
+      const response = await axios.get(`http://${device.ip}/api/system/info`, {
+        timeout: config.systemInfoTimeoutMs,
+      });
       const normalizedInfo = normalizeSystemInfo(response.data);
 
       const asicModelKey = resolveAsicModelKey(normalizedInfo?.ASICModel);
@@ -237,10 +241,27 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
       ipMap[device.ip].tracing = true;
 
     } catch (error: any) {
-      const extendedDevice = { ...device, tracing: false };
+      const errorMessage = typeof error?.message === "string" ? error.message : String(error);
 
       logger.error(`Failed to make request to ${device.ip}:`, error);
-      ioInstance?.emit("error", { ...extendedDevice, error: error.message });
+
+      // Persist offline state and broadcast it as a stat_update.
+      // Some UI views rely on DB/API state (not only websocket events), so if we only update the in-memory ipMap
+      // the device can look online in some screens until a refresh.
+      try {
+        const updatedDevice = await updateOne<Device>(
+          "pluto_core",
+          "devices:imprinted",
+          device.mac,
+          { tracing: false }
+        );
+
+        ioInstance?.emit("stat_update", updatedDevice);
+        ioInstance?.emit("error", { ...updatedDevice, error: errorMessage });
+      } catch (dbError) {
+        logger.error(`Failed to persist offline state for ${device.ip}:`, dbError);
+        ioInstance?.emit("error", { ...device, tracing: false, error: errorMessage });
+      }
 
       // Ensure Prometheus doesn't keep reporting stale values when a device goes offline.
       updatePrometheusMetrics({

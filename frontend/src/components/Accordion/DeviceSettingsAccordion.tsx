@@ -308,7 +308,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
           <div className="hidden items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 tablet:flex">
             <div className="flex flex-[8] items-center gap-3">
               <div className="hidden w-4 tablet:block" aria-hidden="true" />
-              <span className="select-none text-primary opacity-0" aria-hidden="true">
+              <span className="select-none text-xs leading-none text-primary opacity-0" aria-hidden="true">
                 ▾
               </span>
               <span className="font-accent text-xs font-semibold uppercase text-muted-foreground">

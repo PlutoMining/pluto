@@ -47,7 +47,9 @@ describe('App Router smoke', () => {
   });
 
   it('wires pages to their client components', () => {
-    expect(OverviewPage().type).toBe(OverviewClient);
+    const overviewEl = OverviewPage();
+    expect(overviewEl.type).toBe(SocketProvider);
+    expect(React.Children.only(overviewEl.props.children).type).toBe(OverviewClient);
     expect(PresetsPage().type).toBe(PresetsClient);
     expect(SettingsPage().type).toBe(SettingsClient);
     expect(DevicesPage().type).toBe(DevicesClient);

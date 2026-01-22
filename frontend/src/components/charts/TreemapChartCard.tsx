@@ -4,15 +4,17 @@ import * as React from "react";
 import { ResponsiveContainer, Tooltip, Treemap } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  CHART_PALETTE,
+  computeLinearBreakpoints,
+  contrastTextColor,
+  steppedColor,
+} from "@/components/charts/chartPalette";
 
 type AnyRecord = Record<string, any>;
 
 const DEFAULT_COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
+  ...CHART_PALETTE,
   "hsl(50 95% 55%)",
   "hsl(330 85% 62%)",
   "hsl(200 25% 45%)",
@@ -31,6 +33,8 @@ export function TreemapChartCard<T extends AnyRecord>({
   valueKey,
   valueDigits = 0,
   colors = DEFAULT_COLORS,
+  colorMode = "categorical",
+  breakpoints,
   renderTooltip,
 }: {
   title: string;
@@ -39,6 +43,8 @@ export function TreemapChartCard<T extends AnyRecord>({
   valueKey: keyof T & string;
   valueDigits?: number;
   colors?: string[];
+  colorMode?: "categorical" | "stepped";
+  breakpoints?: number[];
   renderTooltip?: (row: T) => React.ReactNode;
 }) {
   const tooltipContentStyle: React.CSSProperties = {
@@ -48,14 +54,39 @@ export function TreemapChartCard<T extends AnyRecord>({
     color: "hsl(var(--secondary-foreground))",
   };
 
+  const palette = React.useMemo(() => {
+    return colors.length > 0 ? colors : ["hsl(var(--chart-1))"];
+  }, [colors]);
+
+  const inferredBreakpoints = React.useMemo(() => {
+    if (colorMode !== "stepped") return [];
+    if (breakpoints) return breakpoints;
+
+    const values = (data ?? [])
+      .map((row) => Number((row as any)?.[valueKey]))
+      .filter((n) => Number.isFinite(n));
+
+    if (values.length < 2) return [];
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    return computeLinearBreakpoints(min, max, Math.max(2, palette.length));
+  }, [breakpoints, colorMode, data, valueKey, palette.length]);
+
   const Content = React.useCallback(
     (nodeProps: any): React.ReactElement => {
-      const { x, y, width, height, index, depth, name, tooltipIndex } = nodeProps ?? {};
+      const { x, y, width, height, index, depth, name, tooltipIndex, payload, value } = nodeProps ?? {};
 
       if (!Number.isFinite(width) || !Number.isFinite(height)) return <g />;
       if (depth === 0) return <g />;
 
-      const fill = colors[(Number(index) || 0) % colors.length];
+      const rawValue = payload?.[valueKey] ?? value ?? index;
+      const fill =
+        colorMode === "stepped"
+          ? steppedColor(rawValue, inferredBreakpoints, palette)
+          : palette[(Number(index) || 0) % palette.length] ?? "hsl(var(--chart-1))";
+      const labelFill = contrastTextColor(fill) ?? "hsl(0 0% 100%)";
+      const labelStroke = labelFill === "#000000" ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)";
       const showLabel = width >= 90 && height >= 28;
 
       return (
@@ -66,7 +97,8 @@ export function TreemapChartCard<T extends AnyRecord>({
             width={width}
             height={height}
             fill={fill}
-            stroke="hsl(var(--background))"
+            stroke="hsl(var(--border))"
+            stroke="hsl(var(--border))"
             strokeWidth={1}
             data-recharts-item-index={tooltipIndex}
           />
@@ -75,8 +107,10 @@ export function TreemapChartCard<T extends AnyRecord>({
               x={x + 8}
               y={y + 18}
               fontSize={12}
-              fill="hsl(0 0% 100%)"
-              style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.35)", strokeWidth: 3 }}
+              fill={labelFill}
+              style={{ paintOrder: "stroke", stroke: labelStroke, strokeWidth: 3 }}
+              fill={labelFill}
+              style={{ paintOrder: "stroke", stroke: labelStroke, strokeWidth: 3 }}
             >
               {String(name)}
             </text>
@@ -84,7 +118,7 @@ export function TreemapChartCard<T extends AnyRecord>({
         </g>
       );
     },
-    [colors]
+    [colorMode, inferredBreakpoints, palette, valueKey]
   );
 
   return (
