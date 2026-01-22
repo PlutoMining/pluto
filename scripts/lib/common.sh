@@ -195,8 +195,7 @@ get_github_repo() {
 # If additional variable names are provided, they will also be preserved from command-line
 load_env_file() {
   local script_root="$1"
-  shift
-  local preserve_vars=("$@")
+  shift || true
   local env_file="${script_root}/.env"
   
   # Save existing values if set (always preserve GITHUB_USERNAME and GITHUB_TOKEN)
@@ -208,7 +207,7 @@ load_env_file() {
   # Use parallel arrays to remain compatible with both Bash 3.x and 4+.
   local saved_var_names=()
   local saved_var_values=()
-  for var in "${preserve_vars[@]}"; do
+  for var in "$@"; do
     # Use indirect variable reference to check if variable is set
     if [[ -n "${!var:-}" ]]; then
       saved_var_names+=("$var")
