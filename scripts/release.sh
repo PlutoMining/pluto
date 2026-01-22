@@ -30,7 +30,8 @@ SKIP_CHANGELOG=false
 VERBOSE=false
 QUIET=false
 CUSTOM_SERVICES=()
-DIFF_BASE="${RELEASE_DIFF_BASE:-HEAD~1}"
+DIFF_BASE=""  # Will be determined dynamically if not explicitly set
+EXPLICIT_DIFF_BASE=""  # Set if user explicitly provides --diff-base
 
 APP_ID="pluto"
 APP_DIR="umbrel-apps/pluto"
@@ -52,7 +53,7 @@ Options:
   --sync-to-umbrel             Sync manifests to Umbrel device (implies --update-manifests)
   --skip-changelog             Skip automatic changelog generation
   --services "svc1,svc2"       Comma-separated list of services to release (override auto-detection)
-  --diff-base <ref>            Git ref to detect changes from (default: HEAD~1)
+  --diff-base <ref>            Git ref to detect changes from (default: auto-detect last release tag)
   --verbose                    Enable verbose logging
   --quiet                      Minimal output (errors only)
   --dry-run                    Print actions without building/pushing or editing files
@@ -80,6 +81,88 @@ check_git_branch() {
   if [[ "$branch" != "main" ]]; then
     err "You must be on the 'main' branch to release."
   fi
+}
+
+# Function to find the last release tag
+# This is important for squash-and-merge workflows where HEAD~1 only shows
+# the single squash commit. By comparing against the last release tag, we
+# can properly evaluate all changes since the last release.
+find_last_release_tag() {
+  command_exists git || err "git is required"
+
+  # Fetch tags to ensure we have the latest
+  git fetch --tags origin 2>/dev/null || git fetch --tags 2>/dev/null || true
+
+  # Look for tags matching common release patterns: v*.*.* (e.g., v1.2.3)
+  # Sort by version and get the latest
+  local last_tag
+  last_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n 1)
+
+  if [[ -n "$last_tag" ]]; then
+    # Verify the tag exists in the current repo
+    if git rev-parse --verify "$last_tag" >/dev/null 2>&1; then
+      echo "$last_tag"
+      return 0
+    fi
+  fi
+
+  # No release tag found
+  return 1
+}
+
+# Function to determine the appropriate DIFF_BASE for version bumping
+# When running on main after a squash-and-merge, origin/main and HEAD are the same
+# (or HEAD is just the squash commit ahead). We need to compare against the last
+# release tag to properly evaluate all changes since the last release.
+#
+# For consistency with beta-release.sh:
+# - beta-release.sh: compares feature branch against origin/main (sees feature commits)
+# - release.sh: compares main against last release tag (sees all changes since last release)
+# Both evaluate the same commits (from the feature branch) but from different perspectives.
+determine_diff_base() {
+  local explicit_base="${1:-}"
+
+  # If explicitly provided via environment or argument, use it
+  if [[ -n "$explicit_base" ]]; then
+    echo "$explicit_base"
+    return 0
+  fi
+
+  # Priority 1: Try to find the last release tag
+  # This is the best option for releases - it shows all changes since the last release,
+  # including the merged PRs. This properly handles squash-and-merge workflows.
+  local last_tag
+  if last_tag=$(find_last_release_tag); then
+    log "Found last release tag: $last_tag (using as diff base for version bumping)"
+    echo "$last_tag"
+    return 0
+  fi
+
+  # Priority 2: Check if HEAD is ahead of origin/main (we have local commits not yet pushed)
+  # This handles the case where we're on main with local commits (e.g., just merged locally)
+  if git rev-parse --verify "origin/main" >/dev/null 2>&1; then
+    local head_commit origin_main_commit
+    head_commit=$(git rev-parse HEAD 2>/dev/null || true)
+    origin_main_commit=$(git rev-parse origin/main 2>/dev/null || true)
+
+    if [[ -n "$head_commit" ]] && [[ -n "$origin_main_commit" ]] && [[ "$head_commit" != "$origin_main_commit" ]]; then
+      # HEAD is ahead of origin/main - we have local commits
+      # Check if HEAD is a direct descendant (linear history)
+      if git merge-base --is-ancestor "$origin_main_commit" "$head_commit" 2>/dev/null; then
+        log "HEAD is ahead of origin/main. Using origin/main as diff base."
+        echo "origin/main"
+        return 0
+      fi
+    fi
+  fi
+
+  # Priority 3: Use HEAD~1 as last resort
+  # This will only show the single squash commit, but it's better than nothing
+  log_warning "No release tag found. Using HEAD~1 as diff base."
+  log_warning "Note: With squash-and-merge, this will only analyze the single squash commit."
+  log_warning "Consider using --diff-base to specify a better comparison point (e.g., last release tag),"
+  log_warning "or ensure PR titles follow conventional commits format."
+  echo "HEAD~1"
 }
 
 # Function to detect which services have changed
@@ -261,6 +344,12 @@ parse_args() {
         DRY_RUN=true
         shift
         ;;
+      --diff-base)
+        [[ -n "${2:-}" ]] || err "--diff-base requires a value"
+        EXPLICIT_DIFF_BASE="$2"
+        DIFF_BASE="$2"
+        shift 2
+        ;;
       -h|--help)
         usage
         exit 0
@@ -340,6 +429,22 @@ main() {
 
   # Check git branch - must be on main for stable releases
   check_git_branch
+
+  # Determine DIFF_BASE for version bumping and change detection
+  # This is important for squash-and-merge workflows where we need to compare
+  # against the last release tag rather than just HEAD~1
+  if [[ -z "$DIFF_BASE" ]]; then
+    # Check if explicitly set via environment variable
+    if [[ -n "${RELEASE_DIFF_BASE:-}" ]]; then
+      DIFF_BASE="$RELEASE_DIFF_BASE"
+      log "Using DIFF_BASE from RELEASE_DIFF_BASE environment variable: $DIFF_BASE"
+    else
+      # Auto-detect: try to find last release tag, fall back to merge-base or HEAD~1
+      DIFF_BASE=$(determine_diff_base)
+    fi
+  else
+    log "Using explicitly provided DIFF_BASE: $DIFF_BASE"
+  fi
 
   # Validate git state (allow uncommitted changes but warn)
   if ! validate_git_state --allow-uncommitted; then
@@ -424,6 +529,12 @@ main() {
     if $BUMP_VERSION; then
       # Automatically bump version based on semantic versioning rules inferred
       # from git log for this service between DIFF_BASE and HEAD.
+      # DIFF_BASE is automatically determined to handle squash-and-merge workflows:
+      # it prioritizes the last release tag, which allows proper evaluation of all
+      # changes since the last release. This is necessary because on main after a merge,
+      # origin/main and HEAD are the same, so comparing against origin/main would show
+      # no changes. Comparing against the last release tag shows all merged PRs since
+      # the last release.
       local bump_level
       bump_level=$(determine_bump_level_for_service "$service" "$DIFF_BASE")
       if [[ "$bump_level" == "none" ]]; then
