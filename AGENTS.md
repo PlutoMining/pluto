@@ -160,6 +160,10 @@ Commits:
 - Commit messages are enforced by commitlint (`.husky/commit-msg`, `.commitlintrc.json`).
 - Conventional Commits required (`feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert` + known scopes).
 
+Helper:
+
+- Interactive Conventional Commit helper: `npm run commit` (see `docs/skills/semver-commits.md`).
+
 ## Cursor / Copilot Rules
 
 - No `.cursor/rules/`, `.cursorrules`, or `.github/copilot-instructions.md` present in this repo.

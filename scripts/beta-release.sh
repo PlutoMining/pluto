@@ -606,14 +606,17 @@ main() {
 
   log "Target services: ${target_services[*]}"
 
-  declare -A service_versions
-  declare -A service_current_versions
+  # macOS ships Bash 3.2 by default which does not support associative arrays.
+  # Keep service->version mapping by index to remain portable.
+  local service_versions=()
+  local service_current_versions=()
 
-  for service in "${target_services[@]}"; do
+  for i in "${!target_services[@]}"; do
+    local service="${target_services[$i]}"
     ensure_service_valid "$service"
     local current_version
     current_version=$(get_package_version "$service")
-    service_current_versions["$service"]="$current_version"
+    service_current_versions[$i]="$current_version"
 
     local version
     if $BUMP_VERSION; then
@@ -632,12 +635,13 @@ main() {
       version="$current_version"
       ensure_prerelease "$version"
     fi
-    service_versions["$service"]="$version"
+    service_versions[$i]="$version"
   done
 
-  for service in "${target_services[@]}"; do
-    local version="${service_versions[$service]}"
-    local current_version="${service_current_versions[$service]}"
+  for i in "${!target_services[@]}"; do
+    local service="${target_services[$i]}"
+    local version="${service_versions[$i]}"
+    local current_version="${service_current_versions[$i]}"
     
     # Skip build if version hasn't changed
     if [[ "$version" == "$current_version" ]]; then
@@ -660,8 +664,9 @@ main() {
 
   # Update docker-compose.next.local.yml with new image references
   log "Updating docker-compose.next.local.yml..."
-  for service in "${target_services[@]}"; do
-    local version="${service_versions[$service]}"
+  for i in "${!target_services[@]}"; do
+    local service="${target_services[$i]}"
+    local version="${service_versions[$i]}"
     local image_tag="${DOCKER_REGISTRY}/pluto-${service}:${version}"
     
     if $DRY_RUN; then
@@ -688,8 +693,9 @@ main() {
 
     # Build image refs string for bump-umbrel-app-version.sh
     local images_arg=()
-    for service in "${target_services[@]}"; do
-      local version="${service_versions[$service]}"
+    for i in "${!target_services[@]}"; do
+      local service="${target_services[$i]}"
+      local version="${service_versions[$i]}"
       local image_tag="${DOCKER_REGISTRY}/pluto-${service}:${version}"
       
       if $DRY_RUN; then
@@ -738,9 +744,10 @@ main() {
   # Print summary
   if ! $QUIET; then
     local summary_items=()
-    for service in "${target_services[@]}"; do
-      if [[ -n "${service_versions[$service]+set}" ]]; then
-        local version="${service_versions[$service]}"
+    for i in "${!target_services[@]}"; do
+      local service="${target_services[$i]}"
+      local version="${service_versions[$i]:-}"
+      if [[ -n "$version" ]]; then
         summary_items+=("$service: v$version")
       fi
     done

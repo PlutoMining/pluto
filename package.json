@@ -10,7 +10,9 @@
   "license": "AGPL-3.0",
   "scripts": {
     "changelog": "semantic-release --dry-run",
+    "commit": "bash scripts/conventional-commit.sh",
     "commitlint": "commitlint --edit",
+    "prepare": "husky",
     "test:backend": "npm --prefix backend test",
     "test:discovery": "npm --prefix discovery test",
     "test:frontend": "npm --prefix frontend test",

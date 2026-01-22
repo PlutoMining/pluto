@@ -512,19 +512,25 @@ main() {
     fi
   fi
 
+  # macOS ships Bash 3.2 by default which does not support associative arrays
+  # or [[ -v ... ]]. Keep service->version mapping by index to remain portable.
+  local service_versions=()
+  local service_current_versions=()
+
   # Get and set versions for each service
-  declare -A service_versions
-  declare -A service_current_versions
-  for service in "${target_services[@]}"; do
+  for i in "${!target_services[@]}"; do
+    local service="${target_services[$i]}"
     if [[ ! -d "$service" ]]; then
       log "Skipping service '$service' (directory not found)"
+      service_versions[$i]=""
+      service_current_versions[$i]=""
       continue
     fi
 
     local current_version
     current_version=$(get_current_version "$service")
-    service_current_versions["$service"]="$current_version"
-    
+    service_current_versions[$i]="$current_version"
+
     local new_version
     if $BUMP_VERSION; then
       # Automatically bump version based on semantic versioning rules inferred
@@ -556,18 +562,19 @@ main() {
         fi
       fi
     fi
-    
-    service_versions["$service"]="$new_version"
+
+    service_versions[$i]="$new_version"
   done
 
   # Build and publish images for each service
-  for service in "${target_services[@]}"; do
-    if [[ ! -v service_versions["$service"] ]]; then
+  for i in "${!target_services[@]}"; do
+    local service="${target_services[$i]}"
+    local new_version="${service_versions[$i]:-}"
+    if [[ -z "$new_version" ]]; then
       continue
     fi
-    
-    local new_version="${service_versions[$service]}"
-    local current_version="${service_current_versions[$service]}"
+
+    local current_version="${service_current_versions[$i]:-}"
 
     # Skip build if version hasn't changed
     if [[ "$new_version" == "$current_version" ]]; then
@@ -613,12 +620,12 @@ main() {
 
   # Update docker-compose.release.local.yml with new image references
   log "Updating docker-compose.release.local.yml..."
-  for service in "${target_services[@]}"; do
-    if [[ ! -v service_versions["$service"] ]]; then
+  for i in "${!target_services[@]}"; do
+    local service="${target_services[$i]}"
+    local version="${service_versions[$i]:-}"
+    if [[ -z "$version" ]]; then
       continue
     fi
-    
-    local version="${service_versions[$service]}"
     local image_tag="${DOCKER_REGISTRY}/pluto-${service}:${version}"
     
     if $DRY_RUN; then
@@ -641,12 +648,12 @@ main() {
 
     # Build image refs string for bump-umbrel-app-version.sh
     local images_arg=()
-    for service in "${target_services[@]}"; do
-      if [[ ! -v service_versions["$service"] ]]; then
+    for i in "${!target_services[@]}"; do
+      local service="${target_services[$i]}"
+      local version="${service_versions[$i]:-}"
+      if [[ -z "$version" ]]; then
         continue
       fi
-      
-      local version="${service_versions[$service]}"
       local image_tag="${DOCKER_REGISTRY}/pluto-${service}:${version}"
       
       if $DRY_RUN; then
@@ -694,12 +701,12 @@ main() {
     if ! $SKIP_CHANGELOG && [[ -f "CHANGELOG.md" ]]; then
       # Get the new version from the first service that was updated
       local release_version=""
-      for service in "${target_services[@]}"; do
-        if [[ -v service_versions["$service"] ]]; then
-          release_version="${service_versions[$service]}"
-          break
-        fi
-      done
+       for i in "${!target_services[@]}"; do
+         release_version="${service_versions[$i]:-}"
+         if [[ -n "$release_version" ]]; then
+           break
+         fi
+       done
       
       log ""
       log "Release completed successfully!"
@@ -727,9 +734,10 @@ main() {
   # Print summary
   if ! $QUIET; then
     local summary_items=()
-    for service in "${target_services[@]}"; do
-      if [[ -v service_versions["$service"] ]]; then
-        local version="${service_versions[$service]}"
+    for i in "${!target_services[@]}"; do
+      local service="${target_services[$i]}"
+      local version="${service_versions[$i]:-}"
+      if [[ -n "$version" ]]; then
         summary_items+=("$service: v$version")
       fi
     done

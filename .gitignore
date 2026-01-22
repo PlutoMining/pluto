@@ -9,8 +9,10 @@
 !/scripts/bump-umbrel-app-version.sh
 !/scripts/beta-release.sh
 !/scripts/setup.sh
+!/scripts/conventional-commit.sh
 
 .env
 node_modules
+.husky/_
 .docker/
 .pluto-npm-install.lock/
