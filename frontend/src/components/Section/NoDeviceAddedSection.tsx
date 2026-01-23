@@ -18,7 +18,7 @@ export const NoDeviceAddedSection: React.FC<NoDeviceAddedSectionProps> = ({}) =>
     <div className="flex flex-col items-center gap-4 text-center">
       <p className="text-sm text-foreground">Start using Pluto adding your first device</p>
       <NextLink href="/devices">
-        <Button variant="primary">Go to "Your Devices"</Button>
+        <Button variant="primary">Go to Your Devices</Button>
       </NextLink>
     </div>
   );
