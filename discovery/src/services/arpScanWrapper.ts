@@ -21,13 +21,65 @@ export interface ArpScanResult {
   type: string;
 }
 
+function parseEnvInt(value: string | undefined, fallback: number): number {
+  if (typeof value !== "string" || value.trim() === "") return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : fallback;
+}
+
+function parseEnvBool(value: string | undefined, fallback: boolean): boolean {
+  if (typeof value !== "string" || value.trim() === "") return fallback;
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "y", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "n", "off"].includes(normalized)) return false;
+  return fallback;
+}
+
+function getArpScanArgs() {
+  // Defaults chosen to be robust on LANs where some devices respond slowly.
+  // These mirror the recommended Umbrel container invocation:
+  // arp-scan --localnet --retry=3 --timeout=2000 --ignoredups
+  const retry = parseEnvInt(process.env.ARP_SCAN_RETRY, 3);
+
+  const timeout =
+    parseEnvInt(process.env.ARP_SCAN_TIMEOUT_MS, -1) >= 0
+      ? parseEnvInt(process.env.ARP_SCAN_TIMEOUT_MS, 2000)
+      : parseEnvInt(process.env.ARP_SCAN_TIMEOUT, 2000);
+
+  const ignoreDups = parseEnvBool(process.env.ARP_SCAN_IGNORE_DUPS, true);
+
+  const args: string[] = [`--retry=${retry}`, `--timeout=${timeout}`];
+  if (ignoreDups) args.push("--ignoredups");
+  return args;
+}
+
+function parseInterfaceList(value: string): string[] {
+  const items = value
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s !== "");
+
+  const unique = Array.from(new Set(items));
+  for (const iface of unique) {
+    if (!/^[a-zA-Z0-9._:-]+$/.test(iface)) {
+      throw new Error(`Invalid network interface name: ${iface}`);
+    }
+  }
+  return unique;
+}
+
 /**
  * Perform an ARP scan on the specified network interface and return the parsed results.
  * @param {string} networkInterface - The network interface to use for the ARP scan.
  * @returns {Promise<ArpScanResult[]>} Parsed ARP scan results.
  */
 export async function arpScan(networkInterface: string): Promise<ArpScanResult[]> {
-  const command = `arp-scan --interface=${networkInterface} --localnet`;
+  if (!/^[a-zA-Z0-9._:-]+$/.test(networkInterface)) {
+    throw new Error(`Invalid network interface name: ${networkInterface}`);
+  }
+
+  const extraArgs = getArpScanArgs().join(" ");
+  const command = `arp-scan --interface=${networkInterface} --localnet ${extraArgs}`;
   try {
     const { stdout, stderr } = await execPromise(command);
 
@@ -48,7 +100,16 @@ export async function arpScan(networkInterface: string): Promise<ArpScanResult[]
  * @returns {Promise<string[]>} List of active network interface names.
  */
 export async function getActiveNetworkInterfaces(): Promise<string[]> {
-  const command = `ip -o addr show | awk '{print $2}' | grep -Ev '^(docker|br-|veth|lo|dind|.orbmirror)' | sort -u`;
+  const configured =
+    typeof process.env.ARP_SCAN_INTERFACES === "string" &&
+    process.env.ARP_SCAN_INTERFACES.trim() !== ""
+      ? parseInterfaceList(process.env.ARP_SCAN_INTERFACES)
+      : undefined;
+
+  if (configured && configured.length > 0) return configured;
+
+  // Prefer IPv4 interfaces (ARP scan is IPv4-only).
+  const command = `ip -o -4 addr show | awk '{print $2}' | grep -Ev '^(docker|br-|veth|lo|dind|.orbmirror)' | sort -u`;
   try {
     const { stdout, stderr } = await execPromise(command);
 

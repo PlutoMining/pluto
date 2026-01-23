@@ -58,7 +58,7 @@ clean: ## Remove volumes and data directories (WARNING: destructive)
 		echo "Stopping services..."; \
 		docker compose -f $(COMPOSE_FILE) down -v; \
 		echo "Removing data directories..."; \
-		rm -rf data/prometheus/* data/prometheus-*/* data/grafana/* data/grafana-*/* data/leveldb/* data/leveldb-*/*; \
+		rm -rf data/prometheus/* data/prometheus-*/* data/leveldb/* data/leveldb-*/*; \
 		echo "Clean complete."; \
 	else \
 		echo "Clean cancelled."; \
@@ -78,7 +78,7 @@ shell: ## Open shell in a service container (requires SERVICE=<name>)
 	@if [ -z "$(SERVICE)" ]; then \
 		echo "Error: SERVICE parameter required"; \
 		echo "Usage: make shell SERVICE=<service-name>"; \
-		echo "Available services: backend, frontend, discovery, mock, prometheus, grafana"; \
+		echo "Available services: backend, frontend, discovery, mock, prometheus"; \
 		exit 1; \
 	fi
 	@docker compose -f $(COMPOSE_FILE) exec $(SERVICE) /bin/sh
@@ -124,6 +124,18 @@ test-apps: ## Run tests for all apps (override APP=<name> or APPS="a b")
 			$(MAKE) test-app APP=$$app || exit 1; \
 		done; \
 	fi
+
+test-apps-parallel: ## Run tests in parallel for all apps
+	@pids=(); \
+	failed=0; \
+	for app in $(APPS); do \
+		echo "→ Testing $$app (parallel)..."; \
+		( cd $$app && npm run test ) & pids+=("$$!"); \
+	done; \
+	for pid in "$$\{pids[@]\}"; do \
+		wait $$pid || failed=1; \
+	done; \
+	exit $$failed
 
 test-app:
 	@if [ -z "$(APP)" ]; then \

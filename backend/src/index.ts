@@ -11,40 +11,62 @@ import express from "express";
 import http from "http";
 import { config } from "./config/environment";
 import metricsRoutes from "./routes/metrics.routes";
-import dashboardsRoutes from "./routes/dashboards.routes";
 import devicesRoutes from "./routes/devices.routes";
 import presetsRoutes from "./routes/presets.routes";
 import socketRoutes from "./routes/socket.routes";
+import prometheusRoutes from "./routes/prometheus.routes";
 import { listenToDevices } from "./services/device.service";
-import { createGrafanaOverviewDashboard } from "./services/grafana.service";
 import { removeSecretsMiddleware } from "./middleware/remove-secrets.middleware";
 
-const { port, autoListen } = config;
+export function createBackendServer() {
+  const app = express();
+  const server = http.createServer(app);
 
-const app = express();
-const server = http.createServer(app);
+  app.use(express.json());
+  app.use(removeSecretsMiddleware);
 
-app.use(express.json());
+  // Imposta il server nell'app per poterlo riutilizzare nei controller
+  app.set("server", server);
 
-app.use(removeSecretsMiddleware);
+  // Aggiungi le rotte
+  app.use(metricsRoutes);
+  app.use(prometheusRoutes);
+  app.use(devicesRoutes);
+  app.use(presetsRoutes);
+  app.use(socketRoutes);
 
-// Imposta il server nell'app per poterlo riutilizzare nei controller
-app.set("server", server);
+  return { app, server };
+}
 
-// Aggiungi le rotte
-app.use(metricsRoutes);
-app.use(dashboardsRoutes);
-app.use(devicesRoutes);
-app.use(presetsRoutes);
-app.use(socketRoutes);
+export async function startServer(opts?: { port?: number; autoListen?: boolean }) {
+  const { port = config.port, autoListen = config.autoListen } = opts ?? {};
+  const { server } = createBackendServer();
 
-server.listen(port, async () => {
-  if (autoListen) {
-    await listenToDevices(); //no filter and log tracing disabled
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, async () => {
+      try {
+        if (autoListen) {
+          await listenToDevices(); //no filter and log tracing disabled
+        }
+        resolve();
+      } catch (err) {
+        server.close(() => {
+          reject(err);
+        });
+      }
+    });
+  });
 
-    // Crea o aggiorna la dashboard Grafana dell'overview
-    await createGrafanaOverviewDashboard();
-  }
+  const address = server.address();
+  const actualPort = typeof address === "object" && address ? address.port : port;
+  logger.info(`Server running on http://localhost:${actualPort}`);
 
-  logger.info(`Server running on http://localhost:${port}`);
+  return { server, port: actualPort };
+}
+
+export const serverPromise = startServer().catch((err) => {
+  logger.error("Failed to start backend server", err);
+  process.exitCode = 1;
+  return undefined;
 });

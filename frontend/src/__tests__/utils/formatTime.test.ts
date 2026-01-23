@@ -8,13 +8,25 @@ describe('formatTime', () => {
     expect(formatTime(0)).toBe('-');
     expect(formatTime(10)).toBe('< 1 m');
   });
+
+  it('handles missing values', () => {
+    expect(formatTime(undefined)).toBe('-');
+    expect(formatTime(null)).toBe('-');
+  });
 });
 
 describe('formatDetailedTime', () => {
   it('includes up to three most significant units', () => {
     expect(formatDetailedTime(4000000)).toBe('6w 4d 7h');
     expect(formatDetailedTime(90000)).toBe('1d 1h');
+    expect(formatDetailedTime(90060)).toBe('1d 1h 1m');
+    expect(formatDetailedTime(2 * 3600 + 5 * 60)).toBe('2h 5m');
     expect(formatDetailedTime(125)).toBe('2m');
+  });
+
+  it('handles missing values', () => {
+    expect(formatDetailedTime(undefined)).toBe('-');
+    expect(formatDetailedTime(null)).toBe('-');
   });
 
   it('handles multi-year durations', () => {
@@ -28,4 +40,3 @@ describe('convertIsoTomMdDYy', () => {
     expect(convertIsoTomMdDYy('2024-10-05T10:00:00Z')).toBe('10/05/24');
   });
 });
-

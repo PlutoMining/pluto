@@ -4,12 +4,11 @@
  * it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation, version 3.
  * See <https://www.gnu.org/licenses/>.
-*/
+ */
 
 import { Footer } from "@/components/Footer";
 import { NavBar } from "@/components/NavBar";
 import { Providers } from "@/providers";
-import { Box } from "@chakra-ui/react";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -24,38 +23,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body style={{ overflow: "initial" }}>
+    <html lang="en" suppressHydrationWarning>
+      <body>
         <Providers>
-          <Box height={"100vh"}>
+          <div className="flex min-h-screen flex-col">
             <NavBar />
-            <Box
-              height={{
-                base: "calc(100vh - 7.25rem)",
-                tablet: "calc(100vh - 9.5rem)",
-                tabletL: "calc(100vh - 8.5rem)",
-              }}
-            >
-              <Box
-                h={"100%"}
-                bg={"bg-color"}
-                overflowY={"scroll"}
-                sx={{
-                  scrollbarWidth: {
-                    tablet: "none",
-                  },
-                  "&::-webkit-scrollbar": {
-                    display: {
-                      tablet: "none",
-                    },
-                  },
-                }}
-              >
-                {children}
-              </Box>
-            </Box>
+            <main className="flex-1 bg-background">{children}</main>
             <Footer />
-          </Box>
+          </div>
         </Providers>
       </body>
     </html>

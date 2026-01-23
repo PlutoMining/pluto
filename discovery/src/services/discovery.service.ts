@@ -13,6 +13,19 @@ import axios from "axios";
 import { config } from "../config/environment";
 import { ArpScanResult, arpScan, getActiveNetworkInterfaces } from "./arpScanWrapper";
 
+function toHexByte(value: number) {
+  return value.toString(16).padStart(2, "0");
+}
+
+function mockMacFromPort(port: unknown) {
+  const numericPort = typeof port === "number" ? port : Number(port);
+  if (!Number.isFinite(numericPort) || numericPort <= 0) return undefined;
+
+  const hi = (numericPort >> 8) & 0xff;
+  const lo = numericPort & 0xff;
+  return `ff:ff:ff:ff:${toHexByte(hi)}:${toHexByte(lo)}`;
+}
+
 interface DiscoveryOptions {
   ip?: string;
   mac?: string;
@@ -91,7 +104,6 @@ export async function discoverDevices(options?: DiscoveryOptions) {
       }
     }
 
-    /* istanbul ignore next -- requires OS-level ARP scanning which isn't testable in CI */
     const arpScanInterfaces = await getActiveNetworkInterfaces();
 
     let arpTable = (
@@ -136,7 +148,11 @@ export async function discoverDevices(options?: DiscoveryOptions) {
           ip: config.mockDeviceHost
             ? `${config.mockDeviceHost}:${server.port}`
             : config.mockDiscoveryHost.replace(/https?:\/\/(.+)(:.+)$/, `$1:${server.port}`),
-          mac: `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`,
+          // Deterministic MAC based on port so it stays stable across restarts/removals.
+          // This avoids generating a different MAC when the /servers ordering changes.
+          mac:
+            mockMacFromPort(server.port) ??
+            `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`,
           type: "unknown",
         }));
 
@@ -169,7 +185,7 @@ export async function discoverDevices(options?: DiscoveryOptions) {
     for (const element of validDevices) {
       // For mock devices, discovery (host network) needs to use localhost for verification
       // but store host.docker.internal for backend containers to reach them
-      const isMockDevice = element.mac.startsWith("ff:ff:ff:ff:ff:");
+      const isMockDevice = element.mac.startsWith("ff:ff:ff:ff:");
       const verificationIp = isMockDevice && element.ip.includes("host.docker.internal")
         ? element.ip.replace("host.docker.internal", "localhost")
         : element.ip;

@@ -14,14 +14,44 @@ interface EnvConfig {
   port: number;
   autoListen: boolean;
   discoveryServiceHost: string;
-  gfHost: string;
+  prometheusHost: string;
   deleteDataOnDeviceRemove: boolean;
+  systemInfoTimeoutMs: number;
 }
 
+const requireEnv = (name: string): string => {
+  const value = process.env[name];
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+  return value;
+};
+
+const parseNumber = (name: string, fallback: number): number => {
+  const value = process.env[name];
+  if (typeof value !== "string" || value.trim() === "") {
+    return fallback;
+  }
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) {
+    throw new Error(`Invalid number for ${name}: "${value}"`);
+  }
+  return parsed;
+};
+
+const parseBoolean = (name: string, fallback = false): boolean => {
+  const value = process.env[name];
+  if (typeof value !== "string" || value.trim() === "") {
+    return fallback;
+  }
+  return value === "true";
+};
+
 export const config: EnvConfig = {
-  port: Number(process.env.PORT || 3000),
-  autoListen: process.env.AUTO_LISTEN === "true",
-  discoveryServiceHost: process.env.DISCOVERY_SERVICE_HOST!,
-  gfHost: process.env.GF_HOST!,
-  deleteDataOnDeviceRemove: process.env.DELETE_DATA_ON_DEVICE_REMOVE === "true",
+  port: parseNumber("PORT", 3000),
+  autoListen: parseBoolean("AUTO_LISTEN"),
+  discoveryServiceHost: requireEnv("DISCOVERY_SERVICE_HOST"),
+  prometheusHost: process.env.PROMETHEUS_HOST || "http://prometheus:9090",
+  deleteDataOnDeviceRemove: parseBoolean("DELETE_DATA_ON_DEVICE_REMOVE"),
+  systemInfoTimeoutMs: parseNumber("SYSTEM_INFO_TIMEOUT_MS", 1500),
 };

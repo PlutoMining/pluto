@@ -6,17 +6,8 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  Text,
-  useToken,
-} from "@chakra-ui/react";
 import Button from "../Button/Button";
+import { Modal } from "@/components/ui/modal";
 
 interface RestartModalProps {
   isOpen: boolean;
@@ -25,36 +16,18 @@ interface RestartModalProps {
 }
 
 export const RestartModal: React.FC<RestartModalProps> = ({ isOpen, onClose }) => {
-  const [borderColor] = useToken("colors", ["border-color"]);
-  const [bgColor] = useToken("colors", ["item-bg"]);
-  const [textColor] = useToken("colors", ["body-text"]);
   return (
-    <Modal
-      isCentered
-      isOpen={isOpen}
-      onClose={() => onClose(false)}
-      motionPreset="slideInBottom"
-      blockScrollOnMount={false}
-      returnFocusOnClose={false}
-    >
-      <ModalOverlay bg="none" backdropFilter="auto" backdropBlur="3px" />
-      <ModalContent
-        bg={bgColor}
-        borderColor={borderColor}
-        borderWidth={"1px"}
-        borderRadius={0}
-        p={"1rem"}
-        color={textColor}
-      >
-        <ModalHeader>Restart Device</ModalHeader>
-        <ModalBody>
-          <Text>Do you want to restart this device?</Text>
-        </ModalBody>
-        <ModalFooter gap={"1.5rem"}>
+    <Modal open={isOpen} onClose={() => onClose(false)}>
+      <div className="w-full max-w-lg border border-border bg-card p-4 text-card-foreground">
+        <h2 className="font-heading text-lg font-medium">Restart Device</h2>
+        <p className="mt-3 font-body text-sm text-muted-foreground">
+          Do you want to restart this device?
+        </p>
+        <div className="mt-6 flex items-center justify-end gap-4">
           <Button label="Cancel" variant="outlined" onClick={() => onClose(false)} />
           <Button label="Restart" variant="primary" onClick={() => onClose(true)} />
-        </ModalFooter>
-      </ModalContent>
+        </div>
+      </div>
     </Modal>
   );
 };

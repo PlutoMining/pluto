@@ -6,15 +6,16 @@ module.exports = {
   displayName: 'discovery',
   rootDir: __dirname,
   testEnvironment: 'node',
+  setupFiles: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     ...baseConfig.moduleNameMapper,
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverageFrom: [
-    '<rootDir>/src/services/**/*.ts',
-  ],
-  coveragePathIgnorePatterns: [
-    '<rootDir>/src/services/arpScanWrapper.ts',
+    '<rootDir>/src/**/*.ts',
+    '!<rootDir>/src/**/*.d.ts',
+    '!<rootDir>/src/**/*.test.ts',
+    '!<rootDir>/src/**/*.spec.ts',
   ],
   transform: {
     '^.+\\.ts$': [
@@ -26,11 +27,10 @@ module.exports = {
   },
   coverageThreshold: {
     global: {
-      statements: 80,
-      lines: 80,
-      functions: 80,
-      branches: 65,
+      statements: 90,
+      lines: 90,
+      functions: 90,
+      branches: 90,
     },
   },
 };
-

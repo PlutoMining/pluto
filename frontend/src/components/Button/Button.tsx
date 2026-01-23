@@ -4,99 +4,12 @@
  * it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation, version 3.
  * See <https://www.gnu.org/licenses/>.
-*/
+ */
 
-import { MouseEventHandler, ReactElement } from "react";
-import { Button as ChakraButton, ResponsiveValue } from "@chakra-ui/react";
-import { defineStyle, defineStyleConfig } from "@chakra-ui/react";
-import React from "react";
+import React, { MouseEventHandler, ReactElement } from "react";
 
-const primary = defineStyle(() => {
-  return {
-    fontFamily: "Azaret_Mono",
-    background: "cta-bg",
-    color: "cta-color",
-    borderRadius: 0,
-    fontWeight: 500,
-    padding: "6px 12px",
-    fontSize: "13px",
-    lineHeight: "15.17px",
-    textAlign: "center",
-    textTransform: "uppercase",
-    _hover: {
-      bg: "cta-bg-hover",
-    },
-    _focus: {
-      bg: "cta-bg-focus",
-    },
-    _disabled: {
-      bg: "cta-bg-disabled",
-      color: "cta-color-disabled",
-      borderWidth: "1px",
-      borderColor: "cta-color-disabled",
-      pointerEvents: "none",
-    },
-  };
-});
-
-const outlined = defineStyle(() => {
-  return {
-    background: "item-bg",
-    color: "body-text",
-    borderColor: "body-text",
-    borderWidth: "1px",
-    borderRadius: 0,
-    fontWeight: 500,
-    padding: "6px 12px",
-    textAlign: "center",
-    fontSize: "13px",
-
-    _hover: {
-      bg: "cta-outlined-hover",
-    },
-    _focus: {
-      color: "cta-outlined-focus",
-      borderColor: "cta-outlined-focus",
-    },
-    _disabled: {
-      color: "cta-outlined-disabled",
-      borderColor: "cta-outlined-disabled",
-    },
-  };
-});
-
-const text = defineStyle(() => {
-  return {
-    background: "none",
-    color: "body-text",
-    fontSize: "13px",
-    lineHeight: "1.5rem",
-    fontWeight: 500,
-    padding: 0,
-    iconColor: "cta-bg",
-    _hover: {
-      color: "cta-text-hover",
-      iconColor: "cta-bg-hover",
-    },
-    _focus: {
-      color: "cta-text-focus",
-      iconColor: "cta-bg-focus",
-    },
-    _disabled: {
-      color: "cta-text-disabled",
-      iconColor: "cta-color-disabled",
-
-      _hover: {
-        color: "cta-text-disabled",
-        iconColor: "cta-color-disabled",
-      },
-    },
-  };
-});
-
-export const buttonTheme = defineStyleConfig({
-  variants: { primary, text, outlined },
-});
+import { Button as UiButton } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ButtonProps {
   variant: "text" | "primary" | "outlined";
@@ -110,6 +23,7 @@ interface ButtonProps {
   rightIcon?: ReactElement;
   size?: string;
   transform?: "uppercase" | "capitalize";
+  className?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -117,28 +31,29 @@ const Button: React.FC<ButtonProps> = ({
   label,
   onClick,
   disabled,
-  type,
+  type = "button",
   isLoading,
   icon,
   rightIcon,
   size = "sm",
   transform = "uppercase",
+  className,
 }) => {
+  const mappedSize = size === "lg" ? "lg" : size === "md" ? "md" : "sm";
+
   return (
-    <ChakraButton
-      fontFamily={"body"}
-      textTransform={transform}
-      leftIcon={icon}
-      rightIcon={rightIcon}
-      isLoading={isLoading}
-      isDisabled={disabled || false}
-      variant={variant}
-      onClick={onClick}
+    <UiButton
       type={type}
-      fontSize={size}
+      variant={variant}
+      size={mappedSize}
+      disabled={disabled || isLoading || false}
+      onClick={onClick}
+      className={cn(transform === "uppercase" ? "uppercase" : "capitalize", className)}
     >
+      {icon ? <span className="mr-1 inline-flex">{icon}</span> : null}
       {label}
-    </ChakraButton>
+      {rightIcon ? <span className="ml-1 inline-flex">{rightIcon}</span> : null}
+    </UiButton>
   );
 };
 

@@ -8,19 +8,7 @@
 
 import { useSocket } from "@/providers/SocketProvider";
 import { formatDetailedTime } from "@/utils/formatTime";
-import {
-  AccordionButton,
-  AccordionIcon,
-  AccordionPanel,
-  Accordion as ChakraAccordion,
-  AccordionItem as ChakraAccordionItem,
-  Link as ChakraLink,
-  Divider,
-  Flex,
-  Heading,
-  Text,
-  useToken,
-} from "@chakra-ui/react";
+import { formatDifficulty } from "@/utils/formatDifficulty";
 import { Device } from "@pluto/interfaces";
 import NextLink from "next/link";
 import { useEffect, useState } from "react";
@@ -43,10 +31,12 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
   const { isConnected, socket } = useSocket();
 
   useEffect(() => {
+    setDevices(deviceList || []);
+  }, [deviceList]);
+
+  useEffect(() => {
     const listener = (e: Device) => {
       setDevices((prevDevices) => {
-        if (!prevDevices) return prevDevices;
-
         // Trova l'indice del dispositivo da aggiornare
         const deviceIndex = prevDevices.findIndex((device) => device.mac === e.mac);
 
@@ -75,169 +65,98 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
         socket.off("error", listener);
       };
     }
-  }, [isConnected, socket, devices]);
+  }, [isConnected, socket]);
 
   return (
     <>
       {devices && devices.length > 0 ? (
-        <ChakraAccordion
-          allowMultiple
-          as={Flex}
-          flexDir={"column"}
-          backgroundColor={"td-bg"}
-          borderWidth={"1px"}
-          borderColor={"border-color"}
-        >
-          {devices?.map((device, index) => (
-            <ChakraAccordionItem
-              key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
-              borderTopWidth={index > 0 ? "1px" : "0"}
-              borderBottomWidth={"0!important"}
+        <div className="flex flex-col border border-border bg-card">
+          {devices.map((device, index) => (
+            <details
+              key={`device-settings-${device.mac}`}
+              className={index === 0 ? "" : "border-t border-border"}
             >
-              <AccordionItem key={device.mac} device={device} />
-            </ChakraAccordionItem>
+              <AccordionItem device={device} />
+            </details>
           ))}
-        </ChakraAccordion>
+        </div>
       ) : (
-        <Text textAlign={"center"}>No device found</Text>
+        <div className="text-center text-sm text-muted-foreground">No device found</div>
       )}
     </>
   );
 };
 
 const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
-  const [textColor] = useToken("colors", ["body-text"]);
-  const [headerBg] = useToken("colors", ["th-bg"]);
+  const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
+
   return (
     <>
-      <AccordionButton
-        p={"1rem"}
-        justifyContent={"space-between"}
-        _hover={{ backgroundColor: "none" }}
-        backgroundColor={headerBg}
-      >
-        <Flex>
-          <Flex gap={"1rem"} alignItems={"center"}>
-            <AccordionIcon />
-            <Heading
-              fontSize={"sm"}
-              fontWeight={600}
-              textTransform={"capitalize"}
-              fontFamily={"body"}
-            >
-              {device.info.hostname}
-            </Heading>
-            <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
-          </Flex>
-        </Flex>
-        <ChakraLink
-          as={NextLink}
-          href={`monitoring/${device.info.hostname}`}
+      <summary className="flex cursor-pointer items-center justify-between gap-4 bg-muted p-4">
+        <div className="flex items-center gap-4">
+          <span className="text-muted-foreground">▾</span>
+          <span className="font-body text-sm font-semibold capitalize">{device.info.hostname}</span>
+          <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
+        </div>
+        <NextLink
+          href={`/monitoring/${device.info.hostname}`}
           onClick={(e) => e.stopPropagation()}
+          className="text-muted-foreground hover:text-foreground"
+          aria-label={`Open ${device.info.hostname}`}
         >
-          <ArrowLeftSmallIcon color={textColor} />
-        </ChakraLink>
-      </AccordionButton>
-      <AccordionPanel p={0} pb={4} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
-        <Divider borderColor={"border-color"} />
+          <ArrowLeftSmallIcon color="currentColor" />
+        </NextLink>
+      </summary>
 
-        <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"} p={"1rem"}>
-          <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"heading"}
-            >
-              Hash rate
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
-              {(device.info.hashRate_10m || device.info.hashRate)?.toFixed(2)} GH/s
-            </Text>
-          </Flex>
-          <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"heading"}
-            >
-              Shares
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
-              {device.info.sharesAccepted} |{" "}
-              <Text as={"label"} color={"primary-color"}>
-                {device.info.sharesRejected}
-              </Text>
-            </Text>
-          </Flex>
-          <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"heading"}
-            >
-              Power
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
-              {device.info.power.toFixed(2)} W
-            </Text>
-          </Flex>
-          <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"heading"}
-            >
-              Temp.
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
-              {device.info.temp}°C
-            </Text>
-          </Flex>
-          <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"heading"}
-            >
-              Difficulty
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
-              {device.info.bestSessionDiff}
-            </Text>
-          </Flex>
-          <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"heading"}
-            >
-              Best Difficulty
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
-              {device.info.bestDiff}
-            </Text>
-          </Flex>
-          <Flex justify={"space-between"}>
-            <Text
-              fontWeight={500}
-              textTransform={"capitalize"}
-              fontSize={"sm"}
-              fontFamily={"heading"}
-            >
-              Uptime
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"body"}>
-              {formatDetailedTime(device.info.uptimeSeconds)}
-            </Text>
-          </Flex>
-        </Flex>
-      </AccordionPanel>
+      <div className="border-t border-border bg-card p-4">
+        <div className="flex flex-col gap-2">
+          <Row label="Hash rate" value={`${(device.info.hashRate_10m || device.info.hashRate)?.toFixed(2)} GH/s`} />
+          <Row
+            label="Shares"
+            value={`${device.info.sharesAccepted} | ${device.info.sharesRejected}`}
+            highlightRight
+          />
+          <Row label="Power" value={`${device.info.power.toFixed(2)} W`} />
+          <Row label="Temp." value={`${formatTemperature(device.info.temp)} °C`} />
+          <Row label="VR Temp." value={`${formatTemperature(device.info.vrTemp)} °C`} />
+          <Row label="Current difficulty" value={formatDifficulty(currentDiff)} />
+          <Row label="Best difficulty" value={formatDifficulty(device.info.bestDiff)} />
+          <Row label="Uptime" value={formatDetailedTime(device.info.uptimeSeconds)} />
+        </div>
+      </div>
     </>
   );
 };
+
+function Row({
+  label,
+  value,
+  highlightRight = false,
+}: {
+  label: string;
+  value: string;
+  highlightRight?: boolean;
+}) {
+  const parts = value.split("|").map((p) => p.trim());
+
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="font-heading text-sm font-medium capitalize">{label}</span>
+      {highlightRight && parts.length === 2 ? (
+        <span className="font-body text-sm">
+          <span className="text-muted-foreground">{parts[0]}</span>{" "}
+          <span className="text-muted-foreground">|</span>{" "}
+          <span className="text-primary">{parts[1]}</span>
+        </span>
+      ) : (
+        <span className="font-body text-sm text-muted-foreground">{value}</span>
+      )}
+    </div>
+  );
+}
+
+function formatTemperature(value: number | undefined | null) {
+  if (value == null) return "N/A";
+  if (!Number.isFinite(value)) return "N/A";
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}

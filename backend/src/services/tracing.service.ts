@@ -7,21 +7,26 @@
 */
 
 import { updateOne } from "@pluto/db";
-import { Device, DeviceInfo, ExtendedDeviceInfo } from "@pluto/interfaces";
+import {
+  Device,
+  DeviceFrequencyOptions,
+  DeviceInfo,
+  DeviceVoltageOptions,
+  ExtendedDeviceInfo,
+} from "@pluto/interfaces";
 import { createCustomLogger, logger } from "@pluto/logger";
+import { asyncForEach, sanitizeHostname } from "@pluto/utils";
 import axios from "axios";
 import { Server as NetServer } from "http";
 import { Server as ServerIO } from "socket.io";
 import WebSocket from "ws";
 import { config } from "../config/environment";
-import { sanitizeHostname } from "@pluto/utils/strings";
-import { createGrafanaDeviceDashboard, deleteGrafanaDashboard } from "./grafana.service"; // Aggiunta funzione per rimuovere dashboard
+import { normalizeSystemInfo, resolveAsicModelKey } from "./tracing.helpers";
 import {
   createMetricsForDevice,
   deleteMetricsForDevice,
   updateOverviewMetrics,
 } from "./metrics.service"; // Aggiunta funzione per rimuovere metriche
-import { asyncForEach } from "@pluto/utils/arrays";
 
 let isListeningLogs = false;
 let ipMap: {
@@ -90,15 +95,11 @@ export async function updateOriginalIpsListeners(newDevices: Device[], traceLogs
 
       if (config.deleteDataOnDeviceRemove) {
         try {
-          // Rimuovi la dashboard di Grafana
-          await deleteGrafanaDashboard(ipMap[existingIp].info?.hostname!);
-          logger.info(`Deleted Grafana dashboard for hostname ${existingIp}`);
-
           // Rimuovi le metriche di Prometheus
           deleteMetricsForDevice(sanitizeHostname(ipMap[existingIp].info?.hostname!));
           logger.info(`Deleted Prometheus metrics for IP ${existingIp}`);
         } catch (err) {
-          logger.error(`Failed to delete Grafana dashboard for hostname ${existingIp}:`, err);
+          logger.error(`Failed to delete Prometheus metrics for IP ${existingIp}:`, err);
         }
       }
 
@@ -187,13 +188,38 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
 
     try {
       logger.debug(`Polling system info from ${device.ip}`);
-      const response = await axios.get(`http://${device.ip}/api/system/info`);
+      // Without an explicit timeout, axios can hang for a long time on network errors,
+      // making offline/online transitions feel sluggish.
+      const response = await axios.get(`http://${device.ip}/api/system/info`, {
+        timeout: config.systemInfoTimeoutMs,
+      });
+      const normalizedInfo = normalizeSystemInfo(response.data);
+
+      const asicModelKey = resolveAsicModelKey(normalizedInfo?.ASICModel);
+      const mappedFrequencyOptions =
+        (asicModelKey ? DeviceFrequencyOptions[asicModelKey] : undefined) || [];
+      const mappedCoreVoltageOptions =
+        (asicModelKey ? DeviceVoltageOptions[asicModelKey] : undefined) || [];
 
       const extendedDevice: Device = {
         ...device,
         tracing: true,
-        info: response.data,
+        info: normalizedInfo,
       };
+
+      // Ensure tuning options are always present in websocket updates (new API omits them).
+      (extendedDevice.info as any).frequencyOptions =
+        mappedFrequencyOptions.length > 0
+          ? mappedFrequencyOptions
+          : Array.isArray((extendedDevice.info as any).frequencyOptions)
+          ? (extendedDevice.info as any).frequencyOptions
+          : [];
+      (extendedDevice.info as any).coreVoltageOptions =
+        mappedCoreVoltageOptions.length > 0
+          ? mappedCoreVoltageOptions
+          : Array.isArray((extendedDevice.info as any).coreVoltageOptions)
+          ? (extendedDevice.info as any).coreVoltageOptions
+          : [];
 
       delete extendedDevice.presetUuid; // @hack to avoid that presetId gets reset
 
@@ -208,19 +234,57 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
       ioInstance?.emit("stat_update", updatedDevice);
 
       // Aggiorna le metriche Prometheus con i dati del sistema
-      updatePrometheusMetrics(response.data);
+      updatePrometheusMetrics(normalizedInfo);
 
       // Aggiorna i dati nella mappa ipMap per il dispositivo corrente
-      ipMap[device.ip].info = response.data;
+      ipMap[device.ip].info = normalizedInfo;
       ipMap[device.ip].tracing = true;
 
-      // Crea o aggiorna la dashboard Grafana
-      await createGrafanaDeviceDashboard(extendedDevice);
     } catch (error: any) {
-      const extendedDevice = { ...device, tracing: false };
+      const errorMessage = typeof error?.message === "string" ? error.message : String(error);
 
       logger.error(`Failed to make request to ${device.ip}:`, error);
-      ioInstance?.emit("error", { ...extendedDevice, error: error.message });
+
+      // Persist offline state and broadcast it as a stat_update.
+      // Some UI views rely on DB/API state (not only websocket events), so if we only update the in-memory ipMap
+      // the device can look online in some screens until a refresh.
+      try {
+        const updatedDevice = await updateOne<Device>(
+          "pluto_core",
+          "devices:imprinted",
+          device.mac,
+          { tracing: false }
+        );
+
+        ioInstance?.emit("stat_update", updatedDevice);
+        ioInstance?.emit("error", { ...updatedDevice, error: errorMessage });
+      } catch (dbError) {
+        logger.error(`Failed to persist offline state for ${device.ip}:`, dbError);
+        ioInstance?.emit("error", { ...device, tracing: false, error: errorMessage });
+      }
+
+      // Ensure Prometheus doesn't keep reporting stale values when a device goes offline.
+      updatePrometheusMetrics({
+        power: 0,
+        voltage: 0,
+        current: 0,
+        fanSpeedRpm: 0,
+        fanspeed: 0,
+        fanrpm: 0,
+        temp: 0,
+        vrTemp: 0,
+        hashRate: 0,
+        hashRate_10m: 0,
+        sharesAccepted: 0,
+        sharesRejected: 0,
+        uptimeSeconds: 0,
+        freeHeap: 0,
+        freeHeapInternal: 0,
+        freeHeapSpiram: 0,
+        coreVoltage: 0,
+        coreVoltageActual: 0,
+        frequency: 0,
+      });
 
       // // Se il polling fallisce, aggiorna il dispositivo come offline in ipMap
       // ipMap[device.ip].metrics = {

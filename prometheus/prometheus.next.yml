@@ -4,5 +4,5 @@ global:
 scrape_configs:
   - job_name: "backend-metrics"
     static_configs:
-      - targets: ["pluto-next_backend_1:7676"]
+      - targets: ["backend:7676"]
     metrics_path: "/metrics"

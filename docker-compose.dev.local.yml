@@ -1,4 +1,49 @@
 services:
+  node_modules_permissions:
+    image: node:24-alpine
+    user: "0:0"
+    command:
+      - sh
+      - -lc
+      - |
+        set -e
+        for d in \
+          /vol/backend_node_modules \
+          /vol/backend_common_logger_node_modules \
+          /vol/backend_common_interfaces_node_modules \
+          /vol/backend_common_db_node_modules \
+          /vol/backend_common_utils_node_modules \
+          /vol/discovery_node_modules \
+          /vol/discovery_common_logger_node_modules \
+          /vol/discovery_common_interfaces_node_modules \
+          /vol/discovery_common_db_node_modules \
+          /vol/mock_node_modules \
+          /vol/mock_common_logger_node_modules \
+          /vol/mock_common_interfaces_node_modules \
+          /vol/frontend_node_modules \
+          /vol/frontend_common_utils_node_modules \
+          /vol/frontend_common_interfaces_node_modules \
+        ; do
+          mkdir -p "$$d"
+          chown -R 1000:1000 "$$d"
+        done
+    volumes:
+      - backend_node_modules:/vol/backend_node_modules
+      - backend_common_logger_node_modules:/vol/backend_common_logger_node_modules
+      - backend_common_interfaces_node_modules:/vol/backend_common_interfaces_node_modules
+      - backend_common_db_node_modules:/vol/backend_common_db_node_modules
+      - backend_common_utils_node_modules:/vol/backend_common_utils_node_modules
+      - discovery_node_modules:/vol/discovery_node_modules
+      - discovery_common_logger_node_modules:/vol/discovery_common_logger_node_modules
+      - discovery_common_interfaces_node_modules:/vol/discovery_common_interfaces_node_modules
+      - discovery_common_db_node_modules:/vol/discovery_common_db_node_modules
+      - mock_node_modules:/vol/mock_node_modules
+      - mock_common_logger_node_modules:/vol/mock_common_logger_node_modules
+      - mock_common_interfaces_node_modules:/vol/mock_common_interfaces_node_modules
+      - frontend_node_modules:/vol/frontend_node_modules
+      - frontend_common_utils_node_modules:/vol/frontend_common_utils_node_modules
+      - frontend_common_interfaces_node_modules:/vol/frontend_common_interfaces_node_modules
+    restart: "no"
   # app_proxy:
   #   image: getumbrel/app-proxy:latest
   #   environment:
@@ -30,6 +75,9 @@ services:
 
     # Container restart policy - restart unless manually stopped
     restart: on-failure
+    depends_on:
+      node_modules_permissions:
+        condition: service_completed_successfully
     env_file:
       - mock/.env.local
     environment:
@@ -40,6 +88,9 @@ services:
       - ./common/logger:/home/node/common/logger # Monta il modulo (writable per development)
       - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
       - ./mock:/home/node/app/
+      - mock_node_modules:/home/node/app/node_modules
+      - mock_common_logger_node_modules:/home/node/common/logger/node_modules
+      - mock_common_interfaces_node_modules:/home/node/common/interfaces/node_modules
     user: "1000:1000"
 
   discovery:
@@ -47,7 +98,6 @@ services:
       context: discovery
       dockerfile: Dockerfile.development
     network_mode: "host"
-    privileged: true
     # ports:
     #   - "7775:7775" # Map port 7775 on the host to port 7775 on the container
     pid: host
@@ -57,6 +107,9 @@ services:
 
     # Container restart policy - restart unless manually stopped
     restart: on-failure
+    depends_on:
+      node_modules_permissions:
+        condition: service_completed_successfully
     env_file:
       - discovery/.env.local
     environment:
@@ -70,6 +123,10 @@ services:
       - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./discovery:/home/node/app/
       - ./data/leveldb:/home/node/app/data
+      - discovery_node_modules:/home/node/app/node_modules
+      - discovery_common_logger_node_modules:/home/node/common/logger/node_modules
+      - discovery_common_interfaces_node_modules:/home/node/common/interfaces/node_modules
+      - discovery_common_db_node_modules:/home/node/common/db/node_modules
     user: "1000:1000"
 
   backend:
@@ -95,7 +152,6 @@ services:
       - PORT=7776
       - AUTO_LISTEN=true
       # - DISCOVERY_SERVICE_HOST=http://host.docker.internal:7775
-      - GF_HOST=http://grafana:3000
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
       - ./common/utils:/home/node/common/utils # Monta il modulo (writable per development)
@@ -104,14 +160,26 @@ services:
       - ./common/logger:/home/node/common/logger # Monta il modulo (writable per development)
       - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./backend:/home/node/app/
-      - ./grafana/templates:/home/node/app/grafana_templates/
       - ./data/leveldb:/home/node/app/data
-      - ./data/grafana:/home/node/app/grafana
+      - backend_node_modules:/home/node/app/node_modules
+      - backend_common_logger_node_modules:/home/node/common/logger/node_modules
+      - backend_common_interfaces_node_modules:/home/node/common/interfaces/node_modules
+      - backend_common_db_node_modules:/home/node/common/db/node_modules
+      - backend_common_utils_node_modules:/home/node/common/utils/node_modules
     depends_on:
+      node_modules_permissions:
+        condition: service_completed_successfully
       prometheus:
         condition: service_healthy
-      grafana:
-        condition: service_healthy
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "require('net').connect(7776,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 20
     user: "1000:1000"
 
   frontend:
@@ -126,12 +194,14 @@ services:
     # Container restart policy - restart unless manually stopped
     restart: on-failure
     depends_on:
-      - backend
+      node_modules_permissions:
+        condition: service_completed_successfully
+      backend:
+        condition: service_healthy
     # env_file:
     #   - frontend/.env.local
     environment:
       - PORT=7777
-      - GF_HOST=http://grafana:3000
       - BACKEND_DESTINATION_HOST=http://pluto-backend-1:7776
     volumes:
       - ./common/utils:/home/node/common/utils # Monta il modulo (writable per development)
@@ -139,12 +209,20 @@ services:
       - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./frontend:/home/node/app/
       - ./umbrel-apps/pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
+      - frontend_node_modules:/home/node/app/node_modules
+      - frontend_common_utils_node_modules:/home/node/common/utils/node_modules
+      - frontend_common_interfaces_node_modules:/home/node/common/interfaces/node_modules
     user: "1000:1000"
 
   prometheus:
     build:
       context: prometheus
       dockerfile: Dockerfile.development
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--storage.tsdb.retention.size=5GB"
     volumes:
       - ./data/prometheus:/prometheus
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -160,30 +238,19 @@ services:
       retries: 5
     user: "65534:65534"
 
-  grafana:
-    build:
-      context: grafana
-      dockerfile: Dockerfile.development
-    # ports:
-    #   - "7778:3000"
-    pid: host
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_INSTALL_PLUGINS=marcusolsson-treemap-panel
-    volumes:
-      - ./data/grafana:/var/lib/grafana
-      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
-      - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
-    healthcheck:
-      test:
-        - "CMD-SHELL"
-        - "wget --spider --quiet http://localhost:3000/api/health || exit 1"
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      prometheus:
-        condition: service_healthy # Attende che prometheus sia in stato "healthy"
-    user: "472:472"
+volumes:
+  backend_node_modules:
+  backend_common_logger_node_modules:
+  backend_common_interfaces_node_modules:
+  backend_common_db_node_modules:
+  backend_common_utils_node_modules:
+  discovery_node_modules:
+  discovery_common_logger_node_modules:
+  discovery_common_interfaces_node_modules:
+  discovery_common_db_node_modules:
+  mock_node_modules:
+  mock_common_logger_node_modules:
+  mock_common_interfaces_node_modules:
+  frontend_node_modules:
+  frontend_common_utils_node_modules:
+  frontend_common_interfaces_node_modules:

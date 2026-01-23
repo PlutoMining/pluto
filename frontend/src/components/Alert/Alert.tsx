@@ -6,16 +6,9 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import {
-  AlertDescription,
-  AlertTitle,
-  Box,
-  Alert as ChakraAlert,
-  Flex,
-  useTheme,
-  useToken,
-} from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
+
+import { cn } from "@/lib/utils";
 import { CloseIcon } from "../icons/CloseIcon";
 import { ErrorIcon } from "../icons/ErrorIcon";
 import { SuccessIcon } from "../icons/SuccessIcon";
@@ -23,36 +16,26 @@ import { WarningIcon } from "../icons/WarningIcon";
 import { AlertProps, AlertStatus } from "./interfaces";
 
 const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
-  const { isOpen, onOpen, onClose, content } = alertProps;
+  const { isOpen, onClose, content } = alertProps;
 
   const [icon, setIcon] = useState<React.JSX.Element>();
-  const [color, setColor] = useState<string>();
-
-  const theme = useTheme();
-
-  const [successColor, warningColor, errorColor] = useToken("colors", [
-    "success-color",
-    "warning-color",
-    "error-color",
-  ]);
-
-  const [bodyText] = useToken("colors", ["body-text"]);
+  const [variantClass, setVariantClass] = useState<string>("border-border");
 
   useEffect(() => {
     switch (content.status) {
       case AlertStatus.ERROR: {
-        setIcon(<ErrorIcon color={errorColor} h={"18"} />);
-        setColor(errorColor);
+        setIcon(<ErrorIcon color="currentColor" h={"18"} />);
+        setVariantClass("border-destructive text-destructive");
         break;
       }
       case AlertStatus.SUCCESS: {
-        setIcon(<SuccessIcon color={successColor} h={"18"} />);
-        setColor(successColor);
+        setIcon(<SuccessIcon color="currentColor" h={"18"} />);
+        setVariantClass("border-emerald-500 text-emerald-500");
         break;
       }
       case AlertStatus.WARNING: {
-        setIcon(<WarningIcon color={warningColor} h={"18"} />);
-        setColor(warningColor);
+        setIcon(<WarningIcon color="currentColor" h={"18"} />);
+        setVariantClass("border-amber-500 text-amber-500");
         break;
       }
       default:
@@ -60,48 +43,29 @@ const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
     }
   }, [content.status]);
 
+  if (!isOpen) return null;
+
   return (
-    <Box
-      pos={"absolute"}
-      top={"4rem"}
-      left={0}
-      right={0}
-      zIndex={10}
-      maxWidth={theme.breakpoints["desktop"]}
-      margin={"0 auto"}
-      p={{ base: "1rem", tablet: "1rem 2rem" }}
-    >
-      <Box bg={"bg-color"} borderRadius={0} borderColor={color} borderWidth={"1.5px"} p={"0.5rem"}>
-        <ChakraAlert
-          borderRadius={"1rem"}
-          bg={"bg-color"}
-          display={"flex"}
-          flexDir={"column"}
-          alignItems={"start"}
-          gap={"0.5rem"}
-          p={0}
-        >
-          <Box pos={"absolute"} top={"0.25rem"} right={"0.25rem"} cursor={"pointer"}>
-            <CloseIcon h={"18"} color={bodyText} onClick={onClose} />
-          </Box>
-          <Flex alignItems={"center"} gap={"0.5rem"}>
-            {icon}
-            <AlertTitle color={color} fontFamily={"heading"} fontSize={"1rem"} fontWeight={500}>
+    <div className="fixed inset-x-0 top-16 z-50 px-4">
+      <div className="container">
+        <div className={cn("relative border bg-card p-3 text-card-foreground", variantClass)}>
+          <div className="absolute right-2 top-2 cursor-pointer text-muted-foreground hover:text-foreground">
+            <CloseIcon h={"18"} color="currentColor" onClick={onClose} />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className={cn("inline-flex", variantClass)}>{icon}</span>
+            <div className={cn("font-heading text-sm font-medium", variantClass)}>
               {content.title}
-            </AlertTitle>
-          </Flex>
-          <AlertDescription
-            color={"body-text"}
-            fontWeight={300}
-            fontSize={"13px"}
-            paddingLeft={"2rem"}
-            fontFamily={"accent"}
-          >
+            </div>
+          </div>
+
+          <div className="mt-1 pl-7 font-accent text-[13px] text-muted-foreground">
             {content.message}
-          </AlertDescription>
-        </ChakraAlert>
-      </Box>
-    </Box>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

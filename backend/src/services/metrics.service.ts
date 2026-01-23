@@ -58,6 +58,12 @@ export const createMetricsForDevice = (hostname: string) => {
     registers: [globalRegister],
   });
 
+  const vrTempGauge = new client.Gauge({
+    name: `${prefix}vr_temperature_celsius`,
+    help: "Current voltage regulator temperature in Celsius",
+    registers: [globalRegister],
+  });
+
   const hashRateGauge = new client.Gauge({
     name: `${prefix}hashrate_ghs`,
     help: "Current hash rate in GH/s",
@@ -88,6 +94,18 @@ export const createMetricsForDevice = (hostname: string) => {
     registers: [globalRegister],
   });
 
+  const freeHeapInternalGauge = new client.Gauge({
+    name: `${prefix}free_heap_internal_bytes`,
+    help: "Current free internal heap in bytes",
+    registers: [globalRegister],
+  });
+
+  const freeHeapSpiramGauge = new client.Gauge({
+    name: `${prefix}free_heap_spiram_bytes`,
+    help: "Current free PSRAM heap in bytes",
+    registers: [globalRegister],
+  });
+
   const coreVoltageGauge = new client.Gauge({
     name: `${prefix}core_voltage_volts`,
     help: "Current core voltage in volts",
@@ -113,28 +131,35 @@ export const createMetricsForDevice = (hostname: string) => {
   });
 
   return {
-    updatePrometheusMetrics: (data: DeviceInfo) => {
-      if (data.power) powerGauge.set(data.power);
-      if (data.voltage) voltageGauge.set(data.voltage / 1000); // Assume voltage in millivolts
-      if (data.current) currentGauge.set(data.current / 1000); // Assume current in milliamps
-      if (data.fanSpeedRpm || data.fanspeed) fanSpeedGauge.set(data.fanSpeedRpm || data.fanspeed);
-      if (data.temp) tempGauge.set(data.temp);
-      if (data.hashRate || data.hashRate_10m) hashRateGauge.set(data.hashRate || data.hashRate_10m);
-      if (data.sharesAccepted) sharesAcceptedGauge.set(data.sharesAccepted);
-      if (data.sharesRejected) sharesRejectedGauge.set(data.sharesRejected);
-      if (data.uptimeSeconds) uptimeGauge.set(data.uptimeSeconds);
-      if (data.freeHeap) freeHeapGauge.set(data.freeHeap);
-      if (data.coreVoltage) coreVoltageGauge.set(data.coreVoltage / 1000); // Assume voltage in millivolts
-      if (data.coreVoltageActual) coreVoltageActualGauge.set(data.coreVoltageActual / 1000); // Assume voltage in millivolts
-      if (data.frequency) frequencyGauge.set(data.frequency);
+    updatePrometheusMetrics: (data: Partial<DeviceInfo>) => {
+      const setGauge = (gauge: client.Gauge<string>, value: unknown, map?: (n: number) => number) => {
+        if (typeof value !== "number" || !Number.isFinite(value)) return;
+        gauge.set(map ? map(value) : value);
+      };
 
-      if (data.efficiency)
-        efficiencyGauge.set(
-          data.power / ((data.hashRate || data.hashRate_10m) / 1000)
+      const hashrate = data.hashRate ?? data.hashRate_10m;
 
-          // efficiency (J / TH) = power (W) / (hashrate GH/s / 1000 )
-          // (data.hashRate || data.hashRate_10m) / ((data.power * data.uptimeSeconds) / 3600)
-        );
+      setGauge(powerGauge, data.power);
+      setGauge(voltageGauge, data.voltage, (v) => v / 1000); // Assume voltage in millivolts
+      setGauge(currentGauge, data.current, (c) => c / 1000); // Assume current in milliamps
+      setGauge(fanSpeedGauge, data.fanSpeedRpm ?? data.fanrpm ?? data.fanspeed);
+      setGauge(tempGauge, data.temp);
+      setGauge(vrTempGauge, data.vrTemp);
+      setGauge(hashRateGauge, hashrate);
+      setGauge(sharesAcceptedGauge, data.sharesAccepted);
+      setGauge(sharesRejectedGauge, data.sharesRejected);
+      setGauge(uptimeGauge, data.uptimeSeconds);
+      setGauge(freeHeapGauge, data.freeHeap);
+      setGauge(freeHeapInternalGauge, data.freeHeapInternal);
+      setGauge(freeHeapSpiramGauge, data.freeHeapSpiram);
+      setGauge(coreVoltageGauge, data.coreVoltage, (v) => v / 1000); // Assume voltage in millivolts
+      setGauge(coreVoltageActualGauge, data.coreVoltageActual, (v) => v / 1000); // Assume voltage in millivolts
+      setGauge(frequencyGauge, data.frequency);
+
+      if (typeof data.power === "number" && Number.isFinite(data.power) && typeof hashrate === "number" && Number.isFinite(hashrate)) {
+        const efficiency = data.power > 0 && hashrate > 0 ? data.power / (hashrate / 1000) : 0;
+        efficiencyGauge.set(efficiency);
+      }
     },
     register: globalRegister, // Return the registry for further usage
   };
@@ -226,6 +251,34 @@ const totalEfficiencyGauge = new client.Gauge({
   registers: [globalRegister],
 });
 
+function normalizePoolKey(stratumURL: unknown, stratumPort: unknown) {
+  const rawUrl = typeof stratumURL === "string" ? stratumURL.trim() : "";
+  const rawPort = typeof stratumPort === "number" ? stratumPort : Number(stratumPort);
+
+  let hostPort = rawUrl;
+
+  hostPort = hostPort.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, "");
+  hostPort = hostPort.split("/")[0];
+
+  if (!hostPort) {
+    return Number.isFinite(rawPort) ? `unknown:${rawPort}` : "unknown";
+  }
+
+  const lastColonIdx = hostPort.lastIndexOf(":");
+  if (lastColonIdx > 0 && lastColonIdx < hostPort.length - 1) {
+    const possiblePort = Number(hostPort.slice(lastColonIdx + 1));
+    if (Number.isFinite(possiblePort)) {
+      return `${hostPort.slice(0, lastColonIdx)}:${possiblePort}`;
+    }
+  }
+
+  if (Number.isFinite(rawPort)) {
+    return `${hostPort}:${rawPort}`;
+  }
+
+  return hostPort;
+}
+
 // Funzione per aggiornare tutte le metriche di overview
 export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   const totalDevices = devicesData.length;
@@ -233,14 +286,13 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   const offlineDevices = totalDevices - onlineDevices;
 
   const totalHashrate = devicesData.reduce((acc, device) => {
+    if (!device.tracing) return acc;
     const hashRate = device.hashRate ?? device.hashRate_10m ?? 0; // Usa 0 se entrambi sono null o undefined
     return acc + hashRate;
   }, 0);
   const averageHashrate = totalDevices > 0 ? totalHashrate / totalDevices : 0;
 
-  const totalPower = devicesData.reduce((acc, device) => acc + device.power, 0);
-  const sharesAccepted = devicesData.reduce((acc, device) => acc + device.sharesAccepted, 0);
-  const sharesRejected = devicesData.reduce((acc, device) => acc + device.sharesRejected, 0);
+  const totalPower = devicesData.reduce((acc, device) => (device.tracing ? acc + (device.power ?? 0) : acc), 0);
   // Fleet efficiency (J/TH) is computed with the same formula used for single devices:
   // efficiency (J / TH) = power (W) / (hashrate GH/s / 1000)
   const efficiency =
@@ -253,8 +305,6 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   totalHashrateGauge.set(totalHashrate);
   averageHashrateGauge.set(averageHashrate);
   totalPowerGauge.set(totalPower);
-  sharesByPoolAcceptedGauge.set(sharesAccepted);
-  sharesByPoolRejectedGauge.set(sharesRejected);
   totalEfficiencyGauge.set(efficiency);
 
   // Conta il numero di dispositivi per ciascuna versione firmware
@@ -275,9 +325,8 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
       acc: { accepted: { [pool: string]: number }; rejected: { [pool: string]: number } },
       device
     ) => {
-      const pool =
-        poolMap.get(`${device.stratumURL}:${device.stratumPort}`) ||
-        `${device.stratumURL}:${device.stratumPort}`;
+      const poolKey = normalizePoolKey(device.stratumURL, device.stratumPort);
+      const pool = poolMap.get(poolKey) || poolKey;
       acc.accepted[pool] = (acc.accepted[pool] || 0) + device.sharesAccepted;
       acc.rejected[pool] = (acc.rejected[pool] || 0) + device.sharesRejected;
       return acc;
