@@ -76,7 +76,8 @@ fi
 
 echo "Syncing ${SOURCE_DIR} -> ${SSH_TARGET}:${REMOTE_PATH}"
 if [[ -n "${UMBREL_PASSWORD}" ]]; then
-  sshpass -p "${UMBREL_PASSWORD}" RSYNC_RSH="${RSYNC_RSH}" rsync -av --exclude=".gitkeep" \
+  # RSYNC_RSH must be an environment variable for rsync, not a \"command\"
+  RSYNC_RSH="${RSYNC_RSH}" sshpass -p "${UMBREL_PASSWORD}" rsync -av --exclude=".gitkeep" \
     "${SOURCE_DIR}/" "${SSH_TARGET}:${REMOTE_PATH}/"
 else
   RSYNC_RSH="${RSYNC_RSH}" rsync -av --exclude=".gitkeep" \
