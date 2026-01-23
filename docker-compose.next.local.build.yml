@@ -21,6 +21,8 @@ services:
     image: pluto-discovery:local
     environment:
       MOCK_DEVICE_HOST: host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   backend:
     build:
@@ -29,6 +31,8 @@ services:
     image: pluto-backend:local
     environment:
       DISCOVERY_SERVICE_HOST: http://host.docker.internal:7675
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   frontend:
     build:
