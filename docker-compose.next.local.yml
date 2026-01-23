@@ -13,7 +13,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: mock/Dockerfile
-    image: ghcr.io/plutomining/pluto-mock:0.7.0-rc.2@sha256:8a9f6438ab9ce431809106ca089335e51c97be0a50d0a4d1e5270df83b4ee0fc
+    image: ghcr.io/plutomining/pluto-mock:0.7.0-beta.1@sha256:63ff4c30441cc2a1cf206c8c012bff4720c97c1d2a555476cf9e02c385efea63
     container_name: pluto-next_mock_1
     ports:
       - "7670:7670"
@@ -47,7 +47,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: ghcr.io/plutomining/pluto-discovery:1.2.0-beta.0@sha256:d89d97a4d4a18adc9584e38ed85096dc2b2f87f2ce07ba00757c6c73dba85c45
+    image: ghcr.io/plutomining/pluto-discovery:1.2.0-beta.1@sha256:be6193f155875de4f50af98501a7be6539b7304c5f2c5bfcaf7242c19773517a
     container_name: pluto-next_discovery_1
     network_mode: "host"
     # ports:
@@ -79,7 +79,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: ghcr.io/plutomining/pluto-backend:2.0.0-beta.0@sha256:ccc898a77e017688f40bdcc0f51f11bc047855be542e326b98fedfaea50966e8
+    image: ghcr.io/plutomining/pluto-backend:2.0.0-beta.1@sha256:fc4bd10150027193d8ce8a8a8267c3ff613f41e7464cf820858997125b4ec76c
     container_name: pluto-next_backend_1
     # ports:
     #   - "7676:7676"
@@ -110,7 +110,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: ghcr.io/plutomining/pluto-frontend:2.0.0-beta.0@sha256:73aa60181db3f67cc22f00c72a5cf67a2236b2c60bc779d4387f0f91c59880cf
+    image: ghcr.io/plutomining/pluto-frontend:2.0.0-beta.1@sha256:dc12881c3d34dc85e7f088b41bec664e8b489a5ff565dcd23edb12b4791bc10e
     container_name: pluto-next_frontend_1
     ports:
       - "7677:7677" # Map port 7777 on the host to port 7777 on the container

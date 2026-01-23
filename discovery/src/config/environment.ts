@@ -13,7 +13,7 @@
 interface EnvConfig {
   port: number;
   mockDiscoveryHost: string;
-  mockDeviceHost: string; // Hostname to use for mock device IPs (for Docker compatibility)
+  mockDeviceHost?: string; // Optional hostname for mock device IPs (Docker compatibility)
   detectMockDevices: boolean;
 }
 
@@ -21,5 +21,11 @@ export const config: EnvConfig = {
   port: Number(process.env.PORT || 3000),
   detectMockDevices: process.env.DETECT_MOCK_DEVICES === "true",
   mockDiscoveryHost: process.env.MOCK_DISCOVERY_HOST!,
-  mockDeviceHost: process.env.MOCK_DEVICE_HOST || "localhost", // Default to localhost, override for Docker
+  // If unset, we fall back to extracting the host from MOCK_DISCOVERY_HOST.
+  // This is important on Umbrel where discovery runs with host networking but backend does not;
+  // storing "localhost" would make backend poll itself instead of the host.
+  mockDeviceHost:
+    typeof process.env.MOCK_DEVICE_HOST === "string" && process.env.MOCK_DEVICE_HOST.trim() !== ""
+      ? process.env.MOCK_DEVICE_HOST
+      : undefined,
 };

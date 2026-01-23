@@ -8,7 +8,7 @@ services:
     restart: on-failure
 
   mock:
-    image: ghcr.io/plutomining/pluto-mock:0.7.0-rc.2
+    image: ghcr.io/plutomining/pluto-mock:0.7.0-beta.1@sha256:63ff4c30441cc2a1cf206c8c012bff4720c97c1d2a555476cf9e02c385efea63
     ports:
       - "7670:7670"
       - "7651:7651"
@@ -30,7 +30,7 @@ services:
     user: "1000:1000"
 
   discovery:
-    image: ghcr.io/plutomining/pluto-discovery:1.2.0-beta.0@sha256:d89d97a4d4a18adc9584e38ed85096dc2b2f87f2ce07ba00757c6c73dba85c45
+    image: ghcr.io/plutomining/pluto-discovery:1.2.0-beta.1@sha256:be6193f155875de4f50af98501a7be6539b7304c5f2c5bfcaf7242c19773517a
     network_mode: "host"
     pid: host
     cap_add:
@@ -46,7 +46,7 @@ services:
     user: "1000:1000"
 
   backend:
-    image: ghcr.io/plutomining/pluto-backend:2.0.0-beta.0@sha256:ccc898a77e017688f40bdcc0f51f11bc047855be542e326b98fedfaea50966e8
+    image: ghcr.io/plutomining/pluto-backend:2.0.0-beta.1@sha256:fc4bd10150027193d8ce8a8a8267c3ff613f41e7464cf820858997125b4ec76c
     pid: host
     restart: on-failure
     environment:
@@ -62,7 +62,7 @@ services:
     user: "1000:1000"
 
   frontend:
-    image: ghcr.io/plutomining/pluto-frontend:2.0.0-beta.0@sha256:73aa60181db3f67cc22f00c72a5cf67a2236b2c60bc779d4387f0f91c59880cf
+    image: ghcr.io/plutomining/pluto-frontend:2.0.0-beta.1@sha256:dc12881c3d34dc85e7f088b41bec664e8b489a5ff565dcd23edb12b4791bc10e
     pid: host
     restart: on-failure
     depends_on:
@@ -75,7 +75,7 @@ services:
     user: "1000:1000"
 
   prometheus:
-    image: ghcr.io/plutomining/pluto-prometheus:1.2.0-beta.0@sha256:2f7056a47b601e1f7e994a4bcdb278a898be43b0e812c8ba05fe3985e4e51303
+    image: ghcr.io/plutomining/pluto-prometheus:1.2.0-beta.1@sha256:80c70036103596e536865da271f3daa5921053dfd37a845610785db923379192
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"

@@ -21,7 +21,7 @@ describe("config/environment", () => {
 
     expect(config.port).toBe(3000);
     expect(config.detectMockDevices).toBe(false);
-    expect(config.mockDeviceHost).toBe("localhost");
+    expect(config.mockDeviceHost).toBeUndefined();
     expect(config.mockDiscoveryHost).toBe("http://mock");
   });
 

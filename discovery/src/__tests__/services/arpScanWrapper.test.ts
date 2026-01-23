@@ -1,5 +1,6 @@
 describe("arpScanWrapper", () => {
   const originalConsoleError = console.error;
+  const originalEnv = process.env;
 
   const loadArpScanWrapper = async () => {
     const execPromise = jest.fn();
@@ -20,10 +21,12 @@ describe("arpScanWrapper", () => {
     jest.resetModules();
     jest.clearAllMocks();
     console.error = jest.fn();
+    process.env = { ...originalEnv };
   });
 
   afterAll(() => {
     console.error = originalConsoleError;
+    process.env = originalEnv;
   });
 
   describe("arpScan", () => {
@@ -46,6 +49,31 @@ describe("arpScanWrapper", () => {
         { ip: "192.168.0.2", mac: "00:11:22:33:44:55", type: "Some Vendor" },
         { ip: "10.0.0.1", mac: "aa:bb:cc:dd:ee:ff", type: "miner" },
       ]);
+
+      expect(execPromise).toHaveBeenCalledWith(
+        "arp-scan --interface=eth0 --localnet --retry=3 --timeout=2000 --ignoredups"
+      );
+    });
+
+    it("includes configured retry/timeout args", async () => {
+      const { arpScan, execPromise } = await loadArpScanWrapper();
+
+      process.env.ARP_SCAN_RETRY = "5";
+      process.env.ARP_SCAN_TIMEOUT_MS = "1500";
+      process.env.ARP_SCAN_IGNORE_DUPS = "false";
+
+      execPromise.mockResolvedValue({ stdout: "", stderr: "" });
+
+      await expect(arpScan("eth0")).resolves.toEqual([]);
+      expect(execPromise).toHaveBeenCalledWith(
+        "arp-scan --interface=eth0 --localnet --retry=5 --timeout=1500"
+      );
+    });
+
+    it("rejects invalid interface name", async () => {
+      const { arpScan } = await loadArpScanWrapper();
+
+      await expect(arpScan("eth0;rm -rf /")).rejects.toThrow("Invalid network interface name");
     });
 
     it("throws when stderr is returned", async () => {
@@ -69,6 +97,23 @@ describe("arpScanWrapper", () => {
       execPromise.mockResolvedValue({ stdout: "eth0\nwlan0\n\n", stderr: "" });
 
       await expect(getActiveNetworkInterfaces()).resolves.toEqual(["eth0", "wlan0"]);
+    });
+
+    it("returns configured interface list when set", async () => {
+      const { getActiveNetworkInterfaces, execPromise } = await loadArpScanWrapper();
+
+      process.env.ARP_SCAN_INTERFACES = " eth0 , wlan0 ";
+
+      await expect(getActiveNetworkInterfaces()).resolves.toEqual(["eth0", "wlan0"]);
+      expect(execPromise).not.toHaveBeenCalled();
+    });
+
+    it("rejects invalid configured interface list", async () => {
+      const { getActiveNetworkInterfaces } = await loadArpScanWrapper();
+
+      process.env.ARP_SCAN_INTERFACES = "eth0,;rm -rf /";
+
+      await expect(getActiveNetworkInterfaces()).rejects.toThrow("Invalid network interface name");
     });
 
     it("throws when stderr is returned", async () => {
