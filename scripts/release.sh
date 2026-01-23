@@ -227,6 +227,64 @@ update_local_compose() {
 # Version bumping (uses semver bump level: major / minor / patch)
 ###############################################################################
 
+# Helper function to find the most recent commit that modified package.json for a service
+# This helps us determine when the current version was set
+find_last_package_json_commit() {
+  local service=$1
+  local package_file="$service/package.json"
+
+  command_exists git || err "git is required"
+
+  # Find the most recent commit that modified package.json
+  local commit
+  commit=$(git log -1 --format="%H" -- "$package_file" 2>/dev/null || true)
+
+  echo "$commit"
+}
+
+# Helper function to check if there are meaningful commits since the version was set
+# Returns true (0) if there are new commits, false (1) if no new commits
+has_commits_since_version_set() {
+  local service=$1
+  local version_commit=$2
+
+  command_exists git || err "git is required"
+
+  # If we can't find the version commit, assume there might be new commits (bump)
+  if [[ -z "$version_commit" ]] || ! git rev-parse --verify "$version_commit" >/dev/null 2>&1; then
+    return 0  # Assume there are commits (safer to bump)
+  fi
+
+  # Check if the version commit itself is the HEAD (no new commits after version was set)
+  local head_commit
+  head_commit=$(git rev-parse HEAD 2>/dev/null || true)
+
+  if [[ "$version_commit" == "$head_commit" ]]; then
+    # Version was set in the current commit - check if there are other changes in this commit
+    # If package.json is the only file changed, likely no new functional changes
+    # Use git show which is more compatible across platforms
+    local changed_files
+    changed_files=$(git show --name-only --pretty=format: "$version_commit" 2>/dev/null | grep -v "^${service}/package.json$" | grep "^${service}/" || true)
+
+    if [[ -z "$changed_files" ]]; then
+      return 1  # Only package.json was changed, no new commits
+    else
+      return 0  # Other files were changed, there are new commits
+    fi
+  fi
+
+  # Version commit is not HEAD - check if there are commits after it that touch this service
+  # Use version_commit..HEAD (not version_commit^..HEAD) to check commits AFTER version_commit
+  local commits
+  commits=$(git log --oneline "${version_commit}..HEAD" -- "${service}/" 2>/dev/null || true)
+
+  if [[ -n "$commits" ]]; then
+    return 0  # There are new commits after version was set
+  fi
+
+  return 1  # No new commits after version was set
+}
+
 bump_package_version() {
   local service=$1
   local bump_level=$2  # major|minor|patch
@@ -262,30 +320,43 @@ bump_package_version() {
 
     new_version="${major}.${minor}.${patch}"
   elif [[ "$current_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)- ]]; then
-    # Prerelease version - strip prerelease suffix and bump base according to bump_level
+    # Prerelease version - smart detection: check if there are new commits since version was set
     local base="${BASH_REMATCH[1]}"
-    local major minor patch
-    IFS='.' read -r major minor patch <<<"$base"
 
-    case "$bump_level" in
-      major)
-        major=$((major + 1))
-        minor=0
-        patch=0
-        ;;
-      minor)
-        minor=$((minor + 1))
-        patch=0
-        ;;
-      patch)
-        patch=$((patch + 1))
-        ;;
-      *)
-        err "Unsupported bump level '$bump_level' for service '$service'"
-        ;;
-    esac
+    # Smart detection: if no new commits since version was set, just strip suffix
+    local version_commit
+    version_commit=$(find_last_package_json_commit "$service")
 
-    new_version="${major}.${minor}.${patch}"
+    if has_commits_since_version_set "$service" "$version_commit"; then
+      # There are new commits since version was set - bump as normal
+      log "New commits detected since prerelease $current_version was set. Bumping version based on changes (level: $bump_level)."
+      local major minor patch
+      IFS='.' read -r major minor patch <<<"$base"
+
+      case "$bump_level" in
+        major)
+          major=$((major + 1))
+          minor=0
+          patch=0
+          ;;
+        minor)
+          minor=$((minor + 1))
+          patch=0
+          ;;
+        patch)
+          patch=$((patch + 1))
+          ;;
+        *)
+          err "Unsupported bump level '$bump_level' for service '$service'"
+          ;;
+      esac
+
+      new_version="${major}.${minor}.${patch}"
+    else
+      # No new commits since version was set - just strip the prerelease suffix
+      log "No new commits detected since prerelease $current_version was set. Promoting to stable version $base."
+      new_version="$base"
+    fi
   else
     err "Cannot parse version '$current_version' for service '$service'"
   fi
