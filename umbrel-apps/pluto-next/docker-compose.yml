@@ -30,7 +30,7 @@ services:
     user: "1000:1000"
 
   discovery:
-    image: ghcr.io/plutomining/pluto-discovery:1.2.0-beta.1@sha256:be6193f155875de4f50af98501a7be6539b7304c5f2c5bfcaf7242c19773517a
+    image: ghcr.io/plutomining/pluto-discovery:1.2.0-beta.2@sha256:44d071dd122d07fddbee5504ffb3f681968b674389ad2a80c7cbc4df856bd9bf
     network_mode: "host"
     pid: host
     cap_add:
