@@ -152,6 +152,7 @@ export function MultiLineChartCard({
                   strokeOpacity={s.strokeOpacity}
                   strokeLinecap={s.strokeLinecap}
                   connectNulls
+                  animateNewValues={false}
                 />
               ))}
             </LineChart>

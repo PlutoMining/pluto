@@ -15,6 +15,8 @@ export type PrometheusResponse =
 
 export type TimeRangeKey = "15m" | "1h" | "6h" | "24h" | "7d";
 
+export type PollingIntervalKey = "auto" | "5s" | "15s" | "30s" | "60s" | "5m";
+
 export const TIME_RANGES: Array<{ key: TimeRangeKey; label: string; seconds: number }> = [
   { key: "15m", label: "15m", seconds: 15 * 60 },
   { key: "1h", label: "1h", seconds: 60 * 60 },
@@ -22,6 +24,20 @@ export const TIME_RANGES: Array<{ key: TimeRangeKey; label: string; seconds: num
   { key: "24h", label: "24h", seconds: 24 * 60 * 60 },
   { key: "7d", label: "7d", seconds: 7 * 24 * 60 * 60 },
 ];
+
+export const POLLING_INTERVALS: Array<{ key: PollingIntervalKey; label: string; ms?: number }> = [
+  { key: "auto", label: "Auto" },
+  { key: "5s", label: "5s", ms: 5_000 },
+  { key: "15s", label: "15s", ms: 15_000 },
+  { key: "30s", label: "30s", ms: 30_000 },
+  { key: "60s", label: "60s", ms: 60_000 },
+  { key: "5m", label: "5m", ms: 5 * 60_000 },
+];
+
+export function resolvePollingMs(key: PollingIntervalKey, autoMs: number) {
+  if (key === "auto") return autoMs;
+  return POLLING_INTERVALS.find((o) => o.key === key)?.ms ?? autoMs;
+}
 
 function pickStepSeconds(rangeSeconds: number) {
   const targetPoints = 240;

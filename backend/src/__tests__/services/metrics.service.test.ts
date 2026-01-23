@@ -76,6 +76,8 @@ describe('metrics.service', () => {
         sharesRejected: 1,
         uptimeSeconds: 3600,
         freeHeap: 512,
+        freeHeapInternal: 128,
+        freeHeapSpiram: 0,
         coreVoltage: 1100,
         coreVoltageActual: 1050,
         frequency: 500,
@@ -95,6 +97,9 @@ describe('metrics.service', () => {
       expect(gaugeInstances.get('rig_temperature_celsius')?.set).toHaveBeenCalledWith(45);
       expect(gaugeInstances.get('rig_vr_temperature_celsius')?.set).toHaveBeenCalledWith(70);
       expect(gaugeInstances.get('rig_hashrate_ghs')?.set).toHaveBeenCalledWith(800);
+      expect(gaugeInstances.get('rig_free_heap_bytes')?.set).toHaveBeenCalledWith(512);
+      expect(gaugeInstances.get('rig_free_heap_internal_bytes')?.set).toHaveBeenCalledWith(128);
+      expect(gaugeInstances.get('rig_free_heap_spiram_bytes')?.set).toHaveBeenCalledWith(0);
       expect(gaugeInstances.get('rig_efficiency')?.set).toHaveBeenCalledWith(1200 / (800 / 1000));
     });
 

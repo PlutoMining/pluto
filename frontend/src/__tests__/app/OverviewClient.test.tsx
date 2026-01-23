@@ -21,8 +21,8 @@ jest.mock('@/components/charts/DeviceHeatmapCard', () => ({
 
 jest.mock('@/components/charts/LineChartCard', () => ({
   __esModule: true,
-  LineChartCard: ({ title, unit }: any) => (
-    <div data-testid="line-chart" data-title={title} data-unit={unit}>
+  LineChartCard: ({ title, unit, points }: any) => (
+    <div data-testid="line-chart" data-title={title} data-unit={unit} data-points={points?.length ?? 0}>
       {title}
     </div>
   ),
@@ -52,9 +52,20 @@ jest.mock('@/components/charts/TreemapChartCard', () => ({
 jest.mock('@/components/charts/TimeRangeSelect', () => ({
   __esModule: true,
   TimeRangeSelect: ({ value, onChange }: any) => (
-    <button type="button" data-testid="time-range" onClick={() => onChange('not-a-range')}>
-      {value}
-    </button>
+    <div>
+      <button type="button" data-testid="time-range" onClick={() => onChange('not-a-range')}>
+        {value}
+      </button>
+      <button type="button" data-testid="range-6h" onClick={() => onChange('6h')}>
+        6h
+      </button>
+      <button type="button" data-testid="range-24h" onClick={() => onChange('24h')}>
+        24h
+      </button>
+      <button type="button" data-testid="range-7d" onClick={() => onChange('7d')}>
+        7d
+      </button>
+    </div>
   ),
 }));
 
@@ -105,6 +116,22 @@ function matrixNoSeries() {
   };
 }
 
+async function flushEffects() {
+  await act(async () => {
+    await Promise.resolve();
+  });
+  await act(async () => {
+    await Promise.resolve();
+  });
+}
+
+async function waitForAnyLineChartPoints() {
+  await waitFor(() => {
+    const charts = screen.getAllByTestId('line-chart');
+    expect(Math.max(...charts.map((c) => Number(c.getAttribute('data-points') ?? '0')))).toBeGreaterThan(0);
+  });
+}
+
 describe('OverviewClient', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -123,8 +150,10 @@ describe('OverviewClient', () => {
 
     render(<OverviewClient />);
 
-    expect(await screen.findByText('Overview Dashboard')).toBeInTheDocument();
-    expect(await screen.findByText('Start using Pluto adding your first device')).toBeInTheDocument();
+    await flushEffects();
+
+    expect(screen.getByText('Overview Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Start using Pluto adding your first device')).toBeInTheDocument();
   });
 
   it('renders KPIs and uses J/TH for efficiency charts', async () => {
@@ -198,9 +227,7 @@ describe('OverviewClient', () => {
 
     expect(await screen.findByText('Total hardware')).toBeInTheDocument();
 
-    await waitFor(() => {
-      expect(screen.getAllByTestId('line-chart').length).toBeGreaterThan(0);
-    });
+    await waitForAnyLineChartPoints();
 
     const efficiencyChart = screen
       .getAllByTestId('line-chart')
@@ -276,6 +303,8 @@ describe('OverviewClient', () => {
 
     await screen.findByText('Total hardware');
 
+    await waitForAnyLineChartPoints();
+
     const offlineCard = screen.getByText('Offline').closest('.rounded-none');
     expect(offlineCard).toBeTruthy();
     expect(within(offlineCard as HTMLElement).getByText('0')).toBeInTheDocument();
@@ -294,6 +323,8 @@ describe('OverviewClient', () => {
       expect(within(offlineCard as HTMLElement).getByText('1')).toBeInTheDocument();
     });
 
+    await flushEffects();
+
     unmount();
     expect(socket.off).toHaveBeenCalled();
   });
@@ -306,7 +337,9 @@ describe('OverviewClient', () => {
 
     render(<OverviewClient />);
 
-    expect(await screen.findByText('Overview Dashboard')).toBeInTheDocument();
+    await flushEffects();
+
+    expect(screen.getByText('Overview Dashboard')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith('Error discovering devices:', expect.any(Error));
@@ -370,6 +403,8 @@ describe('OverviewClient', () => {
 
     render(<OverviewClient />);
 
+    await waitForAnyLineChartPoints();
+
     expect(await screen.findByText('Shares by pool')).toBeInTheDocument();
     expect(screen.getAllByTestId('pie-chart').length).toBeGreaterThan(1);
     expect(screen.getByText('Other')).toBeInTheDocument();
@@ -427,7 +462,9 @@ describe('OverviewClient', () => {
       expect(lastCall?.[0]).toBe(3600);
     });
 
-    expect(screen.getByTestId('treemap-versions')).toHaveTextContent('unknown');
+    await waitFor(() => {
+      expect(screen.getByTestId('treemap-versions')).toHaveTextContent('unknown');
+    });
   });
 
   it('shows 0% firmware share when firmwareTotal is 0', async () => {
@@ -474,6 +511,8 @@ describe('OverviewClient', () => {
 
     render(<OverviewClient />);
 
+    await waitForAnyLineChartPoints();
+
     const tooltip = await screen.findByTestId('treemap-tooltip');
     expect(tooltip).toHaveTextContent('0.0%');
   });
@@ -481,16 +520,100 @@ describe('OverviewClient', () => {
   it('logs load errors via load().catch', async () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    axios.get.mockResolvedValue({ data: { data: [] } });
+    axios.get.mockResolvedValue({
+      data: {
+        data: [
+          {
+            mac: 'aa',
+            ip: '1.1.1.1',
+            type: 'rig',
+            tracing: true,
+            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', power: 1 },
+          },
+        ],
+      },
+    });
     prom.promQuery.mockRejectedValueOnce(new Error('prom-fail'));
     prom.promQueryRange.mockResolvedValue(matrix([[1, 1]]));
 
     render(<OverviewClient />);
+
+    await screen.findByText('Total hardware');
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
     });
 
     consoleSpy.mockRestore();
+  });
+
+  it('updates auto refresh interval when time range changes', async () => {
+    const originalVisibilityState = document.visibilityState;
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+
+    axios.get.mockResolvedValue({
+      data: {
+        data: [
+          {
+            mac: 'aa',
+            ip: '1.1.1.1',
+            type: 'rig',
+            tracing: true,
+            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', power: 1 },
+          },
+        ],
+      },
+    });
+
+    prom.promQuery.mockResolvedValue(vector(0));
+    prom.promQueryRange.mockResolvedValue(matrixNoSeries());
+
+    try {
+      render(<OverviewClient />);
+      await screen.findByText('Total hardware');
+
+      expect(screen.getByRole('button', { name: 'Auto (15s)' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId('range-6h'));
+      expect(screen.getByRole('button', { name: 'Auto (30s)' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId('range-24h'));
+      expect(screen.getByRole('button', { name: 'Auto (60s)' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId('range-7d'));
+      expect(screen.getByRole('button', { name: 'Auto (5m)' })).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: originalVisibilityState });
+    }
+  });
+
+  it('skips polling when hidden', async () => {
+    const originalVisibilityState = document.visibilityState;
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+
+    axios.get.mockResolvedValue({
+      data: {
+        data: [
+          {
+            mac: 'aa',
+            ip: '1.1.1.1',
+            type: 'rig',
+            tracing: true,
+            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', power: 1 },
+          },
+        ],
+      },
+    });
+    prom.promQuery.mockResolvedValue(vector(0));
+    prom.promQueryRange.mockResolvedValue(matrixNoSeries());
+
+    try {
+      render(<OverviewClient />);
+
+      await screen.findByText('Total hardware');
+      expect(prom.promQuery).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: originalVisibilityState });
+    }
   });
 });

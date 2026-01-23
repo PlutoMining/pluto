@@ -104,7 +104,6 @@ export async function discoverDevices(options?: DiscoveryOptions) {
       }
     }
 
-    /* istanbul ignore next -- requires OS-level ARP scanning which isn't testable in CI */
     const arpScanInterfaces = await getActiveNetworkInterfaces();
 
     let arpTable = (

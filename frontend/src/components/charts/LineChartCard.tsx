@@ -75,6 +75,7 @@ export function LineChartCard({
                 stroke="hsl(var(--chart-1))"
                 dot={showDots ? { r: 2 } : false}
                 strokeWidth={2}
+                animateNewValues={false}
               />
             </LineChart>
           </ResponsiveContainer>

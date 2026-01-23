@@ -148,6 +148,7 @@ jest.mock("recharts", () => {
 
 import { TIME_RANGES } from "@/lib/prometheus";
 import { TimeRangeSelect } from "@/components/charts/TimeRangeSelect";
+import { PollingIntervalSelect } from "@/components/charts/PollingIntervalSelect";
 import { LineChartCard } from "@/components/charts/LineChartCard";
 import { AreaChartCard } from "@/components/charts/AreaChartCard";
 import { MultiLineChartCard } from "@/components/charts/MultiLineChartCard";
@@ -177,6 +178,25 @@ describe("charts coverage", () => {
     const next = screen.getByRole("button", { name: TIME_RANGES[1].label });
     fireEvent.click(next);
     expect(onChange).toHaveBeenCalledWith(TIME_RANGES[1].key);
+  });
+
+  it("PollingIntervalSelect calls onChange and highlights active value", () => {
+    const onChange = jest.fn();
+    render(<PollingIntervalSelect value="auto" onChange={onChange} autoMs={15_000} />);
+
+    const active = screen.getByRole("button", { name: "Auto (15s)" });
+    expect(active.className).toContain("bg-primary");
+
+    fireEvent.click(screen.getByRole("button", { name: "5s" }));
+    expect(onChange).toHaveBeenCalledWith("5s");
+
+    // Covers the early-return branch when autoMs is missing/non-finite.
+    render(<PollingIntervalSelect value="auto" onChange={onChange} />);
+    expect(screen.getAllByRole("button", { name: "Auto" }).length).toBeGreaterThan(0);
+
+    // Covers the fallback label when autoMs does not match a known interval.
+    render(<PollingIntervalSelect value="auto" onChange={onChange} autoMs={12_345} />);
+    expect(screen.getByRole("button", { name: "Auto (12s)" })).toBeInTheDocument();
   });
 
   it("renders chart cards and executes tooltip/formatter callbacks", () => {

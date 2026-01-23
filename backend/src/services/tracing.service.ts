@@ -270,10 +270,20 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
         current: 0,
         fanSpeedRpm: 0,
         fanspeed: 0,
+        fanrpm: 0,
         temp: 0,
         vrTemp: 0,
         hashRate: 0,
         hashRate_10m: 0,
+        sharesAccepted: 0,
+        sharesRejected: 0,
+        uptimeSeconds: 0,
+        freeHeap: 0,
+        freeHeapInternal: 0,
+        freeHeapSpiram: 0,
+        coreVoltage: 0,
+        coreVoltageActual: 0,
+        frequency: 0,
       });
 
       // // Se il polling fallisce, aggiorna il dispositivo come offline in ipMap

@@ -23,6 +23,9 @@ export interface DeviceInfoLegacy {
   bestSessionDiff: string;
   currentDiff?: string;
   freeHeap: number;
+  freeHeapInternal?: number;
+  freeHeapSpiram?: number;
+  isPSRAMAvailable?: number;
   coreVoltage: number;
   coreVoltageActual: number;
   frequency: number;
@@ -70,6 +73,9 @@ export interface DeviceInfoNew {
   bestSessionDiff: string;
   currentDiff?: string;
   freeHeap: number;
+  freeHeapInternal?: number;
+  freeHeapSpiram?: number;
+  isPSRAMAvailable?: number;
   coreVoltage: number;
   coreVoltageActual: number;
   frequency: number;

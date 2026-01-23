@@ -15,6 +15,7 @@ import { LineChartCard } from "@/components/charts/LineChartCard";
 import { PieChartCard } from "@/components/charts/PieChartCard";
 import { TreemapChartCard } from "@/components/charts/TreemapChartCard";
 import { TimeRangeSelect } from "@/components/charts/TimeRangeSelect";
+import { PollingIntervalSelect } from "@/components/charts/PollingIntervalSelect";
 import { DeviceHeatmapCard } from "@/components/charts/DeviceHeatmapCard";
 import {
   TIME_RANGES,
@@ -23,7 +24,9 @@ import {
   promQueryRange,
   rangeToQueryParams,
   vectorToNumber,
+  resolvePollingMs,
   type TimeRangeKey,
+  type PollingIntervalKey,
 } from "@/lib/prometheus";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatDifficulty, parseDifficulty } from "@/utils/formatDifficulty";
@@ -40,6 +43,8 @@ function formatNumber(value: number, digits = 2) {
 export default function OverviewClient() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [range, setRange] = useState<TimeRangeKey>("1h");
+
+  const [polling, setPolling] = useState<PollingIntervalKey>("auto");
 
   const [kpis, setKpis] = useState({
     total: 0,
@@ -64,12 +69,14 @@ export default function OverviewClient() {
     [range]
   );
 
-  const refreshMs = useMemo(() => {
+  const autoRefreshMs = useMemo(() => {
     if (rangeSeconds <= 60 * 60) return 15_000;
     if (rangeSeconds <= 6 * 60 * 60) return 30_000;
     if (rangeSeconds <= 24 * 60 * 60) return 60_000;
     return 5 * 60_000;
   }, [rangeSeconds]);
+
+  const refreshMs = useMemo(() => resolvePollingMs(polling, autoRefreshMs), [polling, autoRefreshMs]);
 
   const fleetBestDiff = useMemo(() => {
     let best = 0;
@@ -85,7 +92,7 @@ export default function OverviewClient() {
       try {
         const response = await axios.get("/api/devices/imprint");
         const imprintedDevices: Device[] = response.data.data;
-        if (imprintedDevices) setDevices(imprintedDevices);
+        if (Array.isArray(imprintedDevices) && imprintedDevices.length > 0) setDevices(imprintedDevices);
       } catch (error) {
         console.error("Error discovering devices:", error);
       }
@@ -140,9 +147,10 @@ export default function OverviewClient() {
   }, [devices]);
 
   useEffect(() => {
+    if (!devices.length) return;
+
     const controller = new AbortController();
     let cancelled = false;
-    let inFlight = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
 
     const load = async () => {
@@ -237,25 +245,15 @@ export default function OverviewClient() {
     };
 
     const tick = async () => {
-      if (cancelled || controller.signal.aborted) return;
-
       if (typeof document !== "undefined" && document.visibilityState === "hidden") {
         timer = setTimeout(tick, refreshMs);
         return;
       }
-
-      if (inFlight) {
-        timer = setTimeout(tick, refreshMs);
-        return;
-      }
-
-      inFlight = true;
       try {
         await load();
       } catch (e) {
         if (!controller.signal.aborted) console.error(e);
       } finally {
-        inFlight = false;
         if (!cancelled && !controller.signal.aborted) timer = setTimeout(tick, refreshMs);
       }
     };
@@ -267,7 +265,7 @@ export default function OverviewClient() {
       controller.abort();
       if (timer) clearTimeout(timer);
     };
-  }, [rangeSeconds, refreshMs]);
+  }, [devices.length, rangeSeconds, refreshMs]);
 
   const firmwareTreemapData = useMemo(() => {
     const data = firmwareData.filter((r) => Number.isFinite(r.count) && r.count > 0);
@@ -295,7 +293,16 @@ export default function OverviewClient() {
     <div className="mx-auto w-full max-w-[1440px] px-4 py-4 tablet:px-8">
       <div className="mb-4 flex flex-col gap-3 tablet:flex-row tablet:items-center tablet:justify-between">
         <h1 className="font-heading text-3xl font-bold uppercase text-foreground">Overview Dashboard</h1>
-        <TimeRangeSelect value={range} onChange={setRange} />
+        <div className="flex flex-col items-start gap-2 tablet:items-end">
+          <div className="flex flex-col items-start gap-1 tablet:items-end">
+            <p className="font-accent text-xs text-muted-foreground">Time range</p>
+            <TimeRangeSelect value={range} onChange={setRange} />
+          </div>
+          <div className="flex flex-col items-start gap-1 tablet:items-end">
+            <p className="font-accent text-xs text-muted-foreground">Refresh</p>
+            <PollingIntervalSelect value={polling} onChange={setPolling} autoMs={autoRefreshMs} />
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-4 tablet:grid-cols-4">

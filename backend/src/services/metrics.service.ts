@@ -94,6 +94,18 @@ export const createMetricsForDevice = (hostname: string) => {
     registers: [globalRegister],
   });
 
+  const freeHeapInternalGauge = new client.Gauge({
+    name: `${prefix}free_heap_internal_bytes`,
+    help: "Current free internal heap in bytes",
+    registers: [globalRegister],
+  });
+
+  const freeHeapSpiramGauge = new client.Gauge({
+    name: `${prefix}free_heap_spiram_bytes`,
+    help: "Current free PSRAM heap in bytes",
+    registers: [globalRegister],
+  });
+
   const coreVoltageGauge = new client.Gauge({
     name: `${prefix}core_voltage_volts`,
     help: "Current core voltage in volts",
@@ -138,6 +150,8 @@ export const createMetricsForDevice = (hostname: string) => {
       setGauge(sharesRejectedGauge, data.sharesRejected);
       setGauge(uptimeGauge, data.uptimeSeconds);
       setGauge(freeHeapGauge, data.freeHeap);
+      setGauge(freeHeapInternalGauge, data.freeHeapInternal);
+      setGauge(freeHeapSpiramGauge, data.freeHeapSpiram);
       setGauge(coreVoltageGauge, data.coreVoltage, (v) => v / 1000); // Assume voltage in millivolts
       setGauge(coreVoltageActualGauge, data.coreVoltageActual, (v) => v / 1000); // Assume voltage in millivolts
       setGauge(frequencyGauge, data.frequency);

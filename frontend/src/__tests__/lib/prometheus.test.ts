@@ -1,4 +1,11 @@
-import { matrixToSeries, promQuery, promQueryRange, rangeToQueryParams, vectorToNumber } from '@/lib/prometheus';
+import {
+  matrixToSeries,
+  promQuery,
+  promQueryRange,
+  rangeToQueryParams,
+  resolvePollingMs,
+  vectorToNumber,
+} from '@/lib/prometheus';
 
 describe('prometheus lib', () => {
 
@@ -24,7 +31,7 @@ describe('prometheus lib', () => {
             [1700000001, '2'],
             ['bad-time', '3'],
             [1700000002, 'bad-value'],
-          ],
+          ] as Array<[number | string, string]>,
         },
       ];
 
@@ -65,6 +72,17 @@ describe('prometheus lib', () => {
       expect(params.step).toBe('3600s');
 
       (Date.now as jest.Mock).mockRestore();
+    });
+  });
+
+  describe('polling interval helpers', () => {
+    it('resolves Auto to autoMs and uses explicit values when set', () => {
+      expect(resolvePollingMs('auto', 12_345)).toBe(12_345);
+      expect(resolvePollingMs('5s', 12_345)).toBe(5_000);
+      expect(resolvePollingMs('5m', 12_345)).toBe(5 * 60_000);
+
+      // Covers the fallback branch when an unknown key is passed at runtime.
+      expect(resolvePollingMs('unknown' as any, 12_345)).toBe(12_345);
     });
   });
 
@@ -125,7 +143,8 @@ describe('prometheus lib', () => {
 
     it('passes AbortSignal through to fetch', async () => {
       const controller = new AbortController();
-      const fetchSpy = jest.spyOn(global, 'fetch' as any).mockImplementation((_url: string, init?: any) => {
+      const fetchSpy = jest.spyOn(global, 'fetch' as any).mockImplementation((...args: any[]) => {
+        const init = args[1] as any;
         const signal = init?.signal as AbortSignal | undefined;
         return new Promise((_resolve, reject) => {
           signal?.addEventListener('abort', () => {
@@ -139,7 +158,7 @@ describe('prometheus lib', () => {
 
       await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
 
-      const init = fetchSpy.mock.calls[0][1];
+      const init = fetchSpy.mock.calls[0][1] as any;
       expect(init.signal).toBe(controller.signal);
     });
 
@@ -157,7 +176,7 @@ describe('prometheus lib', () => {
 
       await promQuery('up', undefined, { signal: controller.signal });
 
-      const init = fetchSpy.mock.calls[0][1];
+      const init = fetchSpy.mock.calls[0][1] as any;
       expect(init.signal).toBe(controller.signal);
     });
   });

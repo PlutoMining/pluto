@@ -61,6 +61,20 @@ export function normalizeSystemInfo(raw: any): any {
     raw.uptimeSeconds;
   const normalizedUptimeSeconds = coerceFiniteNumber(uptimeSeconds);
 
+  const isPSRAMAvailable = pickFirstValue(raw, ["isPSRAMAvailable", "is_psram_available"]);
+  const normalizedIsPSRAMAvailable =
+    typeof isPSRAMAvailable === "boolean"
+      ? isPSRAMAvailable
+        ? 1
+        : 0
+      : coerceFiniteNumber(isPSRAMAvailable);
+
+  const freeHeapInternal = pickFirstValue(raw, ["freeHeapInternal", "free_heap_internal"]);
+  const normalizedFreeHeapInternal = coerceFiniteNumber(freeHeapInternal);
+
+  const freeHeapSpiram = pickFirstValue(raw, ["freeHeapSpiram", "free_heap_spiram"]);
+  const normalizedFreeHeapSpiram = coerceFiniteNumber(freeHeapSpiram);
+
   return {
     ...raw,
     ...(bestDiff !== undefined ? { bestDiff } : {}),
@@ -69,5 +83,8 @@ export function normalizeSystemInfo(raw: any): any {
     ...(normalizedUptimeSeconds !== undefined
       ? { uptimeSeconds: normalizedUptimeSeconds }
       : {}),
+    ...(normalizedIsPSRAMAvailable !== undefined ? { isPSRAMAvailable: normalizedIsPSRAMAvailable } : {}),
+    ...(normalizedFreeHeapInternal !== undefined ? { freeHeapInternal: normalizedFreeHeapInternal } : {}),
+    ...(normalizedFreeHeapSpiram !== undefined ? { freeHeapSpiram: normalizedFreeHeapSpiram } : {}),
   };
 }

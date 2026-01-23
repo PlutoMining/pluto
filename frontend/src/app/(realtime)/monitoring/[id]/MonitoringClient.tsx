@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LineChartCard } from "@/components/charts/LineChartCard";
 import { MultiLineChartCard } from "@/components/charts/MultiLineChartCard";
 import { TimeRangeSelect } from "@/components/charts/TimeRangeSelect";
+import { PollingIntervalSelect } from "@/components/charts/PollingIntervalSelect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSocket } from "@/providers/SocketProvider";
@@ -23,7 +24,9 @@ import {
   matrixToSeries,
   promQueryRange,
   rangeToQueryParams,
+  resolvePollingMs,
   type TimeRangeKey,
+  type PollingIntervalKey,
 } from "@/lib/prometheus";
 import { sanitizeHostname } from "@pluto/utils";
 import type { Device, Preset } from "@pluto/interfaces";
@@ -35,11 +38,19 @@ function formatNumber(value: number | undefined, digits = 2) {
   return value.toFixed(digits);
 }
 
+function bytesToMb(value: number | undefined) {
+  if (value === undefined || value === null) return undefined;
+  if (!Number.isFinite(value)) return undefined;
+  return value / (1024 * 1024);
+}
+
 export default function MonitoringClient({ id }: { id: string }) {
   const [device, setDevice] = useState<Device | undefined>(undefined);
   const [preset, setPreset] = useState<Partial<Preset> | undefined>(undefined);
 
   const [range, setRange] = useState<TimeRangeKey>("1h");
+
+  const [polling, setPolling] = useState<PollingIntervalKey>("auto");
 
   const [hashrate, setHashrate] = useState<Array<{ t: number; v: number }>>([]);
   const [power, setPower] = useState<Array<{ t: number; v: number }>>([]);
@@ -50,18 +61,24 @@ export default function MonitoringClient({ id }: { id: string }) {
   const [coreVActual, setCoreVActual] = useState<Array<{ t: number; v: number }>>([]);
   const [coreV, setCoreV] = useState<Array<{ t: number; v: number }>>([]);
   const [voltage, setVoltage] = useState<Array<{ t: number; v: number }>>([]);
+  const [frequency, setFrequency] = useState<Array<{ t: number; v: number }>>([]);
+  const [freeHeapMb, setFreeHeapMb] = useState<Array<{ t: number; v: number }>>([]);
+  const [freeHeapInternalMb, setFreeHeapInternalMb] = useState<Array<{ t: number; v: number }>>([]);
+  const [freeHeapSpiramMb, setFreeHeapSpiramMb] = useState<Array<{ t: number; v: number }>>([]);
 
   const rangeSeconds = useMemo(
     () => TIME_RANGES.find((r) => r.key === range)?.seconds ?? 3600,
     [range]
   );
 
-  const refreshMs = useMemo(() => {
+  const autoRefreshMs = useMemo(() => {
     if (rangeSeconds <= 60 * 60) return 15_000;
     if (rangeSeconds <= 6 * 60 * 60) return 30_000;
     if (rangeSeconds <= 24 * 60 * 60) return 60_000;
     return 5 * 60_000;
   }, [rangeSeconds]);
+
+  const refreshMs = useMemo(() => resolvePollingMs(polling, autoRefreshMs), [polling, autoRefreshMs]);
 
   const host = useMemo(() => sanitizeHostname(id), [id]);
 
@@ -99,6 +116,67 @@ export default function MonitoringClient({ id }: { id: string }) {
       },
     ],
     [voltage, coreVActual, coreV]
+  );
+
+  const psramAvailable = useMemo(() => Number(device?.info.isPSRAMAvailable) === 1, [device?.info.isPSRAMAvailable]);
+
+  const heapSeries = useMemo(() => {
+    const series: Array<{
+      key: string;
+      label: string;
+      color: string;
+      points: Array<{ t: number; v: number }>;
+      strokeWidth?: number;
+      strokeDasharray?: string;
+      strokeLinecap?: "butt" | "round" | "square";
+      renderOrder?: number;
+    }> = [
+      {
+        key: "total",
+        label: "Total",
+        color: "hsl(var(--chart-1))",
+        points: freeHeapMb,
+        strokeWidth: 2,
+        renderOrder: 0,
+      },
+    ];
+
+    if (psramAvailable && freeHeapSpiramMb.length > 0) {
+      series.push({
+        key: "psram",
+        label: "PSRAM",
+        color: "hsl(var(--chart-2))",
+        points: freeHeapSpiramMb,
+        strokeDasharray: "5 7",
+        strokeLinecap: "butt" as const,
+        strokeWidth: 2,
+        renderOrder: 1,
+      });
+    }
+
+    if (psramAvailable && freeHeapInternalMb.length > 0) {
+      series.push({
+        key: "internal",
+        label: "Internal",
+        color: "hsl(var(--chart-5))",
+        points: freeHeapInternalMb,
+        strokeDasharray: "2 4",
+        strokeLinecap: "butt" as const,
+        strokeWidth: 2,
+        renderOrder: 2,
+      });
+    }
+
+    return series;
+  }, [freeHeapInternalMb, freeHeapMb, freeHeapSpiramMb, psramAvailable]);
+
+  const freeHeapInternalCurrentMb = useMemo(
+    () => bytesToMb((device?.info as any)?.freeHeapInternal),
+    [device?.info]
+  );
+  const freeHeapSpiramCurrentMb = useMemo(
+    () => bytesToMb((device?.info as any)?.freeHeapSpiram),
+    [device?.info]
   );
 
   useEffect(() => {
@@ -150,7 +228,6 @@ export default function MonitoringClient({ id }: { id: string }) {
   useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
-    let inFlight = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
 
     const load = async () => {
@@ -167,12 +244,29 @@ export default function MonitoringClient({ id }: { id: string }) {
           coreVActual: `${host}_core_voltage_actual_volts`,
           coreV: `${host}_core_voltage_volts`,
           voltage: `${host}_voltage_volts`,
+          frequency: `${host}_frequency_mhz`,
+          freeHeap: `${host}_free_heap_bytes`,
+          freeHeapInternal: `${host}_free_heap_internal_bytes`,
+          freeHeapSpiram: `${host}_free_heap_spiram_bytes`,
         };
 
         const options = { signal: controller.signal };
 
-        const [hashrateRes, powerRes, effRes, tempRes, vrTempRes, fanRes, coreVaRes, coreVRes, voltRes] =
-          await Promise.all([
+        const [
+          hashrateRes,
+          powerRes,
+          effRes,
+          tempRes,
+          vrTempRes,
+          fanRes,
+          coreVaRes,
+          coreVRes,
+          voltRes,
+          freqRes,
+          freeHeapRes,
+          freeHeapInternalRes,
+          freeHeapSpiramRes,
+        ] = await Promise.all([
             promQueryRange(queries.hashrate, start, end, step, options),
             promQueryRange(queries.power, start, end, step, options),
             promQueryRange(queries.efficiency, start, end, step, options),
@@ -182,6 +276,10 @@ export default function MonitoringClient({ id }: { id: string }) {
             promQueryRange(queries.coreVActual, start, end, step, options),
             promQueryRange(queries.coreV, start, end, step, options),
             promQueryRange(queries.voltage, start, end, step, options),
+            promQueryRange(queries.frequency, start, end, step, options),
+            promQueryRange(queries.freeHeap, start, end, step, options),
+            promQueryRange(queries.freeHeapInternal, start, end, step, options),
+            promQueryRange(queries.freeHeapSpiram, start, end, step, options),
           ]);
 
         if (cancelled || controller.signal.aborted) return;
@@ -195,6 +293,31 @@ export default function MonitoringClient({ id }: { id: string }) {
         setCoreVActual(matrixToSeries((coreVaRes as any).data.result)[0]?.points ?? []);
         setCoreV(matrixToSeries((coreVRes as any).data.result)[0]?.points ?? []);
         setVoltage(matrixToSeries((voltRes as any).data.result)[0]?.points ?? []);
+        setFrequency(matrixToSeries((freqRes as any).data.result)[0]?.points ?? []);
+
+        const freeHeapPoints = matrixToSeries((freeHeapRes as any).data.result)[0]?.points ?? [];
+        setFreeHeapMb(
+          freeHeapPoints.map((p) => ({
+            t: p.t,
+            v: p.v / (1024 * 1024),
+          }))
+        );
+
+        const freeHeapInternalPoints = matrixToSeries((freeHeapInternalRes as any).data.result)[0]?.points ?? [];
+        setFreeHeapInternalMb(
+          freeHeapInternalPoints.map((p) => ({
+            t: p.t,
+            v: p.v / (1024 * 1024),
+          }))
+        );
+
+        const freeHeapSpiramPoints = matrixToSeries((freeHeapSpiramRes as any).data.result)[0]?.points ?? [];
+        setFreeHeapSpiramMb(
+          freeHeapSpiramPoints.map((p) => ({
+            t: p.t,
+            v: p.v / (1024 * 1024),
+          }))
+        );
       } catch (error: any) {
         if (controller.signal.aborted) return;
         if (error?.name === "AbortError") return;
@@ -203,23 +326,13 @@ export default function MonitoringClient({ id }: { id: string }) {
     };
 
     const tick = async () => {
-      if (cancelled || controller.signal.aborted) return;
-
       if (typeof document !== "undefined" && document.visibilityState === "hidden") {
         timer = setTimeout(tick, refreshMs);
         return;
       }
-
-      if (inFlight) {
-        timer = setTimeout(tick, refreshMs);
-        return;
-      }
-
-      inFlight = true;
       try {
         await load();
       } finally {
-        inFlight = false;
         if (!cancelled && !controller.signal.aborted) timer = setTimeout(tick, refreshMs);
       }
     };
@@ -242,7 +355,16 @@ export default function MonitoringClient({ id }: { id: string }) {
           </NextLink>
           <h1 className="font-heading text-3xl font-bold uppercase text-foreground">{id} Dashboard</h1>
         </div>
-        <TimeRangeSelect value={range} onChange={setRange} />
+        <div className="flex flex-col items-start gap-2 tablet:items-end">
+          <div className="flex flex-col items-start gap-1 tablet:items-end">
+            <p className="font-accent text-xs text-muted-foreground">Time range</p>
+            <TimeRangeSelect value={range} onChange={setRange} />
+          </div>
+          <div className="flex flex-col items-start gap-1 tablet:items-end">
+            <p className="font-accent text-xs text-muted-foreground">Refresh</p>
+            <PollingIntervalSelect value={polling} onChange={setPolling} autoMs={autoRefreshMs} />
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-4 tablet:grid-cols-2">
@@ -269,7 +391,7 @@ export default function MonitoringClient({ id }: { id: string }) {
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4 tablet:grid-cols-3 desktop:grid-cols-6">
+      <div className="mt-4 grid grid-cols-2 gap-4 tablet:grid-cols-4 desktop:grid-cols-4">
         <Card className="rounded-none">
           <CardHeader>
             <CardTitle>Hashrate</CardTitle>
@@ -301,31 +423,55 @@ export default function MonitoringClient({ id }: { id: string }) {
         </Card>
         <Card className="rounded-none">
           <CardHeader>
-            <CardTitle>Temperatures</CardTitle>
+            <CardTitle>Frequency</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-1">
-              <p className="font-accent text-xl text-foreground">
-                {formatNumber(device?.info.temp, 1)}°C{" "}
-                <span className="text-muted-foreground">/</span> {formatNumber(device?.info.vrTemp, 1)}°C
-              </p>
-              <p className="font-accent text-xs text-muted-foreground">ASIC / VR</p>
-            </div>
+            <p className="font-accent text-xl text-foreground">{formatNumber((device?.info as any)?.frequency, 0)} MHz</p>
           </CardContent>
         </Card>
         <Card className="rounded-none">
-          <CardHeader>
-            <CardTitle>Difficulty</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
+            <CardTitle>Temperatures</CardTitle>
+            <span className="ml-auto whitespace-nowrap font-accent text-xs text-muted-foreground">ASIC | VR</span>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-1">
-              <p className="font-accent text-xl text-foreground">
-                {formatDifficulty((device?.info as any)?.currentDiff ?? device?.info.bestSessionDiff)}
-                <span className="text-muted-foreground"> / </span>
-                {formatDifficulty(device?.info.bestDiff)}
-              </p>
-              <p className="font-accent text-xs text-muted-foreground">Current / Best</p>
-            </div>
+            <p className="font-accent text-xl text-foreground">
+              {formatNumber(device?.info.temp, 1)}°C <span className="text-muted-foreground">|</span>{" "}
+              {formatNumber(device?.info.vrTemp, 1)}°C
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-none">
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
+            <CardTitle>Free heap</CardTitle>
+            <span className="ml-auto whitespace-nowrap font-accent text-xs text-muted-foreground">
+              {psramAvailable ? "Internal | PSRAM" : "Internal"}
+            </span>
+          </CardHeader>
+          <CardContent>
+            <p className="font-accent text-xl text-foreground">
+              {psramAvailable ? (
+                <>
+                  {formatNumber(freeHeapInternalCurrentMb, 2)} MB <span className="text-muted-foreground">|</span>{" "}
+                  {formatNumber(freeHeapSpiramCurrentMb, 2)} MB
+                </>
+              ) : (
+                <>{formatNumber(freeHeapInternalCurrentMb, 2)} MB</>
+              )}
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-none">
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
+            <CardTitle>Difficulty</CardTitle>
+            <span className="ml-auto whitespace-nowrap font-accent text-xs text-muted-foreground">Current | Best</span>
+          </CardHeader>
+          <CardContent>
+            <p className="font-accent text-xl text-foreground">
+              {formatDifficulty((device?.info as any)?.currentDiff ?? device?.info.bestSessionDiff)}
+              <span className="text-muted-foreground"> | </span>
+              {formatDifficulty(device?.info.bestDiff)}
+            </p>
           </CardContent>
         </Card>
         <Card className="rounded-none">
@@ -356,6 +502,16 @@ export default function MonitoringClient({ id }: { id: string }) {
       <div className="mt-4 grid gap-4 tablet:grid-cols-2">
         <LineChartCard title="Fan speed" points={fan} unit="RPM" />
         <MultiLineChartCard title="Voltages" series={voltageSeries} unit="V" valueDigits={3} yDomain={[0, 6]} />
+      </div>
+
+      <div className="mt-4 grid gap-4 tablet:grid-cols-2">
+        <LineChartCard title="Frequency" points={frequency} unit="MHz" curve="step" />
+        <MultiLineChartCard
+          title="Free heap"
+          unit="MB"
+          valueDigits={2}
+          series={heapSeries}
+        />
       </div>
     </div>
   );

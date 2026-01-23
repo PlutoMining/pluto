@@ -78,5 +78,29 @@ describe("tracing.helpers", () => {
 
       expect(normalized.uptimeSeconds).toBeUndefined();
     });
+
+    it("normalizes psram availability and heap counters", () => {
+      const normalizedTrue = normalizeSystemInfo({
+        isPSRAMAvailable: true,
+        free_heap_internal: "100",
+        freeHeapSpiram: 200,
+      });
+
+      expect(normalizedTrue.isPSRAMAvailable).toBe(1);
+      expect(normalizedTrue.freeHeapInternal).toBe(100);
+      expect(normalizedTrue.freeHeapSpiram).toBe(200);
+
+      const normalizedFalse = normalizeSystemInfo({
+        is_psram_available: false,
+      });
+
+      expect(normalizedFalse.isPSRAMAvailable).toBe(0);
+
+      const normalizedNumeric = normalizeSystemInfo({
+        isPSRAMAvailable: "2",
+      });
+
+      expect(normalizedNumeric.isPSRAMAvailable).toBe(2);
+    });
   });
 });

@@ -70,6 +70,31 @@ describe("arpScanWrapper", () => {
       );
     });
 
+    it("falls back to default ignoredups when env var is invalid", async () => {
+      const { arpScan, execPromise } = await loadArpScanWrapper();
+
+      process.env.ARP_SCAN_IGNORE_DUPS = "maybe";
+      execPromise.mockResolvedValue({ stdout: "", stderr: "" });
+
+      await expect(arpScan("eth0")).resolves.toEqual([]);
+      expect(execPromise).toHaveBeenCalledWith(
+        "arp-scan --interface=eth0 --localnet --retry=3 --timeout=2000 --ignoredups"
+      );
+    });
+
+    it("parses truthy ignoredups and invalid retry values", async () => {
+      const { arpScan, execPromise } = await loadArpScanWrapper();
+
+      process.env.ARP_SCAN_IGNORE_DUPS = "yes";
+      process.env.ARP_SCAN_RETRY = "-1";
+      execPromise.mockResolvedValue({ stdout: "", stderr: "" });
+
+      await expect(arpScan("eth0")).resolves.toEqual([]);
+      expect(execPromise).toHaveBeenCalledWith(
+        "arp-scan --interface=eth0 --localnet --retry=3 --timeout=2000 --ignoredups"
+      );
+    });
+
     it("rejects invalid interface name", async () => {
       const { arpScan } = await loadArpScanWrapper();
 
