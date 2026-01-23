@@ -28,7 +28,7 @@ export default function RootLayout({
         <Providers>
           <div className="flex min-h-screen flex-col">
             <NavBar />
-            <main className="flex-1 overflow-y-auto bg-background">{children}</main>
+            <main className="flex-1 bg-background">{children}</main>
             <Footer />
           </div>
         </Providers>

@@ -12,7 +12,7 @@ import { DiscordLogo, GithubLogo } from "../icons/FooterIcons";
 
 export const Footer = () => {
   return (
-    <footer className="sticky bottom-0 z-10 border-t border-border bg-background py-4 text-muted-foreground">
+    <footer className="mt-auto border-t border-border bg-background py-4 text-muted-foreground">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-8 tablet:flex-row tablet:items-center tablet:justify-between">
         <div className="hidden flex-col-reverse gap-2 tablet:flex tablet:flex-col tablet:items-start desktop:flex-row desktop:items-center desktop:gap-4">
           <div className="flex w-full items-center justify-between gap-4 tablet:w-auto tablet:justify-start">
