@@ -511,6 +511,10 @@ main() {
     UPDATE_MANIFESTS=true
   fi
 
+  if [[ -n "$APP_VERSION" ]] && ! $UPDATE_MANIFESTS; then
+    err "--app-version requires --update-manifests (or --sync-to-umbrel)"
+  fi
+
   # Load .env file if present
   load_env_file "$SCRIPT_ROOT"
 
@@ -715,14 +719,25 @@ main() {
     IFS=',' eval 'images_string="${images_arg[*]}"'
 
     if $DRY_RUN; then
-      log "[dry-run] Would call bump-umbrel-app-version.sh with: ${images_string}"
+      if [[ -n "$APP_VERSION" ]]; then
+        log "[dry-run] Would call bump-umbrel-app-version.sh with --app-version ${APP_VERSION}: ${images_string}"
+      else
+        log "[dry-run] Would call bump-umbrel-app-version.sh with: ${images_string}"
+      fi
     else
-      "${SCRIPT_ROOT}/scripts/bump-umbrel-app-version.sh" \
-        --app pluto-next \
-        --channel beta \
-        --manifest "${SCRIPT_ROOT}/umbrel-apps/pluto-next/umbrel-app.yml" \
-        --compose "${SCRIPT_ROOT}/umbrel-apps/pluto-next/docker-compose.yml" \
-        --images "$images_string" || {
+      bump_args=(
+        --app pluto-next
+        --channel beta
+        --manifest "${SCRIPT_ROOT}/umbrel-apps/pluto-next/umbrel-app.yml"
+        --compose "${SCRIPT_ROOT}/umbrel-apps/pluto-next/docker-compose.yml"
+        --images "$images_string"
+      )
+
+      if [[ -n "$APP_VERSION" ]]; then
+        bump_args+=(--app-version "$APP_VERSION")
+      fi
+
+      "${SCRIPT_ROOT}/scripts/bump-umbrel-app-version.sh" "${bump_args[@]}" || {
         # If manifest update fails, it might be because bundle is unchanged
         log "Manifest update completed (bundle may be unchanged)"
       }

@@ -32,6 +32,7 @@ CHANNEL=""
 MANIFEST=""
 COMPOSE=""
 IMAGES_ARG=""
+APP_VERSION_OVERRIDE=""
 
 usage() {
   cat <<EOF
@@ -45,6 +46,8 @@ Options:
   --compose       Path to docker-compose.yml to update
   --images        Comma-separated list of service=image refs to pin
                   Example: "backend=ghcr.io/...@sha256:...,frontend=ghcr.io/...@sha256:..."
+  --app-version   Optional explicit app version to write into umbrel-app.yml
+                  (skips auto-bump logic). Example: 2.0.1-beta.0
   -h, --help      Show this help
 EOF
 }
@@ -72,6 +75,10 @@ parse_args() {
         IMAGES_ARG="${2:-}"
         shift 2
         ;;
+      --app-version)
+        APP_VERSION_OVERRIDE="${2:-}"
+        shift 2
+        ;;
       -h|--help)
         usage
         exit 0
@@ -94,6 +101,14 @@ ensure_args() {
   [[ -n "$COMPOSE" && -f "$COMPOSE" ]] || err "compose file '$COMPOSE' not found"
 
   [[ -n "$IMAGES_ARG" ]] || err "--images is required"
+
+  if [[ -n "$APP_VERSION_OVERRIDE" ]]; then
+    if [[ "$CHANNEL" == "stable" ]]; then
+      [[ "$APP_VERSION_OVERRIDE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || err "--app-version must be a stable semver (e.g. 2.0.1) when --channel stable"
+    else
+      [[ "$APP_VERSION_OVERRIDE" =~ ^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$ ]] || err "--app-version must be a beta semver (e.g. 2.0.1-beta.0) when --channel beta"
+    fi
+  fi
 }
 
 NEW_IMAGE_SERVICES=()
@@ -308,7 +323,7 @@ main() {
 
   local diff
   diff=$(compare_fingerprints)
-  if [[ "$diff" == "same" ]]; then
+  if [[ "$diff" == "same" && -z "$APP_VERSION_OVERRIDE" ]]; then
     log "Bundle unchanged; leaving app version and compose file as-is."
     log "Comparison details:"
     for i in "${!NEW_IMAGE_SERVICES[@]}"; do
@@ -324,6 +339,10 @@ main() {
     done
     log "All image references match exactly (same tag and SHA256)."
     exit 0
+  fi
+
+  if [[ -n "$APP_VERSION_OVERRIDE" ]]; then
+    log "Using explicit app version override: ${APP_VERSION_OVERRIDE}"
   fi
 
   # Step 1: Extract current versions from docker-compose.yml
@@ -389,12 +408,16 @@ main() {
     esac
   done
 
-  # Step 4: Calculate new app version based on highest change
+  # Step 4: Calculate new app version based on highest change (unless overridden)
   local current_app_version next_version
   current_app_version=$(get_current_app_version)
   if [[ -z "$current_app_version" ]]; then
     err "Could not determine current app version from $MANIFEST"
   fi
+
+  if [[ -n "$APP_VERSION_OVERRIDE" ]]; then
+    next_version="$APP_VERSION_OVERRIDE"
+  else
 
   # If bundle changed but no version changes, still bump patch
   if [[ "$highest_change" == "none" ]]; then
@@ -447,6 +470,8 @@ main() {
       # Base version changed - reset beta to 0
       next_version="${major}.${minor}.${patch}-beta.0"
     fi
+  fi
+
   fi
 
   log ""
