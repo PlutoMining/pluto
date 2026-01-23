@@ -51,4 +51,10 @@ describe("backend config/environment", () => {
     expect(config.autoListen).toBe(true);
     expect(config.deleteDataOnDeviceRemove).toBe(true);
   });
+
+  it("throws when DISCOVERY_SERVICE_HOST is missing", async () => {
+    delete process.env.DISCOVERY_SERVICE_HOST;
+
+    await expect(import("../../config/environment")).rejects.toThrow("DISCOVERY_SERVICE_HOST");
+  });
 });

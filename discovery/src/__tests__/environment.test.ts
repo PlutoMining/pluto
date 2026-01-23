@@ -38,4 +38,10 @@ describe("config/environment", () => {
     expect(config.mockDeviceHost).toBe("device-host");
     expect(config.mockDiscoveryHost).toBe("http://mock");
   });
+
+  it("throws when MOCK_DISCOVERY_HOST is missing", async () => {
+    delete process.env.MOCK_DISCOVERY_HOST;
+
+    await expect(import("@/config/environment")).rejects.toThrow("MOCK_DISCOVERY_HOST");
+  });
 });

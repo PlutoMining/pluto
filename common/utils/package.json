@@ -11,7 +11,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "AGPL-3.0",
   "description": "",
   "devDependencies": {
     "@types/jest": "^29.5.12",

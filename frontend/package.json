@@ -2,6 +2,7 @@
   "name": "@pluto/frontend",
   "version": "2.0.0-beta.3",
   "private": true,
+  "license": "AGPL-3.0",
   "scripts": {
     "dev": "next dev",
     "build": "ESLINT_USE_FLAT_CONFIG=false next build",
