@@ -161,13 +161,14 @@ export default function DevicesClient() {
       ) : null}
 
       <form className="flex flex-col gap-6">
-        <div className="flex items-center justify-between gap-6">
-          <h1 className="font-heading text-4xl font-bold uppercase">Your devices</h1>
+        <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
+          <h1 className="font-heading text-3xl font-bold uppercase">Your devices</h1>
           <Button
             variant={"primary"}
             onClick={onOpen}
             rightIcon={<AddIcon color="currentColor" />}
             label="Add device"
+            className="w-full tablet:w-auto"
           />
         </div>
 

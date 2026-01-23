@@ -14,9 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChartCard } from "@/components/charts/LineChartCard";
 import { PieChartCard } from "@/components/charts/PieChartCard";
 import { TreemapChartCard } from "@/components/charts/TreemapChartCard";
-import { TimeRangeSelect } from "@/components/charts/TimeRangeSelect";
-import { PollingIntervalSelect } from "@/components/charts/PollingIntervalSelect";
 import { DeviceHeatmapCard } from "@/components/charts/DeviceHeatmapCard";
+import { ChartsToolbar } from "@/components/charts/ChartsToolbar";
 import {
   TIME_RANGES,
   matrixToSeries,
@@ -282,27 +281,17 @@ export default function OverviewClient() {
 
   if (devices.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-[1440px] px-4 py-4 tablet:px-8">
-        <h1 className="mb-4 font-heading text-3xl font-bold uppercase text-foreground">Overview Dashboard</h1>
+      <div className="container flex-1 px-4 py-4 tablet:px-8 tablet:py-6">
+        <h1 className="mb-4 font-heading text-3xl font-bold uppercase">Overview Dashboard</h1>
         <NoDeviceAddedSection />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] px-4 py-4 tablet:px-8">
-      <div className="mb-4 flex flex-col gap-3 tablet:flex-row tablet:items-center tablet:justify-between">
-        <h1 className="font-heading text-3xl font-bold uppercase text-foreground">Overview Dashboard</h1>
-        <div className="flex flex-col items-start gap-2 tablet:items-end">
-          <div className="flex flex-col items-start gap-1 tablet:items-end">
-            <p className="font-accent text-xs text-muted-foreground">Time range</p>
-            <TimeRangeSelect value={range} onChange={setRange} />
-          </div>
-          <div className="flex flex-col items-start gap-1 tablet:items-end">
-            <p className="font-accent text-xs text-muted-foreground">Refresh</p>
-            <PollingIntervalSelect value={polling} onChange={setPolling} autoMs={autoRefreshMs} />
-          </div>
-        </div>
+    <div className="container flex-1 px-4 py-4 tablet:px-8 tablet:py-6">
+      <div className="mb-3 tablet:mb-4">
+        <h1 className="font-heading text-3xl font-bold uppercase">Overview Dashboard</h1>
       </div>
 
       <div className="grid gap-4 tablet:grid-cols-4">
@@ -340,12 +329,25 @@ export default function OverviewClient() {
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4 tablet:grid-cols-2">
+      <div className="mt-3 grid gap-4 tablet:mt-4">
+        <DeviceHeatmapCard title="Device map" devices={devices} />
+      </div>
+
+      <ChartsToolbar
+        className="mt-3 tablet:mt-4"
+        range={range}
+        onRangeChange={setRange}
+        polling={polling}
+        onPollingChange={setPolling}
+        autoRefreshMs={autoRefreshMs}
+      />
+
+      <div className="mt-3 grid gap-4 tablet:mt-4 tablet:grid-cols-2">
         <LineChartCard title="Total hashrate" points={hashrateSeries} unit="GH/s" />
         <LineChartCard title="Total power" points={powerSeries} unit="W" curve="step" />
       </div>
 
-      <div className="mt-4 grid gap-4 tablet:grid-cols-2">
+      <div className="mt-3 grid gap-4 tablet:mt-4 tablet:grid-cols-2">
         <LineChartCard title="Total efficiency" points={effSeries} unit="J/TH" />
         <TreemapChartCard
           title="Firmware distribution"
@@ -369,7 +371,7 @@ export default function OverviewClient() {
         />
       </div>
 
-      <div className="mt-4 grid gap-4">
+      <div className="mt-3 grid gap-4 tablet:mt-4">
         <Card className="rounded-none">
           <CardHeader>
             <CardTitle>Shares by pool</CardTitle>
@@ -404,9 +406,6 @@ export default function OverviewClient() {
             </div>
           </CardContent>
         </Card>
-      </div>
-      <div className="mt-4 grid gap-4">
-        <DeviceHeatmapCard title="Device map" devices={devices} />
       </div>
     </div>
   );

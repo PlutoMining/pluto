@@ -125,7 +125,7 @@ export default function MonitoringTableClient() {
     <div className="container flex-1 py-6">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
-          <h1 className="font-heading text-4xl font-bold uppercase">Monitoring</h1>
+          <h1 className="font-heading text-3xl font-bold uppercase">Monitoring</h1>
           <div className="w-full tablet:w-auto">
             <SearchInput label="Search device" onChange={handleSearch} placeholder="Search device" />
           </div>

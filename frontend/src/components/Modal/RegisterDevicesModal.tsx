@@ -259,6 +259,7 @@ function ModalBodyContent({
                 isLoading={isLoadingData}
                 disabled={areManuallySearchFieldsValid()}
                 label="Search"
+                className="w-full tablet:w-auto"
               />
             </div>
 
@@ -276,14 +277,15 @@ function ModalBodyContent({
                     handleAllCheckbox={handleAllCheckbox}
                     selectedTab={tabIndex}
                   />
-                  <div className="flex gap-4">
-                    <Button variant="outlined" onClick={onClose} label="Cancel" />
+                  <div className="flex flex-col gap-3 tablet:flex-row tablet:gap-4">
+                    <Button variant="outlined" onClick={onClose} label="Cancel" className="w-full tablet:w-auto" />
                     <Button
                       variant="primary"
                       onClick={() => registerDevice()}
                       rightIcon={<AddIcon color="currentColor" />}
                       disabled={discoveredDevices.length !== 1}
                       label="Add device"
+                      className="w-full tablet:w-auto"
                     />
                   </div>
                 </div>
@@ -325,8 +327,8 @@ function ModalBodyContent({
                   selectedTab={tabIndex}
                 />
 
-                <div className="flex gap-4">
-                  <Button variant="outlined" onClick={onClose} label="Cancel" />
+                <div className="flex flex-col gap-3 tablet:flex-row tablet:gap-4">
+                  <Button variant="outlined" onClick={onClose} label="Cancel" className="w-full tablet:w-auto" />
                   <Button
                     variant="primary"
                     onClick={() => registerDevices()}
@@ -337,6 +339,7 @@ function ModalBodyContent({
                         ? checkedFetchedItems.filter((el) => el === true).length
                         : ""
                     } device`}
+                    className="w-full tablet:w-auto"
                   />
                 </div>
               </div>

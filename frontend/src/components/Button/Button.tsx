@@ -23,6 +23,7 @@ interface ButtonProps {
   rightIcon?: ReactElement;
   size?: string;
   transform?: "uppercase" | "capitalize";
+  className?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -36,6 +37,7 @@ const Button: React.FC<ButtonProps> = ({
   rightIcon,
   size = "sm",
   transform = "uppercase",
+  className,
 }) => {
   const mappedSize = size === "lg" ? "lg" : size === "md" ? "md" : "sm";
 
@@ -46,7 +48,7 @@ const Button: React.FC<ButtonProps> = ({
       size={mappedSize}
       disabled={disabled || isLoading || false}
       onClick={onClick}
-      className={cn(transform === "uppercase" ? "uppercase" : "capitalize")}
+      className={cn(transform === "uppercase" ? "uppercase" : "capitalize", className)}
     >
       {icon ? <span className="mr-1 inline-flex">{icon}</span> : null}
       {label}

@@ -164,10 +164,15 @@ export default function PresetsClient() {
         <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
       ) : null}
 
-      <div className="flex items-center justify-between gap-6">
-        <h1 className="font-heading text-4xl font-bold uppercase">Pool Presets</h1>
+      <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
+        <h1 className="font-heading text-3xl font-bold uppercase">Pool Presets</h1>
         {presets && presets.length > 0 ? (
-          <Button variant="primary" onClick={handleNewPreset()} label="Add a New Preset" />
+          <Button
+            variant="primary"
+            onClick={handleNewPreset()}
+            label="Add a New Preset"
+            className="w-full tablet:w-auto"
+          />
         ) : null}
       </div>
 
