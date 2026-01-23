@@ -57,4 +57,11 @@ describe("backend config/environment", () => {
 
     await expect(import("../../config/environment")).rejects.toThrow("DISCOVERY_SERVICE_HOST");
   });
+
+  it("throws when PORT is not a number", async () => {
+    process.env.PORT = "not-a-number";
+    process.env.DISCOVERY_SERVICE_HOST = "http://discovery.test";
+
+    await expect(import("../../config/environment")).rejects.toThrow("Invalid number for PORT");
+  });
 });

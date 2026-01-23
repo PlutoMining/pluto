@@ -6,6 +6,7 @@ module.exports = {
   displayName: 'discovery',
   rootDir: __dirname,
   testEnvironment: 'node',
+  setupFiles: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     ...baseConfig.moduleNameMapper,
     '^@/(.*)$': '<rootDir>/src/$1',

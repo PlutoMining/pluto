@@ -44,4 +44,11 @@ describe("config/environment", () => {
 
     await expect(import("@/config/environment")).rejects.toThrow("MOCK_DISCOVERY_HOST");
   });
+
+  it("throws when PORT is not a number", async () => {
+    process.env.PORT = "not-a-number";
+    process.env.MOCK_DISCOVERY_HOST = "http://mock";
+
+    await expect(import("@/config/environment")).rejects.toThrow("Invalid number for PORT");
+  });
 });
