@@ -21,7 +21,7 @@ describe("NoDeviceAddedSection", () => {
     const link = screen.getByRole("link");
     expect(link).toHaveAttribute("href", "/devices");
 
-    const button = screen.getByRole("button", { name: 'Go to "Your Devices"' });
+    const button = screen.getByRole("button", { name: "Go to Your Devices" });
     expect(button).toBeInTheDocument();
     expect(button).toHaveClass("bg-primary");
   });
