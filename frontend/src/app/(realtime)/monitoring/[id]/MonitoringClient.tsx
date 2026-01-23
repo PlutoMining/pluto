@@ -56,6 +56,13 @@ export default function MonitoringClient({ id }: { id: string }) {
     [range]
   );
 
+  const refreshMs = useMemo(() => {
+    if (rangeSeconds <= 60 * 60) return 15_000;
+    if (rangeSeconds <= 6 * 60 * 60) return 30_000;
+    if (rangeSeconds <= 24 * 60 * 60) return 60_000;
+    return 5 * 60_000;
+  }, [rangeSeconds]);
+
   const host = useMemo(() => sanitizeHostname(id), [id]);
 
   const temperatureSeries = useMemo(
@@ -143,6 +150,8 @@ export default function MonitoringClient({ id }: { id: string }) {
   useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
+    let inFlight = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
     const load = async () => {
       try {
@@ -193,13 +202,36 @@ export default function MonitoringClient({ id }: { id: string }) {
       }
     };
 
-    void load();
+    const tick = async () => {
+      if (cancelled || controller.signal.aborted) return;
+
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        timer = setTimeout(tick, refreshMs);
+        return;
+      }
+
+      if (inFlight) {
+        timer = setTimeout(tick, refreshMs);
+        return;
+      }
+
+      inFlight = true;
+      try {
+        await load();
+      } finally {
+        inFlight = false;
+        if (!cancelled && !controller.signal.aborted) timer = setTimeout(tick, refreshMs);
+      }
+    };
+
+    void tick();
 
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
       controller.abort();
     };
-  }, [host, rangeSeconds]);
+  }, [host, rangeSeconds, refreshMs]);
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-4 tablet:px-8">

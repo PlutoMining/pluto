@@ -623,6 +623,37 @@ describe('devices.controller', () => {
       expect(patchBody.coreVoltage).toBeUndefined();
     });
 
+
+    it('drops non-string values from string system fields', async () => {
+      const req = {
+        params: { id: 'mac' },
+        body: {
+          info: {
+            stratumURL: 192,
+            stratumPort: '3333',
+            hostname: 123,
+            stratumUser: true,
+          },
+          mac: 'mac',
+        },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([
+        { mac: 'mac', ip: '10.0.0.3' },
+      ] as unknown as Device[]);
+      mockedAxios.patch.mockResolvedValue({ status: 200 });
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      const patchBody = mockedAxios.patch.mock.calls[0]?.[1] as Record<string, unknown>;
+      expect(patchBody).toBeDefined();
+      expect(patchBody.stratumPort).toBe(3333);
+      expect(patchBody.stratumURL).toBeUndefined();
+      expect(patchBody.hostname).toBeUndefined();
+      expect(patchBody.stratumUser).toBeUndefined();
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
     it('handles missing request body', async () => {
       const req = { params: { id: 'mac' } } as unknown as Request;
       const res = createMockResponse();

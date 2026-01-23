@@ -43,6 +43,7 @@ async function fetchProm(url: string, params: Record<string, string>, signal?: A
 
   const response = await fetch(u.toString(), {
     method: "GET",
+    cache: "no-store",
     headers: {
       Accept: "application/json",
     },

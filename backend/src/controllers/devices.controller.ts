@@ -74,6 +74,22 @@ function pickWritableSystemInfo(info: unknown) {
   coerceNumberField("overheat_temp");
   coerceNumberField("autoscreenoff");
 
+  const coerceStringField = (key: string) => {
+    if (out[key] === undefined) return;
+    if (typeof out[key] === "string") return;
+    delete out[key];
+  };
+
+  // Devices can report corrupted types (e.g. stratumURL as a number).
+  // The miner firmware rejects invalid types with "Wrong API input", so we
+  // only forward string values for string-backed system settings.
+  coerceStringField("hostname");
+  coerceStringField("stratumURL");
+  coerceStringField("stratumUser");
+  coerceStringField("stratumPassword");
+  coerceStringField("wifiPassword");
+  coerceStringField("wifiPass");
+
   return out;
 }
 

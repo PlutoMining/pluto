@@ -69,6 +69,47 @@ describe("DeviceSettingsAccordion actions", () => {
     }));
   });
 
+  it("keeps stratumURL as a string when saving an IP address", async () => {
+    // Ensure we are in custom mode without presets so the save payload uses the edited device.info.
+    (global as any).fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({ data: [] }),
+    }));
+
+    axiosMock.patch
+      .mockResolvedValueOnce({ data: { data: { mac: "aa" } } })
+      .mockResolvedValueOnce({ data: { data: { mac: "aa", info: { hostname: "miner-01" } } } });
+
+    const { container } = render(
+      <DeviceSettingsAccordion
+        fetchedDevices={[makeDevice("aa", "miner-01")]}
+        alert={undefined}
+        setAlert={jest.fn() as any}
+        onOpenAlert={jest.fn()}
+      />
+    );
+
+    await waitFor(() => expect((global as any).fetch).toHaveBeenCalledWith("/api/presets"));
+
+    const details = container.querySelector("details") as HTMLDetailsElement;
+    await act(async () => {
+      details.open = true;
+      fireEvent(details, new Event("toggle"));
+    });
+
+    const stratumUrl = details.querySelector("input#aa-stratumUrl") as HTMLInputElement;
+    fireEvent.change(stratumUrl, { target: { value: "192.168.0.252" } });
+
+    fireEvent.click(within(details).getByRole("button", { name: "Save" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Confirm" }));
+
+    await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(2));
+
+    const firstPayload = axiosMock.patch.mock.calls[0][1];
+    expect(firstPayload.info.stratumURL).toBe("192.168.0.252");
+  });
+
   it("restarts selected devices (success)", async () => {
     axiosMock.post.mockResolvedValue({ data: {} });
 

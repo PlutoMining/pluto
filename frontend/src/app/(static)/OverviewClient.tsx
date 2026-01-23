@@ -64,6 +64,13 @@ export default function OverviewClient() {
     [range]
   );
 
+  const refreshMs = useMemo(() => {
+    if (rangeSeconds <= 60 * 60) return 15_000;
+    if (rangeSeconds <= 6 * 60 * 60) return 30_000;
+    if (rangeSeconds <= 24 * 60 * 60) return 60_000;
+    return 5 * 60_000;
+  }, [rangeSeconds]);
+
   const fleetBestDiff = useMemo(() => {
     let best = 0;
     for (const device of devices) {
@@ -133,13 +140,19 @@ export default function OverviewClient() {
   }, [devices]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+    let inFlight = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
     const load = async () => {
       const { start, end, step } = rangeToQueryParams(rangeSeconds);
+      const options = { signal: controller.signal };
 
       const [totalHashrate, totalPower, totalEfficiency] = await Promise.all([
-        promQuery("total_hashrate"),
-        promQuery("total_power_watts"),
-        promQuery("total_efficiency"),
+        promQuery("total_hashrate", undefined, options),
+        promQuery("total_power_watts", undefined, options),
+        promQuery("total_efficiency", undefined, options),
       ]);
 
       // Keep online/offline reactive via websocket/device state.
@@ -152,9 +165,9 @@ export default function OverviewClient() {
       }));
 
       const [hashrate, power, efficiency] = await Promise.all([
-        promQueryRange("total_hashrate", start, end, step),
-        promQueryRange("total_power_watts", start, end, step),
-        promQueryRange("total_efficiency", start, end, step),
+        promQueryRange("total_hashrate", start, end, step, options),
+        promQueryRange("total_power_watts", start, end, step, options),
+        promQueryRange("total_efficiency", start, end, step, options),
       ]);
 
       const hashrateSeries = matrixToSeries((hashrate as any).data.result)[0]?.points ?? [];
@@ -165,7 +178,7 @@ export default function OverviewClient() {
       setPowerSeries(powerSeries);
       setEffSeries(effSeries);
 
-      const firmware = await promQuery("sum by (version) (firmware_version_distribution)");
+      const firmware = await promQuery("sum by (version) (firmware_version_distribution)", undefined, options);
       const firmwareResult = (firmware as any).data.result as any[];
       setFirmwareData(
         firmwareResult
@@ -175,8 +188,8 @@ export default function OverviewClient() {
       );
 
       const [accepted, rejected] = await Promise.all([
-        promQuery('sum by (pool) (shares_by_pool_accepted{pool!=""})'),
-        promQuery('sum by (pool) (shares_by_pool_rejected{pool!=""})'),
+        promQuery('sum by (pool) (shares_by_pool_accepted{pool!=""})', undefined, options),
+        promQuery('sum by (pool) (shares_by_pool_rejected{pool!=""})', undefined, options),
       ]);
 
       const acceptedByPool = new Map<string, number>();
@@ -223,8 +236,38 @@ export default function OverviewClient() {
       }
     };
 
-    load().catch((e) => console.error(e));
-  }, [rangeSeconds, range]);
+    const tick = async () => {
+      if (cancelled || controller.signal.aborted) return;
+
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        timer = setTimeout(tick, refreshMs);
+        return;
+      }
+
+      if (inFlight) {
+        timer = setTimeout(tick, refreshMs);
+        return;
+      }
+
+      inFlight = true;
+      try {
+        await load();
+      } catch (e) {
+        if (!controller.signal.aborted) console.error(e);
+      } finally {
+        inFlight = false;
+        if (!cancelled && !controller.signal.aborted) timer = setTimeout(tick, refreshMs);
+      }
+    };
+
+    void tick();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+      if (timer) clearTimeout(timer);
+    };
+  }, [rangeSeconds, refreshMs]);
 
   const firmwareTreemapData = useMemo(() => {
     const data = firmwareData.filter((r) => Number.isFinite(r.count) && r.count > 0);

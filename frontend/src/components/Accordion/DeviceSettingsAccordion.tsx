@@ -571,19 +571,37 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
       const isCheckbox = type === "checkbox";
 
+      const numericFields = new Set([
+        "frequency",
+        "coreVoltage",
+        "stratumPort",
+        "fanspeed",
+        "autoscreenoff",
+        "overheat_temp",
+      ]);
+
+      const nextValue = (() => {
+        if (isCheckbox) {
+          return (e.target as HTMLInputElement).checked ? 1 : 0;
+        }
+
+        // Keep string fields as strings. The previous implementation used
+        // `parseInt(value) || value`, which turns IPs like "192.168.0.252" into
+        // the number 192 (because parseInt stops at the first dot).
+        if (!numericFields.has(name)) {
+          return value;
+        }
+
+        const raw = name === "stratumPort" ? value.replace(/\D/g, "") : value;
+        const parsed = parseInt(raw, 10);
+        return Number.isNaN(parsed) ? value : parsed;
+      })();
+
       const updatedDevice = {
         ...device,
         info: {
           ...device.info,
-          [name]: isCheckbox
-            ? (e.target as HTMLInputElement).checked
-              ? 1
-              : 0
-            : name === "stratumPort"
-            ? parseInt(value.replace(/\D/g, ""), 10) || 0 // Mantieni solo numeri nell'input
-            : ["wifiPass", "stratumPassword"].includes(name)
-            ? value
-            : parseInt(value) || value,
+          [name]: nextValue,
         },
       };
 
