@@ -93,6 +93,18 @@ services:
       - mock_common_interfaces_node_modules:/home/node/common/interfaces/node_modules
     user: "1000:1000"
 
+  pyasic-bridge:
+    build:
+      context: pyasic-bridge
+      dockerfile: Dockerfile.development
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./pyasic-bridge:/app
+    restart: on-failure
+
   discovery:
     build:
       context: discovery
@@ -114,7 +126,11 @@ services:
       - discovery/.env.local
     environment:
       - PORT=7775
-      - DETECT_MOCK_DEVICES=true
+      - DETECT_MOCK_DEVICES=false
+      - USE_PYASIC=true
+      - PYASIC_BRIDGE_HOST=http://localhost:8000
+      - PYASIC_FALLBACK_TO_LEGACY=false
+      - DISCOVERY_CONCURRENCY_LIMIT=10
       # - MOCK_DISCOVERY_HOST=http://host.docker.internal:7770
     volumes:
       - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
@@ -151,6 +167,9 @@ services:
     environment:
       - PORT=7776
       - AUTO_LISTEN=true
+      - USE_PYASIC=true
+      - PYASIC_BRIDGE_HOST=http://pyasic-bridge:8000
+      - PYASIC_FALLBACK_TO_LEGACY=false
       # - DISCOVERY_SERVICE_HOST=http://host.docker.internal:7775
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
@@ -169,6 +188,8 @@ services:
     depends_on:
       node_modules_permissions:
         condition: service_completed_successfully
+      pyasic-bridge:
+        condition: service_started
       prometheus:
         condition: service_healthy
     healthcheck:
