@@ -10,7 +10,7 @@ from typing import Any
 from pyasic.config import MinerConfig
 
 from .models import MinerInfo
-from .normalization import DefaultMinerDataNormalizer, MinerDataNormalizer
+from .normalizers import get_normalizer_for_miner
 from .pyasic_client import MinerClient, PyasicMinerClient
 
 
@@ -21,22 +21,22 @@ class MinerService:
     Coordinates between MinerClient (for pyasic operations) and
     MinerDataNormalizer (for data transformation) to provide
     high-level miner management operations.
+
+    Automatically selects the appropriate normalizer for each miner
+    based on miner type detection.
     """
 
     def __init__(
         self,
-        client: MinerClient | None = None,
-        normalizer: MinerDataNormalizer | None = None
+        client: MinerClient | None = None
     ):
         """
         Initialize MinerService with dependencies.
 
         Args:
             client: MinerClient implementation (defaults to PyasicMinerClient)
-            normalizer: MinerDataNormalizer implementation (defaults to DefaultMinerDataNormalizer)
         """
         self.client = client or PyasicMinerClient()
-        self.normalizer = normalizer or DefaultMinerDataNormalizer()
 
     async def scan_miners(
         self,
@@ -69,8 +69,10 @@ class MinerService:
                 # Serialize first to get the dict
                 data_dict = data.as_dict() if hasattr(data, "as_dict") else {}
 
+                # Get appropriate normalizer for this miner
+                normalizer = get_normalizer_for_miner(data_dict)
                 # Normalize the data
-                normalized_data = self.normalizer.normalize(data_dict)
+                normalized_data = normalizer.normalize(data_dict)
 
                 # Extract hashrate rate for the top-level hashrate field (for backward compatibility)
                 normalized_hashrate_rate = (
@@ -95,8 +97,10 @@ class MinerService:
                 # Serialize first to get the dict
                 data_dict = data.as_dict() if hasattr(data, "as_dict") else {}
 
+                # Get appropriate normalizer for this miner
+                normalizer = get_normalizer_for_miner(data_dict)
                 # Normalize the data
-                normalized_data = self.normalizer.normalize(data_dict)
+                normalized_data = normalizer.normalize(data_dict)
 
                 # Extract hashrate rate for the top-level hashrate field (for backward compatibility)
                 normalized_hashrate_rate = (
@@ -137,8 +141,10 @@ class MinerService:
         # Serialize first to get the dict
         data_dict = data.as_dict() if hasattr(data, "as_dict") else {}
 
+        # Get appropriate normalizer for this miner
+        normalizer = get_normalizer_for_miner(data_dict)
         # Normalize the data
-        return self.normalizer.normalize(data_dict)
+        return normalizer.normalize(data_dict)
 
     async def get_miner_config(self, ip: str) -> dict[str, Any]:
         """

@@ -7,18 +7,16 @@ This module serves as the entrypoint for the application.
 The actual FastAPI app is configured in app.py.
 """
 
-# Backward compatibility: re-export normalization functions for existing code
 # Import the app from app.py to maintain compatibility with Dockerfile
 # which expects "main:app"
 from .app import app
 
-# Re-export models for backward compatibility
+# Re-export models
 from .models import MinerInfo, ScanRequest
-from .normalization import (
+from .normalizers import (
     convert_hashrate_to_ghs,
     normalize_efficiency_structure,
     normalize_hashrate_structure,
-    normalize_miner_data,
 )
 
 __all__ = [
@@ -26,7 +24,6 @@ __all__ = [
     "convert_hashrate_to_ghs",
     "normalize_hashrate_structure",
     "normalize_efficiency_structure",
-    "normalize_miner_data",
     "MinerInfo",
     "ScanRequest",
 ]
