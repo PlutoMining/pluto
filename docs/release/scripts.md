@@ -39,7 +39,8 @@ scripts/release.sh [options]
   - Automatically bump `package.json` versions per service using **semantic versioning** derived from git history via `scripts/lib/semver.sh`:
     - `major` if any commit touching that service has a matching `BREAKING CHANGE:` with a header scope that includes the service (for example `feat(frontend,backend): ...` is major for `frontend` and `backend`).
     - `minor` if there is at least one `feat(...)` commit touching that service.
-    - `patch` if there are only `fix/chore/docs/refactor/test(...)` commits touching that service.
+    - `patch` if there is at least one `fix(...)` commit touching that service.
+    - `none` if there are no commits touching that service, or only non-versioned types (docs, build, ci, chore, style, refactor, perf, test, revert).
   - The new version becomes the tag used for the built image (for example `2.0.0`).
 - `--update-manifests` - Update `pluto` Umbrel manifests (`umbrel-apps/pluto/umbrel-app.yml`, `umbrel-apps/pluto/docker-compose.yml`) with the newly built images and bump the **app version** accordingly.
 - `--sync-to-umbrel` - Sync `pluto` manifests to an Umbrel device (implies `--update-manifests`).
@@ -53,7 +54,7 @@ scripts/release.sh [options]
 - Per-service SemVer bump level is computed by `scripts/lib/semver.sh`:
   - Only commits that actually touched that service’s directory (`backend/`, `frontend/`, `discovery/`, `prometheus/`) are considered.
   - A `BREAKING CHANGE:` in the body only counts for a service if the commit **header scope** mentions that service (for example `feat(frontend,backend): ...` is major for `frontend` and `backend`, but not for `discovery`).
-  - `feat(...)` → minor, `fix/chore/docs/test/refactor(...)` → patch, everything else defaults to patch.
+  - `feat(...)` → minor, `fix(...)` → patch. Other types (docs, build, ci, chore, style, refactor, perf, test, revert) do not trigger version bumps unless they include a `BREAKING CHANGE`.
 
 **Requirements**:
 - Must be on `main` branch

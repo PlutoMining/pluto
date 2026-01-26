@@ -119,7 +119,7 @@ To ensure proper changelog generation, all commits must follow the [Conventional
 
 Scopes are optional but recommended. Valid scopes for this project:
 
-- `backend`, `frontend`, `discovery`, `prometheus`, `mock` - Service-specific changes
+- `backend`, `frontend`, `discovery`, `prometheus`, `mock`, `pyasic-bridge` - Service-specific changes
 - `common` - Changes to shared/common code
 - `scripts` - Changes to release/utility scripts
 - `docs` - Documentation changes
