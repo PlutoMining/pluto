@@ -18,7 +18,7 @@ source "${SCRIPT_ROOT}/scripts/lib/common.sh"
 # shellcheck source=scripts/lib/semver.sh
 source "${SCRIPT_ROOT}/scripts/lib/semver.sh"
 
-AVAILABLE_SERVICES=(backend discovery frontend prometheus)
+AVAILABLE_SERVICES=(backend discovery frontend prometheus pyasic-bridge)
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-ghcr.io/plutomining}"
 
 SKIP_LOGIN=false
@@ -186,7 +186,7 @@ detect_changed_services() {
 
   git diff --name-only "${DIFF_BASE}...HEAD" \
     | awk -F/ '
-      /^(backend|discovery|frontend|prometheus)\// {print $1}
+      /^(backend|discovery|frontend|prometheus|pyasic-bridge)\// {print $1}
     ' \
     | sort -u
 }
