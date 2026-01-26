@@ -2,11 +2,8 @@
 Unit tests for app module.
 """
 
-import os
-from unittest.mock import patch
 
 from app.app import create_app
-from app.normalization import DefaultMinerDataNormalizer
 from app.pyasic_client import PyasicMinerClient
 from app.services import MinerService
 
@@ -27,27 +24,10 @@ class TestCreateApp:
         """Test app has correct dependencies."""
         app = create_app()
 
-        # Check that service has client and normalizer
+        # Check that service has client
         service = app.state.miner_service
         assert service.client is not None
         assert isinstance(service.client, PyasicMinerClient)
-        assert service.normalizer is not None
-        assert isinstance(service.normalizer, DefaultMinerDataNormalizer)
-
-    @patch.dict(os.environ, {"NORMALIZATION_STRATEGY": "default"})
-    def test_create_app_with_default_strategy(self):
-        """Test creating app with default normalization strategy."""
-        app = create_app()
-        service = app.state.miner_service
-        assert isinstance(service.normalizer, DefaultMinerDataNormalizer)
-
-    @patch.dict(os.environ, {"NORMALIZATION_STRATEGY": "unknown"})
-    def test_create_app_with_unknown_strategy_falls_back(self):
-        """Test creating app with unknown strategy falls back to default."""
-        app = create_app()
-        service = app.state.miner_service
-        # Should fall back to default
-        assert isinstance(service.normalizer, DefaultMinerDataNormalizer)
 
     def test_create_app_has_routes(self):
         """Test app has routes registered."""

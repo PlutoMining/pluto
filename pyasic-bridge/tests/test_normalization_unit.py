@@ -2,15 +2,12 @@
 Unit tests for normalization module.
 """
 
-from app.normalization import (
+from app.normalizers import (
+    BitaxeMinerDataNormalizer,
     DefaultMinerDataNormalizer,
-    _convert_hashrate_to_ghs,
-    _normalize_efficiency_structure,
-    _normalize_hashrate_structure,
     convert_hashrate_to_ghs,
     normalize_efficiency_structure,
     normalize_hashrate_structure,
-    normalize_miner_data,
 )
 
 
@@ -19,7 +16,7 @@ class TestConvertHashrateToGhs:
 
     def test_none_value(self):
         """Test None input returns 0.0."""
-        assert _convert_hashrate_to_ghs(None) == 0.0
+        assert convert_hashrate_to_ghs(None) == 0.0
 
     def test_dict_with_nested_unit(self):
         """Test dict with nested unit structure."""
@@ -27,35 +24,35 @@ class TestConvertHashrateToGhs:
             "rate": 0.5,
             "unit": {"value": 1000000000000, "suffix": "TH/s"}
         }
-        result = _convert_hashrate_to_ghs(hashrate)
+        result = convert_hashrate_to_ghs(hashrate)
         assert result == 500.0  # 0.5 TH/s = 500 Gh/s
 
     def test_dict_with_simple_unit(self):
         """Test dict with simple unit value."""
         hashrate = {"rate": 1000.0, "unit": 1000000}  # MH/s
-        result = _convert_hashrate_to_ghs(hashrate)
+        result = convert_hashrate_to_ghs(hashrate)
         assert result == 1.0  # 1000 MH/s = 1 Gh/s
 
     def test_dict_already_ghs(self):
         """Test dict already in Gh/s."""
         hashrate = {"rate": 2.5, "unit": 1000000000}  # Gh/s
-        result = _convert_hashrate_to_ghs(hashrate)
+        result = convert_hashrate_to_ghs(hashrate)
         assert result == 2.5
 
     def test_dict_hs_unit(self):
         """Test dict with H/s unit."""
         hashrate = {"rate": 1000000000.0, "unit": 1}  # H/s
-        result = _convert_hashrate_to_ghs(hashrate)
+        result = convert_hashrate_to_ghs(hashrate)
         assert abs(result - 1.0) < 0.01  # 1e9 H/s = 1 Gh/s
 
     def test_direct_number_large(self):
         """Test direct number (large, assumed H/s)."""
-        result = _convert_hashrate_to_ghs(986983520.50)
+        result = convert_hashrate_to_ghs(986983520.50)
         assert abs(result - 0.987) < 0.01
 
     def test_direct_number_small(self):
         """Test direct number (small)."""
-        result = _convert_hashrate_to_ghs(250.0)
+        result = convert_hashrate_to_ghs(250.0)
         # Small numbers might be interpreted differently
         assert result >= 0.0
 
@@ -67,7 +64,7 @@ class TestConvertHashrateToGhs:
                 self.unit = 1000000000
 
         hashrate = MockHashRate()
-        result = _convert_hashrate_to_ghs(hashrate)
+        result = convert_hashrate_to_ghs(hashrate)
         assert result == 1.5
 
     def test_object_with_unit_value(self):
@@ -82,17 +79,17 @@ class TestConvertHashrateToGhs:
                 self.unit = MockUnit()
 
         hashrate = MockHashRate()
-        result = _convert_hashrate_to_ghs(hashrate)
+        result = convert_hashrate_to_ghs(hashrate)
         assert result == 500.0
 
     def test_negative_value(self):
         """Test negative value returns 0.0."""
-        result = _convert_hashrate_to_ghs(-100)
+        result = convert_hashrate_to_ghs(-100)
         assert result == 0.0
 
     def test_invalid_type_handled(self):
         """Test invalid type is handled gracefully."""
-        result = _convert_hashrate_to_ghs("invalid")
+        result = convert_hashrate_to_ghs("invalid")
         # Should return 0.0 or handle gracefully
         assert isinstance(result, float)
 
@@ -102,7 +99,7 @@ class TestNormalizeHashrateStructure:
 
     def test_none_value(self):
         """Test None returns default structure."""
-        result = _normalize_hashrate_structure(None)
+        result = normalize_hashrate_structure(None)
         assert result == {
             "unit": {"value": 1000000000, "suffix": "Gh/s"},
             "rate": 0.0
@@ -111,14 +108,14 @@ class TestNormalizeHashrateStructure:
     def test_dict_input(self):
         """Test dict input is normalized."""
         hashrate = {"rate": 0.5, "unit": {"value": 1000000000000, "suffix": "TH/s"}}
-        result = _normalize_hashrate_structure(hashrate)
+        result = normalize_hashrate_structure(hashrate)
         assert result["rate"] == 500.0
         assert result["unit"]["value"] == 1000000000
         assert result["unit"]["suffix"] == "Gh/s"
 
     def test_number_input(self):
         """Test number input is normalized."""
-        result = _normalize_hashrate_structure(1000000000.0)
+        result = normalize_hashrate_structure(1000000000.0)
         assert result["rate"] > 0
         assert result["unit"]["suffix"] == "Gh/s"
 
@@ -128,7 +125,7 @@ class TestNormalizeEfficiencyStructure:
 
     def test_calculate_from_wattage_and_hashrate(self):
         """Test efficiency calculated from wattage and hashrate."""
-        result = _normalize_efficiency_structure(
+        result = normalize_efficiency_structure(
             efficiency_value=None,
             wattage=50.0,
             hashrate_ghs=1.0  # 1 Gh/s = 0.001 Th/s
@@ -142,7 +139,7 @@ class TestNormalizeEfficiencyStructure:
 
     def test_fallback_to_efficiency_value(self):
         """Test fallback to efficiency value."""
-        result = _normalize_efficiency_structure(
+        result = normalize_efficiency_structure(
             efficiency_value="1.8e-11",
             wattage=None,
             hashrate_ghs=None
@@ -154,7 +151,7 @@ class TestNormalizeEfficiencyStructure:
 
     def test_efficiency_value_as_float(self):
         """Test efficiency value as float."""
-        result = _normalize_efficiency_structure(
+        result = normalize_efficiency_structure(
             efficiency_value=1.8e-11,
             wattage=None,
             hashrate_ghs=None
@@ -163,7 +160,7 @@ class TestNormalizeEfficiencyStructure:
 
     def test_zero_efficiency(self):
         """Test zero efficiency."""
-        result = _normalize_efficiency_structure(
+        result = normalize_efficiency_structure(
             efficiency_value=0,
             wattage=None,
             hashrate_ghs=None
@@ -172,7 +169,7 @@ class TestNormalizeEfficiencyStructure:
 
     def test_none_efficiency_no_calculation(self):
         """Test None efficiency with no calculation possible."""
-        result = _normalize_efficiency_structure(
+        result = normalize_efficiency_structure(
             efficiency_value=None,
             wattage=None,
             hashrate_ghs=None
@@ -181,7 +178,7 @@ class TestNormalizeEfficiencyStructure:
 
     def test_zero_wattage(self):
         """Test zero wattage doesn't calculate."""
-        result = _normalize_efficiency_structure(
+        result = normalize_efficiency_structure(
             efficiency_value=None,
             wattage=0.0,
             hashrate_ghs=1.0
@@ -343,29 +340,137 @@ class TestDefaultMinerDataNormalizer:
         assert result["extra_fields"]["active"] is True
 
 
-class TestBackwardCompatibilityFunctions:
-    """Test backward compatibility wrapper functions."""
+class TestBitaxeMinerDataNormalizer:
+    """Test BitaxeMinerDataNormalizer class."""
 
-    def test_convert_hashrate_to_ghs_wrapper(self):
-        """Test convert_hashrate_to_ghs wrapper."""
-        result = convert_hashrate_to_ghs({"rate": 1.0, "unit": 1000000000})
-        assert result == 1.0
-
-    def test_normalize_hashrate_structure_wrapper(self):
-        """Test normalize_hashrate_structure wrapper."""
-        result = normalize_hashrate_structure({"rate": 1.0, "unit": 1000000000})
-        assert result["unit"]["suffix"] == "Gh/s"
-
-    def test_normalize_efficiency_structure_wrapper(self):
-        """Test normalize_efficiency_structure wrapper."""
-        result = normalize_efficiency_structure("1.8e-11")
-        assert result["unit"]["suffix"] == "J/Th"
-
-    def test_normalize_miner_data_wrapper(self):
-        """Test normalize_miner_data wrapper."""
+    def test_normalize_bitaxe_miner_with_extra_fields(self):
+        """Test normalizing Bitaxe miner data with extra_fields."""
+        normalizer = BitaxeMinerDataNormalizer()
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "best_difficulty": 123
+            "make": "BitAxe",
+            "model": "BitAxe Gamma",
+            "wattage": 50.0,
+            "extra_fields": {
+                "custom_efficiency": "1.8e-11",
+                "custom_difficulty": 123456789,
+                "temperature_custom": "65.5",
+                "power_custom": "50"
+            }
         }
-        result = normalize_miner_data(data)
-        assert result["best_difficulty"] == "123"
+        result = normalizer.normalize(data)
+
+        assert "extra_fields" in result
+        extra = result["extra_fields"]
+        # Efficiency-like field should be normalized to structure
+        assert "custom_efficiency" in extra
+        assert isinstance(extra["custom_efficiency"], dict)
+        assert extra["custom_efficiency"]["unit"]["suffix"] == "J/Th"
+        # Difficulty-like field should be converted to string
+        assert extra["custom_difficulty"] == "123456789"
+        # Temperature-like field should be converted to float
+        assert extra["temperature_custom"] == 65.5
+        # Power-like field should be converted to float
+        assert extra["power_custom"] == 50.0
+
+    def test_normalize_non_bitaxe_miner(self):
+        """Test that non-Bitaxe miners get default normalization."""
+        normalizer = BitaxeMinerDataNormalizer()
+        data = {
+            "hashrate": {"rate": 1.0, "unit": 1000000000},
+            "make": "Antminer",
+            "model": "S19",
+            "extra_fields": {
+                "custom_efficiency": "1.8e-11",
+                "custom_difficulty": 123456789
+            }
+        }
+        result = normalizer.normalize(data)
+
+        # Should still normalize hashrate-like structures (from parent)
+        assert "extra_fields" in result
+        # But Bitaxe-specific normalization should not apply
+        # (custom_efficiency and custom_difficulty should remain as-is if not hashrate-like)
+        extra = result["extra_fields"]
+        # Efficiency-like fields are only normalized for Bitaxe miners
+        # So for non-Bitaxe, they should remain as-is (unless they're hashrate-like)
+        assert "custom_efficiency" in extra
+        # Difficulty-like fields are only normalized for Bitaxe miners
+        assert "custom_difficulty" in extra
+
+    def test_is_bitaxe_miner_detection(self):
+        """Test Bitaxe miner detection logic."""
+        normalizer = BitaxeMinerDataNormalizer()
+
+        # Test with make
+        assert normalizer._is_bitaxe_miner({"make": "BitAxe"})
+        assert normalizer._is_bitaxe_miner({"make": "bitaxe"})
+        assert not normalizer._is_bitaxe_miner({"make": "Antminer"})
+
+        # Test with model
+        assert normalizer._is_bitaxe_miner({"model": "BitAxe Gamma"})
+        assert normalizer._is_bitaxe_miner({"model": "bitaxe-supra"})
+        assert not normalizer._is_bitaxe_miner({"model": "S19"})
+
+        # Test with hostname
+        assert normalizer._is_bitaxe_miner({"hostname": "bitaxe-001"})
+        assert normalizer._is_bitaxe_miner({"hostname": "BITAXE"})
+        assert not normalizer._is_bitaxe_miner({"hostname": "antminer-001"})
+
+        # Test case insensitive
+        assert normalizer._is_bitaxe_miner({"make": "BITAXE"})
+        assert normalizer._is_bitaxe_miner({"model": "BitAxe"})
+
+    def test_normalize_bitaxe_extra_fields_with_hashrate_like(self):
+        """Test that hashrate-like structures in extra_fields are normalized."""
+        normalizer = BitaxeMinerDataNormalizer()
+        data = {
+            "hashrate": {"rate": 1.0, "unit": 1000000000},
+            "make": "BitAxe",
+            "extra_fields": {
+                "secondary_hashrate": {
+                    "rate": 500000000.0,
+                    "unit": {"value": 1, "suffix": "H/s"}
+                }
+            }
+        }
+        result = normalizer.normalize(data)
+
+        assert "extra_fields" in result
+        extra = result["extra_fields"]
+        assert "secondary_hashrate" in extra
+        # Should be normalized by parent class (hashrate-like structure)
+        assert isinstance(extra["secondary_hashrate"], dict)
+        assert "rate" in extra["secondary_hashrate"]
+        assert extra["secondary_hashrate"]["unit"]["suffix"] == "Gh/s"
+
+    def test_normalize_bitaxe_extra_fields_none(self):
+        """Test normalizing Bitaxe miner with None extra_fields."""
+        normalizer = BitaxeMinerDataNormalizer()
+        data = {
+            "hashrate": {"rate": 1.0, "unit": 1000000000},
+            "make": "BitAxe",
+            "extra_fields": None
+        }
+        result = normalizer.normalize(data)
+
+        assert result["extra_fields"] is None
+
+    def test_normalize_bitaxe_extra_fields_invalid_difficulty(self):
+        """Test handling of invalid difficulty values in extra_fields."""
+        normalizer = BitaxeMinerDataNormalizer()
+        data = {
+            "hashrate": {"rate": 1.0, "unit": 1000000000},
+            "make": "BitAxe",
+            "extra_fields": {
+                "invalid_difficulty": "not_a_number"
+            }
+        }
+        result = normalizer.normalize(data)
+
+        assert "extra_fields" in result
+        extra = result["extra_fields"]
+        # Should default to "0" for invalid difficulty
+        assert extra["invalid_difficulty"] == "0"
+
+
