@@ -4,4 +4,4 @@ uvicorn==0.24.0
 # You can pin to a specific commit by replacing "master.zip" with
 # e.g. "refs/heads/my-branch.zip" or "refs/tags/v0.78.1-pluto1.zip"
 pyasic @ https://github.com/PlutoMining/pyasic/archive/refs/heads/master.zip
-pydantic==2.11.0
+pydantic>=2.12.5,<3.0.0
