@@ -31,8 +31,13 @@
 # Returns:
 #   "major" - if commits contain breaking changes (BREAKING CHANGE or type!:)
 #   "minor" - if commits contain features (feat:)
-#   "patch" - if commits contain fixes/chores/refactors/docs/tests
-#   "none"  - if no commits touched this service
+#   "patch" - if commits contain bug fixes (fix:)
+#   "none"  - if no commits touched this service, or only non-versioned types
+#
+# According to Conventional Commits spec (https://www.conventionalcommits.org/):
+# - Only feat: triggers MINOR, fix: triggers PATCH, BREAKING CHANGE triggers MAJOR
+# - Other types (docs, build, ci, chore, style, refactor, perf, test, revert)
+#   do not trigger version bumps unless they include a BREAKING CHANGE
 #
 # Examples:
 #   determine_bump_level_for_service "frontend" "origin/main"
@@ -84,12 +89,16 @@ determine_bump_level_for_service() {
   fi
 
   # PATCH bump:
-  #  - any "fix:", "chore:", "refactor:", "docs:", "test:" touching this service
-  if echo "$commits" | grep -qiE '^[0-9a-f]+ +(fix|chore|refactor|docs|test)(\(|:)' ; then
+  #  - any "fix:" or "fix(scope):" touching this service
+  #  According to Conventional Commits spec, only fix: triggers PATCH
+  if echo "$commits" | grep -qiE '^[0-9a-f]+ +fix(\(|:)' ; then
     echo "patch"
     return 0
   fi
 
-  # There are changes but no explicit type we understand – default to patch.
-  echo "patch"
+  # If we have commits but they're not feat/fix/breaking, they don't trigger a version bump
+  # (e.g., docs, build, ci, chore, style, refactor, perf, test, revert)
+  # According to Conventional Commits spec, these types have no implicit effect
+  # on Semantic Versioning unless they include a BREAKING CHANGE.
+  echo "none"
 }
