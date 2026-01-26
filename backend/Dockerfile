@@ -41,9 +41,6 @@ COPY --from=builder /home/node/app/node_modules ./node_modules
 COPY --from=builder /home/node/app/dist ./dist
 COPY --from=builder /home/node/app/package*.json ./
 
-# Copy grafana dashboard templates
-COPY ./grafana/templates ./grafana_templates
-
 # Change ownership to allow access for the `node` user
 RUN chown -R node:node /home/node
 

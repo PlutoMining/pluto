@@ -6,18 +6,6 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import {
-  AccordionButton,
-  AccordionIcon,
-  AccordionPanel,
-  Accordion as ChakraAccordion,
-  AccordionItem as ChakraAccordionItem,
-  Divider,
-  Flex,
-  Heading,
-  Link,
-  Text,
-} from "@chakra-ui/react";
 import { Device } from "@pluto/interfaces";
 import { DeviceStatusBadge } from "../Badge";
 import { getMinerName } from "@/utils/minerMap";
@@ -37,25 +25,18 @@ export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({ devices, remov
   return (
     <>
       {devices && devices.length > 0 ? (
-        <ChakraAccordion
-          allowMultiple
-          as={Flex}
-          flexDir={"column"}
-          backgroundColor={"td-bg"}
-          borderColor={"border-color"}
-        >
-          {devices?.map((device, index) => (
-            <ChakraAccordionItem
-              key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
-              borderTopWidth={index > 0 ? "1px" : "0"}
-              borderBottomWidth={"0!important"}
+        <div className="flex flex-col bg-card">
+          {devices.map((device, index) => (
+            <details
+              key={`device-settings-${device.mac}`}
+              className={index === 0 ? "" : "border-t border-border"}
             >
-              <AccordionItem key={device.mac} device={device} removeFunction={removeFunction} />
-            </ChakraAccordionItem>
+              <AccordionItem device={device} removeFunction={removeFunction} />
+            </details>
           ))}
-        </ChakraAccordion>
+        </div>
       ) : (
-        <Text textAlign={"center"}>No device found</Text>
+        <div className="text-center text-sm text-muted-foreground">No device found</div>
       )}
     </>
   );
@@ -64,90 +45,45 @@ export const DeviceAccordion: React.FC<DeviceAccordionProps> = ({ devices, remov
 const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction }) => {
   return (
     <>
-      <AccordionButton
-        p={"1rem"}
-        justifyContent={"space-between"}
-        _hover={{ backgroundColor: "none" }}
-        bg={"th-bg"}
-      >
-        <Flex gap={"1rem"} alignItems={"center"}>
-          <AccordionIcon />
-          <Heading
-            fontSize={"sm"}
-            fontWeight={600}
-            textTransform={"capitalize"}
-            fontFamily={"body"}
-          >
-            {device.info.hostname}
-          </Heading>
+      <summary className="flex cursor-pointer items-center justify-between gap-4 bg-card px-4 py-3 hover:bg-muted">
+        <div className="flex items-center gap-4">
+          <span className="text-primary">▾</span>
+          <span className="font-body text-sm font-semibold capitalize">{device.info.hostname}</span>
           <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
-        </Flex>
+        </div>
 
-        {/* Pass the device ID to the removeRegisteredDevice function */}
-        <Link
-          fontFamily={"accent"}
-          fontWeight={500}
-          textDecoration={"underline"}
-          textTransform={"uppercase"}
-          fontSize={"14px"}
-          onClick={() => removeFunction(device.mac)}
+        <button
+          type="button"
+          className="font-accent text-sm font-medium uppercase text-foreground underline"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            removeFunction(device.mac);
+          }}
         >
           Remove
-        </Link>
-      </AccordionButton>
-      <AccordionPanel p={0} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
-        <Divider borderColor={"border-color"} />
-        <Flex flexDirection={"column"} gap={"0.5rem"} w={"100%"} p={"1rem"}>
-          <Flex justify={"space-between"}>
-            <Text fontWeight={500} textTransform={"capitalize"} fontSize={"sm"} fontFamily={"body"}>
-              Data added
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
-              {new Date(device.createdAt!).toLocaleDateString()}
-            </Text>
-          </Flex>
-          <Flex justify={"space-between"}>
-            <Text fontWeight={500} textTransform={"capitalize"} fontSize={"sm"} fontFamily={"body"}>
-              IP
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
-              {device.ip}
-            </Text>
-          </Flex>
-          <Flex justify={"space-between"}>
-            <Text fontWeight={500} textTransform={"capitalize"} fontSize={"sm"} fontFamily={"body"}>
-              Miner
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
-              {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
-            </Text>
-          </Flex>
-          <Flex justify={"space-between"}>
-            <Text fontWeight={500} textTransform={"capitalize"} fontSize={"sm"} fontFamily={"body"}>
-              ASIC
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
-              {device.info.ASICModel}
-            </Text>
-          </Flex>
-          <Flex justify={"space-between"}>
-            <Text fontWeight={500} textTransform={"capitalize"} fontSize={"sm"} fontFamily={"body"}>
-              FW v.
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
-              {device.info.version}
-            </Text>
-          </Flex>
-          <Flex justify={"space-between"}>
-            <Text fontWeight={500} textTransform={"capitalize"} fontSize={"sm"} fontFamily={"body"}>
-              Uptime
-            </Text>
-            <Text fontWeight={400} fontSize={"sm"} fontFamily={"accent"}>
-              {formatDetailedTime(device.info.uptimeSeconds)}
-            </Text>
-          </Flex>
-        </Flex>
-      </AccordionPanel>
+        </button>
+      </summary>
+
+      <div className="border-t border-border bg-card p-4">
+        <div className="flex flex-col gap-2">
+          <Row label="Date added" value={new Date(device.createdAt!).toLocaleDateString()} />
+          <Row label="IP" value={device.ip} />
+          <Row label="Miner" value={getMinerName(device.info.boardVersion) || device.info?.deviceModel} />
+          <Row label="ASIC" value={device.info.ASICModel} />
+          <Row label="FW v." value={device.info.version} />
+          <Row label="Uptime" value={formatDetailedTime(device.info.uptimeSeconds)} />
+        </div>
+      </div>
     </>
   );
 };
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="font-body text-sm font-medium capitalize">{label}</span>
+      <span className="font-accent text-sm text-muted-foreground">{value}</span>
+    </div>
+  );
+}

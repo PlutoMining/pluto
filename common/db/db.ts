@@ -45,24 +45,23 @@ async function getDatabase(dbName: string): Promise<Level<string, any>> {
 }
 
 // Funzione per chiudere tutti i database al termine del processo
-async function closeAllDatabases(): Promise<void> {
-  for (const [dbName, db] of dbInstances.entries()) {
-    if (db) {
-      await db.close();
-      dbInstances.delete(dbName);
-      // console.log(`Database ${dbName} closed.`);
-    }
+export async function closeAllDatabases(): Promise<void> {
+  const dbNames = Array.from(dbInstances.keys());
+  for (const dbName of dbNames) {
+    await closeDatabase(dbName);
   }
 }
 
 // Funzione per chiudere un singolo database
-async function closeDatabase(dbName: string): Promise<void> {
+export async function closeDatabase(dbName: string): Promise<void> {
   const db = dbInstances.get(dbName);
-  if (db) {
-    await db.close();
-    dbInstances.delete(dbName);
-    // console.log(`Database ${dbName} closed.`);
+  if (!db) {
+    return;
   }
+
+  await db.close();
+  dbInstances.delete(dbName);
+  // console.log(`Database ${dbName} closed.`);
 }
 
 // Funzione per ottenere un record specifico con prefisso

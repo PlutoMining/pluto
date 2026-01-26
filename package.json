@@ -1,6 +1,6 @@
 {
   "name": "pluto",
-  "version": "1.3.5",
+  "version": "2.0.1-beta.3",
   "private": true,
   "description": "Pluto - Open Source Bitcoin Mining Management Platform",
   "repository": {
@@ -10,7 +10,14 @@
   "license": "AGPL-3.0",
   "scripts": {
     "changelog": "semantic-release --dry-run",
-    "commitlint": "commitlint --edit"
+    "commit": "bash scripts/conventional-commit.sh",
+    "commitlint": "commitlint --edit",
+    "prepare": "husky",
+    "test:backend": "npm --prefix backend test",
+    "test:discovery": "npm --prefix discovery test",
+    "test:frontend": "npm --prefix frontend test",
+    "test:all": "bash -lc 'npm --prefix backend test & npm --prefix discovery test & npm --prefix frontend test & wait'",
+    "test:coverage": "bash -lc 'npm --prefix backend run test:coverage & npm --prefix discovery run test:coverage & npm --prefix frontend run test:coverage & wait'"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",

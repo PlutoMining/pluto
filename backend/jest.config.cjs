@@ -15,12 +15,12 @@ module.exports = {
     ...baseConfig.moduleNameMapper,
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  coveragePathIgnorePatterns: [
-    '<rootDir>/src/index.ts',
-    '<rootDir>/src/config/',
-    '<rootDir>/src/routes/',
-    '<rootDir>/src/services/grafana.service.ts',
-    '<rootDir>/src/services/tracing.service.ts',
-  ],
+  coverageThreshold: {
+    global: {
+      statements: 90,
+      lines: 90,
+      functions: 90,
+      branches: 90,
+    },
+  },
 };
-

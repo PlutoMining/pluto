@@ -68,6 +68,16 @@ describe('presets.controller', () => {
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({ message: 'Preset not found', data: null });
     });
+
+    it('handles getPreset errors', async () => {
+      const res = mockRes();
+      presetsService.getPreset.mockRejectedValue(new Error('fail'));
+
+      await presetsController.getPreset({ params: { id: '1' } } as unknown as Request, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to process the request' });
+    });
   });
 
   describe('createPreset', () => {
@@ -92,6 +102,16 @@ describe('presets.controller', () => {
   });
 
   describe('deletePreset', () => {
+    it('deletes preset successfully', async () => {
+      const res = mockRes();
+      presetsService.deletePreset.mockResolvedValue({ uuid: '1' });
+
+      await presetsController.deletePreset({ params: { id: '1' } } as unknown as Request, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Preset deleted successfully', data: { uuid: '1' } });
+    });
+
     it('deletes preset returning not found', async () => {
       const res = mockRes();
       presetsService.deletePreset.mockResolvedValue(null);

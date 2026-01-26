@@ -6,17 +6,6 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import {
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
-  Divider,
-  Flex,
-  Heading,
-  Text,
-  useToken,
-} from "@chakra-ui/react";
 import { Preset } from "@pluto/interfaces";
 import { MouseEvent } from "react";
 import { HostnameBadge } from "../Badge";
@@ -40,42 +29,25 @@ export const PresetAccordion: React.FC<PresetProps> = ({
   index,
   isDuplicateDisabled,
 }) => {
-  const [borderColor] = useToken("colors", ["border-color"]);
-  const [textColor] = useToken("colors", ["body-text"]);
-  const [accentColor] = useToken("colors", ["cta-bg"]);
-
   return (
-    <AccordionItem
-      key={`preset-${preset.uuid}`} // Prefisso specifico per il preset
-      backgroundColor={"td-bg"}
-      borderWidth={"1px"}
-      borderColor={borderColor}
+    <details
+      key={`preset-${preset.uuid}`}
+      className="border border-border bg-card text-card-foreground"
     >
-      <AccordionButton p={"1rem"} _hover={{ backgroundColor: "none" }} bg={"th-bg"}>
-        <Flex
-          gap={"0.5rem"}
-          alignItems={"center"}
-          fontFamily={"heading"}
-          fontWeight={"600"}
-          color={textColor}
-        >
-          <AccordionIcon color={accentColor} />
-          <Heading fontFamily={"accent"} fontSize={"md"} fontWeight={"400"}>
-            #{++index}
-          </Heading>
-          <Heading fontFamily={"accent"} fontSize={"md"} fontWeight={"400"}>
-            {preset.name}
-          </Heading>
-        </Flex>
-      </AccordionButton>
-      <AccordionPanel p={0} as={Flex} flexDir={"column"} alignItems={"flex-start"}>
-        <Divider borderColor={"border-color"} />
-        <Flex flexDirection={"column"} gap={"1rem"} p={"1rem"} w={"100%"}>
-          <Text fontFamily={"heading"} fontWeight={"600"} textTransform={"uppercase"}>
-            Settings
-          </Text>
-          <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
-            <Flex flex={1}>
+      <summary className="flex cursor-pointer items-center justify-between gap-4 bg-muted p-4">
+        <div className="flex items-center gap-2 font-heading font-semibold">
+          <span className="text-primary">▾</span>
+          <span className="font-accent font-normal">#{++index}</span>
+          <span className="font-accent font-normal">{preset.name}</span>
+        </div>
+      </summary>
+
+      <div className="border-t border-border p-4">
+        <div className="flex flex-col gap-4">
+          <p className="font-heading text-sm font-semibold uppercase">Settings</p>
+
+          <div className="flex flex-col gap-4 tablet:flex-row">
+            <div className="flex-1">
               <Input
                 isDisabled={true}
                 type="text"
@@ -84,8 +56,8 @@ export const PresetAccordion: React.FC<PresetProps> = ({
                 id={`${preset.uuid}-stratumUrl`}
                 defaultValue={preset.configuration.stratumURL}
               />
-            </Flex>
-            <Flex flex={1}>
+            </div>
+            <div className="flex-1">
               <Input
                 isDisabled={true}
                 type="number"
@@ -94,8 +66,8 @@ export const PresetAccordion: React.FC<PresetProps> = ({
                 id={`${preset.uuid}-stratumPort`}
                 defaultValue={preset.configuration.stratumPort}
               />
-            </Flex>
-            <Flex flex={2}>
+            </div>
+            <div className="flex-[2]">
               <Input
                 isDisabled={true}
                 type="text"
@@ -104,15 +76,14 @@ export const PresetAccordion: React.FC<PresetProps> = ({
                 id={`${preset.uuid}-stratumUser`}
                 defaultValue={preset.configuration.stratumUser}
               />
-            </Flex>
-          </Flex>
-          <Text fontFamily={"accent"} fontWeight={"600"} textTransform={"uppercase"}>
-            Associated Devices
-          </Text>
+            </div>
+          </div>
+
+          <p className="font-accent text-sm font-semibold uppercase">Associated Devices</p>
 
           {preset.associatedDevices && preset.associatedDevices.length > 0 ? (
-            <Flex gap={"1rem"} flexWrap={"wrap"}>
-              {preset.associatedDevices?.map((device, i) => (
+            <div className="flex flex-wrap gap-3">
+              {preset.associatedDevices.map((device, i) => (
                 <HostnameBadge
                   key={`hostname-badge-${i}`}
                   mac={device.mac}
@@ -121,31 +92,29 @@ export const PresetAccordion: React.FC<PresetProps> = ({
                   tracing={device.tracing || false}
                 />
               ))}
-            </Flex>
+            </div>
           ) : (
-            <Text textAlign={"center"} fontSize={"12px"}>
-              No associated device
-            </Text>
+            <p className="text-center text-xs text-muted-foreground">No associated device</p>
           )}
-        </Flex>
-      </AccordionPanel>
-      <Divider borderColor={borderColor} />
-      <Flex alignItems={"center"} p={"0.5rem 1rem"} gap={"1rem"}>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 border-t border-border p-3">
         <Button
           variant="text"
           onClick={onDuplicate(preset.uuid)}
           icon={<DuplicateIcon h={"18"} />}
           disabled={isDuplicateDisabled}
           label="Duplicate"
-        ></Button>
+        />
         <Button
           variant="text"
           onClick={() => onDelete(preset.uuid)}
           disabled={preset.associatedDevices && preset.associatedDevices.length > 0}
           icon={<DeleteIcon h={"18"} />}
           label="Delete"
-        ></Button>
-      </Flex>
-    </AccordionItem>
+        />
+      </div>
+    </details>
   );
 };
