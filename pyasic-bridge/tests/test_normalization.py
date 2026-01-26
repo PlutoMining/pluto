@@ -17,16 +17,22 @@ import sys
 from typing import Any
 
 try:
-    from app.normalization import (
+    from app.normalizers import (
+        DefaultMinerDataNormalizer,
         convert_hashrate_to_ghs,
         normalize_hashrate_structure,
-        normalize_miner_data,
     )
 except ImportError as e:
     print(f"Error importing normalization functions: {e}")
     print("\nPlease ensure dependencies are installed:")
     print("  pip install -r requirements.txt")
     sys.exit(1)
+
+# Create a normalizer instance for backward compatibility in this test file
+_normalizer = DefaultMinerDataNormalizer()
+def normalize_miner_data(data_dict: dict[str, Any]) -> dict[str, Any]:
+    """Helper function for tests."""
+    return _normalizer.normalize(data_dict)
 
 
 def print_comparison(title: str, raw: Any, normalized: Any, show_diff: bool = False):
