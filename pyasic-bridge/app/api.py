@@ -52,9 +52,23 @@ async def get_miner_data(
     ip: str,
     service: MinerService = Depends(get_miner_service)
 ):
-    """Get data from a specific miner using get_data()"""
+    """Get normalized data from a specific miner using get_data()"""
     try:
         return await service.get_miner_data(ip)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/miner/{ip}/data/raw")
+async def get_miner_data_raw(
+    ip: str,
+    service: MinerService = Depends(get_miner_service)
+):
+    """Get raw data from a specific miner without normalization"""
+    try:
+        return await service.get_miner_data_raw(ip)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:

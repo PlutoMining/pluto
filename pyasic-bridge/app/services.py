@@ -146,6 +146,27 @@ class MinerService:
         # Normalize the data
         return normalizer.normalize(data_dict)
 
+    async def get_miner_data_raw(self, ip: str) -> dict[str, Any]:
+        """
+        Get raw data from a specific miner without normalization.
+
+        Args:
+            ip: IP address of the miner
+
+        Returns:
+            Raw miner data dictionary (as returned by pyasic library)
+
+        Raises:
+            ValueError: If miner is not found
+        """
+        miner = await self.client.get_miner(ip)
+        if not miner:
+            raise ValueError(f"Miner not found at {ip}")
+
+        data = await miner.get_data()
+        # Serialize to get the dict without normalization
+        return data.as_dict() if hasattr(data, "as_dict") else {}
+
     async def get_miner_config(self, ip: str) -> dict[str, Any]:
         """
         Get config from a specific miner.
