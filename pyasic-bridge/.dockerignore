@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+dist
+build
+.eggs
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov/
+.tox/
+*.cover
+.hypothesis/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation
+*.md
+docs/
+
+# Test files
+tests/
+test_*.py
+*_test.py
+
+# Linting/formatting config
+ruff.toml
+pytest.ini
+.ruff_cache/
+
+# Development files
+Dockerfile.development
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+
+# Other
+*.log
+.DS_Store
