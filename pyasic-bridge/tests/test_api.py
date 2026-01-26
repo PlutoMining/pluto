@@ -232,3 +232,96 @@ class TestAPIRoutes:
 
         response = await client.get("/miner/192.168.1.100/errors")
         assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_get_miner_data_raw_success(self, client, mock_service):
+        """Test getting raw miner data successfully."""
+        mock_data = {
+            "hashrate": 1.0,
+            "wattage": 50.0,
+            "raw_field": "raw_value"
+        }
+        mock_service.get_miner_data_raw = AsyncMock(return_value=mock_data)
+
+        response = await client.get("/miner/192.168.1.100/data/raw")
+        assert response.status_code == 200
+        data = response.json()
+        assert "hashrate" in data
+        assert "raw_field" in data
+
+    @pytest.mark.asyncio
+    async def test_get_miner_data_raw_not_found(self, client, mock_service):
+        """Test getting raw miner data when not found."""
+        mock_service.get_miner_data_raw = AsyncMock(side_effect=ValueError("Miner not found at 192.168.1.100"))
+
+        response = await client.get("/miner/192.168.1.100/data/raw")
+        assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_get_miner_data_raw_error(self, client, mock_service):
+        """Test getting raw miner data with service error."""
+        mock_service.get_miner_data_raw = AsyncMock(side_effect=Exception("Service error"))
+
+        response = await client.get("/miner/192.168.1.100/data/raw")
+        assert response.status_code == 500
+
+    @pytest.mark.asyncio
+    async def test_get_miner_data_error(self, client, mock_service):
+        """Test getting miner data with service error."""
+        mock_service.get_miner_data = AsyncMock(side_effect=Exception("Service error"))
+
+        response = await client.get("/miner/192.168.1.100/data")
+        assert response.status_code == 500
+
+    @pytest.mark.asyncio
+    async def test_get_miner_config_error(self, client, mock_service):
+        """Test getting miner config with service error."""
+        mock_service.get_miner_config = AsyncMock(side_effect=Exception("Service error"))
+
+        response = await client.get("/miner/192.168.1.100/config")
+        assert response.status_code == 500
+
+    @pytest.mark.asyncio
+    async def test_update_miner_config_error(self, client, mock_service):
+        """Test updating miner config with service error."""
+        mock_service.update_miner_config = AsyncMock(side_effect=Exception("Service error"))
+
+        response = await client.patch("/miner/192.168.1.100/config", json={})
+        assert response.status_code == 500
+
+    @pytest.mark.asyncio
+    async def test_restart_miner_error(self, client, mock_service):
+        """Test restarting miner with service error."""
+        mock_service.restart_miner = AsyncMock(side_effect=Exception("Service error"))
+
+        response = await client.post("/miner/192.168.1.100/restart")
+        assert response.status_code == 500
+
+    @pytest.mark.asyncio
+    async def test_fault_light_on_error(self, client, mock_service):
+        """Test turning fault light on with service error."""
+        mock_service.fault_light_on = AsyncMock(side_effect=Exception("Service error"))
+
+        response = await client.post("/miner/192.168.1.100/fault-light/on")
+        assert response.status_code == 500
+
+    @pytest.mark.asyncio
+    async def test_fault_light_off_error(self, client, mock_service):
+        """Test turning fault light off with service error."""
+        mock_service.fault_light_off = AsyncMock(side_effect=Exception("Service error"))
+
+        response = await client.post("/miner/192.168.1.100/fault-light/off")
+        assert response.status_code == 500
+
+    @pytest.mark.asyncio
+    async def test_get_miner_errors_error(self, client, mock_service):
+        """Test getting miner errors with service error."""
+        mock_service.get_miner_errors = AsyncMock(side_effect=Exception("Service error"))
+
+        response = await client.get("/miner/192.168.1.100/errors")
+        assert response.status_code == 500
+
+    def test_get_miner_service_not_configured(self):
+        """Test get_miner_service raises RuntimeError when not configured."""
+        with pytest.raises(RuntimeError, match="MinerService not configured"):
+            get_miner_service()
