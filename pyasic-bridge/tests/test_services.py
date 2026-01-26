@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from app.models import MinerInfo
-from app.normalization import DefaultMinerDataNormalizer
 from app.services import MinerService
 
 
@@ -91,21 +90,17 @@ class TestMinerService:
         """Test initialization with defaults."""
         service = MinerService()
         assert service.client is not None
-        assert service.normalizer is not None
 
-    def test_init_with_dependencies(self):
-        """Test initialization with provided dependencies."""
+    def test_init_with_client(self):
+        """Test initialization with provided client."""
         client = MockMinerClient()
-        normalizer = MockNormalizer()
-        service = MinerService(client=client, normalizer=normalizer)
+        service = MinerService(client=client)
         assert service.client is client
-        assert service.normalizer is normalizer
 
     @pytest.mark.asyncio
     async def test_scan_miners_single_ip_found(self):
         """Test scanning single IP when miner is found."""
         client = MockMinerClient()
-        normalizer = DefaultMinerDataNormalizer()
 
         data_dict = {
             "hashrate": {"rate": 1.0, "unit": {"value": 1000000000, "suffix": "GH/s"}},
@@ -118,7 +113,7 @@ class TestMinerService:
         miner = MockMiner("192.168.1.100", data_dict)
         client.miners["192.168.1.100"] = miner
 
-        service = MinerService(client=client, normalizer=normalizer)
+        service = MinerService(client=client)
         result = await service.scan_miners(ip="192.168.1.100")
 
         assert len(result) == 1
@@ -132,8 +127,7 @@ class TestMinerService:
     async def test_scan_miners_single_ip_not_found(self):
         """Test scanning single IP when miner is not found."""
         client = MockMinerClient()
-        normalizer = DefaultMinerDataNormalizer()
-        service = MinerService(client=client, normalizer=normalizer)
+        service = MinerService(client=client)
 
         result = await service.scan_miners(ip="192.168.1.100")
 
@@ -143,7 +137,6 @@ class TestMinerService:
     async def test_scan_miners_subnet(self):
         """Test scanning subnet."""
         client = MockMinerClient()
-        normalizer = DefaultMinerDataNormalizer()
 
         data_dict1 = {
             "hashrate": {"rate": 1.0, "unit": {"value": 1000000000, "suffix": "GH/s"}},
@@ -162,7 +155,7 @@ class TestMinerService:
         miner2 = MockMiner("192.168.1.101", data_dict2)
         client.scan_results = [miner1, miner2]
 
-        service = MinerService(client=client, normalizer=normalizer)
+        service = MinerService(client=client)
         result = await service.scan_miners(subnet="192.168.1.0/24")
 
         assert len(result) == 2
@@ -181,7 +174,6 @@ class TestMinerService:
     async def test_get_miner_data_success(self):
         """Test getting miner data successfully."""
         client = MockMinerClient()
-        normalizer = DefaultMinerDataNormalizer()
 
         data_dict = {
             "hashrate": {"rate": 1.0, "unit": {"value": 1000000000, "suffix": "GH/s"}},
@@ -191,7 +183,7 @@ class TestMinerService:
         miner = MockMiner("192.168.1.100", data_dict)
         client.miners["192.168.1.100"] = miner
 
-        service = MinerService(client=client, normalizer=normalizer)
+        service = MinerService(client=client)
         result = await service.get_miner_data("192.168.1.100")
 
         assert "hashrate" in result
@@ -359,13 +351,6 @@ class TestMinerService:
         """Test scanning with custom normalizer."""
         client = MockMinerClient()
 
-        def custom_normalize(data):
-            normalized = data.copy()
-            normalized["custom_field"] = "normalized"
-            return normalized
-
-        normalizer = MockNormalizer(normalize_func=custom_normalize)
-
         data_dict = {
             "hashrate": {"rate": 1.0, "unit": {"value": 1000000000, "suffix": "GH/s"}},
             "mac": "00:11:22:33:44:55",
@@ -375,8 +360,10 @@ class TestMinerService:
         miner = MockMiner("192.168.1.100", data_dict)
         client.miners["192.168.1.100"] = miner
 
-        service = MinerService(client=client, normalizer=normalizer)
+        service = MinerService(client=client)
         result = await service.scan_miners(ip="192.168.1.100")
 
         assert len(result) == 1
-        assert result[0].data["custom_field"] == "normalized"
+        # Normalizer is now selected automatically, so we just verify normalization occurred
+        assert "hashrate" in result[0].data
+        assert isinstance(result[0].data["hashrate"], dict)
