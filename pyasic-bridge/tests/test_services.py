@@ -243,6 +243,58 @@ class TestMinerService:
             await service.update_miner_config("192.168.1.100", {})
 
     @pytest.mark.asyncio
+    async def test_update_miner_config_send_error(self):
+        """Test updating miner config when send_config raises an error."""
+        client = MockMinerClient()
+        data_dict = {}
+        miner = MockMiner("192.168.1.100", data_dict)
+        miner.send_config = AsyncMock(side_effect=Exception("Send config failed"))
+        client.miners["192.168.1.100"] = miner
+
+        service = MinerService(client=client)
+        with pytest.raises(Exception, match="Send config failed"):
+            await service.update_miner_config("192.168.1.100", {"pool": "stratum+tcp://pool.example.com:3333"})
+
+    @pytest.mark.asyncio
+    async def test_restart_miner_reboot_error(self):
+        """Test restarting miner when reboot raises an error."""
+        client = MockMinerClient()
+        data_dict = {}
+        miner = MockMiner("192.168.1.100", data_dict)
+        miner.reboot = AsyncMock(side_effect=Exception("Reboot failed"))
+        client.miners["192.168.1.100"] = miner
+
+        service = MinerService(client=client)
+        with pytest.raises(Exception, match="Reboot failed"):
+            await service.restart_miner("192.168.1.100")
+
+    @pytest.mark.asyncio
+    async def test_fault_light_on_error(self):
+        """Test turning fault light on when operation raises an error."""
+        client = MockMinerClient()
+        data_dict = {}
+        miner = MockMiner("192.168.1.100", data_dict)
+        miner.fault_light_on = AsyncMock(side_effect=Exception("Fault light failed"))
+        client.miners["192.168.1.100"] = miner
+
+        service = MinerService(client=client)
+        with pytest.raises(Exception, match="Fault light failed"):
+            await service.fault_light_on("192.168.1.100")
+
+    @pytest.mark.asyncio
+    async def test_fault_light_off_error(self):
+        """Test turning fault light off when operation raises an error."""
+        client = MockMinerClient()
+        data_dict = {}
+        miner = MockMiner("192.168.1.100", data_dict)
+        miner.fault_light_off = AsyncMock(side_effect=Exception("Fault light failed"))
+        client.miners["192.168.1.100"] = miner
+
+        service = MinerService(client=client)
+        with pytest.raises(Exception, match="Fault light failed"):
+            await service.fault_light_off("192.168.1.100")
+
+    @pytest.mark.asyncio
     async def test_restart_miner_success(self):
         """Test restarting miner successfully."""
         client = MockMinerClient()
@@ -367,3 +419,125 @@ class TestMinerService:
         # Normalizer is now selected automatically, so we just verify normalization occurred
         assert "hashrate" in result[0].data
         assert isinstance(result[0].data["hashrate"], dict)
+
+    @pytest.mark.asyncio
+    async def test_get_miner_data_raw_success(self):
+        """Test getting raw miner data successfully."""
+        client = MockMinerClient()
+
+        data_dict = {
+            "hashrate": 1.0,
+            "wattage": 50.0,
+            "raw_field": "raw_value"
+        }
+        miner = MockMiner("192.168.1.100", data_dict)
+        client.miners["192.168.1.100"] = miner
+
+        service = MinerService(client=client)
+        result = await service.get_miner_data_raw("192.168.1.100")
+
+        assert result == data_dict
+        assert "raw_field" in result
+
+    @pytest.mark.asyncio
+    async def test_get_miner_data_raw_not_found(self):
+        """Test getting raw miner data when miner not found."""
+        client = MockMinerClient()
+        service = MinerService(client=client)
+
+        with pytest.raises(ValueError, match="Miner not found"):
+            await service.get_miner_data_raw("192.168.1.100")
+
+    @pytest.mark.asyncio
+    async def test_get_miner_data_raw_no_as_dict(self):
+        """Test getting raw miner data when data has no as_dict method."""
+        client = MockMinerClient()
+        miner = MagicMock()
+        # Create a simple object without as_dict method
+        class DataWithoutAsDict:
+            pass
+        mock_data = DataWithoutAsDict()
+        miner.get_data = AsyncMock(return_value=mock_data)
+        client.miners["192.168.1.100"] = miner
+
+        service = MinerService(client=client)
+        result = await service.get_miner_data_raw("192.168.1.100")
+
+        assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_get_miner_data_no_as_dict(self):
+        """Test getting miner data when data has no as_dict method."""
+        client = MockMinerClient()
+        miner = MagicMock()
+        miner.get_data = AsyncMock(return_value=MagicMock())  # No as_dict method
+        client.miners["192.168.1.100"] = miner
+
+        service = MinerService(client=client)
+        result = await service.get_miner_data("192.168.1.100")
+
+        # Should still normalize even with empty dict
+        assert isinstance(result, dict)
+
+    @pytest.mark.asyncio
+    async def test_get_miner_config_no_as_dict(self):
+        """Test getting miner config when config has no as_dict method."""
+        client = MockMinerClient()
+        miner = MagicMock()
+        # Create a simple object without as_dict method
+        class ConfigWithoutAsDict:
+            pass
+        mock_config = ConfigWithoutAsDict()
+        miner.get_config = AsyncMock(return_value=mock_config)
+        client.miners["192.168.1.100"] = miner
+
+        service = MinerService(client=client)
+        result = await service.get_miner_config("192.168.1.100")
+
+        assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_scan_miners_hashrate_not_dict(self):
+        """Test scanning when raw hashrate is not a dict (normalizer converts it)."""
+        client = MockMinerClient()
+
+        data_dict = {
+            "hashrate": 1.0,  # Raw value is not a dict, but normalizer will convert it
+            "mac": "00:11:22:33:44:55",
+            "model": "TestMiner",
+            "hostname": "test-miner"
+        }
+        miner = MockMiner("192.168.1.100", data_dict)
+        client.miners["192.168.1.100"] = miner
+
+        service = MinerService(client=client)
+        result = await service.scan_miners(ip="192.168.1.100")
+
+        assert len(result) == 1
+        # Normalizer converts hashrate to dict structure, so hashrate should be the rate value
+        # The normalizer will convert 1.0 (assuming Gh/s) to a dict with rate in Gh/s
+        assert isinstance(result[0].data.get('hashrate'), dict)
+        assert 'rate' in result[0].data.get('hashrate', {})
+        # The top-level hashrate field should be the rate value from the normalized dict
+        assert result[0].hashrate >= 0.0  # Should be a valid number (normalized rate)
+
+    @pytest.mark.asyncio
+    async def test_scan_miners_no_hashrate(self):
+        """Test scanning when normalized data has no hashrate."""
+        client = MockMinerClient()
+
+        data_dict = {
+            "wattage": 50.0,
+            "mac": "00:11:22:33:44:55",
+            "model": "TestMiner",
+            "hostname": "test-miner"
+        }
+        miner = MockMiner("192.168.1.100", data_dict)
+        client.miners["192.168.1.100"] = miner
+
+        service = MinerService(client=client)
+        result = await service.scan_miners(ip="192.168.1.100")
+
+        assert len(result) == 1
+        # When no hashrate, should default to 0.0
+        assert result[0].hashrate == 0.0

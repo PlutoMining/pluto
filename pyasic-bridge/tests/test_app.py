@@ -38,7 +38,12 @@ class TestCreateApp:
         assert "/health" in routes
         assert "/scan" in routes
         assert "/miner/{ip}/data" in routes
+        assert "/miner/{ip}/data/raw" in routes
         assert "/miner/{ip}/config" in routes
+        assert "/miner/{ip}/restart" in routes
+        assert "/miner/{ip}/fault-light/on" in routes
+        assert "/miner/{ip}/fault-light/off" in routes
+        assert "/miner/{ip}/errors" in routes
 
     def test_create_app_dependency_override(self):
         """Test app has dependency override configured."""
