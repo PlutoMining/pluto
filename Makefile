@@ -3,7 +3,7 @@
 
 SHELL := /bin/bash
 COMPOSE_FILE = docker-compose.dev.local.yml
-.PHONY: help setup start stop up down logs build rebuild clean restart status shell lint-apps test-apps lint-app test-app up-stable down-stable logs-stable up-beta down-beta logs-beta
+.PHONY: help setup start stop up down logs build rebuild clean restart status shell lint-apps test-apps lint-app test-app lint-pyasic-bridge test-pyasic-bridge setup-pyasic-bridge up-stable down-stable logs-stable up-beta down-beta logs-beta
 
 APPS ?= backend discovery frontend
 
@@ -42,7 +42,7 @@ logs: ## View logs (use SERVICE=<name> for specific service)
 
 build: ## Build all Docker images
 	@echo "Building Docker images..."
-	@docker compose -f $(COMPOSE_FILE) build
+	@docker compose -f $(COMPOSE_FILE) build --no-cache
 	@echo "Build complete."
 
 rebuild: ## Rebuild all Docker images without cache
@@ -113,8 +113,12 @@ lint-app:
 		echo "Error: directory '$(APP)' not found"; \
 		exit 1; \
 	fi
-	@echo "→ Linting $(APP)..."
-	@cd $(APP) && npm run lint
+	@if [ "$(APP)" = "pyasic-bridge" ]; then \
+		$(MAKE) lint-pyasic-bridge; \
+	else \
+		echo "→ Linting $(APP)..."; \
+		cd $(APP) && npm run lint; \
+	fi
 
 test-apps: ## Run tests for all apps (override APP=<name> or APPS="a b")
 	@if [ -n "$(APP)" ]; then \
@@ -146,8 +150,49 @@ test-app:
 		echo "Error: directory '$(APP)' not found"; \
 		exit 1; \
 	fi
-	@echo "→ Testing $(APP)..."
-	@cd $(APP) && npm run test
+	@if [ "$(APP)" = "pyasic-bridge" ]; then \
+		$(MAKE) test-pyasic-bridge; \
+	else \
+		echo "→ Testing $(APP)..."; \
+		cd $(APP) && npm run test; \
+	fi
+
+setup-pyasic-bridge: ## Set up pyasic-bridge virtual environment
+	@echo "→ Setting up pyasic-bridge virtual environment..."
+	@cd pyasic-bridge && \
+		if [ ! -d "venv" ]; then \
+			echo "Creating virtual environment..."; \
+			python3 -m venv venv; \
+		fi && \
+		echo "Installing dependencies..." && \
+		. venv/bin/activate && \
+		pip install --upgrade pip && \
+		pip install -r requirements.txt && \
+		echo "✓ Virtual environment ready. Activate with: source pyasic-bridge/venv/bin/activate"
+
+lint-pyasic-bridge: ## Lint and fix pyasic-bridge Python code
+	@echo "→ Linting and fixing pyasic-bridge..."
+	@cd pyasic-bridge && \
+		if [ -d "venv" ]; then \
+			. venv/bin/activate && ruff check --fix app tests; \
+		elif command -v ruff > /dev/null 2>&1; then \
+			ruff check --fix app tests; \
+		else \
+			echo "Warning: ruff not found. Run 'make setup-pyasic-bridge' or install with: pip install ruff"; \
+			echo "Skipping linting..."; \
+		fi
+
+test-pyasic-bridge: ## Run tests for pyasic-bridge
+	@echo "→ Testing pyasic-bridge..."
+	@cd pyasic-bridge && \
+		if [ -d "venv" ]; then \
+			. venv/bin/activate && pytest --cov=app --cov-report=term-missing -v tests/; \
+		elif command -v pytest > /dev/null 2>&1; then \
+			pytest --cov=app --cov-report=term-missing -v tests/; \
+		else \
+			echo "Error: pytest not found. Run 'make setup-pyasic-bridge' or install dependencies with: pip install -r requirements.txt"; \
+			exit 1; \
+		fi
 
 # Production-like local testing (stable release)
 up-stable: ## Start stable release services locally (docker-compose.release.local.yml)
