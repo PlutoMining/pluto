@@ -42,7 +42,7 @@ These are enforced (see `.commitlintrc.json`):
 Scopes are optional but help both humans and the release tooling.
 
 Common scopes used in release docs:
-- `backend`, `frontend`, `discovery`, `prometheus`, `mock`
+- `backend`, `frontend`, `discovery`, `prometheus`, `mock`, `pyasic-bridge`
 - `common`
 - `scripts`
 - `docs`
@@ -58,14 +58,18 @@ feat(frontend,backend): add realtime status
 
 When you run `scripts/release.sh --bump-version` or `scripts/beta-release.sh --bump-version`, the bump level is computed **per service** from commit history (see `scripts/lib/semver.sh`).
 
+According to the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/):
+
 - `major`:
   - `type(scope)!: ...` for a scope that includes the service, OR
   - a `BREAKING CHANGE:` footer *and* a header scope that includes the service
 - `minor`: any `feat(...)` touching that service
-- `patch`: `fix|chore|refactor|docs|test(...)` touching that service
-- `none`: no commits touching that service directory
+- `patch`: any `fix(...)` touching that service
+- `none`: no commits touching that service directory, or only non-versioned types (docs, build, ci, chore, style, refactor, perf, test, revert)
 
 Important nuance: a breaking change footer only counts as `major` for a service if the **header scope mentions that service** (e.g. `feat(frontend,backend)!: ...` is major for `frontend` + `backend`, not for `discovery`).
+
+**Note**: Only `feat:` and `fix:` commit types trigger automatic version bumps. Other types (docs, build, ci, chore, style, refactor, perf, test, revert) do not trigger version bumps unless they include a `BREAKING CHANGE`.
 
 ## Examples
 
