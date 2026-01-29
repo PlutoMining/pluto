@@ -74,10 +74,7 @@ services:
     environment:
       - PORT=7775
       - DETECT_MOCK_DEVICES=true
-      - USE_PYASIC=false
       - PYASIC_BRIDGE_HOST=http://172.17.0.1:8000
-      - PYASIC_FALLBACK_TO_LEGACY=true
-      - DISCOVERY_CONCURRENCY_LIMIT=10
       - MOCK_DISCOVERY_HOST=http://localhost:7770
       - MOCK_DEVICE_HOST=172.17.0.1
     volumes:
@@ -105,9 +102,7 @@ services:
     environment:
       - PORT=7776
       - AUTO_LISTEN=true
-      - USE_PYASIC=false
       - PYASIC_BRIDGE_HOST=http://172.17.0.1:8000
-      - PYASIC_FALLBACK_TO_LEGACY=true
       - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7775
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:

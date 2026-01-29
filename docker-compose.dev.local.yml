@@ -103,6 +103,8 @@ services:
       - PYTHONUNBUFFERED=1
     volumes:
       - ./pyasic-bridge:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: on-failure
 
   discovery:
@@ -126,12 +128,16 @@ services:
       - discovery/.env.local
     environment:
       - PORT=7775
-      - DETECT_MOCK_DEVICES=false
-      - USE_PYASIC=true
+      - DETECT_MOCK_DEVICES=true
       - PYASIC_BRIDGE_HOST=http://localhost:8000
-      - PYASIC_FALLBACK_TO_LEGACY=false
-      - DISCOVERY_CONCURRENCY_LIMIT=10
+      - PYASIC_VALIDATION_TIMEOUT=3000
+      - PYASIC_VALIDATION_BATCH_SIZE=10
+      - PYASIC_VALIDATION_CONCURRENCY=3
       # - MOCK_DISCOVERY_HOST=http://host.docker.internal:7770
+      - MOCK_DISCOVERY_HOST=http://localhost:7770
+      - MOCK_DEVICE_HOST=host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
       - ./common/db:/home/node/common/db # Monta il modulo (writable per development)
@@ -167,9 +173,7 @@ services:
     environment:
       - PORT=7776
       - AUTO_LISTEN=true
-      - USE_PYASIC=true
       - PYASIC_BRIDGE_HOST=http://pyasic-bridge:8000
-      - PYASIC_FALLBACK_TO_LEGACY=false
       # - DISCOVERY_SERVICE_HOST=http://host.docker.internal:7775
       - DELETE_DATA_ON_DEVICE_REMOVE=true
     volumes:
