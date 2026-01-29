@@ -6,7 +6,7 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { DeviceInfo, ExtendedDeviceInfo } from "@pluto/interfaces";
+import { PyasicMinerInfo } from "@pluto/interfaces";
 import { logger } from "@pluto/logger";
 import client from "prom-client";
 
@@ -21,6 +21,25 @@ poolMap.set("umbrel.local:2018", "Public Pool Local");
 const globalRegister = new client.Registry();
 // client.collectDefaultMetrics({ register: globalRegister }); // Colleziona metriche di default (memoria, CPU, etc.)
 
+// Helper function to get or create a Gauge metric
+const getOrCreateGauge = (name: string, help: string): client.Gauge<string> => {
+  const existingMetric = globalRegister.getSingleMetric(name);
+  if (existingMetric) {
+    if (existingMetric instanceof client.Gauge) {
+      logger.debug(`Reusing existing metric: ${name}`);
+      return existingMetric;
+    }
+    // If metric exists but is not a Gauge, remove it and create a new one
+    logger.warn(`Metric ${name} exists but is not a Gauge, removing and recreating`);
+    globalRegister.removeSingleMetric(name);
+  }
+  return new client.Gauge({
+    name,
+    help,
+    registers: [globalRegister],
+  });
+};
+
 // Factory function that returns Prometheus metrics for a given hostname
 export const createMetricsForDevice = (hostname: string) => {
   logger.debug(`HOSTNAME: ${hostname}`);
@@ -28,136 +47,154 @@ export const createMetricsForDevice = (hostname: string) => {
   const prefix = `${hostname}_`; // Prefix for all metrics
 
   // Define counters and gauges for each data point in the JSON, using the hostname as the prefix
-  const powerGauge = new client.Gauge({
-    name: `${prefix}power_watts`,
-    help: "Current power in watts",
-    registers: [globalRegister],
-  });
+  // Use getOrCreateGauge to avoid duplicate registration errors
+  const powerGauge = getOrCreateGauge(
+    `${prefix}power_watts`,
+    "Current power in watts"
+  );
 
-  const voltageGauge = new client.Gauge({
-    name: `${prefix}voltage_volts`,
-    help: "Current voltage in volts",
-    registers: [globalRegister],
-  });
+  const voltageGauge = getOrCreateGauge(
+    `${prefix}voltage_volts`,
+    "Current voltage in volts"
+  );
 
-  const currentGauge = new client.Gauge({
-    name: `${prefix}current_amps`,
-    help: "Current current in amps",
-    registers: [globalRegister],
-  });
+  const currentGauge = getOrCreateGauge(
+    `${prefix}current_amps`,
+    "Current current in amps"
+  );
 
-  const fanSpeedGauge = new client.Gauge({
-    name: `${prefix}fanspeed_rpm`,
-    help: "Current fan speed in RPM or %",
-    registers: [globalRegister],
-  });
+  const fanSpeedGauge = getOrCreateGauge(
+    `${prefix}fanspeed_rpm`,
+    "Current fan speed in RPM or %"
+  );
 
-  const tempGauge = new client.Gauge({
-    name: `${prefix}temperature_celsius`,
-    help: "Current temperature in Celsius",
-    registers: [globalRegister],
-  });
+  const tempGauge = getOrCreateGauge(
+    `${prefix}temperature_celsius`,
+    "Current temperature in Celsius"
+  );
 
-  const vrTempGauge = new client.Gauge({
-    name: `${prefix}vr_temperature_celsius`,
-    help: "Current voltage regulator temperature in Celsius",
-    registers: [globalRegister],
-  });
+  const vrTempGauge = getOrCreateGauge(
+    `${prefix}vr_temperature_celsius`,
+    "Current voltage regulator temperature in Celsius"
+  );
 
-  const hashRateGauge = new client.Gauge({
-    name: `${prefix}hashrate_ghs`,
-    help: "Current hash rate in GH/s",
-    registers: [globalRegister],
-  });
+  const hashRateGauge = getOrCreateGauge(
+    `${prefix}hashrate_ghs`,
+    "Current hash rate in GH/s"
+  );
 
-  const sharesAcceptedGauge = new client.Gauge({
-    name: `${prefix}shares_accepted`,
-    help: "Current shares accepted",
-    registers: [globalRegister],
-  });
+  const sharesAcceptedGauge = getOrCreateGauge(
+    `${prefix}shares_accepted`,
+    "Current shares accepted"
+  );
 
-  const sharesRejectedGauge = new client.Gauge({
-    name: `${prefix}shares_rejected`,
-    help: "Current shares rejected",
-    registers: [globalRegister],
-  });
+  const sharesRejectedGauge = getOrCreateGauge(
+    `${prefix}shares_rejected`,
+    "Current shares rejected"
+  );
 
-  const uptimeGauge = new client.Gauge({
-    name: `${prefix}uptime_seconds`,
-    help: "Current uptime in seconds",
-    registers: [globalRegister],
-  });
+  const uptimeGauge = getOrCreateGauge(
+    `${prefix}uptime_seconds`,
+    "Current uptime in seconds"
+  );
 
-  const freeHeapGauge = new client.Gauge({
-    name: `${prefix}free_heap_bytes`,
-    help: "Current free heap in bytes",
-    registers: [globalRegister],
-  });
+  const freeHeapGauge = getOrCreateGauge(
+    `${prefix}free_heap_bytes`,
+    "Current free heap in bytes"
+  );
 
-  const freeHeapInternalGauge = new client.Gauge({
-    name: `${prefix}free_heap_internal_bytes`,
-    help: "Current free internal heap in bytes",
-    registers: [globalRegister],
-  });
+  const freeHeapInternalGauge = getOrCreateGauge(
+    `${prefix}free_heap_internal_bytes`,
+    "Current free internal heap in bytes"
+  );
 
-  const freeHeapSpiramGauge = new client.Gauge({
-    name: `${prefix}free_heap_spiram_bytes`,
-    help: "Current free PSRAM heap in bytes",
-    registers: [globalRegister],
-  });
+  const freeHeapSpiramGauge = getOrCreateGauge(
+    `${prefix}free_heap_spiram_bytes`,
+    "Current free PSRAM heap in bytes"
+  );
 
-  const coreVoltageGauge = new client.Gauge({
-    name: `${prefix}core_voltage_volts`,
-    help: "Current core voltage in volts",
-    registers: [globalRegister],
-  });
+  const coreVoltageGauge = getOrCreateGauge(
+    `${prefix}core_voltage_volts`,
+    "Current core voltage in volts"
+  );
 
-  const coreVoltageActualGauge = new client.Gauge({
-    name: `${prefix}core_voltage_actual_volts`,
-    help: "Current actual core voltage in volts",
-    registers: [globalRegister],
-  });
+  const coreVoltageActualGauge = getOrCreateGauge(
+    `${prefix}core_voltage_actual_volts`,
+    "Current actual core voltage in volts"
+  );
 
-  const frequencyGauge = new client.Gauge({
-    name: `${prefix}frequency_mhz`,
-    help: "Current frequency in MHz",
-    registers: [globalRegister],
-  });
+  const frequencyGauge = getOrCreateGauge(
+    `${prefix}frequency_mhz`,
+    "Current frequency in MHz"
+  );
 
-  const efficiencyGauge = new client.Gauge({
-    name: `${prefix}efficiency`,
-    help: "Current device efficiency",
-    registers: [globalRegister],
-  });
+  const efficiencyGauge = getOrCreateGauge(
+    `${prefix}efficiency`,
+    "Current device efficiency"
+  );
 
   return {
-    updatePrometheusMetrics: (data: Partial<DeviceInfo>) => {
+    updatePrometheusMetrics: (data: Partial<PyasicMinerInfo>) => {
       const setGauge = (gauge: client.Gauge<string>, value: unknown, map?: (n: number) => number) => {
         if (typeof value !== "number" || !Number.isFinite(value)) return;
         gauge.set(map ? map(value) : value);
       };
 
-      const hashrate = data.hashRate ?? data.hashRate_10m;
+      // Pyasic-bridge normalizes hashrate to Gh/s
+      const hashrateGhs =
+        data.hashrate?.rate !== undefined && Number.isFinite(data.hashrate.rate)
+          ? data.hashrate.rate
+          : 0;
 
-      setGauge(powerGauge, data.power);
-      setGauge(voltageGauge, data.voltage, (v) => v / 1000); // Assume voltage in millivolts
-      setGauge(currentGauge, data.current, (c) => c / 1000); // Assume current in milliamps
-      setGauge(fanSpeedGauge, data.fanSpeedRpm ?? data.fanrpm ?? data.fanspeed);
-      setGauge(tempGauge, data.temp);
-      setGauge(vrTempGauge, data.vrTemp);
-      setGauge(hashRateGauge, hashrate);
-      setGauge(sharesAcceptedGauge, data.sharesAccepted);
-      setGauge(sharesRejectedGauge, data.sharesRejected);
-      setGauge(uptimeGauge, data.uptimeSeconds);
-      setGauge(freeHeapGauge, data.freeHeap);
-      setGauge(freeHeapInternalGauge, data.freeHeapInternal);
-      setGauge(freeHeapSpiramGauge, data.freeHeapSpiram);
-      setGauge(coreVoltageGauge, data.coreVoltage, (v) => v / 1000); // Assume voltage in millivolts
-      setGauge(coreVoltageActualGauge, data.coreVoltageActual, (v) => v / 1000); // Assume voltage in millivolts
-      setGauge(frequencyGauge, data.frequency);
+      // Extract temperature (use temperature_avg or max from hashboards)
+      let temp = data.temperature_avg ?? 0;
+      if (!temp && data.hashboards && data.hashboards.length > 0) {
+        const temps = data.hashboards.map((h) => h.temp ?? h.chip_temp ?? 0).filter((t) => t > 0);
+        temp = temps.length > 0 ? Math.max(...temps) : 0;
+      }
 
-      if (typeof data.power === "number" && Number.isFinite(data.power) && typeof hashrate === "number" && Number.isFinite(hashrate)) {
-        const efficiency = data.power > 0 && hashrate > 0 ? data.power / (hashrate / 1000) : 0;
+      // Extract VR temp (max chip_temp from hashboards)
+      let vrTemp = 0;
+      if (data.hashboards && data.hashboards.length > 0) {
+        const temps = data.hashboards.map((h) => h.chip_temp ?? 0).filter((t) => t > 0);
+        vrTemp = temps.length > 0 ? Math.max(...temps) : 0;
+      }
+
+      // Extract fan speed (first fan or average)
+      const fanSpeed = data.fans && data.fans.length > 0 ? data.fans[0].speed : 0;
+
+      // Extract voltage (average from hashboards or top-level)
+      let voltage = data.voltage ?? null;
+      if (!voltage && data.hashboards && data.hashboards.length > 0) {
+        const voltages = data.hashboards.map((h) => h.voltage ?? 0).filter((v) => v > 0);
+        voltage = voltages.length > 0 ? voltages.reduce((a, b) => a + b, 0) / voltages.length : null;
+      }
+
+      setGauge(powerGauge, data.wattage);
+      setGauge(voltageGauge, voltage, (v) => v / 1000); // Assume voltage in millivolts
+      // Current is not available in pyasic schema, leave as 0
+      setGauge(currentGauge, 0);
+      setGauge(fanSpeedGauge, fanSpeed);
+      setGauge(tempGauge, temp);
+      setGauge(vrTempGauge, vrTemp);
+      setGauge(hashRateGauge, hashrateGhs);
+      setGauge(sharesAcceptedGauge, data.shares_accepted);
+      setGauge(sharesRejectedGauge, data.shares_rejected);
+      setGauge(uptimeGauge, data.uptime);
+      // Heap metrics not available in pyasic schema, leave as 0
+      setGauge(freeHeapGauge, 0);
+      setGauge(freeHeapInternalGauge, 0);
+      setGauge(freeHeapSpiramGauge, 0);
+      // Core voltage and frequency not directly available in pyasic schema, leave as 0
+      setGauge(coreVoltageGauge, 0);
+      setGauge(coreVoltageActualGauge, 0);
+      setGauge(frequencyGauge, 0);
+
+      // Use efficiency from pyasic if available, otherwise compute
+      if (data.efficiency?.rate !== undefined && Number.isFinite(data.efficiency.rate)) {
+        efficiencyGauge.set(data.efficiency.rate);
+      } else if (data.wattage && hashrateGhs > 0) {
+        const efficiency = data.wattage > 0 && hashrateGhs > 0 ? data.wattage / (hashrateGhs / 1000) : 0;
         efficiencyGauge.set(efficiency);
       }
     },
@@ -230,6 +267,10 @@ const firmwareVersionGauge = new client.Gauge({
   registers: [globalRegister],
   labelNames: ["version"], // Usa `version` come label per la versione del firmware
 });
+
+// Track previously seen firmware versions to reset stale ones
+const seenFirmwareVersions = new Set<string>();
+
 // Metrica per le shares accepted con label `pool`
 const sharesByPoolAcceptedGauge = new client.Gauge({
   name: "shares_by_pool_accepted",
@@ -245,15 +286,65 @@ const sharesByPoolRejectedGauge = new client.Gauge({
   labelNames: ["pool"], // Usa `pool` come label per identificare il pool
 });
 
+// Track previously seen pools to reset stale ones
+const seenPools = new Set<string>();
+
 const totalEfficiencyGauge = new client.Gauge({
   name: "total_efficiency",
   help: "Total efficiency (hashrate per watt) across all devices",
   registers: [globalRegister],
 });
 
+function extractPoolUrlFromConfig(config: PyasicMinerInfo["config"]): { url: string; port: string } {
+  const defaultPool = { url: "", port: "" };
+
+  if (!config?.pools?.groups || config.pools.groups.length === 0) {
+    return defaultPool;
+  }
+
+  const firstGroup = config.pools.groups[0];
+  if (!firstGroup?.pools || firstGroup.pools.length === 0) {
+    return defaultPool;
+  }
+
+  const pool = firstGroup.pools[0];
+  if (!pool?.url) {
+    return defaultPool;
+  }
+
+  // Parse URL to extract host and port
+  try {
+    const urlStr = pool.url.replace(/^stratum\+tcp:\/\//i, "");
+    const urlParts = urlStr.split("/")[0]; // Remove path
+
+    // Handle malformed URLs with multiple colons (e.g., "example.com:abc:123")
+    // by keeping the whole thing as the URL
+    const colonCount = (urlParts.match(/:/g) || []).length;
+    if (colonCount > 1) {
+      return {
+        url: urlParts,
+        port: "",
+      };
+    }
+
+    const [host, port] = urlParts.split(":");
+
+    return {
+      url: host || "",
+      port: port || "",
+    };
+  } catch {
+    return {
+      url: pool.url || "",
+      port: "",
+    };
+  }
+}
+
 function normalizePoolKey(stratumURL: unknown, stratumPort: unknown) {
   const rawUrl = typeof stratumURL === "string" ? stratumURL.trim() : "";
-  const rawPort = typeof stratumPort === "number" ? stratumPort : Number(stratumPort);
+  const rawPortStr = typeof stratumPort === "string" ? stratumPort.trim() : String(stratumPort);
+  const rawPort = typeof stratumPort === "number" ? stratumPort : rawPortStr ? Number(rawPortStr) : NaN;
 
   let hostPort = rawUrl;
 
@@ -261,7 +352,17 @@ function normalizePoolKey(stratumURL: unknown, stratumPort: unknown) {
   hostPort = hostPort.split("/")[0];
 
   if (!hostPort) {
-    return Number.isFinite(rawPort) ? `unknown:${rawPort}` : "unknown";
+    return Number.isFinite(rawPort) && rawPort > 0 ? `unknown:${rawPort}` : "unknown";
+  }
+
+  // If hostPort doesn't look like a valid hostname/IP, treat as unknown
+  // Valid hostnames have dots or are IP addresses, or are at least 4 chars (like "localhost")
+  const hasDot = hostPort.includes(".");
+  const looksLikeIP = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(hostPort);
+  const isJustNumbers = /^\d+$/.test(hostPort);
+  if (!hasDot && !looksLikeIP && (isJustNumbers || hostPort.length < 3)) {
+    // Numbers-only strings or very short strings without dots are likely invalid (e.g., "123")
+    return "unknown";
   }
 
   const lastColonIdx = hostPort.lastIndexOf(":");
@@ -272,7 +373,7 @@ function normalizePoolKey(stratumURL: unknown, stratumPort: unknown) {
     }
   }
 
-  if (Number.isFinite(rawPort)) {
+  if (Number.isFinite(rawPort) && rawPort > 0) {
     return `${hostPort}:${rawPort}`;
   }
 
@@ -280,19 +381,24 @@ function normalizePoolKey(stratumURL: unknown, stratumPort: unknown) {
 }
 
 // Funzione per aggiornare tutte le metriche di overview
-export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
+export const updateOverviewMetrics = (
+  devicesData: Array<PyasicMinerInfo & { tracing?: boolean }>
+) => {
   const totalDevices = devicesData.length;
   const onlineDevices = devicesData.filter((device) => device.tracing).length;
   const offlineDevices = totalDevices - onlineDevices;
 
+  // Pyasic-bridge normalizes hashrate to Gh/s
   const totalHashrate = devicesData.reduce((acc, device) => {
-    if (!device.tracing) return acc;
-    const hashRate = device.hashRate ?? device.hashRate_10m ?? 0; // Usa 0 se entrambi sono null o undefined
-    return acc + hashRate;
+    if (!device.tracing || !device.hashrate?.rate) return acc;
+    return acc + device.hashrate.rate;
   }, 0);
   const averageHashrate = totalDevices > 0 ? totalHashrate / totalDevices : 0;
 
-  const totalPower = devicesData.reduce((acc, device) => (device.tracing ? acc + (device.power ?? 0) : acc), 0);
+  const totalPower = devicesData.reduce(
+    (acc, device) => (device.tracing ? acc + (device.wattage ?? 0) : acc),
+    0
+  );
   // Fleet efficiency (J/TH) is computed with the same formula used for single devices:
   // efficiency (J / TH) = power (W) / (hashrate GH/s / 1000)
   const efficiency =
@@ -309,14 +415,23 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
 
   // Conta il numero di dispositivi per ciascuna versione firmware
   const firmwareCount = devicesData.reduce((acc: { [version: string]: number }, device) => {
-    const version = device.version || "unknown"; // Gestisce il caso di versioni mancanti
+    const version = device.fw_ver || device.api_ver || "unknown";
     acc[version] = (acc[version] || 0) + 1;
     return acc;
   }, {});
 
+  // Reset all previously seen firmware versions to 0 to remove stale entries
+  seenFirmwareVersions.forEach((version) => {
+    firmwareVersionGauge.labels(version).set(0);
+  });
+
+  // Clear the set and rebuild it with current versions
+  seenFirmwareVersions.clear();
+
   // Imposta i valori della metrica firmware per ciascuna versione
   Object.entries(firmwareCount).forEach(([version, count]) => {
-    firmwareVersionGauge.labels(version).set(count); // Usa la label `version` per ogni versione firmware
+    seenFirmwareVersions.add(version);
+    firmwareVersionGauge.labels(version).set(count);
   });
 
   // Conta le shares per pool (accepted e rejected)
@@ -325,21 +440,33 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
       acc: { accepted: { [pool: string]: number }; rejected: { [pool: string]: number } },
       device
     ) => {
-      const poolKey = normalizePoolKey(device.stratumURL, device.stratumPort);
+      const { url, port } = extractPoolUrlFromConfig(device.config);
+      const poolKey = normalizePoolKey(url, port);
       const pool = poolMap.get(poolKey) || poolKey;
-      acc.accepted[pool] = (acc.accepted[pool] || 0) + device.sharesAccepted;
-      acc.rejected[pool] = (acc.rejected[pool] || 0) + device.sharesRejected;
+      acc.accepted[pool] = (acc.accepted[pool] || 0) + (device.shares_accepted || 0);
+      acc.rejected[pool] = (acc.rejected[pool] || 0) + (device.shares_rejected || 0);
       return acc;
     },
     { accepted: {}, rejected: {} }
   );
 
+  // Reset all previously seen pools to 0 to remove stale entries
+  seenPools.forEach((pool) => {
+    sharesByPoolAcceptedGauge.labels(pool).set(0);
+    sharesByPoolRejectedGauge.labels(pool).set(0);
+  });
+
+  // Clear the set and rebuild it with current pools
+  seenPools.clear();
+
   // Imposta le shares accepted e rejected per ciascun pool
   Object.entries(sharesByPool.accepted).forEach(([pool, count]) => {
-    sharesByPoolAcceptedGauge.labels(pool).set(count); // Usa la label `pool` per le shares accepted
+    seenPools.add(pool);
+    sharesByPoolAcceptedGauge.labels(pool).set(count);
   });
 
   Object.entries(sharesByPool.rejected).forEach(([pool, count]) => {
-    sharesByPoolRejectedGauge.labels(pool).set(count); // Usa la label `pool` per le shares rejected
+    seenPools.add(pool);
+    sharesByPoolRejectedGauge.labels(pool).set(count);
   });
 };

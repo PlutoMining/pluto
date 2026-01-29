@@ -12,6 +12,7 @@ import * as deviceService from "../services/device.service";
 import * as presetsService from "../services/presets.service";
 import { Device, DeviceFrequencyOptions, DeviceVoltageOptions } from "@pluto/interfaces";
 import axios from "axios";
+import { pyasicBridgeClient } from "../services/pyasic-bridge.service";
 
 function resolveAsicModelKey(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -307,21 +308,20 @@ export const restartDevice = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Device IP not available" });
     }
 
-    // Invia la richiesta di riavvio al dispositivo
-    const restartUrl = `http://${deviceIp}/api/system/restart`; // Assumendo che il dispositivo esponga un endpoint /api/system/restart
-    const response = await axios.post(restartUrl);
+    // Delegate restart to pyasic-bridge (handles both real and mock devices transparently)
+    await pyasicBridgeClient.restartMiner(deviceIp);
 
-    // Inoltra la risposta del dispositivo al client
-    res
-      .status(response.status)
-      .json({ message: "Device restarted successfully", data: response.data });
+    res.status(200).json({
+      message: "Device restarted successfully",
+      data: { mac: id, ip: deviceIp },
+    });
   } catch (error) {
     logger.error("Error in restartDevice request:", error);
 
     // Gestisci errori di Axios separatamente, se necessario
     if (axios.isAxiosError(error)) {
       res.status(error.response?.status || 500).json({
-        error: "Failed to restart the device",
+        error: "Failed to restart the device via pyasic-bridge",
         details: error.response?.data || error.message,
       });
     } else {
@@ -387,16 +387,18 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
         // the firmware can treat it as 0, effectively disabling the port.
         const presetPort = preset.configuration.stratumPort;
 
-        payload.info.stratumPort =
+        // Cast to any to allow setting legacy properties for pyasic-bridge API compatibility
+        const info = payload.info as any;
+        info.stratumPort =
           typeof presetPort === "number" ? presetPort : Number(presetPort) || 0;
-        payload.info.stratumURL = preset.configuration.stratumURL;
-        // payload.info.stratumUser = preset.configuration.stratumUser;
-        payload.info.stratumPassword = preset.configuration.stratumPassword;
+        info.stratumURL = preset.configuration.stratumURL;
+        // info.stratumUser = preset.configuration.stratumUser;
+        info.stratumPassword = preset.configuration.stratumPassword;
 
         logger.info("Final system info payload to device", {
           mac: payload.mac,
-          stratumPort: payload.info.stratumPort,
-          stratumURL: payload.info.stratumURL,
+          stratumPort: info.stratumPort,
+          stratumURL: info.stratumURL,
         });
       } else {
         logger.error("Preset not found", { presetUuid: payload.presetUuid });
@@ -404,14 +406,11 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
       }
     }
 
-    // Invia la richiesta PATCH per aggiornare le informazioni di sistema
-    const patchUrl = `http://${deviceIp}/api/system`; // Assumendo che l'endpoint sia /api/system
-
     const systemInfoPatch = pickWritableSystemInfo(payload.info ?? originalInfo);
     const infoForLog = (payload.info ?? originalInfo) as any;
 
     logger.info("Sending PATCH to device", {
-      url: patchUrl,
+      url: `pyasic-bridge:/miner/${deviceIp}/config`,
       stratumPort: infoForLog?.stratumPort,
       stratumURL: infoForLog?.stratumURL,
       stratumUser: infoForLog?.stratumUser,
@@ -420,19 +419,21 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
       coreVoltage: (systemInfoPatch as any).coreVoltage,
     });
 
-    const response = await axios.patch(patchUrl, systemInfoPatch); // Passa solo i campi configurabili nel body
+    // Delegate config update to pyasic-bridge (handles both real and mock devices transparently)
+    await pyasicBridgeClient.updateMinerConfig(deviceIp, systemInfoPatch);
 
-    // Inoltra la risposta del dispositivo al client
-    res
-      .status(response.status)
-      .json({ message: "Device system info updated successfully", data: payload });
+    // Inoltra la risposta al client
+    res.status(200).json({
+      message: "Device system info updated successfully",
+      data: payload,
+    });
   } catch (error) {
     logger.error("Error in putDeviceSystemInfo request:", error);
 
     // Gestisci errori di Axios separatamente, se necessario
     if (axios.isAxiosError(error)) {
       res.status(error.response?.status || 500).json({
-        error: "Failed to update device system info",
+        error: "Failed to update device system info via pyasic-bridge",
         details: error.response?.data || error.message,
       });
     } else {

@@ -18,5 +18,10 @@ DISCOVERY_SERVICE_HOST=http://host.docker.internal:7775
 # For local: use localhost (e.g., http://localhost:9090)
 PROMETHEUS_HOST=http://prometheus:9090
 
+# pyasic-bridge host URL
+# For Docker dev: use the docker service name (e.g., http://pyasic-bridge:8000)
+# For local: use localhost (e.g., http://localhost:8000)
+PYASIC_BRIDGE_HOST=http://localhost:8000
+
 # Delete Prometheus metrics when device is removed
 DELETE_DATA_ON_DEVICE_REMOVE=false

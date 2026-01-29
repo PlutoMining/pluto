@@ -52,55 +52,23 @@ describe("tracing.helpers", () => {
   });
 
   describe("normalizeSystemInfo", () => {
-    it("returns raw value for non-object inputs", () => {
+    it("returns raw value as-is (no transformation)", () => {
+      // normalizeSystemInfo is deprecated and now just passes through the raw value
       expect(normalizeSystemInfo(null)).toBeNull();
       expect(normalizeSystemInfo("x")).toBe("x");
-    });
-
-    it("normalizes best diff keys and uptime", () => {
-      const normalized = normalizeSystemInfo({
-        best_diff: "1M",
+      
+      const pyasicData = {
+        best_difficulty: "1M",
         best_session_difficulty: "2M",
-        current_difficulty: "3M",
-        uptime_s: "10",
-      });
-
-      expect(normalized.bestDiff).toBe("1M");
-      expect(normalized.bestSessionDiff).toBe("2M");
-      expect(normalized.currentDiff).toBe("3M");
-      expect(normalized.uptimeSeconds).toBe(10);
-    });
-
-    it("does not overwrite uptimeSeconds when not coercible", () => {
-      const normalized = normalizeSystemInfo({
-        uptime_seconds: "nope",
-      });
-
-      expect(normalized.uptimeSeconds).toBeUndefined();
-    });
-
-    it("normalizes psram availability and heap counters", () => {
-      const normalizedTrue = normalizeSystemInfo({
-        isPSRAMAvailable: true,
-        free_heap_internal: "100",
-        freeHeapSpiram: 200,
-      });
-
-      expect(normalizedTrue.isPSRAMAvailable).toBe(1);
-      expect(normalizedTrue.freeHeapInternal).toBe(100);
-      expect(normalizedTrue.freeHeapSpiram).toBe(200);
-
-      const normalizedFalse = normalizeSystemInfo({
-        is_psram_available: false,
-      });
-
-      expect(normalizedFalse.isPSRAMAvailable).toBe(0);
-
-      const normalizedNumeric = normalizeSystemInfo({
-        isPSRAMAvailable: "2",
-      });
-
-      expect(normalizedNumeric.isPSRAMAvailable).toBe(2);
+        uptime: 10,
+        wattage: 100,
+      };
+      
+      const result = normalizeSystemInfo(pyasicData);
+      expect(result).toEqual(pyasicData);
+      expect(result.best_difficulty).toBe("1M");
+      expect(result.best_session_difficulty).toBe("2M");
+      expect(result.uptime).toBe(10);
     });
   });
 });

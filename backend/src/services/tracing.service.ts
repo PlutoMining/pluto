@@ -7,13 +7,7 @@
 */
 
 import { updateOne } from "@pluto/db";
-import {
-  Device,
-  DeviceFrequencyOptions,
-  DeviceInfo,
-  DeviceVoltageOptions,
-  ExtendedDeviceInfo,
-} from "@pluto/interfaces";
+import { Device, DeviceFrequencyOptions, DeviceVoltageOptions, PyasicMinerInfo } from "@pluto/interfaces";
 import { createCustomLogger, logger } from "@pluto/logger";
 import { asyncForEach, sanitizeHostname } from "@pluto/utils";
 import axios from "axios";
@@ -21,7 +15,7 @@ import { Server as NetServer } from "http";
 import { Server as ServerIO } from "socket.io";
 import WebSocket from "ws";
 import { config } from "../config/environment";
-import { normalizeSystemInfo, resolveAsicModelKey } from "./tracing.helpers";
+import { resolveAsicModelKey } from "./tracing.helpers";
 import {
   createMetricsForDevice,
   deleteMetricsForDevice,
@@ -33,7 +27,7 @@ let ipMap: {
   [key: string]: {
     ws?: WebSocket;
     timeout?: NodeJS.Timeout;
-    info?: DeviceInfo;
+    info?: PyasicMinerInfo;
     tracing?: boolean;
   };
 } = {}; // Mappa che tiene traccia degli IP attivi
@@ -124,7 +118,7 @@ export async function updateOriginalIpsListeners(newDevices: Device[], traceLogs
  */
 function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
   const { updatePrometheusMetrics } = createMetricsForDevice(
-    sanitizeHostname(device.info.hostname)
+    sanitizeHostname(device.info.hostname || device.ip)
   );
 
   let retryAttempts = 0;
@@ -134,7 +128,11 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
 
   // Funzione per connettersi al WebSocket
   const connectWebSocket = (): void => {
-    ws = new WebSocket(`ws://${device.ip}/api/ws`);
+    // Unified endpoint - mock devices are handled transparently by pyasic-bridge
+    const httpBase = config.pyasicBridgeHost.replace(/\/+$/, "");
+    const wsBase = httpBase.replace(/^http/, "ws");
+
+    ws = new WebSocket(`${wsBase}/ws/miner/${device.ip}`);
 
     ws.on("open", () => {
       logger.debug(`Connected to WebSocket for IP ${device.ip}`);
@@ -187,39 +185,52 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
     const startTime = Date.now(); // Registra il tempo di inizio
 
     try {
-      logger.debug(`Polling system info from ${device.ip}`);
-      // Without an explicit timeout, axios can hang for a long time on network errors,
-      // making offline/online transitions feel sluggish.
-      const response = await axios.get(`http://${device.ip}/api/system/info`, {
+      logger.debug(`Polling system info from ${device.ip} via pyasic-bridge`);
+
+      // Unified endpoint - mock devices are handled transparently by pyasic-bridge
+      const baseUrl = config.pyasicBridgeHost.replace(/\/+$/, "");
+
+      // Route all system info polling through pyasic-bridge so that
+      // non-AxeOS miners are supported and protocol differences are abstracted away.
+      const response = await axios.get(`${baseUrl}/miner/${device.ip}/data`, {
         timeout: config.systemInfoTimeoutMs,
       });
-      const normalizedInfo = normalizeSystemInfo(response.data);
 
-      const asicModelKey = resolveAsicModelKey(normalizedInfo?.ASICModel);
+      // Store pyasic response directly (no transformation)
+      const pyasicInfo = response.data as PyasicMinerInfo;
+
+      // Resolve ASIC model from device_info.model or model field for enrichment
+      const modelString = pyasicInfo.device_info?.model || pyasicInfo.model || "";
+      const asicModelKey = resolveAsicModelKey(modelString);
       const mappedFrequencyOptions =
         (asicModelKey ? DeviceFrequencyOptions[asicModelKey] : undefined) || [];
       const mappedCoreVoltageOptions =
         (asicModelKey ? DeviceVoltageOptions[asicModelKey] : undefined) || [];
 
+      // Enrich with Pluto-specific tuning options (additions, not transformations)
+      const enrichedInfo: PyasicMinerInfo = {
+        ...pyasicInfo,
+        // If we have known options for this ASIC model, prefer them.
+        // Otherwise, fall back to whatever options the pyasic info already provides.
+        frequencyOptions:
+          mappedFrequencyOptions.length > 0
+            ? mappedFrequencyOptions
+            : Array.isArray(pyasicInfo.frequencyOptions)
+            ? pyasicInfo.frequencyOptions
+            : [],
+        coreVoltageOptions:
+          mappedCoreVoltageOptions.length > 0
+            ? mappedCoreVoltageOptions
+            : Array.isArray(pyasicInfo.coreVoltageOptions)
+            ? pyasicInfo.coreVoltageOptions
+            : [],
+      };
+
       const extendedDevice: Device = {
         ...device,
         tracing: true,
-        info: normalizedInfo,
+        info: enrichedInfo,
       };
-
-      // Ensure tuning options are always present in websocket updates (new API omits them).
-      (extendedDevice.info as any).frequencyOptions =
-        mappedFrequencyOptions.length > 0
-          ? mappedFrequencyOptions
-          : Array.isArray((extendedDevice.info as any).frequencyOptions)
-          ? (extendedDevice.info as any).frequencyOptions
-          : [];
-      (extendedDevice.info as any).coreVoltageOptions =
-        mappedCoreVoltageOptions.length > 0
-          ? mappedCoreVoltageOptions
-          : Array.isArray((extendedDevice.info as any).coreVoltageOptions)
-          ? (extendedDevice.info as any).coreVoltageOptions
-          : [];
 
       delete extendedDevice.presetUuid; // @hack to avoid that presetId gets reset
 
@@ -234,10 +245,10 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
       ioInstance?.emit("stat_update", updatedDevice);
 
       // Aggiorna le metriche Prometheus con i dati del sistema
-      updatePrometheusMetrics(normalizedInfo);
+      updatePrometheusMetrics(enrichedInfo);
 
       // Aggiorna i dati nella mappa ipMap per il dispositivo corrente
-      ipMap[device.ip].info = normalizedInfo;
+      ipMap[device.ip].info = enrichedInfo;
       ipMap[device.ip].tracing = true;
 
     } catch (error: any) {
@@ -264,27 +275,19 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
       }
 
       // Ensure Prometheus doesn't keep reporting stale values when a device goes offline.
-      updatePrometheusMetrics({
-        power: 0,
-        voltage: 0,
-        current: 0,
-        fanSpeedRpm: 0,
-        fanspeed: 0,
-        fanrpm: 0,
-        temp: 0,
-        vrTemp: 0,
-        hashRate: 0,
-        hashRate_10m: 0,
-        sharesAccepted: 0,
-        sharesRejected: 0,
-        uptimeSeconds: 0,
-        freeHeap: 0,
-        freeHeapInternal: 0,
-        freeHeapSpiram: 0,
-        coreVoltage: 0,
-        coreVoltageActual: 0,
-        frequency: 0,
-      });
+      // Create minimal pyasic-compatible structure with zero values
+      const offlineInfo: Partial<PyasicMinerInfo> = {
+        wattage: 0,
+        voltage: null,
+        hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 0 },
+        shares_accepted: 0,
+        shares_rejected: 0,
+        uptime: 0,
+        temperature_avg: 0,
+        fans: [],
+        hashboards: [],
+      };
+      updatePrometheusMetrics(offlineInfo as PyasicMinerInfo);
 
       // // Se il polling fallisce, aggiorna il dispositivo come offline in ipMap
       // ipMap[device.ip].metrics = {
@@ -311,10 +314,12 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
       ipMap[device.ip].timeout = timeoutId;
 
       // Alla fine di ogni polling, aggiorna le metriche di overview con i dati di tutti i dispositivi
-      const allMetrics: ExtendedDeviceInfo[] = Object.values(ipMap).map((entry) => ({
-        ...entry.info!,
-        tracing: entry.tracing,
-      }));
+      const allMetrics: Array<PyasicMinerInfo & { tracing?: boolean }> = Object.values(ipMap)
+        .filter((entry) => entry.info !== undefined)
+        .map((entry) => ({
+          ...entry.info!,
+          tracing: entry.tracing,
+        }));
       updateOverviewMetrics(allMetrics);
     }
   };
@@ -328,7 +333,8 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
   }
 
   // Aggiungi l'IP alla mappa con il WebSocket e l'ID di timeout per il polling
-  ipMap[device.ip] = { ws, timeout: timeoutId, info: device.info };
+  // info will be set after first successful polling
+  ipMap[device.ip] = { ws, timeout: timeoutId, info: undefined };
 }
 
 /**

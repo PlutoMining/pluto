@@ -31,60 +31,12 @@ export function coerceFiniteNumber(value: unknown): number | undefined {
   return undefined;
 }
 
+/**
+ * @deprecated This function is no longer used. Pyasic-bridge responses are stored directly without transformation.
+ * This function is kept for backward compatibility during migration but will be removed in v2.
+ */
 export function normalizeSystemInfo(raw: any): any {
-  if (!raw || typeof raw !== "object") return raw;
-
-  const bestDiff = pickFirstValue(raw, [
-    "bestDiff",
-    "best_diff",
-    "bestDifficulty",
-    "best_difficulty",
-  ]);
-  const bestSessionDiff = pickFirstValue(raw, [
-    "bestSessionDiff",
-    "best_session_diff",
-    "bestSessionDifficulty",
-    "best_session_difficulty",
-  ]);
-  const currentDiff = pickFirstValue(raw, [
-    "currentDiff",
-    "current_diff",
-    "currentDifficulty",
-    "current_difficulty",
-    "difficulty",
-    "poolDifficulty",
-    "pool_difficulty",
-  ]);
-
-  const uptimeSeconds =
-    pickFirstValue(raw, ["uptimeSeconds", "uptime_seconds", "uptime", "uptime_s"]) ??
-    raw.uptimeSeconds;
-  const normalizedUptimeSeconds = coerceFiniteNumber(uptimeSeconds);
-
-  const isPSRAMAvailable = pickFirstValue(raw, ["isPSRAMAvailable", "is_psram_available"]);
-  const normalizedIsPSRAMAvailable =
-    typeof isPSRAMAvailable === "boolean"
-      ? isPSRAMAvailable
-        ? 1
-        : 0
-      : coerceFiniteNumber(isPSRAMAvailable);
-
-  const freeHeapInternal = pickFirstValue(raw, ["freeHeapInternal", "free_heap_internal"]);
-  const normalizedFreeHeapInternal = coerceFiniteNumber(freeHeapInternal);
-
-  const freeHeapSpiram = pickFirstValue(raw, ["freeHeapSpiram", "free_heap_spiram"]);
-  const normalizedFreeHeapSpiram = coerceFiniteNumber(freeHeapSpiram);
-
-  return {
-    ...raw,
-    ...(bestDiff !== undefined ? { bestDiff } : {}),
-    ...(bestSessionDiff !== undefined ? { bestSessionDiff } : {}),
-    ...(currentDiff !== undefined ? { currentDiff } : {}),
-    ...(normalizedUptimeSeconds !== undefined
-      ? { uptimeSeconds: normalizedUptimeSeconds }
-      : {}),
-    ...(normalizedIsPSRAMAvailable !== undefined ? { isPSRAMAvailable: normalizedIsPSRAMAvailable } : {}),
-    ...(normalizedFreeHeapInternal !== undefined ? { freeHeapInternal: normalizedFreeHeapInternal } : {}),
-    ...(normalizedFreeHeapSpiram !== undefined ? { freeHeapSpiram: normalizedFreeHeapSpiram } : {}),
-  };
+  // Return raw data as-is (no transformation)
+  // Pyasic-bridge already normalizes the data, so we just pass it through
+  return raw;
 }
