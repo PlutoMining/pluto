@@ -1,4 +1,0 @@
-FROM grafana/grafana:11.1.2
-COPY ./grafana/grafana.next.ini /etc/grafana/grafana.ini
-COPY ./grafana/dashboard.yaml /etc/grafana/provisioning/dashboards/main.yaml
-COPY ./grafana/datasource.next.yaml /etc/grafana/provisioning/datasources/main.yaml

@@ -13,13 +13,47 @@
 interface EnvConfig {
   port: number;
   mockDiscoveryHost: string;
-  mockDeviceHost: string; // Hostname to use for mock device IPs (for Docker compatibility)
+  mockDeviceHost?: string; // Optional hostname for mock device IPs (Docker compatibility)
   detectMockDevices: boolean;
 }
 
+const requireEnv = (name: string): string => {
+  const value = process.env[name];
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+  return value;
+};
+
+const parseNumber = (name: string, fallback: number): number => {
+  const value = process.env[name];
+  if (typeof value !== "string" || value.trim() === "") {
+    return fallback;
+  }
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) {
+    throw new Error(`Invalid number for ${name}: "${value}"`);
+  }
+  return parsed;
+};
+
+const parseBoolean = (name: string, fallback = false): boolean => {
+  const value = process.env[name];
+  if (typeof value !== "string" || value.trim() === "") {
+    return fallback;
+  }
+  return value === "true";
+};
+
 export const config: EnvConfig = {
-  port: Number(process.env.PORT || 3000),
-  detectMockDevices: process.env.DETECT_MOCK_DEVICES === "true",
-  mockDiscoveryHost: process.env.MOCK_DISCOVERY_HOST!,
-  mockDeviceHost: process.env.MOCK_DEVICE_HOST || "localhost", // Default to localhost, override for Docker
+  port: parseNumber("PORT", 3000),
+  detectMockDevices: parseBoolean("DETECT_MOCK_DEVICES"),
+  mockDiscoveryHost: requireEnv("MOCK_DISCOVERY_HOST"),
+  // If unset, we fall back to extracting the host from MOCK_DISCOVERY_HOST.
+  // This is important on Umbrel where discovery runs with host networking but backend does not;
+  // storing "localhost" would make backend poll itself instead of the host.
+  mockDeviceHost:
+    typeof process.env.MOCK_DEVICE_HOST === "string" && process.env.MOCK_DEVICE_HOST.trim() !== ""
+      ? process.env.MOCK_DEVICE_HOST
+      : undefined,
 };

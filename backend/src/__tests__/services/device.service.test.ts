@@ -75,9 +75,56 @@ describe('device.service', () => {
         },
       });
     });
+
+    it('omits macs/ips/hostnames when empty and defaults partialMatch', async () => {
+      mockedAxios.get.mockResolvedValue({ data: [] });
+
+      await deviceService.lookupMultipleDiscoveredDevices({
+        macs: [],
+        ips: [],
+        hostnames: [],
+      });
+
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://discovery.test/discovered', {
+        params: {
+          partialMacs: 'both',
+          partialIps: 'both',
+          partialHostnames: 'both',
+        },
+      });
+    });
+
+    it('omits partialMatch params when values are missing', async () => {
+      mockedAxios.get.mockResolvedValue({ data: [] });
+
+      await deviceService.lookupMultipleDiscoveredDevices({
+        macs: ['aa'],
+        partialMatch: {},
+      });
+
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://discovery.test/discovered', {
+        params: {
+          macs: 'aa',
+        },
+      });
+    });
+
+    it('logs and rethrows on axios error', async () => {
+      const error = new Error('network');
+      mockedAxios.get.mockRejectedValue(error);
+
+      await expect(deviceService.lookupMultipleDiscoveredDevices({ macs: ['aa'] })).rejects.toThrow('network');
+      expect(logger.error).toHaveBeenCalledWith('Error during multiple discovered devices lookup', error);
+    });
   });
 
   describe('imprintDevices', () => {
+    it('returns [] when no devices found', async () => {
+      jest.spyOn(deviceService, 'lookupMultipleDiscoveredDevices').mockResolvedValue([]);
+
+      await expect(deviceService.imprintDevices(['mac-0'])).resolves.toEqual([]);
+    });
+
     it('imprints devices inserting new entries', async () => {
       const lookupSpy = jest
         .spyOn(deviceService, 'lookupMultipleDiscoveredDevices')
@@ -129,6 +176,38 @@ describe('device.service', () => {
         expect.objectContaining({ mac: 'mac-2' }),
       );
     });
+
+    it('rethrows non-duplicate insert errors', async () => {
+      jest.spyOn(deviceService, 'lookupMultipleDiscoveredDevices').mockResolvedValue([
+        {
+          mac: 'mac-3',
+          info: {},
+        } as unknown as Device,
+      ]);
+
+      const error = new Error('boom');
+      db.insertOne.mockRejectedValue(error);
+
+      await expect(deviceService.imprintDevices(['mac-3'])).rejects.toThrow('boom');
+      expect(logger.error).toHaveBeenCalledWith('Error in imprintDevices:', error);
+    });
+
+    it('surfaces update errors after duplicate insert', async () => {
+      jest.spyOn(deviceService, 'lookupMultipleDiscoveredDevices').mockResolvedValue([
+        {
+          mac: 'mac-4',
+          info: {},
+        } as unknown as Device,
+      ]);
+
+      const duplicateError = new Error('already exists');
+      const updateError = new Error('update boom');
+      db.insertOne.mockRejectedValue(duplicateError);
+      db.updateOne.mockRejectedValue(updateError);
+
+      await expect(deviceService.imprintDevices(['mac-4'])).rejects.toThrow('update boom');
+      expect(logger.error).toHaveBeenCalledWith('Error in imprintDevices:', updateError);
+    });
   });
 
   describe('listenToDevices', () => {
@@ -143,6 +222,14 @@ describe('device.service', () => {
       expect(response).toEqual(devices);
     });
 
+    it('logs and throws on db error', async () => {
+      const error = new Error('db down');
+      db.findMany.mockRejectedValue(error);
+
+      await expect(deviceService.listenToDevices(undefined, true)).rejects.toThrow('db down');
+      expect(logger.error).toHaveBeenCalledWith('Error in listenToDevices:', error);
+    });
+
     it('reuses provided array', async () => {
       const devices = [{ mac: 'y', info: {} } as Device];
 
@@ -155,24 +242,66 @@ describe('device.service', () => {
   });
 
   describe('getImprintedDevices', () => {
-    it('filters imprinted devices by exact ip by default', async () => {
+    it('filters imprinted devices by query over ip', async () => {
       db.findMany.mockResolvedValue([]);
 
-      await deviceService.getImprintedDevices({ ip: '10.0.0.1' });
+      await deviceService.getImprintedDevices({ q: '10.0.0.1' });
 
       const predicate = db.findMany.mock.calls[0][2];
       expect(predicate({ ip: '10.0.0.1' } as Device)).toBe(true);
       expect(predicate({ ip: '10.0.0.10' } as Device)).toBe(false);
     });
 
-    it('supports partial ip matching for imprinted devices', async () => {
+    it('treats blank query as match-all', async () => {
       db.findMany.mockResolvedValue([]);
 
-      await deviceService.getImprintedDevices({ ip: '10.0', partialMatch: true });
+      await deviceService.getImprintedDevices({ q: '   ' });
+
+      const predicate = db.findMany.mock.calls[0][2];
+      expect(predicate({ ip: '1.2.3.4' } as Device)).toBe(true);
+    });
+
+    it('matches full ip when stored as ip:port', async () => {
+      db.findMany.mockResolvedValue([]);
+
+      await deviceService.getImprintedDevices({ q: '10.0.0.1' });
+
+      const predicate = db.findMany.mock.calls[0][2];
+      expect(predicate({ ip: '10.0.0.1:4028' } as Device)).toBe(true);
+    });
+
+    it('logs and throws on db error', async () => {
+      const error = new Error('db down');
+      db.findMany.mockRejectedValue(error);
+
+      await expect(deviceService.getImprintedDevices({ q: 'x' })).rejects.toThrow('db down');
+      expect(logger.error).toHaveBeenCalledWith('Error in listenToDevices:', error);
+    });
+
+    it('supports partial query matching for imprinted devices', async () => {
+      db.findMany.mockResolvedValue([]);
+
+      await deviceService.getImprintedDevices({ q: '10.0' });
 
       const predicate = db.findMany.mock.calls[0][2];
       expect(predicate({ ip: '10.0.1.5' } as Device)).toBe(true);
       expect(predicate({ ip: '11.0.0.1' } as Device)).toBe(false);
+    });
+
+    it('filters imprinted devices by query over hostname and mac', async () => {
+      db.findMany.mockResolvedValue([]);
+
+      await deviceService.getImprintedDevices({ q: 'S19' });
+
+      const predicate = db.findMany.mock.calls[0][2];
+      expect(predicate({ info: { hostname: 'miner-s19-01' } } as Device)).toBe(true);
+      expect(predicate({ mac: 'aa:bb:cc:dd:ee:ff' } as Device)).toBe(false);
+
+      await deviceService.getImprintedDevices({ q: 'aa:bb' });
+
+      const predicate2 = db.findMany.mock.calls[1][2];
+      expect(predicate2({ mac: 'aa:bb:cc:dd:ee:ff' } as Device)).toBe(true);
+      expect(predicate2({ info: { hostname: 'miner-s19-01' } } as Device)).toBe(false);
     });
   });
 
@@ -183,6 +312,14 @@ describe('device.service', () => {
 
       await expect(deviceService.getImprintedDevice('mac-3')).resolves.toEqual(device);
       expect(db.findOne).toHaveBeenCalledWith('pluto_core', 'devices:imprinted', 'mac-3');
+    });
+
+    it('logs and throws on db error', async () => {
+      const error = new Error('db down');
+      db.findOne.mockRejectedValue(error);
+
+      await expect(deviceService.getImprintedDevice('mac-3')).rejects.toThrow('db down');
+      expect(logger.error).toHaveBeenCalledWith('Error in getImprintedDevice:', error);
     });
   });
 
@@ -196,6 +333,14 @@ describe('device.service', () => {
       expect(predicate({ presetUuid: 'preset-1' } as Device)).toBe(true);
       expect(predicate({ presetUuid: 'preset-2' } as Device)).toBe(false);
       expect(predicate({} as Device)).toBe(false);
+    });
+
+    it('logs and throws on db error', async () => {
+      const error = new Error('db down');
+      db.findMany.mockRejectedValue(error);
+
+      await expect(deviceService.getDevicesByPresetId('preset-1')).rejects.toThrow('db down');
+      expect(logger.error).toHaveBeenCalledWith('Error in getDevicesByPresetId:', error);
     });
   });
 
@@ -221,6 +366,14 @@ describe('device.service', () => {
         }),
       );
     });
+
+    it('logs and throws on db error', async () => {
+      const error = new Error('db down');
+      db.updateOne.mockRejectedValue(error);
+
+      await expect(deviceService.patchImprintedDevice('mac-4', {} as Device)).rejects.toThrow('db down');
+      expect(logger.error).toHaveBeenCalledWith('Error in patchImprintedDevice:', error);
+    });
   });
 
   describe('deleteImprintedDevice', () => {
@@ -231,6 +384,13 @@ describe('device.service', () => {
 
       expect(db.deleteOne).toHaveBeenCalledWith('pluto_core', 'devices:imprinted', 'mac-5');
     });
+
+    it('logs and throws on db error', async () => {
+      const error = new Error('db down');
+      db.deleteOne.mockRejectedValue(error);
+
+      await expect(deviceService.deleteImprintedDevice('mac-5')).rejects.toThrow('db down');
+      expect(logger.error).toHaveBeenCalledWith('Error in deleteImprintedDevice:', error);
+    });
   });
 });
-

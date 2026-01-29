@@ -4,19 +4,12 @@
  * it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation, version 3.
  * See <https://www.gnu.org/licenses/>.
-*/
+ */
 
-import { ChangeEventHandler } from "react";
-import {
-  FormControl,
-  FormLabel,
-  Input as ChakraInput,
-  InputRightAddon,
-  InputLeftAddon,
-  InputGroup,
-  useToken,
-} from "@chakra-ui/react";
-import React from "react";
+import React, { ChangeEventHandler } from "react";
+
+import { Input as UiInput } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface InputProps {
   label?: string;
@@ -50,108 +43,60 @@ export const Input: React.FC<InputProps> = ({
   rightAddon,
   isDisabled,
 }) => {
-  const [borderColor] = useToken("colors", ["border-color"]);
-  const [bgColor] = useToken("colors", ["input-bg"]);
-  const [textColor] = useToken("colors", ["body-text"]);
-  const [rightAddonBg] = useToken("colors", ["input-right-bg"]);
-  const [errorColor] = useToken("colors", ["error-color"]);
-  const [inputLabelColor] = useToken("colors", ["input-label-color"]);
-  const [inputPlaceholderColor] = useToken("colors", ["input-placeholder-color"]);
-  const [inputDisabledColor] = useToken("colors", ["input-disabled-color"]);
-  const [inputDisabledBg] = useToken("colors", ["input-disabled-bg"]);
-
-  // primaryColor
-  const [primaryColor] = useToken("colors", ["cta-bg"]);
-  const [primaryColorHover] = useToken("colors", ["cta-bg-hover"]);
+  const hasError = Boolean(error);
 
   return (
-    <FormControl>
-      {label && (
-        <FormLabel
+    <div className="grid gap-1.5">
+      {label ? (
+        <label
           htmlFor={name}
-          fontWeight={600}
-          fontSize={"xs"}
-          margin={"4px 0"}
-          fontFamily={"body"}
-          textTransform={"uppercase"}
-          color={inputLabelColor}
+          className={cn("text-xs font-semibold uppercase", "font-body")}
         >
           {label}
-        </FormLabel>
-      )}
-      <InputGroup>
-        {leftAddon && <InputLeftAddon>{leftAddon}</InputLeftAddon>}
-        <ChakraInput
-          fontFamily={"accent"}
-          fontWeight={400}
-          fontSize={"13px"}
+        </label>
+      ) : null}
+
+      <div className="flex">
+        {leftAddon ? (
+          <div className="inline-flex h-10 items-center border border-input bg-muted px-3 text-sm text-muted-foreground">
+            {leftAddon}
+          </div>
+        ) : null}
+
+        <UiInput
           id={id}
           name={name}
+          type={type}
           placeholder={placeholder}
           defaultValue={defaultValue}
-          onChange={onChange}
-          type={type}
-          outline={"none"}
-          backgroundColor={bgColor}
-          borderWidth={"1px"}
-          borderColor={borderColor}
-          color={textColor}
-          borderRadius={0}
-          padding={"1rem"}
-          height={"40px"}
-          boxShadow={"none"}
+          value={value}
           pattern={pattern}
-          _placeholder={{
-            color: inputPlaceholderColor,
-          }}
-          _hover={{
-            borderColor: primaryColorHover,
-            borderWidth: "1px",
-          }}
-          _focus={{
-            outline: "none",
-            boxShadow: "none",
-            borderColor: primaryColor,
-            borderWidth: "1px",
-          }}
-          isInvalid={!!error}
-          _invalid={{
-            borderColor: errorColor,
-            borderWidth: "1px",
-          }}
-          _disabled={{
-            borderColor: inputDisabledColor,
-            color: inputDisabledColor,
-            bg: inputDisabledBg,
-          }}
-          isDisabled={isDisabled}
+          onChange={onChange}
+          disabled={isDisabled}
+          aria-invalid={hasError}
+          className={cn(
+            "h-10 font-accent text-[13px]",
+            leftAddon ? "rounded-none border-l-0" : "rounded-none",
+            rightAddon ? "rounded-none border-r-0" : "rounded-none",
+            hasError ? "border-destructive focus-visible:ring-destructive" : null
+          )}
         />
-        {rightAddon && (
-          <InputRightAddon
-            padding="1rem"
-            height="40px"
-            borderColor={error ? errorColor : isDisabled ? inputDisabledColor : borderColor}
-            borderLeft={"none"}
-            color={isDisabled ? inputDisabledColor : textColor}
-            backgroundColor={isDisabled ? inputDisabledBg : rightAddonBg}
-            borderRadius={0}
-            fontFamily={"accent"}
-            fontWeight={400}
-            fontSize={"13px"}
+
+        {rightAddon ? (
+          <div
+            className={cn(
+              "inline-flex h-10 items-center border border-input bg-muted px-3 text-sm",
+              "font-accent text-[13px]",
+              isDisabled ? "opacity-60" : null,
+              hasError ? "border-destructive" : null
+            )}
           >
             {rightAddon}
-          </InputRightAddon>
-        )}
-      </InputGroup>
-      <FormLabel
-        fontFamily={"accent"}
-        pt={"4px"}
-        fontSize={"11px"}
-        color={errorColor}
-        opacity={isDisabled ? 0.5 : 1}
-      >
-        {error}
-      </FormLabel>
-    </FormControl>
+          </div>
+        ) : null}
+      </div>
+
+      {error ? <p className="pt-1 font-accent text-[11px] text-destructive">{error}</p> : null}
+    </div>
   );
 };

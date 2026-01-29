@@ -7,8 +7,9 @@
 */
 
 import { ChangeEvent } from "react";
-import { FormControl, Checkbox as ChakraCheckbox, Text, useToken, Flex } from "@chakra-ui/react";
 import React from "react";
+
+import { cn } from "@/lib/utils";
 
 interface CheckboxProps {
   id: string;
@@ -17,7 +18,7 @@ interface CheckboxProps {
   isChecked?: boolean;
   defaultChecked?: boolean;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  flexDir?: any;
+  flexDir?: "row" | "column";
 }
 
 export const Checkbox: React.FC<CheckboxProps> = ({
@@ -29,65 +30,28 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   defaultChecked,
   flexDir = "row",
 }) => {
-  const [borderColor] = useToken("colors", ["radio-button-border-color"]);
-  const [bgColor] = useToken("colors", ["bg-color"]);
-  const [textColor] = useToken("colors", ["body-text"]);
-  const [accentColor] = useToken("colors", ["input-accent-color"]);
-  const [colorDisabled] = useToken("colors", ["radio-button-border-disabled"]);
-  const [borderColorDisabled] = useToken("colors", ["radio-button-color-disabled"]);
-
   return (
-    <FormControl>
-      <ChakraCheckbox
+    <label
+      className={cn(
+        "flex w-full gap-2",
+        flexDir === "column" ? "flex-col items-start" : "items-center"
+      )}
+    >
+      <input
+        type="checkbox"
+        id={id}
         name={name}
         onChange={onChange}
-        id={id}
-        isChecked={isChecked}
+        checked={isChecked}
         defaultChecked={defaultChecked}
-        borderColor={borderColor}
-        borderRadius={0}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          flexDir: flexDir,
-          width: "100%",
-          "& .chakra-checkbox__control": {
-            height: "1rem",
-            width: "1rem",
-            borderRadius: 0,
-            bg: "bgColor",
-            borderColor: borderColor,
-            boxShadow: `inset 0 0 0 1px ${bgColor}`,
-          },
-          "& .chakra-checkbox__control[data-checked]": {
-            bg: accentColor,
-            borderColor: borderColor,
-            color: borderColor,
-            boxShadow: `inset 0 0 0 1px ${bgColor}`,
-          },
-          "& .chakra-checkbox__control[data-checked]:hover": {
-            bg: accentColor,
-            borderColor: borderColor,
-            color: borderColor,
-            boxShadow: `inset 0 0 0 1px ${bgColor}`,
-          },
-          "& .chakra-checkbox__control:focus": {
-            borderColor: borderColor,
-            boxShadow: `inset 0 0 0 1px ${bgColor}`,
-          },
-        }}
-      >
-        <Text
-          fontSize="sm"
-          fontWeight={500}
-          color={textColor}
-          flexGrow={1}
-          mr="0.5rem"
-          fontFamily={"accent"}
-        >
-          {label}
-        </Text>
-      </ChakraCheckbox>
-    </FormControl>
+        className={cn(
+          "h-4 w-4 rounded-none border border-input bg-background",
+          "accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        )}
+      />
+      {label ? (
+        <span className="flex-1 font-accent text-sm font-medium text-foreground">{label}</span>
+      ) : null}
+    </label>
   );
 };

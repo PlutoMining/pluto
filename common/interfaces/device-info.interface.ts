@@ -6,7 +6,7 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { Entity } from "./entity.interface";
+import type { Entity } from "./entity.interface";
 
 export interface DeviceInfoLegacy {
   power: number;
@@ -21,7 +21,11 @@ export interface DeviceInfoLegacy {
   hashRate: number;
   bestDiff: string;
   bestSessionDiff: string;
+  currentDiff?: string;
   freeHeap: number;
+  freeHeapInternal?: number;
+  freeHeapSpiram?: number;
+  isPSRAMAvailable?: number;
   coreVoltage: number;
   coreVoltageActual: number;
   frequency: number;
@@ -67,7 +71,11 @@ export interface DeviceInfoNew {
   jobInterval: number;
   bestDiff: string;
   bestSessionDiff: string;
+  currentDiff?: string;
   freeHeap: number;
+  freeHeapInternal?: number;
+  freeHeapSpiram?: number;
+  isPSRAMAvailable?: number;
   coreVoltage: number;
   coreVoltageActual: number;
   frequency: number;

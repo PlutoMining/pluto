@@ -2,12 +2,17 @@
 
 /scripts/*
 !/scripts/release.sh
-!/scripts/lib/common.sh
+!/scripts/lib/
+!/scripts/lib/*.sh
 !/scripts/generate-changelog.sh
 !/scripts/sync-umbrel-apps.sh
 !/scripts/bump-umbrel-app-version.sh
 !/scripts/beta-release.sh
 !/scripts/setup.sh
+!/scripts/conventional-commit.sh
 
 .env
 node_modules
+.husky/_
+.docker/
+.pluto-npm-install.lock/

@@ -13,6 +13,86 @@ import * as presetsService from "../services/presets.service";
 import { Device, DeviceFrequencyOptions, DeviceVoltageOptions } from "@pluto/interfaces";
 import axios from "axios";
 
+function resolveAsicModelKey(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const bmMatch = trimmed.match(/BM\d{4}/);
+  return bmMatch?.[0] ?? trimmed;
+}
+
+const WRITABLE_SYSTEM_FIELDS = [
+  "hostname",
+  "frequency",
+  "coreVoltage",
+  "flipscreen",
+  "invertscreen",
+  "invertfanpolarity",
+  "autofanspeed",
+  "fanspeed",
+  "stratumURL",
+  "stratumPort",
+  "stratumUser",
+  "stratumPassword",
+  "wifiPassword",
+  "wifiPass",
+  "autoscreenoff",
+  "overheat_temp",
+] as const;
+
+function pickWritableSystemInfo(info: unknown) {
+  const raw = (info ?? {}) as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+
+  for (const key of WRITABLE_SYSTEM_FIELDS) {
+    if (raw[key] !== undefined) out[key] = raw[key];
+  }
+
+  const coerceNumber = (value: unknown) => {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string") {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : undefined;
+    }
+    return undefined;
+  };
+
+  const coerceNumberField = (key: string) => {
+    if (out[key] === undefined) return;
+    const n = coerceNumber(out[key]);
+    if (n === undefined) {
+      delete out[key];
+      return;
+    }
+    out[key] = n;
+  };
+
+  coerceNumberField("frequency");
+  coerceNumberField("coreVoltage");
+  coerceNumberField("stratumPort");
+  coerceNumberField("fanspeed");
+  coerceNumberField("overheat_temp");
+  coerceNumberField("autoscreenoff");
+
+  const coerceStringField = (key: string) => {
+    if (out[key] === undefined) return;
+    if (typeof out[key] === "string") return;
+    delete out[key];
+  };
+
+  // Devices can report corrupted types (e.g. stratumURL as a number).
+  // The miner firmware rejects invalid types with "Wrong API input", so we
+  // only forward string values for string-backed system settings.
+  coerceStringField("hostname");
+  coerceStringField("stratumURL");
+  coerceStringField("stratumUser");
+  coerceStringField("stratumPassword");
+  coerceStringField("wifiPassword");
+  coerceStringField("wifiPass");
+
+  return out;
+}
+
 export const discoverDevices = async (req: Request, res: Response) => {
   try {
     const data = await deviceService.discoverDevices({
@@ -97,14 +177,29 @@ export const imprintDevice = async (req: Request, res: Response) => {
 
 export const getImprintedDevices = async (req: Request, res: Response) => {
   try {
-    const data = await deviceService.getImprintedDevices({
-      ip: req.query.q as string,
-      partialMatch: true,
-    });
+    const qRaw = req.query.q;
+    const q = typeof qRaw === "string" ? qRaw : undefined;
+
+    const data = await deviceService.getImprintedDevices({ q });
 
     const enrichedDevices = data.map((device) => {
-      const frequencyOptions = DeviceFrequencyOptions[device.info.ASICModel] || [];
-      const coreVoltageOptions = DeviceVoltageOptions[device.info.ASICModel] || [];
+      const modelKey = resolveAsicModelKey((device as any)?.info?.ASICModel);
+      const mappedFrequencyOptions = (modelKey ? DeviceFrequencyOptions[modelKey] : undefined) || [];
+      const mappedCoreVoltageOptions = (modelKey ? DeviceVoltageOptions[modelKey] : undefined) || [];
+
+      const frequencyOptions =
+        mappedFrequencyOptions.length > 0
+          ? mappedFrequencyOptions
+          : Array.isArray(device.info.frequencyOptions)
+          ? device.info.frequencyOptions
+          : [];
+
+      const coreVoltageOptions =
+        mappedCoreVoltageOptions.length > 0
+          ? mappedCoreVoltageOptions
+          : Array.isArray(device.info.coreVoltageOptions)
+          ? device.info.coreVoltageOptions
+          : [];
 
       return {
         ...device,
@@ -264,12 +359,21 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Device IP not available" });
     }
 
-    const payload: Device = req.body;
+    const payload: Device | undefined = req.body as any;
+    if (!payload || typeof payload !== "object") {
+      throw new Error("Missing payload");
+    }
+
+    const originalInfo = (payload as any).info;
 
     if (payload.presetUuid) {
       const preset = await presetsService.getPreset(payload.presetUuid);
 
       if (preset) {
+        if (!payload.info) {
+          payload.info = {} as any;
+        }
+
         logger.info("Applying preset to device", {
           mac: payload.mac,
           presetUuid: payload.presetUuid,
@@ -303,15 +407,20 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
     // Invia la richiesta PATCH per aggiornare le informazioni di sistema
     const patchUrl = `http://${deviceIp}/api/system`; // Assumendo che l'endpoint sia /api/system
 
+    const systemInfoPatch = pickWritableSystemInfo(payload.info ?? originalInfo);
+    const infoForLog = (payload.info ?? originalInfo) as any;
+
     logger.info("Sending PATCH to device", {
       url: patchUrl,
-      stratumPort: payload.info.stratumPort,
-      stratumURL: payload.info.stratumURL,
-      stratumUser: payload.info.stratumUser,
-      hasPassword: !!payload.info.stratumPassword,
+      stratumPort: infoForLog?.stratumPort,
+      stratumURL: infoForLog?.stratumURL,
+      stratumUser: infoForLog?.stratumUser,
+      hasPassword: !!infoForLog?.stratumPassword,
+      frequency: (systemInfoPatch as any).frequency,
+      coreVoltage: (systemInfoPatch as any).coreVoltage,
     });
 
-    const response = await axios.patch(patchUrl, payload.info); // Passa i dati nel body
+    const response = await axios.patch(patchUrl, systemInfoPatch); // Passa solo i campi configurabili nel body
 
     // Inoltra la risposta del dispositivo al client
     res

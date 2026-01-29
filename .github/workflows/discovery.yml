@@ -10,6 +10,10 @@ on:
     branches:
       - "**"
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   test-discovery:
     name: Lint & Test Discovery
@@ -32,6 +36,8 @@ jobs:
             if [ -f "$pkg/package-lock.json" ]; then
               echo "Installing deps for $pkg"
               (cd "$pkg" && npm ci)
+              echo "Building $pkg"
+              (cd "$pkg" && npm run build)
             fi
           done
 
@@ -49,5 +55,15 @@ jobs:
 
       - name: Run tests with coverage
         working-directory: discovery
-        run: npm run test
+        run: npm run test:coverage
 
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: discovery-coverage
+          path: discovery/coverage
+
+      - name: Coverage summary (Octocov)
+        uses: k1LoW/octocov-action@v1
+        with:
+          config: .octocov/discovery.yml

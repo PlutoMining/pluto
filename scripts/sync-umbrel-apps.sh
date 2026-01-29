@@ -24,39 +24,65 @@ DEFAULT_SOURCE_DIR="${SCRIPT_ROOT}/umbrel-apps"
 # These are intentionally not set as defaults to prevent committing personal info
 SOURCE_DIR="${SOURCE_DIR:-$DEFAULT_SOURCE_DIR}"
 REMOTE_PATH="${REMOTE_PATH:-}"
-UMBEL_HOST="${UMBEL_HOST:-}"
-UMBEL_USER="${UMBEL_USER:-umbrel}"
-UMBEL_PASSWORD="${UMBEL_PASSWORD:-}"
+
+# Backward compatible env var names:
+# - Preferred: UMBREL_*
+# - Legacy typo: UMBEL_*
+UMBREL_HOST="${UMBREL_HOST:-${UMBEL_HOST:-}}"
+UMBREL_USER="${UMBREL_USER:-${UMBEL_USER:-umbrel}}"
+UMBREL_PASSWORD="${UMBREL_PASSWORD:-${UMBEL_PASSWORD:-}}"
 
 # Validate required environment variables
 if [[ -z "${REMOTE_PATH}" ]]; then
   echo "Error: REMOTE_PATH environment variable is required" >&2
-  echo "Usage: REMOTE_PATH=/path/to/remote UMBREL_HOST=host UMBREL_PASSWORD=pass $0" >&2
+  echo "Usage: REMOTE_PATH=/path/to/remote UMBREL_HOST=host [UMBREL_PASSWORD=pass] $0" >&2
   exit 1
 fi
 
-if [[ -z "${UMBEL_HOST}" ]]; then
+if [[ -z "${UMBREL_HOST}" ]]; then
   echo "Error: UMBREL_HOST environment variable is required" >&2
-  echo "Usage: REMOTE_PATH=/path/to/remote UMBREL_HOST=host UMBREL_PASSWORD=pass $0" >&2
+  echo "Usage: REMOTE_PATH=/path/to/remote UMBREL_HOST=host [UMBREL_PASSWORD=pass] $0" >&2
   exit 1
 fi
 
-if [[ -z "${UMBEL_PASSWORD}" ]]; then
-  echo "Error: UMBREL_PASSWORD environment variable is required" >&2
-  echo "Usage: REMOTE_PATH=/path/to/remote UMBREL_HOST=host UMBREL_PASSWORD=pass $0" >&2
-  exit 1
+SSH_COMMON_OPTS=(-o StrictHostKeyChecking=accept-new)
+
+if [[ -n "${UMBREL_SSH_KEY:-}" ]]; then
+  SSH_COMMON_OPTS+=(-i "${UMBREL_SSH_KEY}")
 fi
 
-if ! command -v sshpass >/dev/null 2>&1; then
-  echo "sshpass is required. Install it (e.g. sudo apt install sshpass)." >&2
-  exit 1
+SSH_TARGET="${UMBREL_USER}@${UMBREL_HOST}"
+
+build_rsync_rsh() {
+  local cmd="ssh"
+  local opt
+  for opt in "${SSH_COMMON_OPTS[@]}"; do
+    cmd+=" $(printf '%q' "$opt")"
+  done
+  printf '%s' "$cmd"
+}
+
+RSYNC_RSH="$(build_rsync_rsh)"
+
+if [[ -n "${UMBREL_PASSWORD}" ]]; then
+  if ! command -v sshpass >/dev/null 2>&1; then
+    echo "sshpass is required when using UMBREL_PASSWORD. Install it (e.g. sudo apt install sshpass)." >&2
+    exit 1
+  fi
+  SSH_BASE=(sshpass -p "${UMBREL_PASSWORD}" ssh "${SSH_COMMON_OPTS[@]}" "$SSH_TARGET")
+else
+  SSH_BASE=(ssh "${SSH_COMMON_OPTS[@]}" "$SSH_TARGET")
 fi
 
-SSH_BASE=(sshpass -p "${UMBEL_PASSWORD}" ssh -o StrictHostKeyChecking=accept-new "${UMBEL_USER}@${UMBEL_HOST}")
-
-echo "Syncing ${SOURCE_DIR} -> ${UMBEL_USER}@${UMBEL_HOST}:${REMOTE_PATH}"
-sshpass -p "${UMBEL_PASSWORD}" rsync -av --exclude=".gitkeep" \
-  "${SOURCE_DIR}/" "${UMBEL_USER}@${UMBEL_HOST}:${REMOTE_PATH}/"
+echo "Syncing ${SOURCE_DIR} -> ${SSH_TARGET}:${REMOTE_PATH}"
+if [[ -n "${UMBREL_PASSWORD}" ]]; then
+  # RSYNC_RSH must be an environment variable for rsync, not a \"command\"
+  RSYNC_RSH="${RSYNC_RSH}" sshpass -p "${UMBREL_PASSWORD}" rsync -av --exclude=".gitkeep" \
+    "${SOURCE_DIR}/" "${SSH_TARGET}:${REMOTE_PATH}/"
+else
+  RSYNC_RSH="${RSYNC_RSH}" rsync -av --exclude=".gitkeep" \
+    "${SOURCE_DIR}/" "${SSH_TARGET}:${REMOTE_PATH}/"
+fi
 
 IFS=',' read -r -a APP_LIST <<< "${APPS_TO_SYNC:-pluto,pluto-next}"
 
@@ -85,4 +111,3 @@ echo "Running remote Umbrel commands..."
 "${SSH_BASE[@]}" "${REMOTE_CMD}"
 
 echo "Done."
-

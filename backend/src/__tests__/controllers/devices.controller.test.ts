@@ -188,6 +188,23 @@ describe('devices.controller', () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
+    it('enriches options when ASICModel contains extra text', async () => {
+      const req = { query: {} } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([
+        { mac: 'x', info: { ASICModel: 'Bitaxe BM1397 rev2' } },
+      ] as unknown as Device[]);
+
+      await deviceController.getImprintedDevices(req, res as unknown as Response);
+
+      const payload = res.json.mock.calls[0][0];
+      expect(payload.data[0].info.frequencyOptions).toBeDefined();
+      expect(payload.data[0].info.frequencyOptions.length).toBeGreaterThan(0);
+      expect(payload.data[0].info.coreVoltageOptions).toBeDefined();
+      expect(payload.data[0].info.coreVoltageOptions.length).toBeGreaterThan(0);
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
     it('handles unknown ASICModel with empty options', async () => {
       const req = { query: {} } as unknown as Request;
       const res = createMockResponse();
@@ -201,6 +218,37 @@ describe('devices.controller', () => {
       expect(payload.data[0].info.frequencyOptions).toEqual([]);
       expect(payload.data[0].info.coreVoltageOptions).toEqual([]);
       expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it('falls back to device-provided options when ASICModel is missing', async () => {
+      const req = { query: {} } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([
+        {
+          mac: 'x',
+          info: {
+            ASICModel: 123,
+            frequencyOptions: [500, 525],
+            coreVoltageOptions: [1100],
+          },
+        },
+        {
+          mac: 'y',
+          info: {
+            ASICModel: '   ',
+            frequencyOptions: [400],
+            coreVoltageOptions: [1000],
+          },
+        },
+      ] as unknown as Device[]);
+
+      await deviceController.getImprintedDevices(req, res as unknown as Response);
+
+      const payload = res.json.mock.calls[0][0];
+      expect(payload.data[0].info.frequencyOptions).toEqual([500, 525]);
+      expect(payload.data[0].info.coreVoltageOptions).toEqual([1100]);
+      expect(payload.data[1].info.frequencyOptions).toEqual([400]);
+      expect(payload.data[1].info.coreVoltageOptions).toEqual([1000]);
     });
 
     it('handles service errors', async () => {
@@ -459,6 +507,32 @@ describe('devices.controller', () => {
       }));
     });
 
+    it('creates info object when applying preset and info is missing', async () => {
+      const req = {
+        params: { id: 'mac' },
+        body: { presetUuid: 'preset', mac: 'mac' },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.3' }] as unknown as Device[]);
+      presetsService.getPreset.mockResolvedValue({
+        name: 'Test Preset',
+        configuration: { stratumPort: '3333', stratumURL: 'pool.example.com', stratumPassword: 'pass' },
+      });
+      mockedAxios.patch.mockResolvedValue({ status: 200 });
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      expect(mockedAxios.patch).toHaveBeenCalledWith(
+        'http://10.0.0.3/api/system',
+        expect.objectContaining({
+          stratumPort: 3333,
+          stratumURL: 'pool.example.com',
+          stratumPassword: 'pass',
+        })
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
     it('defaults to 0 when preset port is invalid', async () => {
       const req = {
         params: { id: 'mac' },
@@ -494,6 +568,116 @@ describe('devices.controller', () => {
         stratumPort: 5555,
         stratumURL: 'custom.pool.com',
       }));
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it('forwards frequency and voltage as numbers', async () => {
+      const req = {
+        params: { id: 'mac' },
+        body: { info: { frequency: '525', coreVoltage: '1150', stratumURL: 'pool', stratumPort: '3333' }, mac: 'mac' },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.3' }] as unknown as Device[]);
+      mockedAxios.patch.mockResolvedValue({ status: 200 });
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      expect(mockedAxios.patch).toHaveBeenCalledWith(
+        'http://10.0.0.3/api/system',
+        expect.objectContaining({
+          frequency: 525,
+          coreVoltage: 1150,
+          stratumPort: 3333,
+          stratumURL: 'pool',
+        })
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it('drops non-numeric values from numeric system fields', async () => {
+      const req = {
+        params: { id: 'mac' },
+        body: {
+          info: {
+            frequency: true,
+            coreVoltage: 'not-a-number',
+            stratumURL: 'pool',
+            stratumPort: '3333',
+          },
+          mac: 'mac',
+        },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([
+        { mac: 'mac', ip: '10.0.0.3' },
+      ] as unknown as Device[]);
+      mockedAxios.patch.mockResolvedValue({ status: 200 });
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      const patchBody = mockedAxios.patch.mock.calls[0]?.[1] as Record<string, unknown>;
+      expect(patchBody).toBeDefined();
+      expect(patchBody.stratumURL).toBe('pool');
+      expect(patchBody.stratumPort).toBe(3333);
+      expect(patchBody.frequency).toBeUndefined();
+      expect(patchBody.coreVoltage).toBeUndefined();
+    });
+
+
+    it('drops non-string values from string system fields', async () => {
+      const req = {
+        params: { id: 'mac' },
+        body: {
+          info: {
+            stratumURL: 192,
+            stratumPort: '3333',
+            hostname: 123,
+            stratumUser: true,
+          },
+          mac: 'mac',
+        },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([
+        { mac: 'mac', ip: '10.0.0.3' },
+      ] as unknown as Device[]);
+      mockedAxios.patch.mockResolvedValue({ status: 200 });
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      const patchBody = mockedAxios.patch.mock.calls[0]?.[1] as Record<string, unknown>;
+      expect(patchBody).toBeDefined();
+      expect(patchBody.stratumPort).toBe(3333);
+      expect(patchBody.stratumURL).toBeUndefined();
+      expect(patchBody.hostname).toBeUndefined();
+      expect(patchBody.stratumUser).toBeUndefined();
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it('handles missing request body', async () => {
+      const req = { params: { id: 'mac' } } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.3' }] as unknown as Device[]);
+      axiosIsAxiosError.mockReturnValue(false);
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to process the request' });
+    });
+
+    it('handles missing info by sending an empty patch', async () => {
+      const req = {
+        params: { id: 'mac' },
+        body: { mac: 'mac' },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([{ mac: 'mac', ip: '10.0.0.3' }] as unknown as Device[]);
+      mockedAxios.patch.mockResolvedValue({ status: 200 });
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      expect(mockedAxios.patch).toHaveBeenCalledWith('http://10.0.0.3/api/system', {});
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
@@ -615,4 +799,3 @@ describe('devices.controller', () => {
   });
 
 });
-

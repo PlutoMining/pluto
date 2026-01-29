@@ -11,14 +11,17 @@ module.exports = {
   moduleNameMapper: {
     ...baseConfig.moduleNameMapper,
     '^@/(.*)$': '<rootDir>/src/$1',
+    '\\.(css|less|scss|sass)$': '<rootDir>/jest/styleMock.js',
   },
-  collectCoverageFrom: [
-    '<rootDir>/src/utils/formatTime.ts',
-    '<rootDir>/src/utils/minerMap.ts',
-    '<rootDir>/src/providers/**/*.{ts,tsx}',
-    '<rootDir>/src/app/api/**/*.{ts,tsx}',
-  ],
-  coveragePathIgnorePatterns: ['<rootDir>/src/app/(?!api)', '<rootDir>/src/theme/'],
+  collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}', '!<rootDir>/src/**/*.d.ts', '!<rootDir>/src/__tests__/**'],
+  coverageThreshold: {
+    global: {
+      statements: 90,
+      lines: 90,
+      functions: 90,
+      branches: 90,
+    },
+  },
   transform: {
     '^.+\\.(t|j)sx?$': [
       'ts-jest',
@@ -28,4 +31,3 @@ module.exports = {
     ],
   },
 };
-

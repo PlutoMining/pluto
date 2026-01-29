@@ -6,14 +6,16 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-export function formatTime(seconds: number) {
+export function formatTime(seconds: number | null | undefined) {
+  if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) {
+    return "-";
+  }
+
   const oneDayInSeconds = 86400;
   const oneHourInSeconds = 3600;
   const oneMinuteInSeconds = 60;
 
-  if (seconds === 0) {
-    return "-";
-  } else if (seconds >= oneDayInSeconds) {
+  if (seconds >= oneDayInSeconds) {
     const days = Math.floor(seconds / oneDayInSeconds);
     return `${days} d`;
   } else if (seconds >= oneHourInSeconds) {
@@ -40,7 +42,9 @@ export function convertIsoTomMdDYy(isoDate: string): string {
   return `${month}/${day}/${year}`;
 }
 
-export function formatDetailedTime(seconds: number): string {
+export function formatDetailedTime(seconds: number | null | undefined): string {
+  if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return "-";
+
   const timeUnits = {
     y: Math.floor(seconds / (60 * 60 * 24 * 365)),
     w: Math.floor((seconds % (60 * 60 * 24 * 365)) / (60 * 60 * 24 * 7)),

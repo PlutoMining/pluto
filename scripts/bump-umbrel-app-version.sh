@@ -32,6 +32,7 @@ CHANNEL=""
 MANIFEST=""
 COMPOSE=""
 IMAGES_ARG=""
+APP_VERSION_OVERRIDE=""
 
 usage() {
   cat <<EOF
@@ -45,6 +46,8 @@ Options:
   --compose       Path to docker-compose.yml to update
   --images        Comma-separated list of service=image refs to pin
                   Example: "backend=ghcr.io/...@sha256:...,frontend=ghcr.io/...@sha256:..."
+  --app-version   Optional explicit app version to write into umbrel-app.yml
+                  (skips auto-bump logic). Example: 2.0.1-beta.0
   -h, --help      Show this help
 EOF
 }
@@ -72,6 +75,10 @@ parse_args() {
         IMAGES_ARG="${2:-}"
         shift 2
         ;;
+      --app-version)
+        APP_VERSION_OVERRIDE="${2:-}"
+        shift 2
+        ;;
       -h|--help)
         usage
         exit 0
@@ -94,9 +101,34 @@ ensure_args() {
   [[ -n "$COMPOSE" && -f "$COMPOSE" ]] || err "compose file '$COMPOSE' not found"
 
   [[ -n "$IMAGES_ARG" ]] || err "--images is required"
+
+  if [[ -n "$APP_VERSION_OVERRIDE" ]]; then
+    if [[ "$CHANNEL" == "stable" ]]; then
+      [[ "$APP_VERSION_OVERRIDE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || err "--app-version must be a stable semver (e.g. 2.0.1) when --channel stable"
+    else
+      [[ "$APP_VERSION_OVERRIDE" =~ ^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$ ]] || err "--app-version must be a beta semver (e.g. 2.0.1-beta.0) when --channel beta"
+    fi
+  fi
 }
 
-declare -A NEW_IMAGES
+NEW_IMAGE_SERVICES=()
+NEW_IMAGE_REFS=()
+
+set_new_image() {
+  local svc="$1"
+  local img="$2"
+
+  local i
+  for i in "${!NEW_IMAGE_SERVICES[@]}"; do
+    if [[ "${NEW_IMAGE_SERVICES[$i]}" == "$svc" ]]; then
+      NEW_IMAGE_REFS[$i]="$img"
+      return 0
+    fi
+  done
+
+  NEW_IMAGE_SERVICES+=("$svc")
+  NEW_IMAGE_REFS+=("$img")
+}
 
 parse_images() {
   IFS=',' read -r -a pairs <<<"$IMAGES_ARG"
@@ -105,7 +137,7 @@ parse_images() {
     local svc="${pair%%=*}"
     local img="${pair#*=}"
     [[ -n "$svc" && -n "$img" ]] || err "Invalid --images entry '$pair'"
-    NEW_IMAGES["$svc"]="$img"
+    set_new_image "$svc" "$img"
   done
 }
 
@@ -126,13 +158,20 @@ compute_bundle_fingerprint() {
       gsub("\"", "", img)
       printf "%s=%s\n", svc, img
     }
-  ' "$file" | sort | sha256sum | awk '{print $1}'
+  ' "$file" | sort | {
+    if command -v sha256sum >/dev/null 2>&1; then
+      sha256sum
+    else
+      shasum -a 256
+    fi
+  } | awk '{print $1}'
 }
 
 update_compose_images() {
   local svc img
-  for svc in "${!NEW_IMAGES[@]}"; do
-    img="${NEW_IMAGES[$svc]}"
+  for i in "${!NEW_IMAGE_SERVICES[@]}"; do
+    svc="${NEW_IMAGE_SERVICES[$i]}"
+    img="${NEW_IMAGE_REFS[$i]}"
     # Replace the image: line under the given service.
     # Flexible pattern that works with any indentation level.
     # Range: from service line (with optional leading spaces) to next service or empty line.
@@ -228,8 +267,9 @@ compare_fingerprints() {
   
   # Check if any service image references actually differ
   # This is the primary check - if image references differ, we should update
-  for svc in "${!NEW_IMAGES[@]}"; do
-    img="${NEW_IMAGES[$svc]}"
+  for i in "${!NEW_IMAGE_SERVICES[@]}"; do
+    svc="${NEW_IMAGE_SERVICES[$i]}"
+    img="${NEW_IMAGE_REFS[$i]}"
     local current_img
     current_img=$(get_current_image_ref "$svc" "$COMPOSE")
     
@@ -283,52 +323,61 @@ main() {
 
   local diff
   diff=$(compare_fingerprints)
-  if [[ "$diff" == "same" ]]; then
+  if [[ "$diff" == "same" && -z "$APP_VERSION_OVERRIDE" ]]; then
     log "Bundle unchanged; leaving app version and compose file as-is."
     log "Comparison details:"
-    for svc in "${!NEW_IMAGES[@]}"; do
+    for i in "${!NEW_IMAGE_SERVICES[@]}"; do
+      local svc="${NEW_IMAGE_SERVICES[$i]}"
+      local target_img="${NEW_IMAGE_REFS[$i]}"
       local current_img
       current_img=$(get_current_image_ref "$svc" "$COMPOSE" 2>/dev/null || echo "(not found)")
-      if [[ "$current_img" == "${NEW_IMAGES[$svc]}" ]]; then
+      if [[ "$current_img" == "$target_img" ]]; then
         log "  $svc: unchanged ($current_img)"
       else
-        log "  $svc: $current_img -> ${NEW_IMAGES[$svc]}"
+        log "  $svc: $current_img -> $target_img"
       fi
     done
     log "All image references match exactly (same tag and SHA256)."
     exit 0
   fi
 
+  if [[ -n "$APP_VERSION_OVERRIDE" ]]; then
+    log "Using explicit app version override: ${APP_VERSION_OVERRIDE}"
+  fi
+
   # Step 1: Extract current versions from docker-compose.yml
   log "Extracting current versions from docker-compose.yml..."
-  local -A current_versions
-  local -A new_versions
-  local -A version_changes
+  local current_versions=()
+  local new_versions=()
+  local version_changes=()
   local svc current_version new_version change_type
 
-  for svc in "${!NEW_IMAGES[@]}"; do
+  for i in "${!NEW_IMAGE_SERVICES[@]}"; do
+    svc="${NEW_IMAGE_SERVICES[$i]}"
     current_version=$(extract_version_from_compose "$COMPOSE" "$svc")
     if [[ -z "$current_version" || "$current_version" == "unknown" ]]; then
       err "Could not extract version for service ${svc} from ${COMPOSE}"
     fi
-    current_versions["$svc"]="$current_version"
+    current_versions[$i]="$current_version"
     log "  ${svc}: current version ${current_version}"
   done
 
   # Step 2: Extract new versions from image references
   log ""
   log "Extracting new versions from image references..."
-  for svc in "${!NEW_IMAGES[@]}"; do
-    new_version=$(extract_version_from_image_ref "${NEW_IMAGES[$svc]}")
+  for i in "${!NEW_IMAGE_SERVICES[@]}"; do
+    svc="${NEW_IMAGE_SERVICES[$i]}"
+    local img_ref="${NEW_IMAGE_REFS[$i]}"
+    new_version=$(extract_version_from_image_ref "$img_ref")
     if [[ -z "$new_version" ]]; then
-      err "Could not extract version from image reference for service ${svc}: ${NEW_IMAGES[$svc]}"
+      err "Could not extract version from image reference for service ${svc}: ${img_ref}"
     fi
-    new_versions["$svc"]="$new_version"
-    current_version="${current_versions[$svc]}"
+    new_versions[$i]="$new_version"
+    current_version="${current_versions[$i]}"
 
     # Determine change type
     change_type=$(compare_semver_change "$current_version" "$new_version")
-    version_changes["$svc"]="$change_type"
+    version_changes[$i]="$change_type"
 
     if [[ "$change_type" != "none" ]]; then
       log "  ${svc}: ${current_version} -> ${new_version} (${change_type} change)"
@@ -340,8 +389,8 @@ main() {
   # Step 3: Determine highest semver change type across all services
   log ""
   local highest_change="none"
-  for svc in "${!NEW_IMAGES[@]}"; do
-    change_type="${version_changes[$svc]}"
+  for i in "${!NEW_IMAGE_SERVICES[@]}"; do
+    change_type="${version_changes[$i]}"
     case "$change_type" in
       major)
         highest_change="major"
@@ -359,12 +408,16 @@ main() {
     esac
   done
 
-  # Step 4: Calculate new app version based on highest change
+  # Step 4: Calculate new app version based on highest change (unless overridden)
   local current_app_version next_version
   current_app_version=$(get_current_app_version)
   if [[ -z "$current_app_version" ]]; then
     err "Could not determine current app version from $MANIFEST"
   fi
+
+  if [[ -n "$APP_VERSION_OVERRIDE" ]]; then
+    next_version="$APP_VERSION_OVERRIDE"
+  else
 
   # If bundle changed but no version changes, still bump patch
   if [[ "$highest_change" == "none" ]]; then
@@ -419,13 +472,20 @@ main() {
     fi
   fi
 
+  fi
+
   log ""
   log "Current app version: $current_app_version"
   log "New app version:     $next_version"
 
   # Update manifest version
-  sed -i -E "s/version: \".*\"/version: \"${next_version}\"/" "$MANIFEST"
-  sed -i -E "s/Version .*/Version ${next_version}/" "$MANIFEST" || true
+  if [[ "$(uname)" == "Darwin" ]]; then
+    sed -i '' -E "s/version: \".*\"/version: \"${next_version}\"/" "$MANIFEST"
+    sed -i '' -E "s/Version .*/Version ${next_version}/" "$MANIFEST" || true
+  else
+    sed -i -E "s/version: \".*\"/version: \"${next_version}\"/" "$MANIFEST"
+    sed -i -E "s/Version .*/Version ${next_version}/" "$MANIFEST" || true
+  fi
 
   # Update root package.json version to match app version
   local root_package_json="${SCRIPT_ROOT}/package.json"

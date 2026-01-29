@@ -7,33 +7,9 @@
 */
 
 import { useSocket } from "@/providers/SocketProvider";
-import {
-  AccordionButton,
-  AccordionIcon,
-  AccordionPanel,
-  Box,
-  Accordion as ChakraAccordion,
-  AccordionItem as ChakraAccordionItem,
-  Checkbox as ChakraCheckbox,
-  Divider,
-  Flex,
-  FormControl,
-  Grid,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  RadioGroup,
-  SimpleGrid,
-  Stack,
-  Text,
-  useAccordionItemState,
-  useDisclosure,
-  useToken,
-  useTheme,
-} from "@chakra-ui/react";
+import { Modal } from "@/components/ui/modal";
+import { useDisclosure } from "@/hooks/useDisclosure";
+import { cn } from "@/lib/utils";
 import { Device, Preset } from "@pluto/interfaces";
 import { validateDomain, validateTCPPort } from "@pluto/utils";
 import axios from "axios";
@@ -43,7 +19,6 @@ import { DeviceStatusBadge } from "../Badge";
 import Button from "../Button/Button";
 import { Checkbox } from "../Checkbox/Checkbox";
 import { ArrowIcon, ArrowRightUpIcon } from "../icons/ArrowIcon";
-import { CloseIcon } from "../icons/CloseIcon";
 import { RestartIcon } from "../icons/RestartIcon";
 import { Input } from "../Input/Input";
 import Link from "../Link/Link";
@@ -99,10 +74,16 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 
   const [presets, setPresets] = useState<Preset[]>([]);
 
-  const [activeIndex, setActiveIndex] = useState<number | number[]>([]);
+  const [openMacs, setOpenMacs] = useState<string[]>([]);
 
   const allChecked =
     checkedFetchedItems.length > 0 && checkedFetchedItems.every((item) => item.value);
+
+  useEffect(() => {
+    setDevices(fetchedDevices || []);
+    setCheckedFetchedItems([]);
+    setOpenMacs([]);
+  }, [fetchedDevices]);
 
   useEffect(() => {
     fetchPresets();
@@ -124,16 +105,14 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 
   const handleAllCheckbox = useCallback(
     (value: boolean) => {
-      const newValues = devices
-        ? Array.from({ length: devices.length || 0 }, (_, i) => ({
-            mac: devices[i].mac,
-            value: value,
-          }))
-        : [];
+      const newValues = Array.from({ length: devices.length }, (_, i) => ({
+        mac: devices[i].mac,
+        value: value,
+      }));
       setCheckedFetchedItems(newValues);
 
       if (value) {
-        setActiveIndex([]);
+        setOpenMacs([]);
       }
     },
     [devices]
@@ -271,246 +250,142 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 
     // Chiudi l'accordion se la checkbox è selezionata
     if (isChecked) {
-      setActiveIndex([]); // Chiude l'accordion
+      setOpenMacs([]); // Chiude l'accordion
     }
   }, []);
-
-  const [borderColor] = useToken("colors", ["border-color"]);
-  const [bgColor] = useToken("colors", ["item-bg"]);
-  const [textColor] = useToken("colors", ["body-text"]);
-  const [accentColor] = useToken("colors", ["accent-color"]);
-
-  const [checkboxBorderColor] = useToken("colors", ["radio-button-border-color"]);
-
-  const theme = useTheme();
+  const selectedCount = checkedFetchedItems.filter((d) => d.value === true).length;
+  const canBulkAct = selectedCount > 1;
 
   return (
     <>
-      <Flex flexDirection={"column"} gap={"1rem"}>
-        <Flex
-          justify={{ base: "flex-end", tablet: "space-between" }}
-          alignItems={{ base: "flex-end", tablet: "center" }}
-          gap={"1rem"}
-          flexDir={{ base: "column", tablet: "row" }}
-        >
-          <FormControl>
-            <ChakraCheckbox
-              name={"select-all-devices"}
-              onChange={(e) => handleAllCheckbox(e.target.checked)}
-              id={"select-all-devices"}
-              isChecked={allChecked}
-              defaultChecked={allChecked}
-              borderColor={checkboxBorderColor}
-              borderRadius={0}
-              display="flex"
-              alignItems="center"
-              flexDir={{ base: "row-reverse", tablet: "row" }}
-              gap={"0.5rem"}
-              sx={{
-                width: "100%",
-                "& .chakra-checkbox__control": {
-                  height: "1rem",
-                  width: "1rem",
-                  borderRadius: 0,
-                  bg: "bgColor",
-                  borderColor: borderColor,
-                  boxShadow: `inset 0 0 0 1px ${bgColor}`,
-                },
-                "& .chakra-checkbox__control[data-checked]": {
-                  bg: accentColor,
-                  borderColor: borderColor,
-                  color: borderColor,
-                  boxShadow: `inset 0 0 0 1px ${bgColor}`,
-                },
-                "& .chakra-checkbox__control[data-checked]:hover": {
-                  bg: accentColor,
-                  borderColor: borderColor,
-                  color: borderColor,
-                  boxShadow: `inset 0 0 0 1px ${bgColor}`,
-                },
-                "& .chakra-checkbox__control:focus": {
-                  borderColor: borderColor,
-                  boxShadow: `inset 0 0 0 1px ${bgColor}`,
-                },
-              }}
-            >
-              <Flex alignItems={"center"}>
-                {checkedFetchedItems.filter((d) => d.value === true).length === 0 ? (
-                  <Text fontSize={"md"}>Select all</Text>
-                ) : (
-                  <>
-                    <Text fontSize={"md"} fontWeight={500} fontFamily={"body"}>
-                      {checkedFetchedItems.filter((d) => d.value === true).length}
-                    </Text>
-                    <Text fontSize={"md"} fontWeight={400} fontFamily={"body"} opacity={0.6}>
-                      /{devices?.length}{" "}
-                    </Text>
-                    <Text
-                      marginLeft={"5px"}
-                      fontSize={"xs"}
-                      fontWeight={500}
-                      fontFamily={"accent"}
-                      opacity={0.6}
-                    >
-                      selected
-                    </Text>
-                  </>
-                )}
-              </Flex>
-            </ChakraCheckbox>
-          </FormControl>
-          <Flex
-            alignItems={"center"}
-            gap={"1rem"}
-            flexWrap={"wrap"}
-            flexDir={"row"}
-            justify={{ base: "space-between", mobileL: "flex-end" }}
-            w={"100%"}
-          >
-            <Button
-              onClick={() => setIsSelectPoolPresetModalOpen(true)}
-              variant="text"
-              icon={<ArrowRightUpIcon color={accentColor} />}
-              disabled={
-                checkedFetchedItems.length <= 1 ||
-                checkedFetchedItems.filter((item) => item.value === true).length <= 1
-              }
-              size="13px"
+      <div className="flex flex-col gap-4">
+	        <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
+	          <label className="flex shrink-0 items-center gap-2">
+	            <input
+	              type="checkbox"
+	              id="select-all-devices"
+	              name="select-all-devices"
+	              className="h-4 w-4 rounded-none border border-input bg-background accent-primary"
+	              checked={allChecked}
+	              onChange={(e) => handleAllCheckbox(e.target.checked)}
+	            />
+	            <span className="flex items-center gap-1 whitespace-nowrap font-body text-sm">
+	              {selectedCount === 0 ? (
+	                <span className="text-muted-foreground">Select all</span>
+	              ) : (
+                <>
+                  <span className="font-medium text-foreground">{selectedCount}</span>
+                  <span className="text-muted-foreground">/{devices.length}</span>
+                  <span className="ml-1 font-accent text-xs uppercase text-muted-foreground">
+                    selected
+                  </span>
+                </>
+	              )}
+	            </span>
+	          </label>
+
+	          <div className="flex w-full flex-wrap items-center justify-between gap-4 mobileL:justify-end tablet:w-auto tablet:flex-1 tablet:justify-end">
+	            <Button
+	              onClick={() => setIsSelectPoolPresetModalOpen(true)}
+	              variant="text"
+              icon={<ArrowRightUpIcon color="currentColor" />}
+              disabled={!canBulkAct}
               label="Select Pool Preset"
               transform="capitalize"
-            ></Button>
+            />
             <Button
               onClick={onOpenModal}
               variant="outlined"
-              icon={<RestartIcon color={accentColor} />}
-              disabled={
-                checkedFetchedItems.length <= 1 ||
-                checkedFetchedItems.filter((item) => item.value === true).length <= 1
-              }
-              size="13px"
+              icon={<RestartIcon color="currentColor" />}
+              disabled={!canBulkAct}
               label="Restart selected devices"
               transform="capitalize"
-            ></Button>
-          </Flex>
-        </Flex>
-        <ChakraAccordion
-          allowMultiple
-          as={Flex}
-          flexDir={"column"}
-          index={activeIndex}
-          onChange={setActiveIndex}
-          gap={{ base: "0.5rem", tablet: "0" }}
-        >
-          <Flex
-            backgroundColor={"ds-h-table"}
-            justify={"flex-end"}
-            p={"1rem"}
-            display={{ base: "none", tablet: "flex" }}
-            border={`1px solid ${borderColor}`}
-            borderBottomWidth={0}
-          >
-            <Text
-              fontWeight={600}
-              color={"device-th-color"}
-              fontFamily={"accent"}
-              textTransform={"uppercase"}
-              fontSize={"xs"}
-              textAlign={"center"}
-              p={0}
-              as={Flex}
-              flex={8}
-            >
-              Hostname
-            </Text>
-            <Box as={Flex} flex={5} gap={"1.75rem"} justify={"space-between"}>
-              <Text
-                fontWeight={600}
-                color={"device-th-color"}
-                fontFamily={"accent"}
-                textTransform={"uppercase"}
-                fontSize={"xs"}
-                textAlign={"center"}
-                p={0}
-                minW={"70px"}
-              >
+            />
+          </div>
+        </div>
+
+        <div className="border border-border bg-card text-card-foreground">
+          <div className="hidden items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 tablet:flex">
+            <div className="flex flex-[8] items-center gap-3">
+              <div className="hidden w-4 tablet:block" aria-hidden="true" />
+              <span className="select-none text-xs leading-none text-primary opacity-0" aria-hidden="true">
+                ▾
+              </span>
+              <span className="font-accent text-xs font-semibold uppercase text-muted-foreground">
+                Hostname
+              </span>
+            </div>
+            <div className="flex flex-[5] items-center justify-end gap-4">
+              <span className="font-accent text-xs font-semibold uppercase text-muted-foreground">
                 Status
-              </Text>
-              <Text width={"100px"}></Text>
-            </Box>
-          </Flex>
-          {devices?.map((device, index) => (
-            <ChakraAccordionItem
-              key={`device-settings-${device.mac}`} // Prefisso specifico per ogni device
-              borderTopWidth={{ tablet: index === 0 ? "none" : "1px" }}
-              borderBottomWidth={{ tablet: devices.length - 1 === index ? "1px" : "0px!important" }}
-              // borderBottomWidth={{ tablet: { devices.length === index ? "1px" : "0px!important"} }}
-              borderWidth={"1px"}
-              borderColor={"border-color"}
+              </span>
+              <span className="hidden w-24 shrink-0 tablet:inline-flex" aria-hidden="true" />
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            {devices.map((device, index) => {
+              const isOpen = openMacs.includes(device.mac);
+
+              return (
+                <details
+                  key={`device-settings-${device.mac}`}
+                  open={isOpen}
+                  onToggle={(e) => {
+                    const open = (e.currentTarget as HTMLDetailsElement).open;
+                    setOpenMacs((prev) =>
+                      open ? Array.from(new Set([...prev, device.mac])) : prev.filter((m) => m !== device.mac)
+                    );
+                  }}
+                  className={cn("bg-card text-card-foreground", index > 0 ? "border-t border-border" : "")}
+                >
+                  <AccordionItem
+                    key={device.mac}
+                    device={device}
+                    presets={presets}
+                    setAlert={setAlert}
+                    alert={alert}
+                    onOpenAlert={onOpenAlert}
+                    handleCheckboxChange={handleCheckboxChange}
+                    checkedItems={checkedFetchedItems}
+                    isAccordionOpen={isOpen}
+                  />
+                </details>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <Modal open={isOpenModal} onClose={onCloseModal}>
+        <div className="w-full max-w-xl border border-border bg-card p-4 text-card-foreground">
+          <div className="flex items-start justify-between gap-6">
+            <h2 className="font-heading text-lg font-medium">Restart the selected devices?</h2>
+            <button
+              type="button"
+              onClick={onCloseModal}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Close"
             >
-              {device && presets && (
-                <AccordionItem
-                  key={device.mac}
-                  device={device}
-                  presets={presets}
-                  setAlert={setAlert}
-                  alert={alert}
-                  onOpenAlert={onOpenAlert}
-                  handleCheckboxChange={handleCheckboxChange}
-                  checkedItems={checkedFetchedItems}
-                />
-              )}
-            </ChakraAccordionItem>
-          ))}
-        </ChakraAccordion>
-      </Flex>
-      <Modal
-        isCentered
-        onClose={onCloseModal}
-        isOpen={isOpenModal}
-        motionPreset="slideInBottom"
-        blockScrollOnMount={false}
-        returnFocusOnClose={false}
-      >
-        <ModalOverlay bg="none" backdropFilter="auto" backdropBlur="3px" />
-        <ModalContent
-          bg={bgColor}
-          borderColor={borderColor}
-          borderWidth={"1px"}
-          borderRadius={0}
-          p={"1rem"}
-          color={textColor}
-        >
-          <ModalHeader>Restart the selected devices?</ModalHeader>
-          <Box pos={"absolute"} top={"1rem"} right={"1rem"} cursor={"pointer"}>
-            <CloseIcon color={borderColor} onClick={onCloseModal} />
-          </Box>
-          <ModalBody>
-            <Text>
-              Keep in mind that restarting devices may result in the loss of an entire block of
-              transactions.
-            </Text>
-          </ModalBody>
-          <ModalFooter gap={"1.5rem"}>
-            <Button variant="outlined" onClick={onCloseModal} label="Cancel"></Button>
-            <Button
-              type="submit"
-              variant="primary"
-              onClick={handleRestartSelected}
-              label="Restart"
-            ></Button>
-          </ModalFooter>
-        </ModalContent>
+              ✕
+            </button>
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Keep in mind that restarting devices may result in the loss of an entire block of
+            transactions.
+          </p>
+          <div className="mt-6 flex items-center justify-end gap-4">
+            <Button variant="outlined" onClick={onCloseModal} label="Cancel" />
+            <Button type="submit" variant="primary" onClick={handleRestartSelected} label="Restart" />
+          </div>
+        </div>
       </Modal>
       <SelectPresetModal
         isOpen={isSelectPoolPresetOpen}
         onClose={() => setIsSelectPoolPresetModalOpen(false)}
-        devices={
-          (devices &&
-            devices.filter((device) =>
-              checkedFetchedItems.some((item) => item.mac === device.mac && item.value === true)
-            )) ||
-          []
-        }
+        devices={devices.filter((device) =>
+          checkedFetchedItems.some((item) => item.mac === device.mac && item.value === true)
+        )}
         presets={presets}
         onCloseSuccessfully={handleCloseSuccessfully}
       />
@@ -518,21 +393,21 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   );
 };
 
-const AccordionItem: React.FC<AccordionItemProps> = ({
+const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }> = ({
   device: deviceInfo,
   presets,
   setAlert,
   onOpenAlert,
   handleCheckboxChange,
   checkedItems,
+  isAccordionOpen,
 }) => {
-  const { isOpen: isAccordionOpen } = useAccordionItemState(); // Hook per sapere se l'accordion è aperto o chiuso
   const [device, setDevice] = useState<Device>({
     ...deviceInfo,
     info: deviceInfo.info,
   });
 
-  const [deviceError, setDeviceError] = useState<any>({
+  const [deviceError, setDeviceError] = useState<Record<string, string>>({
     hostname: "",
     workerName: "",
     stratumURL: "",
@@ -645,28 +520,30 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     [device, stratumUser.workerName]
   );
 
-  const validateFieldByName = useCallback((name: string, value: string) => {
+  const validatePercentage = (value: string) => {
+    return parseInt(value) <= 100 && parseInt(value) >= 0;
+  };
+
+  const validateFieldByName = (name: string, value: string) => {
     switch (name) {
       case "stratumURL":
         return validateDomain(value, { allowIP: true });
-      case "stratumPort":
+      case "stratumPort": {
         const numericRegex = /^\d+$/;
         return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
+      }
       case "stratumUser":
         // return validateBitcoinAddress(value);
         return !value.includes(".");
       case "fanspeed":
         return validatePercentage(value);
-      case "workerName":
+      case "workerName": {
         const regex = /^[a-zA-Z0-9]+$/;
         return regex.test(value);
+      }
       default:
         return true;
     }
-  }, []);
-
-  const validatePercentage = (value: string) => {
-    return parseInt(value) <= 100 && parseInt(value) >= 0;
   };
 
   const validateField = useCallback(
@@ -694,19 +571,37 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
 
       const isCheckbox = type === "checkbox";
 
+      const numericFields = new Set([
+        "frequency",
+        "coreVoltage",
+        "stratumPort",
+        "fanspeed",
+        "autoscreenoff",
+        "overheat_temp",
+      ]);
+
+      const nextValue = (() => {
+        if (isCheckbox) {
+          return (e.target as HTMLInputElement).checked ? 1 : 0;
+        }
+
+        // Keep string fields as strings. The previous implementation used
+        // `parseInt(value) || value`, which turns IPs like "192.168.0.252" into
+        // the number 192 (because parseInt stops at the first dot).
+        if (!numericFields.has(name)) {
+          return value;
+        }
+
+        const raw = name === "stratumPort" ? value.replace(/\D/g, "") : value;
+        const parsed = parseInt(raw, 10);
+        return Number.isNaN(parsed) ? value : parsed;
+      })();
+
       const updatedDevice = {
         ...device,
         info: {
           ...device.info,
-          [name]: isCheckbox
-            ? (e.target as HTMLInputElement).checked
-              ? 1
-              : 0
-            : name === "stratumPort"
-            ? parseInt(value.replace(/\D/g, ""), 10) || 0 // Mantieni solo numeri nell'input
-            : ["wifiPass", "stratumPassword"].includes(name)
-            ? value
-            : parseInt(value) || value,
+          [name]: nextValue,
         },
       };
 
@@ -739,24 +634,27 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
 
   const handleRadioButtonChange = (value: string) => {
     setIsPresetRadioButtonSelected(value === RadioButtonStatus.PRESET ? true : false);
-    setDevice((prevDevice) => {
-      if (value === RadioButtonStatus.CUSTOM && prevDevice.presetUuid) {
-        return {
-          ...prevDevice,
+
+    if (value === RadioButtonStatus.CUSTOM) {
+      if (device.presetUuid) {
+        setDevice({
+          ...device,
           presetUuid: null,
-        };
-      } else if (value === RadioButtonStatus.PRESET && selectedPreset) {
-        return {
-          ...prevDevice,
-          presetUuid: selectedPreset?.uuid, // || presets[0].uuid,
-          info: {
-            ...prevDevice.info,
-            stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
-          },
-        };
+        });
       }
-      return prevDevice;
-    });
+      return;
+    }
+
+    if (value === RadioButtonStatus.PRESET && selectedPreset) {
+      setDevice({
+        ...device,
+        presetUuid: selectedPreset.uuid,
+        info: {
+          ...device.info,
+          stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
+        },
+      });
+    }
   };
 
   const handleRestartDevice = useCallback(
@@ -806,7 +704,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
 
         const updatedDevice = {
           ...device,
-          presetUuid: preset?.uuid || null,
+          presetUuid: preset.uuid,
           info: {
             ...device.info,
             stratumUser: `${preset.configuration.stratumUser}.${stratumUser.workerName}`,
@@ -827,7 +725,22 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         if (isAccordionOpen) {
           return { ...prevDevice, tracing: e.tracing }; // Esegui solo l'aggiornamento della proprietà di interesse
         }
-        return e;
+        return {
+          ...e,
+          info: {
+            ...e.info,
+            frequencyOptions:
+              Array.isArray((e.info as any)?.frequencyOptions) &&
+              (e.info as any).frequencyOptions.length > 0
+                ? (e.info as any).frequencyOptions
+                : (prevDevice.info as any)?.frequencyOptions || [],
+            coreVoltageOptions:
+              Array.isArray((e.info as any)?.coreVoltageOptions) &&
+              (e.info as any).coreVoltageOptions.length > 0
+                ? (e.info as any).coreVoltageOptions
+                : (prevDevice.info as any)?.coreVoltageOptions || [],
+          },
+        };
       });
     };
 
@@ -853,19 +766,17 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
     return false;
   };
 
-  const hasErrorFields = (obj: any): boolean => {
-    for (const key in obj) {
-      if (typeof obj[key] === "object" && obj[key] !== null) {
-        if (hasErrorFields(obj[key])) {
-          return true; // Ricorsione per oggetti annidati
-        }
-      } else if (obj[key] !== "") {
-        if (key === "fanspeed" && !(device.info.autofanspeed === 0)) {
-          return false;
-        }
-        return true;
+  const hasErrorFields = (obj: Record<string, string>): boolean => {
+    for (const [key, value] of Object.entries(obj)) {
+      if (value === "") continue;
+
+      if (key === "fanspeed" && device.info.autofanspeed !== 0) {
+        continue;
       }
+
+      return true;
     }
+
     return false;
   };
 
@@ -897,115 +808,66 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
 
   return (
     <>
-      <AccordionButton
-        p={"0.5rem 1rem"}
-        justifyContent={"space-between"}
-        _hover={{ backgroundColor: "none" }}
-        bg={"ds-h-acc"}
-      >
-        <Flex gap={"1rem"} alignItems={"center"} justify={"space-between"} w={"100%"}>
-          <Flex alignItems={"center"} gap={"0.25rem"} flex={8}>
-            <Flex alignItems={"center"} gap={"0.5rem"} fontFamily={"heading"}>
-              <Flex display={{ base: "none", tablet: "flex" }}>
-                <Checkbox
-                  id={device.mac}
-                  name={device.mac}
-                  isChecked={checkedItems.find((d) => d.mac === device.mac)?.value}
-                  onChange={(e) => handleCheckboxChange(device.mac, e.target.checked)}
-                ></Checkbox>
-              </Flex>
-              <AccordionIcon color={"primary-color"} />
-            </Flex>
-            <Flex alignItems={"center"} gap={"0.5rem"}>
-              <Text
-                fontSize={"sm"}
+      <summary className="flex cursor-pointer items-center justify-between gap-4 bg-card px-4 py-3 hover:bg-muted">
+        <div className="flex flex-[8] items-center gap-3">
+          <div className="hidden tablet:block" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded-none border border-input bg-background accent-primary"
+              checked={Boolean(checkedItems.find((d) => d.mac === device.mac)?.value)}
+              onChange={(e) => handleCheckboxChange(device.mac, e.target.checked)}
+            />
+          </div>
+          <span className="text-primary">▾</span>
+          <div className="flex items-center gap-2">
+            <span className="font-accent text-sm font-normal capitalize">{device.info.hostname}</span>
+            <span className="hidden tablet:inline text-sm text-muted-foreground">-</span>
+            <span className="hidden tablet:inline">
+              <Link
+                href={`http://${device.ip}`}
+                isExternal={true}
+                label={device.ip}
+                fontSize={"14px"}
                 fontWeight={400}
-                textTransform={"capitalize"}
+                textDecoration="underline"
+                isDisabled={device.tracing ? false : true}
                 fontFamily={"accent"}
-              >
-                {device.info.hostname}
-              </Text>
-              <Text
-                fontSize={"sm"}
-                fontWeight={400}
-                textTransform={"capitalize"}
-                display={{ base: "none", tablet: "block" }}
-              >
-                -
-              </Text>
-              <Flex display={{ base: "none", tablet: "flex" }}>
-                <Link
-                  href={`http://${device.ip}`}
-                  isExternal={true}
-                  label={device.ip}
-                  fontSize={"md"}
-                  fontWeight={400}
-                  textDecoration="underline"
-                  isDisabled={device.tracing ? false : true}
-                />
-              </Flex>
-            </Flex>
-          </Flex>
-          <Flex alignItems={"center"} gap={"1rem"} flex={5} justify={{ base: "space-between" }}>
-            <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
-            <Flex alignItems={"center"} display={{ base: "none", tablet: "flex" }}>
-              <Flex
-                onClick={handleRestartOpenModal}
-                alignItems={"center"}
-                gap={"0.5rem"}
-                cursor="pointer"
-                background="none"
-                color={"body-text"}
-                fontSize={"13px"}
-                lineHeight="1.5rem"
-                fontWeight={400}
-                fontFamily={"accent"}
-                textTransform={"uppercase"}
-                padding={"0.5rem 1rem"}
-                _hover={{ color: "cta-text-hover", iconColor: "cta-bg-hover" }}
-                _focus={{
-                  color: "cta-text-focus",
-                  iconColor: "cta-bg-focus",
-                }}
-                _disabled={{
-                  color: "cta-text-disabled",
-                  iconColor: "cta-color-disabled",
+                className="text-muted-foreground"
+              />
+            </span>
+          </div>
+        </div>
 
-                  _hover: {
-                    color: "cta-text-disabled",
-                    iconColor: "cta-color-disabled",
-                  },
-                }}
-              >
-                <RestartIcon color={"primary-color"} />
-                Restart
-              </Flex>
-            </Flex>
-            <Flex display={{ base: "flex", tablet: "none" }} marginLeft={"1rem"}>
-              <Checkbox
-                id={device.mac}
-                name={device.mac}
-                isChecked={checkedItems.find((d) => d.mac === device.mac)?.value}
-                onChange={(e) => handleCheckboxChange(device.mac, e.target.checked)}
-              ></Checkbox>
-            </Flex>
-          </Flex>
-        </Flex>
-      </AccordionButton>
-      <AccordionPanel
-        p={0}
-        as={Flex}
-        flexDir={"column"}
-        alignItems={"flex-start"}
-        bg={"ds-body-acc"}
-      >
-        <Divider borderColor={"border-color"} />
-        <Flex flexDir={"column"} p={"1rem"} w={"100%"}>
-          <Flex flexDirection={"column"} gap={"1rem"} w={"100%"}>
-            <Text fontWeight={"bold"} textTransform={"uppercase"}>
-              General
-            </Text>
-            <SimpleGrid columns={{ mobile: 1, tablet: 2, desktop: 2 }} spacing={"1rem"}>
+        <div className="flex flex-[5] items-center justify-between gap-4 tablet:justify-end">
+          <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
+          <button
+            type="button"
+            className="hidden items-center gap-2 font-accent text-sm font-medium uppercase text-foreground underline tablet:inline-flex"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleRestartOpenModal(e);
+            }}
+          >
+            <RestartIcon color="currentColor" />
+            Restart
+          </button>
+          <div className="tablet:hidden" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded-none border border-input bg-background accent-primary"
+              checked={Boolean(checkedItems.find((d) => d.mac === device.mac)?.value)}
+              onChange={(e) => handleCheckboxChange(device.mac, e.target.checked)}
+            />
+          </div>
+        </div>
+      </summary>
+
+      <div className="border-t border-border bg-card p-4">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
+            <p className="font-heading text-sm font-bold uppercase">General</p>
+            <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
               <Input
                 label="Hostname"
                 name="hostname"
@@ -1024,49 +886,40 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                 onChange={handleChangeOnStratumUser}
                 error={deviceError.workerName}
               />
-            </SimpleGrid>
-          </Flex>
+            </div>
+          </div>
 
-          <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"100%"}>
-            <Text fontWeight={"bold"} textTransform={"uppercase"}>
-              Hardware settings
-            </Text>
-            <Flex flexDir={{ mobile: "column", tablet: "column", desktop: "row" }} gap={"1rem"}>
-              <Flex flex={2} flexDir={{ mobile: "column", tablet: "row" }} gap={"1rem"}>
+          <div className="flex flex-col gap-4">
+            <p className="font-heading text-sm font-bold uppercase">Hardware settings</p>
+            <div className="flex flex-col gap-4 desktop:flex-row">
+              <div className="flex flex-col gap-4 tablet:flex-row desktop:flex-[2]">
                 <Select
                   id={`${device.mac}-frequency`}
                   label="Frequency"
                   name="frequency"
                   onChange={handleChange}
+                  value={device.info.frequency}
                   defaultValue={device.info.frequency}
                   optionValues={device.info.frequencyOptions}
+                  allowCustom={true}
                 />
                 <Select
                   id={`${device.mac}-coreVoltage`}
                   label="Core Voltage"
                   name="coreVoltage"
                   onChange={handleChange}
+                  value={device.info.coreVoltage}
                   defaultValue={device.info.coreVoltage}
                   optionValues={device.info.coreVoltageOptions}
+                  allowCustom={true}
                 />
-              </Flex>
+              </div>
 
-              <Flex flex={3} flexDirection={"column"} justify={"space-between"} gap={"1rem"}>
-                <Text
-                  fontWeight={600}
-                  fontSize={"xs"}
-                  fontFamily={"body"}
-                  textTransform={"uppercase"}
-                  color={"input-label-color"}
-                >
+              <div className="flex flex-col gap-4 desktop:flex-[3]">
+                <p className="font-body text-xs font-semibold uppercase text-muted-foreground">
                   Advanced Hardware Settings
-                </Text>
-                <Flex
-                  gap={"1.5rem"}
-                  justify={"flex-start"}
-                  alignItems={"center"}
-                  flexDir={{ mobile: "column", tablet: "row", desktop: "row" }}
-                >
+                </p>
+                <div className="flex flex-col gap-4 tablet:flex-row tablet:flex-wrap tablet:items-center">
                   <Checkbox
                     id={`${device.mac}-flipscreen`}
                     name="flipscreen"
@@ -1088,7 +941,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                     defaultChecked={device.info.autofanspeed === 1}
                     onChange={handleChange}
                   />
-                  <Box w={"100%"}>
+                  <div className="w-full tablet:max-w-[200px]">
                     <Input
                       name="fanspeed"
                       id={`${device.mac}-fanspeed`}
@@ -1100,37 +953,38 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                       rightAddon={"%"}
                       error={deviceError.fanspeed}
                     />
-                  </Box>
-                </Flex>
-              </Flex>
-            </Flex>
-          </Flex>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <Flex flexDirection={"column"} gap={"1rem"} p={"1rem 0"} w={"full"}>
-            <Text fontWeight={"bold"} textTransform={"uppercase"}>
-              Pool settings
-            </Text>
-            <RadioGroup
-              defaultValue={isPresetRadioButtonSelected ? "preset" : "custom"}
-              onChange={(value) => handleRadioButtonChange(value)}
-            >
-              <Stack spacing={"1rem"} direction="row">
-                <RadioButton
-                  id={`${device.mac}-${RadioButtonStatus.PRESET}`}
-                  value={RadioButtonStatus.PRESET}
-                  label="Preset"
-                  disabled={presets.length == 0}
-                ></RadioButton>
-                <RadioButton
-                  id={`${device.mac}-${RadioButtonStatus.CUSTOM}`}
-                  value={RadioButtonStatus.CUSTOM}
-                  label="Custom"
-                ></RadioButton>
-              </Stack>
-            </RadioGroup>
+          <div className="flex flex-col gap-4">
+            <p className="font-heading text-sm font-bold uppercase">Pool settings</p>
+
+            <div className="flex flex-wrap gap-6">
+              <RadioButton
+                id={`${device.mac}-${RadioButtonStatus.PRESET}`}
+                name={`${device.mac}-pool-mode`}
+                value={RadioButtonStatus.PRESET}
+                label="Preset"
+                disabled={presets.length === 0}
+                checked={isPresetRadioButtonSelected}
+                onChange={handleRadioButtonChange}
+              />
+              <RadioButton
+                id={`${device.mac}-${RadioButtonStatus.CUSTOM}`}
+                name={`${device.mac}-pool-mode`}
+                value={RadioButtonStatus.CUSTOM}
+                label="Custom"
+                checked={!isPresetRadioButtonSelected}
+                onChange={handleRadioButtonChange}
+              />
+            </div>
+
             {isPresetRadioButtonSelected ? (
-              <Flex flexDir={"column"} gap={"1rem"}>
-                {selectedPreset && (
+              <div className="flex flex-col gap-4">
+                {selectedPreset ? (
                   <>
                     <Select
                       id={`${device.mac}-preset`}
@@ -1143,8 +997,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                         label: preset.name,
                       }))}
                     />
-                    <Flex gap={"1rem"} flexDir={{ base: "column", tablet: "row" }}>
-                      <Flex flex={1}>
+                    <div className="flex flex-col gap-4 tablet:flex-row">
+                      <div className="flex-1">
                         <Input
                           isDisabled={true}
                           type="text"
@@ -1153,8 +1007,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                           id={`${selectedPreset.uuid}-stratumUrl`}
                           defaultValue={selectedPreset.configuration.stratumURL}
                         />
-                      </Flex>
-                      <Flex flex={1}>
+                      </div>
+                      <div className="flex-1">
                         <Input
                           isDisabled={true}
                           type="number"
@@ -1163,8 +1017,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                           id={`${selectedPreset.uuid}-stratumPort`}
                           defaultValue={selectedPreset.configuration.stratumPort}
                         />
-                      </Flex>
-                      <Flex flex={2}>
+                      </div>
+                      <div className="flex-[2]">
                         <Input
                           isDisabled={true}
                           type="text"
@@ -1174,21 +1028,14 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                           defaultValue={selectedPreset.configuration.stratumUser}
                           rightAddon={`.${stratumUser.workerName}`}
                         />
-                      </Flex>
-                    </Flex>
+                      </div>
+                    </div>
                   </>
-                )}
-              </Flex>
+                ) : null}
+              </div>
             ) : (
-              <Grid
-                templateColumns={{
-                  mobile: "repeat(1, 1fr)",
-                  tablet: "repeat(2, 1fr)",
-                  desktop: "repeat(2, 1fr) 2fr repeat(1, 1fr)",
-                }}
-                gap={"1rem"}
-              >
-                <Flex flex={1}>
+              <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-6">
+                <div className="desktop:col-span-2">
                   <Input
                     type="text"
                     label="Stratum URL"
@@ -1199,8 +1046,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                     onChange={handleChange}
                     error={deviceError.stratumURL}
                   />
-                </Flex>
-                <Flex flex={1}>
+                </div>
+                <div className="desktop:col-span-2">
                   <Input
                     type="number"
                     label="Stratum Port"
@@ -1211,8 +1058,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                     onChange={handleChange}
                     error={deviceError.stratumPort}
                   />
-                </Flex>
-                <Flex flex={2}>
+                </div>
+                <div className="desktop:col-span-2">
                   <Input
                     type="text"
                     label="Stratum User"
@@ -1224,8 +1071,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                     rightAddon={`.${stratumUser.workerName}`}
                     error={deviceError.stratumUser}
                   />
-                </Flex>
-                <Flex flex={1}>
+                </div>
+                <div className="desktop:col-span-2">
                   <Input
                     type="password"
                     label="Stratum Password"
@@ -1236,80 +1083,52 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
                     error={deviceError.stratumPassword}
                     onChange={handleChange}
                   />
-                </Flex>
-              </Grid>
+                </div>
+              </div>
             )}
-          </Flex>
-          <Flex justifyContent={"flex-start"}>
+          </div>
+
+          <div>
             <Button
               variant="primary"
-              rightIcon={<ArrowIcon color="cta-primary-icon-color" />}
+              rightIcon={<ArrowIcon color="currentColor" />}
               onClick={() => setIsSaveAndRestartModalOpen(true)}
               disabled={isDeviceValid()}
               label="Save"
-            ></Button>
-          </Flex>
-        </Flex>
-      </AccordionPanel>
-      <Flex
-        alignItems={"center"}
-        display={{ base: "flex", tablet: "none" }}
-        justify={"space-between"}
-        padding={"0.15rem 1rem"}
-        backgroundColor={"ds-h-table"}
-        borderTopColor={"border-color"}
-        borderTopWidth={"1px"}
-      >
-        <Flex gap={"0.5rem"} alignItems={"center"} fontFamily={"accent"}>
-          <Text fontSize={"sm"} fontWeight={500}>
-            IP
-          </Text>
-          <Text fontSize={"sm"} fontWeight={500}>
-            -
-          </Text>
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-4 border-t border-border bg-muted px-4 py-2 tablet:hidden">
+        <div className="flex items-center gap-2 font-accent">
+          <span className="text-sm font-medium">IP</span>
+          <span className="text-sm font-medium text-muted-foreground">-</span>
           <Link
             href={`http://${device.ip}`}
             isExternal={true}
             label={device.ip}
-            fontSize={"sm"}
+            fontSize={"14px"}
             fontWeight={400}
             textDecoration="underline"
             isDisabled={device.tracing ? false : true}
             fontFamily={"accent"}
+            className="text-muted-foreground"
           />
-        </Flex>
-        <Flex
-          onClick={handleRestartOpenModal}
-          alignItems={"center"}
-          gap={"0.5rem"}
-          cursor="pointer"
-          background="none"
-          color={"body-text"}
-          fontSize={"13px"}
-          lineHeight="1.5rem"
-          fontWeight={400}
-          fontFamily={"accent"}
-          textTransform={"capitalize"}
-          padding={"0.5rem 1rem"}
-          _hover={{ color: "cta-text-hover", iconColor: "cta-bg-hover" }}
-          _focus={{
-            color: "cta-text-focus",
-            iconColor: "cta-bg-focus",
-          }}
-          _disabled={{
-            color: "cta-text-disabled",
-            iconColor: "cta-color-disabled",
-
-            _hover: {
-              color: "cta-text-disabled",
-              iconColor: "cta-color-disabled",
-            },
+        </div>
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 font-accent text-sm font-medium capitalize underline"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleRestartOpenModal(e);
           }}
         >
-          <RestartIcon color={"primary-color"} />
+          <RestartIcon color="currentColor" />
           Restart
-        </Flex>
-      </Flex>
+        </button>
+      </div>
       <RestartModal isOpen={isRestartModalOpen} onClose={handleRestartModalClose} />
       <SaveAndRestartModal
         isOpen={isSaveAndRestartModalOpen}

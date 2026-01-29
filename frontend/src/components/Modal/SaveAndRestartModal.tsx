@@ -6,22 +6,10 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  Flex,
-  Text,
-  Stack,
-  RadioGroup,
-  useToken,
-} from "@chakra-ui/react";
 import { useCallback, useState } from "react";
 import { RadioButton } from "../RadioButton";
 import Button from "../Button/Button";
+import { Modal } from "@/components/ui/modal";
 
 interface SaveAndRestartModalProps {
   isOpen: boolean;
@@ -39,6 +27,10 @@ export const SaveAndRestartModal: React.FC<SaveAndRestartModalProps> = ({ isOpen
     RadioButtonValues.ONLY_SAVE
   );
 
+  const handleCancel = useCallback(() => {
+    onClose("");
+  }, [onClose]);
+
   const handleRadioButtonChange = useCallback((value: string) => {
     setRadioButtonValue(value as RadioButtonValues);
   }, []);
@@ -47,55 +39,44 @@ export const SaveAndRestartModal: React.FC<SaveAndRestartModalProps> = ({ isOpen
     onClose(radioButtonValue);
   }, [onClose, radioButtonValue]);
 
-  const [bgColor] = useToken("colors", ["item-bg"]);
-  const [borderColor] = useToken("colors", ["border-color"]);
-  const [textColor] = useToken("colors", ["body-text"]);
-  const [accentColor] = useToken("colors", ["accent-color"]);
-
   return (
-    <Modal
-      isCentered
-      isOpen={isOpen}
-      onClose={() => onClose("")}
-      motionPreset="slideInBottom"
-      blockScrollOnMount={false}
-      returnFocusOnClose={false}
-    >
-      <ModalOverlay bg="none" backdropFilter="auto" backdropBlur="3px" />
-      <ModalContent
-        bg={bgColor}
-        borderColor={borderColor}
-        borderWidth={"1px"}
-        p={"1rem"}
-        color={textColor}
-      >
-        <ModalHeader fontFamily={"heading"} fontWeight={400} fontSize={"4xl"}>
-          Save or Save&Restart the device?
-        </ModalHeader>
-        <ModalBody as={Flex} flexDir={"column"} gap={"1rem"} fontWeight={400} fontSize={"md"}>
-          <Text>
+    <Modal open={isOpen} onClose={handleCancel}>
+      <div className="w-full max-w-2xl border border-border bg-card p-4 text-card-foreground">
+        <h2 className="font-heading text-2xl font-medium">Save or Save&Restart the device?</h2>
+
+        <div className="mt-3 flex flex-col gap-3 font-body text-sm text-muted-foreground">
+          <p>
             Please choose whether to save the changes only or save and restart the device to apply
             them. Keep in mind that restarting the device may result in the loss of an entire block
             of transactions.
-          </Text>
-          <Text fontWeight={500}>Choose your preference</Text>
+          </p>
+          <p className="font-heading text-foreground">Choose your preference</p>
 
-          <RadioGroup defaultValue="only-save" onChange={(value) => handleRadioButtonChange(value)}>
-            <Stack spacing={8} direction="row">
-              <RadioButton id="only-save" value="only-save" label="Only Save"></RadioButton>
-              <RadioButton
-                id="save-and-restart"
-                value="save-and-restart"
-                label="Save&Restart"
-              ></RadioButton>
-            </Stack>
-          </RadioGroup>
-        </ModalBody>
-        <ModalFooter gap={"1.5rem"}>
-          <Button label="Cancel" variant="outlined" onClick={() => onClose("")} />
+          <div className="flex flex-wrap gap-8">
+            <RadioButton
+              id="only-save"
+              name="save-action"
+              value="only-save"
+              label="Only Save"
+              checked={radioButtonValue === RadioButtonValues.ONLY_SAVE}
+              onChange={handleRadioButtonChange}
+            />
+            <RadioButton
+              id="save-and-restart"
+              name="save-action"
+              value="save-and-restart"
+              label="Save&Restart"
+              checked={radioButtonValue === RadioButtonValues.SAVE_AND_RESTART}
+              onChange={handleRadioButtonChange}
+            />
+          </div>
+        </div>
+
+        <div className="mt-6 flex items-center justify-end gap-4">
+          <Button label="Cancel" variant="outlined" onClick={handleCancel} />
           <Button label="Confirm" variant="primary" onClick={handleAction} />
-        </ModalFooter>
-      </ModalContent>
+        </div>
+      </div>
     </Modal>
   );
 };

@@ -6,7 +6,9 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { Badge as ChakraBadge, Text, useToken } from "@chakra-ui/react";
+import React from "react";
+
+import { cn } from "@/lib/utils";
 
 export interface DeviceStatusBadgeProps {
   label?: string | number;
@@ -21,27 +23,26 @@ export const Badge: React.FC<DeviceStatusBadgeProps> = ({
   bg = "dashboard-badge-bg",
   fontWeight = 500,
 }) => {
-  const [badgeColor] = useToken("colors", [bg]);
-  const [textColor] = useToken("colors", [color]);
+  const bgClass =
+    bg === "dashboard-badge-bg" ? "bg-muted" : bg === "badge-bg" ? "bg-muted" : "bg-muted";
+  const textClass =
+    color === "primary-color"
+      ? "text-primary"
+      : color === "body-text"
+      ? "text-foreground"
+      : "text-foreground";
 
   return (
-    <ChakraBadge
-      bg={badgeColor}
-      color={textColor}
-      fontSize={"13px"}
-      borderRadius={0}
-      padding={"4px 8px"}
-    >
-      {label && (
-        <Text
-          fontWeight={fontWeight}
-          textTransform={"uppercase"}
-          fontFamily={"accent"}
-          fontSize={"lg"}
-        >
-          {label}
-        </Text>
+    <span
+      className={cn(
+        "inline-flex items-center border border-border px-2 py-1",
+        "font-accent text-[13px] uppercase leading-5",
+        bgClass,
+        textClass
       )}
-    </ChakraBadge>
+      style={{ fontWeight }}
+    >
+      {label}
+    </span>
   );
 };

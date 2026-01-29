@@ -5,8 +5,9 @@ const sharedJestConfig = {
   roots: ['<rootDir>/src'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
   clearMocks: true,
-  collectCoverage: true,
+  collectCoverage: false,
   coverageDirectory: '<rootDir>/coverage',
+  coverageReporters: ['lcov', 'text', 'json-summary'],
   verbose: true,
   collectCoverageFrom: [
     '<rootDir>/src/**/*.{ts,tsx}',
@@ -18,13 +19,12 @@ const sharedJestConfig = {
   },
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
+      branches: 90,
+      functions: 90,
+      lines: 90,
+      statements: 90,
     },
   },
 };
 
 module.exports = sharedJestConfig;
-

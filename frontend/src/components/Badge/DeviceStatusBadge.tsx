@@ -6,7 +6,9 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { Badge as ChakraBadge, useToken } from "@chakra-ui/react";
+import React from "react";
+
+import { cn } from "@/lib/utils";
 
 export interface DeviceStatusBadgeProps {
   status?: "online" | "offline";
@@ -21,35 +23,15 @@ export const DeviceStatusBadge: React.FC<DeviceStatusBadgeProps> = ({
   lineHeight = "20px",
   invert = false,
 }) => {
-  // online colors
-  const [onlineColor] = useToken("colors", ["badge-online-color"]);
-  const [onlineBorder] = useToken("colors", ["badge-online-border"]);
-  const [onlineBg] = useToken("colors", ["badge-online-bg"]);
-
-  // offline colors
-  const [offlineColor] = useToken("colors", ["badge-offline-color"]);
-  const [offlineBorder] = useToken("colors", ["badge-offline-border"]);
-  const [offlineBg] = useToken("colors", ["badge-offline-bg"]);
-
-  const color = status === "online" ? onlineColor : offlineColor;
-  const borderColor = status === "online" ? onlineBorder : offlineBorder;
-  const bgColor = status === "online" ? onlineBg : offlineBg;
+  const online = status === "online";
+  const base = "inline-flex items-center border px-2 py-1 font-body text-[13px] font-medium uppercase";
+  const variant = online
+    ? "border-emerald-500 bg-emerald-500/10 text-emerald-500"
+    : "border-destructive bg-destructive/10 text-destructive";
+  const maybeInvert = invert ? "bg-background" : "";
   return (
-    <ChakraBadge
-      fontFamily={"body"}
-      fontWeight={"500"}
-      bg={bgColor}
-      color={color}
-      fontSize={"13px"}
-      lineHeight={lineHeight}
-      borderWidth={"1px"}
-      borderColor={borderColor}
-      padding={"4px 8px"}
-      textTransform={"uppercase"}
-      alignContent={"center"}
-      borderRadius={0}
-    >
+    <span className={cn(base, variant, maybeInvert)} style={{ lineHeight }}>
       {label ? label : status}
-    </ChakraBadge>
+    </span>
   );
 };

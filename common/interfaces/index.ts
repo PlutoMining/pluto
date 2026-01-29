@@ -10,4 +10,5 @@
 export * from "./device-info.interface";
 export * from "./preset.interface";
 export * from "./dashboard.interface";
+export * from "./entity.interface";
 // Aggiungi altre interfacce se necessario

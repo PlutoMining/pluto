@@ -6,8 +6,8 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { Device } from "./device-info.interface";
-import { Entity } from "./entity.interface";
+import type { Device } from "./device-info.interface";
+import type { Entity } from "./entity.interface";
 
 export interface Preset extends Entity {
   uuid: string;

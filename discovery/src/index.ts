@@ -11,15 +11,37 @@ import express from "express";
 import { config } from "./config/environment";
 import discoverRoutes from "./routes/discover.routes";
 
-const { port } = config;
+export function createDiscoveryApp() {
+  const app = express();
 
-const app = express();
+  app.use(express.json());
 
-app.use(express.json());
+  // Aggiungi le rotte per la scoperta dei dispositivi
+  app.use(discoverRoutes);
 
-// Aggiungi le rotte per la scoperta dei dispositivi
-app.use(discoverRoutes);
+  return app;
+}
 
-app.listen(port, () => {
-  logger.info(`Server running on http://localhost:${port}`);
+export async function startServer(opts?: { port?: number }) {
+  const port = opts?.port ?? config.port;
+  const app = createDiscoveryApp();
+
+  const server = app.listen(port);
+
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.once("listening", () => resolve());
+  });
+
+  const address = server.address();
+  const actualPort = typeof address === "object" && address ? address.port : port;
+  logger.info(`Server running on http://localhost:${actualPort}`);
+
+  return { server, port: actualPort };
+}
+
+export const serverPromise = startServer().catch((err) => {
+  logger.error("Failed to start discovery server", err);
+  process.exitCode = 1;
+  return undefined;
 });

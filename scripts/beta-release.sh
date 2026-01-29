@@ -15,8 +15,12 @@ cd "$SCRIPT_ROOT"
 SCRIPT_NAME="beta-release"
 # shellcheck source=scripts/lib/common.sh
 source "${SCRIPT_ROOT}/scripts/lib/common.sh"
+# shellcheck source=scripts/lib/semver.sh
+source "${SCRIPT_ROOT}/scripts/lib/semver.sh"
 
-AVAILABLE_SERVICES=(backend discovery frontend grafana prometheus)
+# NOTE: mock is included so we can publish mock device images for beta testing.
+# It is not part of the Umbrel pluto-next manifest bundle by default.
+AVAILABLE_SERVICES=(backend discovery frontend prometheus mock)
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-ghcr.io/plutomining}"
 DIFF_BASE="${BETA_DIFF_BASE:-origin/main}"
 TAG_SUFFIX="${BETA_TAG_SUFFIX:-beta}"
@@ -36,13 +40,18 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [options]
 
+Build and push beta Docker images for pluto-next, using per-service semantic
+versioning (major / minor / patch) and prerelease tags, and optionally
+updating Umbrel manifests.
+
 Options:
   --services "svc1,svc2"   Comma-separated list of services to release (override auto-detection)
   --app-version X.Y.Z-pr   Explicit pluto-next app version to write into umbrel-app.yml
   --diff-base <ref>        Git ref (default: ${DIFF_BASE}) used to detect changed services
   --tag-suffix <suffix>    Secondary tag pushed alongside the explicit version (default: ${TAG_SUFFIX})
   --skip-login             Skip Docker login prompt
-  --bump-version           Automatically bump package.json versions to beta before building
+  --bump-version           Automatically bump package.json versions to beta per service based on git history
+                           (major / minor / patch via scripts/lib/semver.sh, then add -beta.N)
   --update-manifests       Update pluto-next umbrel-app manifests after building images
   --sync-to-umbrel         Sync manifests to Umbrel device (requires --update-manifests)
   --skip-ci-check          Skip CI status check (not recommended)
@@ -133,7 +142,7 @@ detect_changed_services() {
 
   git diff --name-only "${DIFF_BASE}...HEAD" \
     | awk -F/ '
-      /^(backend|discovery|frontend|grafana|prometheus)\// {print $1}
+      /^(backend|discovery|frontend|prometheus|mock)\// {print $1}
     ' \
     | sort -u
 }
@@ -155,7 +164,8 @@ ensure_service_valid() {
 
 get_package_version() {
   local service=$1
-  grep '"version":' "$service/package.json" | sed -E 's/.*"version":\s*"([^"]+)".*/\1/'
+  # Avoid PCRE-only escapes (e.g. \s) for portability across BSD/GNU sed.
+  grep -m 1 '"version":' "$service/package.json" | sed -E 's/.*"version":[[:space:]]*"([^"]+)".*/\1/'
 }
 
 # Function to check the current Git branch
@@ -357,36 +367,65 @@ ensure_prerelease() {
   [[ "$version" == *-* ]] || err "Version '$version' lacks a prerelease suffix (expected something like 1.4.0-beta.1)"
 }
 
+###############################################################################
+# Version bumping (uses semver bump level: major / minor / patch)
+###############################################################################
+
 bump_package_version() {
   local service=$1
+  local bump_level=$2  # major|minor|patch
   local package_file="$service/package.json"
   local current_version
   current_version=$(get_package_version "$service")
-  
-  local new_version
+
+  local new_version=""
+
   if [[ "$current_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-beta\.([0-9]+)$ ]]; then
-    # Already a beta version - increment beta number
+    # Already a beta version - increment beta number only (keep base the same)
     local base="${BASH_REMATCH[1]}"
     local beta_num="${BASH_REMATCH[2]}"
     beta_num=$((beta_num + 1))
     new_version="${base}-beta.${beta_num}"
   elif [[ "$current_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-    # Stable version - bump patch and add beta.0
+    # Stable version - bump according to bump_level, then add beta.0
     local major="${BASH_REMATCH[1]}"
     local minor="${BASH_REMATCH[2]}"
     local patch="${BASH_REMATCH[3]}"
-    patch=$((patch + 1))
+
+    case "$bump_level" in
+      major)
+        major=$((major + 1))
+        minor=0
+        patch=0
+        ;;
+      minor)
+        minor=$((minor + 1))
+        patch=0
+        ;;
+      patch)
+        patch=$((patch + 1))
+        ;;
+      *)
+        err "Unsupported bump level '$bump_level' for service '$service'"
+        ;;
+    esac
+
     new_version="${major}.${minor}.${patch}-beta.0"
+  elif [[ "$current_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-.+$ ]]; then
+    # Non-beta prerelease (e.g. 0.7.0-rc.2) - keep base version and switch to beta.0.
+    # This avoids unexpected base bumps when migrating prerelease tags.
+    local base="${BASH_REMATCH[1]}"
+    new_version="${base}-beta.0"
   else
     err "Cannot parse version '$current_version' for service '$service'"
   fi
-  
+
   if $DRY_RUN; then
-    log "[dry-run] Would bump $service version: $current_version -> $new_version"
+    log "[dry-run] Would bump $service version: $current_version -> $new_version (level: $bump_level)"
     echo "$new_version"
     return
   fi
-  
+
   # Update package.json
   if [[ "$(uname)" == "Darwin" ]]; then
     # macOS uses BSD sed
@@ -395,8 +434,8 @@ bump_package_version() {
     # Linux uses GNU sed
     sed -i "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
   fi
-  
-  log "Bumped $service version: $current_version -> $new_version"
+
+  log "Bumped $service version: $current_version -> $new_version (level: $bump_level)"
   echo "$new_version"
 }
 
@@ -470,6 +509,10 @@ main() {
   # If --sync-to-umbrel is set, automatically enable --update-manifests
   if $SYNC_TO_UMBREL && ! $UPDATE_MANIFESTS; then
     UPDATE_MANIFESTS=true
+  fi
+
+  if [[ -n "$APP_VERSION" ]] && ! $UPDATE_MANIFESTS; then
+    err "--app-version requires --update-manifests (or --sync-to-umbrel)"
   fi
 
   # Load .env file if present
@@ -555,7 +598,11 @@ main() {
   if [[ ${#CUSTOM_SERVICES[@]} -gt 0 ]]; then
     target_services=("${CUSTOM_SERVICES[@]}")
   else
-    mapfile -t target_services < <(detect_changed_services)
+    # mapfile/readarray are not available in macOS' default Bash (3.2).
+    # Read services line-by-line instead for portability.
+    while IFS= read -r service; do
+      [[ -n "$service" ]] && target_services+=("$service")
+    done < <(detect_changed_services)
   fi
 
   if [[ ${#target_services[@]} -eq 0 ]]; then
@@ -564,30 +611,42 @@ main() {
 
   log "Target services: ${target_services[*]}"
 
-  declare -A service_versions
-  declare -A service_current_versions
+  # macOS ships Bash 3.2 by default which does not support associative arrays.
+  # Keep service->version mapping by index to remain portable.
+  local service_versions=()
+  local service_current_versions=()
 
-  for service in "${target_services[@]}"; do
+  for i in "${!target_services[@]}"; do
+    local service="${target_services[$i]}"
     ensure_service_valid "$service"
     local current_version
     current_version=$(get_package_version "$service")
-    service_current_versions["$service"]="$current_version"
-    
+    service_current_versions[$i]="$current_version"
+
     local version
     if $BUMP_VERSION; then
-      # Automatically bump version to beta
-      version=$(bump_package_version "$service")
+      # Automatically bump version to beta based on semantic versioning rules,
+      # inferred from git log for this service between DIFF_BASE and HEAD.
+      local bump_level
+      bump_level=$(determine_bump_level_for_service "$service" "$DIFF_BASE")
+      if [[ "$bump_level" == "none" ]]; then
+        # No commits touching this service – in practice this should not happen
+        # for services in target_services, but fall back to patch if it does.
+        bump_level="patch"
+      fi
+      version=$(bump_package_version "$service" "$bump_level")
     else
       # Use existing version (must already be a prerelease)
       version="$current_version"
       ensure_prerelease "$version"
     fi
-    service_versions["$service"]="$version"
+    service_versions[$i]="$version"
   done
 
-  for service in "${target_services[@]}"; do
-    local version="${service_versions[$service]}"
-    local current_version="${service_current_versions[$service]}"
+  for i in "${!target_services[@]}"; do
+    local service="${target_services[$i]}"
+    local version="${service_versions[$i]}"
+    local current_version="${service_current_versions[$i]}"
     
     # Skip build if version hasn't changed
     if [[ "$version" == "$current_version" ]]; then
@@ -610,8 +669,9 @@ main() {
 
   # Update docker-compose.next.local.yml with new image references
   log "Updating docker-compose.next.local.yml..."
-  for service in "${target_services[@]}"; do
-    local version="${service_versions[$service]}"
+  for i in "${!target_services[@]}"; do
+    local service="${target_services[$i]}"
+    local version="${service_versions[$i]}"
     local image_tag="${DOCKER_REGISTRY}/pluto-${service}:${version}"
     
     if $DRY_RUN; then
@@ -638,8 +698,9 @@ main() {
 
     # Build image refs string for bump-umbrel-app-version.sh
     local images_arg=()
-    for service in "${target_services[@]}"; do
-      local version="${service_versions[$service]}"
+    for i in "${!target_services[@]}"; do
+      local service="${target_services[$i]}"
+      local version="${service_versions[$i]}"
       local image_tag="${DOCKER_REGISTRY}/pluto-${service}:${version}"
       
       if $DRY_RUN; then
@@ -658,14 +719,25 @@ main() {
     IFS=',' eval 'images_string="${images_arg[*]}"'
 
     if $DRY_RUN; then
-      log "[dry-run] Would call bump-umbrel-app-version.sh with: ${images_string}"
+      if [[ -n "$APP_VERSION" ]]; then
+        log "[dry-run] Would call bump-umbrel-app-version.sh with --app-version ${APP_VERSION}: ${images_string}"
+      else
+        log "[dry-run] Would call bump-umbrel-app-version.sh with: ${images_string}"
+      fi
     else
-      "${SCRIPT_ROOT}/scripts/bump-umbrel-app-version.sh" \
-        --app pluto-next \
-        --channel beta \
-        --manifest "${SCRIPT_ROOT}/umbrel-apps/pluto-next/umbrel-app.yml" \
-        --compose "${SCRIPT_ROOT}/umbrel-apps/pluto-next/docker-compose.yml" \
-        --images "$images_string" || {
+      bump_args=(
+        --app pluto-next
+        --channel beta
+        --manifest "${SCRIPT_ROOT}/umbrel-apps/pluto-next/umbrel-app.yml"
+        --compose "${SCRIPT_ROOT}/umbrel-apps/pluto-next/docker-compose.yml"
+        --images "$images_string"
+      )
+
+      if [[ -n "$APP_VERSION" ]]; then
+        bump_args+=(--app-version "$APP_VERSION")
+      fi
+
+      "${SCRIPT_ROOT}/scripts/bump-umbrel-app-version.sh" "${bump_args[@]}" || {
         # If manifest update fails, it might be because bundle is unchanged
         log "Manifest update completed (bundle may be unchanged)"
       }
@@ -688,9 +760,10 @@ main() {
   # Print summary
   if ! $QUIET; then
     local summary_items=()
-    for service in "${target_services[@]}"; do
-      if [[ -v service_versions["$service"] ]]; then
-        local version="${service_versions[$service]}"
+    for i in "${!target_services[@]}"; do
+      local service="${target_services[$i]}"
+      local version="${service_versions[$i]:-}"
+      if [[ -n "$version" ]]; then
         summary_items+=("$service: v$version")
       fi
     done
@@ -701,4 +774,3 @@ main() {
 }
 
 main "$@"
-

@@ -144,23 +144,27 @@ export const imprintDevices = async (macs: string[]): Promise<Device[]> => {
 };
 
 interface DiscoveryOptions {
-  ip?: string;
-  mac?: string;
-  partialMatch?: boolean; // Opzione per ricerche parziali sull'IP
+  q?: string;
 }
 
 // Funzione per iniziare ad ascoltare i dispositivi
 export const getImprintedDevices = async (options?: DiscoveryOptions): Promise<Device[]> => {
   try {
+    const q = options?.q?.trim().toLowerCase();
+    const isFullIp = q ? /^\d{1,3}(\.\d{1,3}){3}$/.test(q) : false;
+
     const devices = await findMany<Device>("pluto_core", "devices:imprinted", (d) => {
-      if (options?.ip) {
-        if (options.partialMatch) {
-          return d.ip.includes(options.ip);
-        } else {
-          return d.ip === options.ip;
-        }
+      if (!q) return true;
+
+      const ip = d.ip?.toLowerCase() ?? "";
+      const mac = d.mac?.toLowerCase() ?? "";
+      const hostname = d.info?.hostname?.toLowerCase?.() ?? "";
+
+      if (isFullIp) {
+        return ip === q || ip.startsWith(`${q}:`);
       }
-      return true;
+
+      return ip.includes(q) || mac.includes(q) || hostname.includes(q);
     });
 
     return devices;
