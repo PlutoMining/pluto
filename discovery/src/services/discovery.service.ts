@@ -12,19 +12,11 @@ import { logger } from "@pluto/logger";
 import axios from "axios";
 import { config } from "../config/environment";
 import { ArpScanResult, arpScan, getActiveNetworkInterfaces } from "./arpScanWrapper";
-
-function toHexByte(value: number) {
-  return value.toString(16).padStart(2, "0");
-}
-
-function mockMacFromPort(port: unknown) {
-  const numericPort = typeof port === "number" ? port : Number(port);
-  if (!Number.isFinite(numericPort) || numericPort <= 0) return undefined;
-
-  const hi = (numericPort >> 8) & 0xff;
-  const lo = numericPort & 0xff;
-  return `ff:ff:ff:ff:${toHexByte(hi)}:${toHexByte(lo)}`;
-}
+import { ConcurrencyLimiter } from "./concurrency-limiter.service";
+import { DeviceConverterService, MinerValidationResult } from "./device-converter.service";
+import { MinerValidationService } from "./miner-validation.service";
+import { MockDeviceService } from "./mock-device.service";
+import { UtilsService } from "./utils.service";
 
 interface DiscoveryOptions {
   ip?: string;
@@ -38,28 +30,47 @@ export async function discoverDevices(options?: DiscoveryOptions) {
   try {
     if (options?.ip && !options.partialMatch) {
       logger.info(
-        `Bypassing ARP discovery and directly attempting feature detection for IP: ${options.ip}`
+        `Bypassing ARP discovery and directly attempting pyasic validation for IP: ${options.ip}`
       );
 
       try {
-        const response = await axios.get(`http://${options.ip}/api/system/info`, {
-          timeout: 1000,
-        });
+        // Validate using pyasic-bridge
+        const validationResponse = await axios.post<MinerValidationResult[]>(
+          `${config.pyasicBridgeHost}/miners/validate`,
+          { ips: [options.ip] },
+          { timeout: config.pyasicValidationTimeout }
+        );
 
-        logger.info(`Received response from ${options.ip}:`, response.data);
+        const validationResult = validationResponse.data[0];
+        if (!validationResult) {
+          logger.info(`No validation result for IP: ${options.ip}`);
+          return [];
+        }
 
-        if (response.data && response.data.ASICModel) {
-          const deviceInfo: Device = {
-            ip: options.ip,
-            mac: response.data.mac || options?.mac || "unknown",
-            type: "unknown",
-            info: response.data,
-          };
+        if (validationResult.is_miner) {
+          // Fetch full miner data
+          let minerData: any = {};
+          try {
+            const dataResponse = await axios.get(
+              `${config.pyasicBridgeHost}/miner/${options.ip}/data`,
+              { timeout: config.pyasicValidationTimeout }
+            );
+            minerData = dataResponse.data;
+          } catch (error) {
+            logger.warn(`Failed to fetch full data for miner ${options.ip}, using minimal data:`, error);
+          }
 
-          logger.info(`Device ${options.ip} with ASICModel detected and added to the list.`);
+          const deviceInfo = DeviceConverterService.convertMinerInfoToDevice(
+            options.ip,
+            options?.mac || "unknown",
+            validationResult.model,
+            undefined,
+            minerData
+          );
+
+          logger.info(`Device ${options.ip} (${validationResult.model || "unknown model"}) validated and added to the list.`);
 
           try {
-            // Tenta di inserire il dispositivo
             await insertOne<Device>(
               "pluto_discovery",
               "devices:discovered",
@@ -69,7 +80,6 @@ export async function discoverDevices(options?: DiscoveryOptions) {
             logger.info(`Device ${options.ip} inserted successfully.`);
           } catch (error) {
             if (error instanceof Error && error.message.includes("already exists")) {
-              // Se l'inserimento fallisce, effettua un aggiornamento
               logger.info(`Device ${options.ip} already exists, updating...`);
               await updateOne<Device>(
                 "pluto_discovery",
@@ -84,19 +94,21 @@ export async function discoverDevices(options?: DiscoveryOptions) {
 
           return [deviceInfo];
         } else {
-          logger.info(`Device ${options.ip} does not contain ASICModel, skipping.`);
+          logger.info(`Device ${options.ip} is not a supported miner: ${validationResult.error || "unknown reason"}`);
           return [];
         }
       } catch (error) {
-        if (error instanceof axios.AxiosError) {
+        if (axios.isAxiosError(error)) {
           if (error.code === "ECONNABORTED") {
             logger.error(`Request to ${options.ip} timed out.`);
+          } else if (error.response) {
+            logger.error(`Pyasic-bridge returned error: ${error.response.status} ${error.response.statusText}`);
           } else {
-            logger.error(`Failed to make request to ${options.ip}:`, error.message);
+            logger.error(`Failed to validate ${options.ip}:`, error.message);
           }
         } else {
           logger.error(
-            `Unexpected error while making request to ${options.ip}:`,
+            `Unexpected error while validating ${options.ip}:`,
             error instanceof Error ? error.message : String(error)
           );
         }
@@ -151,7 +163,7 @@ export async function discoverDevices(options?: DiscoveryOptions) {
           // Deterministic MAC based on port so it stays stable across restarts/removals.
           // This avoids generating a different MAC when the /servers ordering changes.
           mac:
-            mockMacFromPort(server.port) ??
+            UtilsService.mockMacFromPort(server.port) ??
             `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`,
           type: "unknown",
         }));
@@ -182,50 +194,94 @@ export async function discoverDevices(options?: DiscoveryOptions) {
 
     const devices: Device[] = [];
 
-    for (const element of validDevices) {
-      // For mock devices, discovery (host network) needs to use localhost for verification
-      // but store host.docker.internal for backend containers to reach them
-      const isMockDevice = element.mac.startsWith("ff:ff:ff:ff:");
-      const verificationIp = isMockDevice && element.ip.includes("host.docker.internal")
-        ? element.ip.replace("host.docker.internal", "localhost")
-        : element.ip;
-      const storageIp = element.ip; // Keep original IP (host.docker.internal for mock devices) for storage
+    // Always handle mock devices via dedicated service (skip pyasic-bridge for them).
+    const mockDevices = validDevices.filter((device) =>
+      MockDeviceService.isMockDevice(device)
+    );
+    if (mockDevices.length > 0) {
+      logger.info(
+        `Handling ${mockDevices.length} mock device(s) without pyasic-bridge validation.`
+      );
+      const handled = await MockDeviceService.handleMockDevices(mockDevices);
+      devices.push(...handled);
+    }
 
-      logger.info(`Attempting to connect to device with IP: ${verificationIp} and MAC: ${element.mac}`);
+    const remainingDevices = validDevices.filter(
+      (device) => !MockDeviceService.isMockDevice(device)
+    );
 
-      try {
-        const response = await axios.get(`http://${verificationIp}/api/system/info`, { timeout: 1000 });
+    // Create a map of IP to ARP scan result for quick lookup for non-mock devices.
+    const ipToArpDevice = new Map<string, ArpScanResult>();
+    for (const device of remainingDevices) {
+      ipToArpDevice.set(device.ip, device);
+    }
 
-        logger.info(`Received response from ${verificationIp}:`, response.data);
+    // Extract IPs for validation
+    const ipsToValidate = Array.from(ipToArpDevice.keys());
 
-        if (response.data && response.data.ASICModel) {
-          const deviceInfo: Device = {
-            ip: storageIp, // Use storage IP (host.docker.internal for mock devices) so backend can reach them
-            mac: element.mac,
-            type: element.type,
-            info: response.data,
-          };
+    if (ipsToValidate.length === 0) {
+      logger.info("No IPs to validate.");
+      return devices;
+    }
 
-          devices.push(deviceInfo);
-          logger.info(`Device ${storageIp} with ASICModel added to the list.`);
+    // Split IPs into chunks
+    const chunks = UtilsService.chunkArray(ipsToValidate, config.pyasicValidationBatchSize);
+    logger.info(`Split ${ipsToValidate.length} IPs into ${chunks.length} chunks of size ${config.pyasicValidationBatchSize}`);
 
+    // Create concurrency limiter
+    const limiter = new ConcurrencyLimiter(config.pyasicValidationConcurrency);
+
+    // Helper function to validate a chunk and store valid miners
+    const validateChunk = async (chunk: string[]): Promise<Device[]> => {
+      const chunkDevices: Device[] = [];
+
+      logger.info(`Validating chunk of ${chunk.length} IPs: ${chunk.join(", ")}`);
+
+      const validationResults = await MinerValidationService.validateBatch(chunk);
+      logger.info(`Received validation results for chunk: ${validationResults.length} results`);
+
+      // Process validation results
+      for (const result of validationResults) {
+        if (result.is_miner) {
+          const arpDevice = ipToArpDevice.get(result.ip);
+          if (!arpDevice) {
+            logger.warn(`No ARP device found for validated IP: ${result.ip}`);
+            continue;
+          }
+
+          const storageIp = arpDevice.ip; // Keep original IP (host.docker.internal for mock devices) for storage
+
+          // Fetch full miner data
+          const minerData = await MinerValidationService.fetchMinerData(result.ip);
+
+          // Transform MinerInfo to Device format
+          const deviceInfo = DeviceConverterService.convertMinerInfoToDevice(
+            storageIp,
+            arpDevice.mac,
+            result.model,
+            arpDevice.type,
+            minerData
+          );
+
+          chunkDevices.push(deviceInfo);
+          logger.info(`Device ${storageIp} (${result.model || "unknown model"}) validated and added to the list.`);
+
+          // Store in database immediately (progressive storage)
           try {
-            // Tenta di inserire il dispositivo
             await insertOne<Device>(
               "pluto_discovery",
               "devices:discovered",
-              element.mac,
+              arpDevice.mac,
               deviceInfo
             );
             logger.info(`Device ${storageIp} inserted successfully.`);
           } catch (error) {
             if (error instanceof Error && error.message.includes("already exists")) {
-              // Se l'inserimento fallisce, effettua un aggiornamento
               logger.info(`Device ${storageIp} already exists, updating...`);
               await updateOne<Device>(
                 "pluto_discovery",
                 "devices:discovered",
-                element.mac,
+                arpDevice.mac,
                 deviceInfo
               );
             } else {
@@ -233,25 +289,31 @@ export async function discoverDevices(options?: DiscoveryOptions) {
             }
           }
         } else {
-          logger.info(`Device ${element.ip} does not contain ASICModel, skipping.`);
+          logger.debug(`Device ${result.ip} is not a supported miner: ${result.error || "unknown reason"}`);
         }
-      } catch (error) {
-        if (error instanceof axios.AxiosError) {
-          if (error.code === "ECONNABORTED") {
-            logger.error(`Request to ${element.ip} timed out.`);
-          } else {
-            logger.error(`Failed to make request to ${element.ip}:`, error.message);
-          }
-        } else {
-          logger.error(
-            `Unexpected error while making request to ${element.ip}:`,
-            error instanceof Error ? error.message : String(error)
-          );
-        }
+      }
+
+      return chunkDevices;
+    };
+
+    // Process chunks with concurrency limit
+    const chunkPromises = chunks.map((chunk) =>
+      limiter.execute(() => validateChunk(chunk))
+    );
+
+    // Wait for all chunks to complete (using allSettled to continue even if some fail)
+    const results = await Promise.allSettled(chunkPromises);
+
+    // Collect all devices from successful chunks
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        devices.push(...result.value);
+      } else {
+        logger.error(`Chunk validation failed:`, result.reason);
       }
     }
 
-    logger.info(`Discovery completed. ${devices.length} devices found with ASICModel.`);
+    logger.info(`Discovery completed. ${devices.length} devices found.`);
     return devices;
   } catch (err) {
     logger.error(err);

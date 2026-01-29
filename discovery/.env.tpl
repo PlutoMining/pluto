@@ -28,3 +28,17 @@ ARP_SCAN_RETRY=3
 ARP_SCAN_TIMEOUT_MS=2000
 ARP_SCAN_IGNORE_DUPS=true
 # ARP_SCAN_INTERFACES=enp1s0
+
+# Pyasic-bridge configuration
+# - PYASIC_BRIDGE_HOST: URL of the pyasic-bridge service
+#   For host network mode (discovery): use http://localhost:8000
+#   For Docker network: use http://pyasic-bridge:8000
+PYASIC_BRIDGE_HOST=http://localhost:8000
+
+# Pyasic validation tuning
+# - PYASIC_VALIDATION_TIMEOUT: timeout per IP validation in milliseconds (default: 3000)
+# - PYASIC_VALIDATION_BATCH_SIZE: number of IPs to validate per batch (default: 10)
+# - PYASIC_VALIDATION_CONCURRENCY: max concurrent batch validations (default: 3)
+PYASIC_VALIDATION_TIMEOUT=3000
+PYASIC_VALIDATION_BATCH_SIZE=10
+PYASIC_VALIDATION_CONCURRENCY=3
