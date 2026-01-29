@@ -8,121 +8,201 @@
 
 import type { Entity } from "./entity.interface";
 
-export interface DeviceInfoLegacy {
-  power: number;
-  voltage: number;
-  current: number;
-  fanSpeedRpm: number;
-  temp: number;
-  /**
-   * @deprecated
-   * use DeviceInfoNew hashRate_10m, hashRate_1h, hashRate_1d
-   */
-  hashRate: number;
-  bestDiff: string;
-  bestSessionDiff: string;
-  currentDiff?: string;
-  freeHeap: number;
-  freeHeapInternal?: number;
-  freeHeapSpiram?: number;
-  isPSRAMAvailable?: number;
-  coreVoltage: number;
-  coreVoltageActual: number;
-  frequency: number;
-  ssid: string;
-  hostname: string;
-  wifiStatus: string;
-  sharesAccepted: number;
-  sharesRejected: number;
-  uptimeSeconds: number;
-  ASICModel: string;
-  stratumURL: string;
-  stratumPort: number;
-  stratumUser: string;
-  wifiPassword?: string;
-  stratumPassword?: string;
-  version: string;
-  boardVersion: string;
-  runningPartition: string;
-  flipscreen: number;
-  invertscreen: number;
-  invertfanpolarity: number;
-  autofanspeed: number;
-  fanspeed: number;
-  efficiency: number;
-  frequencyOptions: DropdownOption[];
-  coreVoltageOptions: DropdownOption[];
+export type DeviceSource = "real" | "mock";
+
+/**
+ * Unit structure for hashrate, efficiency, and other metrics.
+ * Matches pyasic-bridge response format.
+ */
+export interface MetricUnit {
+  value?: number;
+  suffix: string;
 }
 
-export interface DeviceInfoNew {
-  power: number;
-  maxPower: number;
-  minPower: number;
-  voltage: number;
-  maxVoltage: number;
-  minVoltage: number;
-  current: number;
-  temp: number;
-  vrTemp: number;
-  hashRateTimestamp: number;
-  hashRate_10m: number;
-  hashRate_1h: number;
-  hashRate_1d: number;
-  jobInterval: number;
-  bestDiff: string;
-  bestSessionDiff: string;
-  currentDiff?: string;
-  freeHeap: number;
-  freeHeapInternal?: number;
-  freeHeapSpiram?: number;
-  isPSRAMAvailable?: number;
-  coreVoltage: number;
-  coreVoltageActual: number;
-  frequency: number;
-  ssid: string;
-  hostname: string;
-  wifiStatus: string;
-  sharesAccepted: number;
-  sharesRejected: number;
-  uptimeSeconds: number;
-  asicCount: number;
-  smallCoreCount: number;
-  ASICModel: string;
-  deviceModel: string;
-  stratumURL: string;
-  stratumPort: number;
-  stratumUser: string;
-  wifiPassword?: string;
-  stratumPassword?: string;
-  version: string;
-  runningPartition: string;
-  flipscreen: number;
-  overheat_temp: number;
-  invertscreen: number;
-  autoscreenoff: number;
-  invertfanpolarity: number;
-  autofanspeed: number;
-  fanspeed: number;
-  fanrpm: number;
-  lastResetReason: string;
-  history: {
-    hashrate_10m: number[];
-    hashrate_1h: number[];
-    hashrate_1d: number[];
-    timestamps: number[];
-    timestampBase: number;
+/**
+ * Hashrate structure from pyasic-bridge.
+ */
+export interface HashrateMetric {
+  unit: MetricUnit;
+  rate: number;
+}
+
+/**
+ * Efficiency structure from pyasic-bridge.
+ */
+export interface EfficiencyMetric {
+  unit: {
+    suffix: string;
   };
+  rate: number;
 }
 
-export interface DeviceInfo extends DeviceInfoLegacy, DeviceInfoNew {}
-
-export enum DeviceApiVersion {
-  Legacy = "legacy",
-  New = "new",
+/**
+ * Device information structure from pyasic-bridge.
+ */
+export interface DeviceInfoStructure {
+  make: string;
+  model: string;
+  firmware: string;
+  algo: string;
 }
 
-export interface ExtendedDeviceInfo extends DeviceInfo {
-  tracing?: boolean;
+/**
+ * Hashboard structure from pyasic-bridge.
+ */
+export interface HashboardInfo {
+  slot: number;
+  hashrate: HashrateMetric;
+  inlet_temp: number | null;
+  outlet_temp: number | null;
+  temp: number | null;
+  chip_temp: number | null;
+  chips: number;
+  expected_chips: number;
+  serial_number: string | null;
+  missing: boolean;
+  tuned: unknown | null;
+  active: boolean;
+  voltage: number | null;
+}
+
+/**
+ * Fan structure from pyasic-bridge.
+ */
+export interface FanInfo {
+  speed: number;
+}
+
+/**
+ * Pool configuration structure from pyasic-bridge.
+ */
+export interface PoolConfig {
+  url: string;
+  user: string;
+  password: string;
+}
+
+/**
+ * Pool group structure from pyasic-bridge.
+ */
+export interface PoolGroup {
+  pools: PoolConfig[];
+  quota: number;
+  name: string | null;
+}
+
+/**
+ * Pools configuration structure from pyasic-bridge.
+ */
+export interface PoolsConfig {
+  groups: PoolGroup[];
+}
+
+/**
+ * Fan mode configuration from pyasic-bridge.
+ */
+export interface FanModeConfig {
+  mode: string;
+  speed: number;
+  minimum_fans: number;
+}
+
+/**
+ * Temperature configuration from pyasic-bridge.
+ */
+export interface TemperatureConfig {
+  target: number | null;
+  hot: number | null;
+  danger: number | null;
+}
+
+/**
+ * Mining mode configuration from pyasic-bridge.
+ */
+export interface MiningModeConfig {
+  mode: string;
+}
+
+/**
+ * Extra configuration from pyasic-bridge (vendor-specific settings).
+ */
+export interface ExtraConfig {
+  rotation?: number;
+  invertscreen?: number;
+  display_timeout?: number;
+  overheat_mode?: number;
+  overclock_enabled?: number;
+  stats_frequency?: number;
+  min_fan_speed?: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Miner configuration structure from pyasic-bridge.
+ */
+export interface MinerConfig {
+  pools: PoolsConfig;
+  fan_mode: FanModeConfig;
+  temperature: TemperatureConfig;
+  mining_mode: MiningModeConfig;
+  extra_config: ExtraConfig;
+}
+
+/**
+ * Pyasic-bridge miner information response.
+ * This matches the structure returned by pyasic-bridge `/miner/{ip}/data` endpoint.
+ * All fields match the pyasic-bridge normalized response format.
+ */
+export interface PyasicMinerInfo {
+  ip: string;
+  device_info: DeviceInfoStructure;
+  serial_number: string | null;
+  psu_serial_number: string | null;
+  mac: string;
+  api_ver: string;
+  fw_ver: string;
+  hostname: string;
+  sticker_hashrate: number | null;
+  expected_hashrate: HashrateMetric;
+  expected_hashboards: number;
+  expected_chips: number;
+  expected_fans: number;
+  env_temp: number | null;
+  wattage: number;
+  voltage: number | null;
+  network_difficulty: number;
+  best_difficulty: string;
+  best_session_difficulty: string;
+  shares_accepted: number;
+  shares_rejected: number;
+  fans: FanInfo[];
+  fan_psu: unknown | null;
+  hashboards: HashboardInfo[];
+  config: MinerConfig;
+  fault_light: unknown | null;
+  errors: unknown[];
+  is_mining: boolean;
+  uptime: number;
+  pools: unknown[];
+  hashrate: HashrateMetric;
+  wattage_limit: number | null;
+  total_chips: number;
+  nominal: boolean;
+  percent_expected_chips: number;
+  percent_expected_hashrate: number;
+  percent_expected_wattage: number | null;
+  temperature_avg: number;
+  efficiency: EfficiencyMetric;
+  efficiency_fract: number;
+  datetime: string;
+  timestamp: number;
+  make: string;
+  model: string;
+  firmware: string;
+  algo: string;
+  // Pluto-specific enrichment fields (added by backend, not part of pyasic response)
+  frequencyOptions?: DropdownOption[];
+  coreVoltageOptions?: DropdownOption[];
 }
 
 export interface Device extends Entity {
@@ -131,12 +211,20 @@ export interface Device extends Entity {
   type: string;
   presetUuid?: string | null;
   tracing?: boolean;
-  info: DeviceInfo;
+  /**
+   * Miner information from pyasic-bridge.
+   * Matches the structure returned by pyasic-bridge `/miner/{ip}/data` endpoint.
+   * This is a breaking change from v1 (DeviceInfo) to v2 (PyasicMinerInfo).
+   */
+  info: PyasicMinerInfo;
   publicDashboardUrl?: string;
-}
-
-export interface DeviceInfoWithSecrets extends Partial<DeviceInfo> {
-  wifiPass?: string;
+  /**
+   * Indicates whether this device is backed by a real miner
+   * or by the mock miner service.
+   *
+   * When omitted, callers should treat the device as real.
+   */
+  source?: DeviceSource;
 }
 
 export interface DropdownOption {

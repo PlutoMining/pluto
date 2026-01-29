@@ -1,15 +1,6 @@
-import {
-  DeviceApiVersion,
-  DeviceFrequencyOptions,
-  DeviceVoltageOptions,
-} from "../index";
+import { DeviceFrequencyOptions, DeviceVoltageOptions } from "../index";
 
 describe("@pluto/interfaces", () => {
-  it("exports DeviceApiVersion enum values", () => {
-    expect(DeviceApiVersion.Legacy).toBe("legacy");
-    expect(DeviceApiVersion.New).toBe("new");
-  });
-
   it("exports frequency options for known ASIC models", () => {
     expect(DeviceFrequencyOptions.BM1397).toBeDefined();
     expect(Array.isArray(DeviceFrequencyOptions.BM1397)).toBe(true);
