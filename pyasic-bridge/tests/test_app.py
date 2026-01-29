@@ -24,17 +24,17 @@ class TestCreateApp:
         """Test app has correct dependencies."""
         app = create_app()
 
-        # Check that service has client
-        service = app.state.miner_service
-        assert service.client is not None
-        assert isinstance(service.client, PyasicMinerClient)
+        # Check that unified service has pyasic client (which handles both real and mock)
+        unified_service = app.state.miner_service
+        assert unified_service.client is not None
+        assert isinstance(unified_service.client, PyasicMinerClient)
 
     def test_create_app_has_routes(self):
         """Test app has routes registered."""
         app = create_app()
 
         # Check that routes are registered
-        routes = [route.path for route in app.routes]
+        routes = [getattr(route, "path", None) for route in app.routes]
         assert "/health" in routes
         assert "/scan" in routes
         assert "/miner/{ip}/data" in routes
@@ -44,6 +44,8 @@ class TestCreateApp:
         assert "/miner/{ip}/fault-light/on" in routes
         assert "/miner/{ip}/fault-light/off" in routes
         assert "/miner/{ip}/errors" in routes
+        # WebSocket route (unified for both real and mock)
+        assert "/ws/miner/{ip}" in routes
 
     def test_create_app_dependency_override(self):
         """Test app has dependency override configured."""

@@ -5,13 +5,17 @@ Provides business logic for miner operations, coordinating between
 MinerClient and MinerDataNormalizer.
 """
 
+import asyncio
+import logging
 from typing import Any
 
 from pyasic.config import MinerConfig
 
-from .models import MinerInfo
-from .normalizers import get_normalizer_for_miner
-from .pyasic_client import MinerClient, PyasicMinerClient
+from app.models import MinerInfo, MinerValidationResult
+from app.normalizers import get_normalizer_for_miner
+from app.pyasic_client import MinerClient, PyasicMinerClient
+
+logger = logging.getLogger(__name__)
 
 
 class MinerService:
@@ -59,7 +63,7 @@ class MinerService:
         if not ip and not subnet:
             raise ValueError("Either 'ip' or 'subnet' must be provided")
 
-        miners = []
+        miners: list[MinerInfo] = []
 
         if ip:
             # Single IP scan
@@ -76,19 +80,21 @@ class MinerService:
 
                 # Extract hashrate rate for the top-level hashrate field (for backward compatibility)
                 normalized_hashrate_rate = (
-                    normalized_data['hashrate']['rate']
-                    if isinstance(normalized_data.get('hashrate'), dict)
+                    normalized_data["hashrate"]["rate"]
+                    if isinstance(normalized_data.get("hashrate"), dict)
                     else 0.0
                 )
 
-                miners.append(MinerInfo(
-                    ip=ip,
-                    mac=getattr(data, "mac", None),
-                    model=getattr(data, "model", None),
-                    hostname=getattr(data, "hostname", None),
-                    hashrate=normalized_hashrate_rate,
-                    data=normalized_data
-                ))
+                miners.append(
+                    MinerInfo(
+                        ip=ip,
+                        mac=getattr(data, "mac", None),
+                        model=getattr(data, "model", None),
+                        hostname=getattr(data, "hostname", None),
+                        hashrate=normalized_hashrate_rate,
+                        data=normalized_data,
+                    )
+                )
         elif subnet:
             # Network scan
             found_miners = await self.client.scan_subnet(subnet)
@@ -104,19 +110,21 @@ class MinerService:
 
                 # Extract hashrate rate for the top-level hashrate field (for backward compatibility)
                 normalized_hashrate_rate = (
-                    normalized_data['hashrate']['rate']
-                    if isinstance(normalized_data.get('hashrate'), dict)
+                    normalized_data["hashrate"]["rate"]
+                    if isinstance(normalized_data.get("hashrate"), dict)
                     else 0.0
                 )
 
-                miners.append(MinerInfo(
-                    ip=miner.ip,
-                    mac=getattr(data, "mac", None),
-                    model=getattr(data, "model", None),
-                    hostname=getattr(data, "hostname", None),
-                    hashrate=normalized_hashrate_rate,
-                    data=normalized_data
-                ))
+                miners.append(
+                    MinerInfo(
+                        ip=miner.ip,
+                        mac=getattr(data, "mac", None),
+                        model=getattr(data, "model", None),
+                        hostname=getattr(data, "hostname", None),
+                        hashrate=normalized_hashrate_rate,
+                        data=normalized_data,
+                    )
+                )
 
         return miners
 
@@ -131,15 +139,49 @@ class MinerService:
             Normalized miner data dictionary
 
         Raises:
-            ValueError: If miner is not found
+            ValueError: If miner is not found or not a valid miner
+            ConnectionError: If connection to miner fails
+            TimeoutError: If request times out
         """
         miner = await self.client.get_miner(ip)
         if not miner:
             raise ValueError(f"Miner not found at {ip}")
 
-        data = await miner.get_data()
+        try:
+            data = await miner.get_data()
+        except Exception as e:
+            # Log the full exception details for debugging
+            logger.exception(
+                f"Error calling get_data() for miner at {ip}. "
+                f"Exception type: {type(e).__name__}, "
+                f"Exception message: {str(e)}"
+            )
+            # If get_data() fails, treat it as miner not found/not valid
+            # Re-raise as ValueError so API returns 404, not 500
+            # Include exception type and message in the error for debugging
+            raise ValueError(
+                f"Could not retrieve data from miner at {ip}: "
+                f"{type(e).__name__}: {str(e)}"
+            ) from e
+
         # Serialize first to get the dict
         data_dict = data.as_dict() if hasattr(data, "as_dict") else {}
+
+        # Log raw data for debugging (especially mac/macAddr fields)
+        logger.debug(
+            f"Raw miner data dict for {ip} (before normalization): "
+            f"has_mac={('mac' in data_dict)}, "
+            f"has_macAddr={('macAddr' in data_dict)}, "
+            f"mac={data_dict.get('mac')}, "
+            f"macAddr={data_dict.get('macAddr')}, "
+            f"keys={list(data_dict.keys())[:20]}"
+        )
+
+        # Also check if mac is available as an attribute on the data object
+        if hasattr(data, "mac"):
+            logger.debug(f"Miner data object has .mac attribute: {getattr(data, 'mac', None)}")
+        if hasattr(data, "macAddr"):
+            logger.debug(f"Miner data object has .macAddr attribute: {getattr(data, 'macAddr', None)}")
 
         # Get appropriate normalizer for this miner
         normalizer = get_normalizer_for_miner(data_dict)
@@ -288,3 +330,53 @@ class MinerService:
 
         errors = await miner.get_errors()
         return errors if errors else []
+
+    async def validate_miners(self, ips: list[str]) -> list[MinerValidationResult]:
+        """
+        Validate multiple IPs to check if they are supported miners.
+
+        Args:
+            ips: List of IP addresses to validate
+
+        Returns:
+            List of MinerValidationResult objects with validation status for each IP
+        """
+
+        async def validate_single_ip(ip: str) -> MinerValidationResult:
+            """Validate a single IP address."""
+            try:
+                miner = await asyncio.wait_for(
+                    self.client.get_miner(ip),
+                    timeout=3.0,
+                )
+                if miner:
+                    # Get model if available (without full data fetch for speed)
+                    model = getattr(miner, "model", None)
+                    return MinerValidationResult(
+                        ip=ip,
+                        is_miner=True,
+                        model=model,
+                    )
+                else:
+                    return MinerValidationResult(
+                        ip=ip,
+                        is_miner=False,
+                        error="Miner not detected",
+                    )
+            except TimeoutError:
+                return MinerValidationResult(
+                    ip=ip,
+                    is_miner=False,
+                    error="Timeout",
+                )
+            except Exception as e:
+                return MinerValidationResult(
+                    ip=ip,
+                    is_miner=False,
+                    error=str(e),
+                )
+
+        # Validate all IPs in parallel
+        results = await asyncio.gather(*[validate_single_ip(ip) for ip in ips])
+        return list(results)
+

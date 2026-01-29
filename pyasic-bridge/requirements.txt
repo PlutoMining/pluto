@@ -3,9 +3,10 @@ uvicorn==0.24.0
 # Use PlutoMining fork of pyasic instead of upstream PyPI package
 # You can pin to a specific commit by replacing "master.zip" with
 # e.g. "refs/heads/my-branch.zip" or "refs/tags/v0.78.1-pluto1.zip"
-pyasic @ https://github.com/PlutoMining/pyasic/archive/refs/heads/master.zip
+pyasic @ https://github.com/PlutoMining/pyasic/archive/refs/heads/support-custom-port.zip
 pydantic>=2.12.5,<3.0.0
 pytest==7.4.3
 pytest-cov==4.1.0
 pytest-asyncio==0.21.1
 ruff>=0.1.0
+websockets>=12.0,<13.0

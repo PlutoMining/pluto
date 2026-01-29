@@ -14,30 +14,23 @@ class TestNormalizerFactory:
     """Test NormalizerFactory class."""
 
     def test_get_normalizer_for_bitaxe_by_make(self):
-        """Test factory returns Bitaxe normalizer for Bitaxe miner (by make)."""
+        """Test factory returns Bitaxe normalizer for Bitaxe miner (by device_info.make)."""
         factory = NormalizerFactory()
-        data = {"make": "BitAxe", "model": "Gamma"}
+        data = {"device_info": {"make": "BitAxe", "model": "Gamma"}}
         normalizer = factory.get_normalizer(data)
         assert isinstance(normalizer, BitaxeMinerDataNormalizer)
 
     def test_get_normalizer_for_bitaxe_by_model(self):
-        """Test factory returns Bitaxe normalizer for Bitaxe miner (by model)."""
+        """Test factory returns Bitaxe normalizer for Bitaxe miner (by device_info.model)."""
         factory = NormalizerFactory()
-        data = {"make": "Other", "model": "BitAxe Gamma"}
-        normalizer = factory.get_normalizer(data)
-        assert isinstance(normalizer, BitaxeMinerDataNormalizer)
-
-    def test_get_normalizer_for_bitaxe_by_hostname(self):
-        """Test factory returns Bitaxe normalizer for Bitaxe miner (by hostname)."""
-        factory = NormalizerFactory()
-        data = {"make": "Other", "model": "Other", "hostname": "bitaxe-001"}
+        data = {"device_info": {"make": "Other", "model": "BitAxe Gamma"}}
         normalizer = factory.get_normalizer(data)
         assert isinstance(normalizer, BitaxeMinerDataNormalizer)
 
     def test_get_normalizer_for_default_miner(self):
         """Test factory returns default normalizer for non-Bitaxe miner."""
         factory = NormalizerFactory()
-        data = {"make": "Antminer", "model": "S19"}
+        data = {"device_info": {"make": "Antminer", "model": "S19"}}
         normalizer = factory.get_normalizer(data)
         assert isinstance(normalizer, DefaultMinerDataNormalizer)
 
@@ -46,17 +39,17 @@ class TestNormalizerFactory:
         factory = NormalizerFactory()
 
         # Test uppercase
-        data = {"make": "BITAXE"}
+        data = {"device_info": {"make": "BITAXE"}}
         normalizer = factory.get_normalizer(data)
         assert isinstance(normalizer, BitaxeMinerDataNormalizer)
 
         # Test lowercase
-        data = {"make": "bitaxe"}
+        data = {"device_info": {"make": "bitaxe"}}
         normalizer = factory.get_normalizer(data)
         assert isinstance(normalizer, BitaxeMinerDataNormalizer)
 
         # Test mixed case
-        data = {"make": "BiTaXe"}
+        data = {"device_info": {"make": "BiTaXe"}}
         normalizer = factory.get_normalizer(data)
         assert isinstance(normalizer, BitaxeMinerDataNormalizer)
 
@@ -70,7 +63,12 @@ class TestNormalizerFactory:
     def test_get_normalizer_none_values(self):
         """Test factory handles None values gracefully."""
         factory = NormalizerFactory()
-        data = {"make": None, "model": None, "hostname": None}
+        data = {"device_info": {"make": None, "model": None}}
+        normalizer = factory.get_normalizer(data)
+        assert isinstance(normalizer, DefaultMinerDataNormalizer)
+
+        # Test with None device_info
+        data = {"device_info": None}
         normalizer = factory.get_normalizer(data)
         assert isinstance(normalizer, DefaultMinerDataNormalizer)
 
@@ -79,12 +77,12 @@ class TestNormalizerFactory:
         factory = NormalizerFactory()
 
         # Test with numeric values (should not match)
-        data = {"make": 123, "model": 456}
+        data = {"device_info": {"make": 123, "model": 456}}
         normalizer = factory.get_normalizer(data)
         assert isinstance(normalizer, DefaultMinerDataNormalizer)
 
         # Test with mixed types including valid string
-        data = {"make": "BITAXE", "model": 123}
+        data = {"device_info": {"make": "BITAXE", "model": 123}}
         normalizer = factory.get_normalizer(data)
         assert isinstance(normalizer, BitaxeMinerDataNormalizer)
 
@@ -110,8 +108,8 @@ class TestNormalizerFactory:
     def test_factory_reuses_instances(self):
         """Test factory reuses normalizer instances."""
         factory = NormalizerFactory()
-        data1 = {"make": "BitAxe"}
-        data2 = {"make": "BitAxe"}
+        data1 = {"device_info": {"make": "BitAxe"}}
+        data2 = {"device_info": {"make": "BitAxe"}}
 
         normalizer1 = factory.get_normalizer(data1)
         normalizer2 = factory.get_normalizer(data2)
@@ -125,12 +123,12 @@ class TestGetNormalizerForMiner:
 
     def test_get_normalizer_for_bitaxe(self):
         """Test convenience function returns Bitaxe normalizer."""
-        data = {"make": "BitAxe"}
+        data = {"device_info": {"make": "BitAxe"}}
         normalizer = get_normalizer_for_miner(data)
         assert isinstance(normalizer, BitaxeMinerDataNormalizer)
 
     def test_get_normalizer_for_default(self):
         """Test convenience function returns default normalizer."""
-        data = {"make": "Antminer"}
+        data = {"device_info": {"make": "Antminer"}}
         normalizer = get_normalizer_for_miner(data)
         assert isinstance(normalizer, DefaultMinerDataNormalizer)

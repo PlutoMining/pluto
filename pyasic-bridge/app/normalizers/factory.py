@@ -17,7 +17,7 @@ class NormalizerFactory:
     """
     Factory for selecting the appropriate normalizer based on miner data.
 
-    Automatically detects miner type from data (make, model, hostname) and
+    Automatically detects miner type from device_info (make, model) and
     returns the appropriate normalizer instance.
     """
 
@@ -47,9 +47,11 @@ class NormalizerFactory:
 
     def _is_bitaxe_miner(self, data: Mapping[str, Any]) -> bool:
         """
-        Check if the miner is a Bitaxe based on make, model, or hostname.
+        Check if the miner is a Bitaxe based on device_info.make and device_info.model.
 
         Uses case-insensitive matching to detect Bitaxe miners.
+        Checks device_info.make and device_info.model fields from the miner data.
+        Also checks top-level make and model fields for convenience.
 
         Args:
             data: Raw miner data dictionary
@@ -57,17 +59,24 @@ class NormalizerFactory:
         Returns:
             True if the miner appears to be a Bitaxe, False otherwise
         """
-        # Get values and convert to lowercase for case-insensitive comparison
+        # Get device_info dictionary, defaulting to empty dict if not present
+        device_info = data.get('device_info') or {}
+
+        # Get values from device_info and convert to lowercase for case-insensitive comparison
         # Handle None, empty strings, and non-string types gracefully
-        make = str(data.get('make', '')).lower() if data.get('make') else ''
-        model = str(data.get('model', '')).lower() if data.get('model') else ''
-        hostname = str(data.get('hostname', '')).lower() if data.get('hostname') else ''
+        make = str(device_info.get('make', '')).lower() if device_info.get('make') else ''
+        model = str(device_info.get('model', '')).lower() if device_info.get('model') else ''
+
+        # Also check top-level make and model fields
+        top_make = str(data.get('make', '')).lower() if data.get('make') else ''
+        top_model = str(data.get('model', '')).lower() if data.get('model') else ''
 
         # Check for Bitaxe indicators (case-insensitive)
         return (
             'bitaxe' in make or
             'bitaxe' in model or
-            'bitaxe' in hostname
+            'bitaxe' in top_make or
+            'bitaxe' in top_model
         )
 
 

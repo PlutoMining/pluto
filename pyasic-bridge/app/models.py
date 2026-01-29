@@ -16,3 +16,14 @@ class MinerInfo(BaseModel):
     hashrate: float | None = None
     data: dict[str, Any]
 
+
+class ValidateRequest(BaseModel):
+    ips: list[str]
+
+
+class MinerValidationResult(BaseModel):
+    ip: str
+    is_miner: bool
+    model: str | None = None
+    error: str | None = None
+
