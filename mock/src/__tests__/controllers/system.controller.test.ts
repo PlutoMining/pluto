@@ -1,12 +1,14 @@
 import type { Request, Response } from "express";
 
-import { DeviceApiVersion } from "@pluto/interfaces";
+import { DeviceApiVersion } from "@/types/axeos.types";
 
 import {
   getSystemInfo,
   patchSystemInfo,
   restartSystem,
 } from "@/controllers/system.controller";
+import { MockMinerContext } from "@/contexts/mock-miner-context";
+import type { MockMinerStrategy } from "@/strategies/mock-miner-strategy.interface";
 
 jest.mock("@/services/mock.service", () => ({
   generateSystemInfo: jest.fn(),
@@ -40,7 +42,38 @@ describe("system.controller", () => {
   });
 
   describe("getSystemInfo", () => {
-    it("returns legacy info for legacy API", async () => {
+    it("uses mockContext when available", async () => {
+      const mockStrategy: jest.Mocked<MockMinerStrategy<any>> = {
+        generateSystemInfo: jest.fn().mockReturnValue({ power: 100, temp: 50 }),
+        getApiVersion: jest.fn().mockReturnValue("v1"),
+        getMinerType: jest.fn().mockReturnValue("axeos"),
+        getRootHtml: jest.fn().mockReturnValue(""),
+      };
+
+      const context = new MockMinerContext({
+        strategy: mockStrategy,
+        hostname: "mockaxe1",
+        startTime: new Date(Date.now() - 10_000),
+      });
+
+      const req = {
+        app: {
+          locals: {
+            mockContext: context,
+          },
+        },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await getSystemInfo(req, res);
+
+      expect(mockStrategy.generateSystemInfo).toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith({ power: 100, temp: 50 });
+      expect(generateSystemInfo).not.toHaveBeenCalled();
+      expect(generateSystemInfoAlt).not.toHaveBeenCalled();
+    });
+
+    it("returns legacy info for legacy API when context is missing", async () => {
       generateSystemInfo.mockReturnValueOnce({ legacy: true });
       const req = {
         app: {
@@ -64,7 +97,7 @@ describe("system.controller", () => {
       expect(res.json).toHaveBeenCalledWith({ legacy: true });
     });
 
-    it("returns new info for new API", async () => {
+    it("returns new info for new API when context is missing", async () => {
       generateSystemInfoAlt.mockReturnValueOnce({ modern: true });
       const req = {
         app: {
@@ -82,6 +115,39 @@ describe("system.controller", () => {
 
       expect(generateSystemInfoAlt).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith({ modern: true });
+    });
+
+    it("returns 500 when context throws", async () => {
+      const mockStrategy: jest.Mocked<MockMinerStrategy<any>> = {
+        generateSystemInfo: jest.fn().mockImplementation(() => {
+          throw new Error("context error");
+        }),
+        getApiVersion: jest.fn().mockReturnValue("v1"),
+        getMinerType: jest.fn().mockReturnValue("axeos"),
+        getRootHtml: jest.fn().mockReturnValue(""),
+      };
+
+      const context = new MockMinerContext({
+        strategy: mockStrategy,
+        hostname: "mockaxe1",
+      });
+
+      const req = {
+        app: {
+          locals: {
+            mockContext: context,
+          },
+        },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await getSystemInfo(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Failed to retrieve system info",
+        details: "context error",
+      });
     });
 
     it("returns 500 when generator throws", async () => {
@@ -103,12 +169,46 @@ describe("system.controller", () => {
       await getSystemInfo(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Failed to retrieve system info" });
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Failed to retrieve system info",
+        details: "boom",
+      });
     });
   });
 
   describe("patchSystemInfo", () => {
-    it("initializes locals.systemInfo if missing", async () => {
+    it("uses mockContext when available", async () => {
+      const mockStrategy: jest.Mocked<MockMinerStrategy<any>> = {
+        generateSystemInfo: jest.fn().mockReturnValue({}),
+        getApiVersion: jest.fn().mockReturnValue("v1"),
+        getMinerType: jest.fn().mockReturnValue("axeos"),
+        getRootHtml: jest.fn().mockReturnValue(""),
+      };
+
+      const context = new MockMinerContext({
+        strategy: mockStrategy,
+        hostname: "mockaxe1",
+      });
+
+      const req = {
+        body: { power: 123, temp: 60 },
+        app: {
+          locals: {
+            mockContext: context,
+          },
+        },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await patchSystemInfo(req, res);
+
+      const overrides = context.getSystemInfoOverrides();
+      expect(overrides).toEqual({ power: 123, temp: 60 });
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: "System info updated successfully" });
+    });
+
+    it("initializes locals.systemInfo if missing when context is not available", async () => {
       const req = {
         body: { power: 123 },
         app: {
@@ -123,7 +223,7 @@ describe("system.controller", () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
-    it("merges updates into existing locals.systemInfo", async () => {
+    it("merges updates into existing locals.systemInfo when context is not available", async () => {
       const req = {
         body: { power: 456 },
         app: {
@@ -136,6 +236,40 @@ describe("system.controller", () => {
 
       expect(req.app.locals.systemInfo).toEqual({ voltage: 1, power: 456 });
       expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("returns 500 when context throws", async () => {
+      const mockStrategy: jest.Mocked<MockMinerStrategy<any>> = {
+        generateSystemInfo: jest.fn().mockReturnValue({}),
+        getApiVersion: jest.fn().mockReturnValue("v1"),
+        getMinerType: jest.fn().mockReturnValue("axeos"),
+        getRootHtml: jest.fn().mockReturnValue(""),
+      };
+
+      const context = new MockMinerContext({
+        strategy: mockStrategy,
+        hostname: "mockaxe1",
+      });
+
+      // Mock patchSystemInfo to throw
+      jest.spyOn(context, "patchSystemInfo").mockImplementation(() => {
+        throw new Error("patch error");
+      });
+
+      const req = {
+        body: { power: 123 },
+        app: {
+          locals: {
+            mockContext: context,
+          },
+        },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await patchSystemInfo(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: "Failed to update system info" });
     });
 
     it("returns 500 on error", async () => {
