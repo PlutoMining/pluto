@@ -13,8 +13,10 @@ class TestBitaxeMinerDataNormalizer:
         normalizer = BitaxeMinerDataNormalizer()
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "make": "BitAxe",
-            "model": "BitAxe Gamma",
+            "device_info": {
+                "make": "BitAxe",
+                "model": "Gamma"
+            },
             "wattage": 50.0,
             "extra_fields": {
                 "custom_efficiency": "1.8e-11",
@@ -68,43 +70,43 @@ class TestBitaxeMinerDataNormalizer:
         """Test Bitaxe miner detection logic."""
         normalizer = BitaxeMinerDataNormalizer()
 
-        # Test with make
-        assert normalizer._is_bitaxe_miner({"make": "BitAxe"})
-        assert normalizer._is_bitaxe_miner({"make": "bitaxe"})
-        assert normalizer._is_bitaxe_miner({"make": "BITAXE"})
-        assert not normalizer._is_bitaxe_miner({"make": "Antminer"})
-        assert not normalizer._is_bitaxe_miner({"make": None})
+        # Test with device_info.make
+        assert normalizer._is_bitaxe_miner({"device_info": {"make": "BitAxe"}})
+        assert normalizer._is_bitaxe_miner({"device_info": {"make": "bitaxe"}})
+        assert normalizer._is_bitaxe_miner({"device_info": {"make": "BITAXE"}})
+        assert not normalizer._is_bitaxe_miner({"device_info": {"make": "Antminer"}})
+        assert not normalizer._is_bitaxe_miner({"device_info": {"make": None}})
+        assert not normalizer._is_bitaxe_miner({"device_info": {}})
 
-        # Test with model
-        assert normalizer._is_bitaxe_miner({"model": "BitAxe Gamma"})
-        assert normalizer._is_bitaxe_miner({"model": "bitaxe-supra"})
-        assert normalizer._is_bitaxe_miner({"model": "BitAxe"})
-        assert not normalizer._is_bitaxe_miner({"model": "S19"})
-        assert not normalizer._is_bitaxe_miner({"model": None})
-
-        # Test with hostname
-        assert normalizer._is_bitaxe_miner({"hostname": "bitaxe-001"})
-        assert normalizer._is_bitaxe_miner({"hostname": "BITAXE"})
-        assert normalizer._is_bitaxe_miner({"hostname": "my-bitaxe-miner"})
-        assert not normalizer._is_bitaxe_miner({"hostname": "antminer-001"})
-        assert not normalizer._is_bitaxe_miner({"hostname": None})
+        # Test with device_info.model
+        assert normalizer._is_bitaxe_miner({"device_info": {"model": "BitAxe Gamma"}})
+        assert normalizer._is_bitaxe_miner({"device_info": {"model": "bitaxe-supra"}})
+        assert normalizer._is_bitaxe_miner({"device_info": {"model": "BitAxe"}})
+        assert not normalizer._is_bitaxe_miner({"device_info": {"model": "S19"}})
+        assert not normalizer._is_bitaxe_miner({"device_info": {"model": None}})
 
         # Test case insensitive
-        assert normalizer._is_bitaxe_miner({"make": "BITAXE"})
-        assert normalizer._is_bitaxe_miner({"model": "BitAxe"})
+        assert normalizer._is_bitaxe_miner({"device_info": {"make": "BITAXE"}})
+        assert normalizer._is_bitaxe_miner({"device_info": {"model": "BitAxe"}})
 
         # Test with multiple indicators
         assert normalizer._is_bitaxe_miner({
-            "make": "Other",
-            "model": "BitAxe Gamma"
+            "device_info": {
+                "make": "Other",
+                "model": "BitAxe Gamma"
+            }
         })
+
+        # Test with missing device_info
+        assert not normalizer._is_bitaxe_miner({})
+        assert not normalizer._is_bitaxe_miner({"device_info": None})
 
     def test_normalize_bitaxe_extra_fields_with_hashrate_like(self):
         """Test that hashrate-like structures in extra_fields are normalized."""
         normalizer = BitaxeMinerDataNormalizer()
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "make": "BitAxe",
+            "device_info": {"make": "BitAxe"},
             "extra_fields": {
                 "secondary_hashrate": {
                     "rate": 500000000.0,
@@ -127,7 +129,7 @@ class TestBitaxeMinerDataNormalizer:
         normalizer = BitaxeMinerDataNormalizer()
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "make": "BitAxe",
+            "device_info": {"make": "BitAxe"},
             "extra_fields": None
         }
         result = normalizer.normalize(data)
@@ -139,7 +141,7 @@ class TestBitaxeMinerDataNormalizer:
         normalizer = BitaxeMinerDataNormalizer()
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "make": "BitAxe",
+            "device_info": {"make": "BitAxe"},
             "extra_fields": {
                 "invalid_difficulty": "not_a_number"
             }
@@ -156,7 +158,7 @@ class TestBitaxeMinerDataNormalizer:
         normalizer = BitaxeMinerDataNormalizer()
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "make": "BitAxe",
+            "device_info": {"make": "BitAxe"},
             "wattage": 50.0,
             "extra_fields": {
                 "efficiency_custom": "1.8e-11",
@@ -179,7 +181,7 @@ class TestBitaxeMinerDataNormalizer:
         normalizer = BitaxeMinerDataNormalizer()
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "make": "BitAxe",
+            "device_info": {"make": "BitAxe"},
             "extra_fields": {
                 "temp_cpu": "65.5",
                 "temp_board": 70,
@@ -202,7 +204,7 @@ class TestBitaxeMinerDataNormalizer:
         normalizer = BitaxeMinerDataNormalizer()
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "make": "BitAxe",
+            "device_info": {"make": "BitAxe"},
             "extra_fields": {
                 "wattage_custom": "50",
                 "power_consumption": 45.5,
@@ -225,7 +227,7 @@ class TestBitaxeMinerDataNormalizer:
         normalizer = BitaxeMinerDataNormalizer()
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "make": "BitAxe",
+            "device_info": {"make": "BitAxe"},
             "wattage": 50.0,
             "extra_fields": {
                 "efficiency_custom": "1.8e-11",
@@ -249,7 +251,7 @@ class TestBitaxeMinerDataNormalizer:
         normalizer = BitaxeMinerDataNormalizer()
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "make": "BitAxe",
+            "device_info": {"make": "BitAxe"},
             "best_difficulty": 123456789,
             "efficiency": "1.8e-11",
             "wattage": 50.0
@@ -267,7 +269,7 @@ class TestBitaxeMinerDataNormalizer:
         normalizer = BitaxeMinerDataNormalizer()
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "make": "BitAxe",
+            "device_info": {"make": "BitAxe"},
             "extra_fields": ["list", "value"]
         }
         result = normalizer.normalize(data)
@@ -282,7 +284,7 @@ class TestBitaxeMinerDataNormalizer:
         # Use a value that can't be normalized but matches efficiency pattern
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "make": "BitAxe",
+            "device_info": {"make": "BitAxe"},
             "wattage": 50.0,
             "extra_fields": {
                 "efficiency_custom": object()  # Object that can't be converted
@@ -300,7 +302,7 @@ class TestBitaxeMinerDataNormalizer:
         normalizer = BitaxeMinerDataNormalizer()
         data = {
             "hashrate": {"rate": 1.0, "unit": 1000000000},
-            "make": "BitAxe",
+            "device_info": {"make": "BitAxe"},
             "extra_fields": {
                 "difficulty_custom": None
             }
