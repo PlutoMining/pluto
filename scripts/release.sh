@@ -68,11 +68,16 @@ Examples:
 EOF
 }
 
-# Function to get the current version from the package.json file
+# Get current version (package.json for Node, app/__init__.py __version__ for Python)
 get_current_version() {
   local service=$1
-  # Avoid PCRE-only escapes (e.g. \s) for portability across BSD/GNU sed.
-  grep -m 1 '"version":' "$service/package.json" | sed -E 's/.*"version":[[:space:]]*"([^"]+)".*/\1/'
+  if [[ -f "$service/package.json" ]]; then
+    grep -m 1 '"version":' "$service/package.json" | sed -E 's/.*"version":[[:space:]]*"([^"]+)".*/\1/'
+  elif [[ -f "$service/app/__init__.py" ]]; then
+    sed -n "s/.*__version__[[:space:]]*=[[:space:]]*[\"']\\([^\"']*\\)[\"'].*/\1/p" "$service/app/__init__.py" | head -1
+  else
+    err "No version source for $service (need package.json or app/__init__.py)"
+  fi
 }
 
 # Function to check the current Git branch
@@ -227,18 +232,23 @@ update_local_compose() {
 # Version bumping (uses semver bump level: major / minor / patch)
 ###############################################################################
 
-# Helper function to find the most recent commit that modified package.json for a service
-# This helps us determine when the current version was set
-find_last_package_json_commit() {
+# Helper function to find the most recent commit that modified the version file for a service
+# (package.json for Node, app/__init__.py for Python)
+find_last_version_file_commit() {
   local service=$1
-  local package_file="$service/package.json"
+  local version_file
+  if [[ -f "$service/package.json" ]]; then
+    version_file="$service/package.json"
+  elif [[ -f "$service/app/__init__.py" ]]; then
+    version_file="$service/app/__init__.py"
+  else
+    echo ""
+    return
+  fi
 
   command_exists git || err "git is required"
-
-  # Find the most recent commit that modified package.json
   local commit
-  commit=$(git log -1 --format="%H" -- "$package_file" 2>/dev/null || true)
-
+  commit=$(git log -1 --format="%H" -- "$version_file" 2>/dev/null || true)
   echo "$commit"
 }
 
@@ -261,10 +271,15 @@ has_commits_since_version_set() {
 
   if [[ "$version_commit" == "$head_commit" ]]; then
     # Version was set in the current commit - check if there are other changes in this commit
-    # If package.json is the only file changed, likely no new functional changes
-    # Use git show which is more compatible across platforms
+    # If only the version file changed, likely no new functional changes
+    local version_file_pattern
+    if [[ "$service" == "pyasic-bridge" ]]; then
+      version_file_pattern="^${service}/app/__init__.py$"
+    else
+      version_file_pattern="^${service}/package.json$"
+    fi
     local changed_files
-    changed_files=$(git show --name-only --pretty=format: "$version_commit" 2>/dev/null | grep -v "^${service}/package.json$" | grep "^${service}/" || true)
+    changed_files=$(git show --name-only --pretty=format: "$version_commit" 2>/dev/null | grep -v "$version_file_pattern" | grep "^${service}/" || true)
 
     if [[ -z "$changed_files" ]]; then
       return 1  # Only package.json was changed, no new commits
@@ -288,7 +303,6 @@ has_commits_since_version_set() {
 bump_package_version() {
   local service=$1
   local bump_level=$2  # major|minor|patch
-  local package_file="$service/package.json"
   local current_version
   current_version=$(get_current_version "$service")
 
@@ -325,7 +339,7 @@ bump_package_version() {
 
     # Smart detection: if no new commits since version was set, just strip suffix
     local version_commit
-    version_commit=$(find_last_package_json_commit "$service")
+    version_commit=$(find_last_version_file_commit "$service")
 
     if has_commits_since_version_set "$service" "$version_commit"; then
       # There are new commits since version was set - bump as normal
@@ -367,13 +381,23 @@ bump_package_version() {
     return
   fi
 
-  # Update package.json
-  if [[ "$(uname)" == "Darwin" ]]; then
-    # macOS uses BSD sed
-    sed -i '' "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
+  # Update version in package.json (Node) or app/__init__.py (Python)
+  if [[ -f "$service/app/__init__.py" ]]; then
+    local version_file="$service/app/__init__.py"
+    if [[ "$(uname)" == "Darwin" ]]; then
+      sed -i '' "s/__version__ = \"${current_version}\"/__version__ = \"${new_version}\"/" "$version_file"
+    else
+      sed -i "s/__version__ = \"${current_version}\"/__version__ = \"${new_version}\"/" "$version_file"
+    fi
+  elif [[ -f "$service/package.json" ]]; then
+    local package_file="$service/package.json"
+    if [[ "$(uname)" == "Darwin" ]]; then
+      sed -i '' "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
+    else
+      sed -i "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
+    fi
   else
-    # Linux uses GNU sed
-    sed -i "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
+    err "No version source for $service (need package.json or app/__init__.py)"
   fi
 
   log "Bumped $service version: $current_version -> $new_version (level: $bump_level)"
