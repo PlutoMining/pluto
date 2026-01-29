@@ -17,25 +17,25 @@ def create_app() -> FastAPI:
     Create and configure the FastAPI application.
 
     Instantiates dependencies and wires them together:
-    - MinerClient (defaults to PyasicMinerClient)
-    - MinerService (automatically selects appropriate normalizer per miner)
+    - MinerClient (PyasicMinerClient) backed by pyasic library
+    - MinerService instance that works for all devices
 
     Returns:
         Configured FastAPI application instance
     """
     app = FastAPI(title="Pyasic Bridge", version="1.0.0")
 
-    # Instantiate dependencies
-    client: MinerClient = PyasicMinerClient()
+    # Instantiate client backed by pyasic library
+    unified_client: MinerClient = PyasicMinerClient()
 
     # Create service - normalizer is selected automatically per miner
-    miner_service = MinerService(client=client)
+    unified_miner_service = MinerService(client=unified_client)
 
     # Store service in app state for access in dependency
-    app.state.miner_service = miner_service
+    app.state.miner_service = unified_miner_service
 
-    # Override the dependency function to return our service instance
-    app.dependency_overrides[get_miner_service] = lambda: miner_service
+    # Override dependency function to return our unified service instance
+    app.dependency_overrides[get_miner_service] = lambda: unified_miner_service
 
     # Include routes
     app.include_router(router)

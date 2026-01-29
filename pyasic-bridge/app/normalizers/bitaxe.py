@@ -28,7 +28,7 @@ class BitaxeMinerDataNormalizer(DefaultMinerDataNormalizer):
 
     def _is_bitaxe_miner(self, context: Mapping[str, Any]) -> bool:
         """
-        Check if the miner is a Bitaxe based on make or model.
+        Check if the miner is a Bitaxe based on device_info.make and device_info.model.
 
         Args:
             context: The full normalized data context
@@ -36,15 +36,18 @@ class BitaxeMinerDataNormalizer(DefaultMinerDataNormalizer):
         Returns:
             True if the miner appears to be a Bitaxe, False otherwise
         """
-        make = context.get('make', '').lower() if context.get('make') else ''
-        model = context.get('model', '').lower() if context.get('model') else ''
-        hostname = context.get('hostname', '').lower() if context.get('hostname') else ''
+        # Get device_info dictionary, defaulting to empty dict if not present
+        device_info = context.get('device_info') or {}
 
-        # Check for Bitaxe indicators
+        # Get values from device_info and convert to lowercase for case-insensitive comparison
+        # Handle None, empty strings, and non-string types gracefully
+        make = str(device_info.get('make', '')).lower() if device_info.get('make') else ''
+        model = str(device_info.get('model', '')).lower() if device_info.get('model') else ''
+
+        # Check for Bitaxe indicators (case-insensitive)
         return (
             'bitaxe' in make or
-            'bitaxe' in model or
-            'bitaxe' in hostname
+            'bitaxe' in model
         )
 
     def _normalize_extra_fields(
