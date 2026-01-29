@@ -5,7 +5,7 @@ SHELL := /bin/bash
 COMPOSE_FILE = docker-compose.dev.local.yml
 .PHONY: help setup start stop up down logs build rebuild clean restart status shell lint-apps test-apps lint-app test-app lint-pyasic-bridge test-pyasic-bridge setup-pyasic-bridge up-stable down-stable logs-stable up-beta down-beta logs-beta
 
-APPS ?= backend discovery frontend
+APPS ?= backend discovery frontend mock
 
 # Default target
 .DEFAULT_GOAL := help
