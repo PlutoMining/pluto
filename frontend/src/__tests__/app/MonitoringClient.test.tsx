@@ -2,6 +2,7 @@ import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 
 import MonitoringClient from '@/app/(realtime)/monitoring/[id]/MonitoringClient';
+import { createPyasicMinerInfoFixture } from '../fixtures/pyasic-miner-info.fixture';
 
 jest.mock('axios', () => ({
   __esModule: true,
@@ -133,7 +134,8 @@ describe('MonitoringClient', () => {
     expect(screen.getByText('Pool preset')).toBeInTheDocument();
     expect(screen.getByText('Custom')).toBeInTheDocument();
 
-    expect(screen.getByText(/- GH\/s/)).toBeInTheDocument();
+    // Hashrate placeholder is a bare dash before data loads.
+    expect(screen.getAllByText('-').length).toBeGreaterThan(0);
 
     act(() => {
       screen.getByTestId('time-range').click();
@@ -171,17 +173,17 @@ describe('MonitoringClient', () => {
             tracing: false,
             presetUuid: 'p1',
             info: {
+              ...createPyasicMinerInfoFixture(),
               hostname: 'rig-1',
-              hashRate: 10,
-              hashRate_10m: 11,
-              sharesAccepted: 1,
-              sharesRejected: 2,
-              bestDiff: '1',
-              bestSessionDiff: '1',
-              uptimeSeconds: 60,
-              power: 100,
-              temp: 50,
-              vrTemp: 55,
+              hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 11 },
+              shares_accepted: 1,
+              shares_rejected: 2,
+              best_difficulty: '1',
+              best_session_difficulty: '1',
+              uptime: 60,
+              wattage: 100,
+              temperature_avg: 50,
+              hashboards: [{ slot: 0, hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 0 }, temp: 55, chip_temp: null, chips: 1, expected_chips: 1, serial_number: null, missing: false, tuned: null, active: true, voltage: null, inlet_temp: null, outlet_temp: null }],
             },
           },
         ],
@@ -267,7 +269,8 @@ describe('MonitoringClient', () => {
     await flushEffects();
 
     expect(await screen.findByText('online')).toBeInTheDocument();
-    expect(screen.getByText(/- GH\/s/)).toBeInTheDocument();
+    // Hashrate shows a bare dash when no numeric value is available.
+    expect(screen.getAllByText('-').length).toBeGreaterThan(0);
     expect(screen.getByText(/- W/)).toBeInTheDocument();
   });
 

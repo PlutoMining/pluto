@@ -29,6 +29,44 @@ import { SelectPresetModal } from "../Modal/SelectPresetModal";
 import { RadioButton } from "../RadioButton";
 import { Select } from "../Select/Select";
 
+// Helper function to extract pool URL, port, and user from pyasic config
+function extractPoolInfo(device: Device): { url: string; port: string; user: string } {
+  const defaultPool = { url: "", port: "", user: "" };
+
+  if (!device.info.config?.pools?.groups || device.info.config.pools.groups.length === 0) {
+    return defaultPool;
+  }
+
+  const firstGroup = device.info.config.pools.groups[0];
+  if (!firstGroup?.pools || firstGroup.pools.length === 0) {
+    return defaultPool;
+  }
+
+  const pool = firstGroup.pools[0];
+  if (!pool?.url) {
+    return defaultPool;
+  }
+
+  // Parse URL to extract host and port
+  try {
+    const urlStr = pool.url.replace(/^stratum\+tcp:\/\//i, "");
+    const urlParts = urlStr.split("/")[0]; // Remove path
+    const [host, port] = urlParts.split(":");
+
+    return {
+      url: host || "",
+      port: port || "",
+      user: pool.user || "",
+    };
+  } catch {
+    return {
+      url: pool.url || "",
+      port: "",
+      user: pool.user || "",
+    };
+  }
+}
+
 interface DeviceSettingsAccordionProps {
   fetchedDevices: Device[] | undefined;
   alert?: AlertInterface;
@@ -164,7 +202,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
         onOpenAlert();
       }
     },
-    [checkedFetchedItems, onOpenAlert, setAlert]
+    [checkedFetchedItems, onCloseModal, onOpenAlert, setAlert]
   );
 
   const handleCloseSuccessfully = async (uuid: string) => {
@@ -442,7 +480,8 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
   useEffect(() => {
     if (device) {
-      const currentDeviceStratumUser = device.info.stratumUser;
+      const poolInfo = extractPoolInfo(device);
+      const currentDeviceStratumUser = poolInfo.user || "";
       const dotIndex = currentDeviceStratumUser.indexOf(".");
 
       setStratumUser({
@@ -456,7 +495,46 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
             : currentDeviceStratumUser.substring(0, dotIndex),
       });
     }
-  }, []);
+  }, [device]);
+
+  const handleRestartDevice = useCallback(
+    async (hasSaveBeenPerformedAlso: boolean) => {
+      const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
+
+      try {
+        await handleRestart(device.mac);
+
+        setAlert({
+          status: AlertStatus.SUCCESS,
+          title: `${hasSaveBeenPerformedAlso ? "Save and " : ""}Restart went successfully`,
+          message: `The device has been ${
+            hasSaveBeenPerformedAlso ? "saved and " : ""
+          }restarted successfully. ${
+            hasSaveBeenPerformedAlso
+              ? "The new settings have been applied, and the miner is back online."
+              : ""
+          }`,
+        });
+
+        onOpenAlert();
+      } catch (error) {
+        let errorMessage = "An error occurred while attempting to restart the device.";
+
+        if (axios.isAxiosError(error)) {
+          errorMessage = error.response?.data?.message || error.message;
+        }
+
+        setAlert({
+          status: AlertStatus.ERROR,
+          title: "Restart Failed",
+          message: `${errorMessage} Please try again or contact support if the issue persists.`,
+        });
+        onOpenAlert();
+        setIsRestartModalOpen(false);
+      }
+    },
+    [device.mac, onOpenAlert, setAlert]
+  );
 
   const handleSaveOrSaveAndRestartDeviceSettings = useCallback(
     async (shouldRestart: boolean) => {
@@ -517,37 +595,37 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         onOpenAlert(); // Aprire l'alert per mostrare il messaggio di errore
       }
     },
-    [device, stratumUser.workerName]
+    [device, stratumUser.workerName, selectedPreset, handleRestartDevice, onOpenAlert, setAlert]
   );
 
   const validatePercentage = (value: string) => {
     return parseInt(value) <= 100 && parseInt(value) >= 0;
   };
 
-  const validateFieldByName = (name: string, value: string) => {
-    switch (name) {
-      case "stratumURL":
-        return validateDomain(value, { allowIP: true });
-      case "stratumPort": {
-        const numericRegex = /^\d+$/;
-        return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
-      }
-      case "stratumUser":
-        // return validateBitcoinAddress(value);
-        return !value.includes(".");
-      case "fanspeed":
-        return validatePercentage(value);
-      case "workerName": {
-        const regex = /^[a-zA-Z0-9]+$/;
-        return regex.test(value);
-      }
-      default:
-        return true;
-    }
-  };
-
   const validateField = useCallback(
     (name: string, value: string) => {
+      const validateFieldByName = (name: string, value: string) => {
+        switch (name) {
+          case "stratumURL":
+            return validateDomain(value, { allowIP: true });
+          case "stratumPort": {
+            const numericRegex = /^\d+$/;
+            return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
+          }
+          case "stratumUser":
+            // return validateBitcoinAddress(value);
+            return !value.includes(".");
+          case "fanspeed":
+            return validatePercentage(value);
+          case "workerName": {
+            const regex = /^[a-zA-Z0-9]+$/;
+            return regex.test(value);
+          }
+          default:
+            return true;
+        }
+      };
+
       const label =
         value === ""
           ? `${name} is required.`
@@ -560,7 +638,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         [name]: label,
       }));
     },
-    [validateFieldByName]
+    []
   );
 
   const handleChange = useCallback(
@@ -629,7 +707,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
       setDevice(updatedDevice);
     },
-    [device, stratumUser]
+    [device, stratumUser, validateField]
   );
 
   const handleRadioButtonChange = (value: string) => {
@@ -657,45 +735,6 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     }
   };
 
-  const handleRestartDevice = useCallback(
-    async (hasSaveBeenPerformedAlso: boolean) => {
-      const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
-
-      try {
-        await handleRestart(device.mac);
-
-        setAlert({
-          status: AlertStatus.SUCCESS,
-          title: `${hasSaveBeenPerformedAlso ? "Save and " : ""}Restart went successfully`,
-          message: `The device has been ${
-            hasSaveBeenPerformedAlso ? "saved and " : ""
-          }restarted successfully. ${
-            hasSaveBeenPerformedAlso
-              ? "The new settings have been applied, and the miner is back online."
-              : ""
-          }`,
-        });
-
-        onOpenAlert();
-      } catch (error) {
-        let errorMessage = "An error occurred while attempting to restart the device.";
-
-        if (axios.isAxiosError(error)) {
-          errorMessage = error.response?.data?.message || error.message;
-        }
-
-        setAlert({
-          status: AlertStatus.ERROR,
-          title: "Restart Failed",
-          message: `${errorMessage} Please try again or contact support if the issue persists.`,
-        });
-        onOpenAlert();
-        setIsRestartModalOpen(false);
-      }
-    },
-    [device.mac, onOpenAlert, setAlert]
-  );
-
   const handleChangeOnSelectPreset = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
       const preset = presets.find((p) => p.uuid === e.target.value);
@@ -714,7 +753,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         setDevice(updatedDevice);
       }
     },
-    [presets]
+    [presets, device, stratumUser.workerName]
   );
 
   useEffect(() => {
@@ -755,7 +794,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     }
   }, [isAccordionOpen, isConnected, socket]);
 
-  const hasEmptyFields = (obj: any): boolean => {
+  const hasEmptyFields = useCallback((obj: any): boolean => {
     for (const key in obj) {
       if (typeof obj[key] === "object" && obj[key] !== null) {
         if (hasEmptyFields(obj[key])) return true; // Ricorsione per oggetti annidati
@@ -764,9 +803,9 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
       }
     }
     return false;
-  };
+  }, []);
 
-  const hasErrorFields = (obj: Record<string, string>): boolean => {
+  const hasErrorFields = useCallback((obj: Record<string, string>): boolean => {
     for (const [key, value] of Object.entries(obj)) {
       if (value === "") continue;
 
@@ -778,11 +817,11 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     }
 
     return false;
-  };
+  }, [device.info.autofanspeed]);
 
   const isDeviceValid = useCallback(() => {
     return hasEmptyFields(device) || hasErrorFields(deviceError);
-  }, [device, deviceError]);
+  }, [device, deviceError, hasEmptyFields, hasErrorFields]);
 
   const handleSaveAndRestartModalClose = async (value: string) => {
     // Funzione di callback per gestire il valore restituito dalla modale
@@ -799,7 +838,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
       handleRestartDevice(false);
     }
     setIsRestartModalOpen(false);
-  }, []);
+  }, [handleRestartDevice]);
 
   const handleRestartOpenModal = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -1042,7 +1081,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                     name="stratumURL"
                     id={`${device.mac}-stratumUrl`}
                     placeholder="Add your stratum URL"
-                    defaultValue={device.info.stratumURL}
+                    defaultValue={extractPoolInfo(device).url}
                     onChange={handleChange}
                     error={deviceError.stratumURL}
                   />
@@ -1054,7 +1093,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                     name="stratumPort"
                     id={`${device.mac}-stratumPort`}
                     placeholder="Add your stratum port"
-                    defaultValue={device.info.stratumPort}
+                    defaultValue={extractPoolInfo(device).port}
                     onChange={handleChange}
                     error={deviceError.stratumPort}
                   />

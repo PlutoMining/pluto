@@ -172,7 +172,15 @@ export default function MonitoringTableClient() {
                 </thead>
                 <tbody>
                   {registeredDevices.map((device) => {
-                    const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
+                    // Pyasic-bridge normalizes hashrate to Gh/s
+                    const hashrateGhs = device.info.hashrate?.rate ?? 0;
+
+                    // Extract temperature from pyasic schema
+                    const temp = device.info.temperature_avg ?? null;
+                    const vrTemp =
+                      device.info.hashboards && device.info.hashboards.length > 0
+                        ? Math.max(...device.info.hashboards.map((h) => h.chip_temp ?? 0).filter((t) => t > 0))
+                        : null;
 
                     return (
                     <tr key={device.mac} className="bg-card">
@@ -180,33 +188,33 @@ export default function MonitoringTableClient() {
                         {device.info.hostname}
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {(device.info.hashRate_10m || device.info.hashRate)?.toFixed(2)} GH/s
+                        {hashrateGhs.toFixed(2)} GH/s
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        <span className="text-muted-foreground">{device.info.sharesAccepted}</span>{" "}
+                        <span className="text-muted-foreground">{device.info.shares_accepted ?? 0}</span>{" "}
                         <span className="text-muted-foreground">|</span>{" "}
-                        <span className="text-primary">{device.info.sharesRejected}</span>
+                        <span className="text-primary">{device.info.shares_rejected ?? 0}</span>
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {device.info.power.toFixed(2)} W
+                        {(device.info.wattage ?? 0).toFixed(2)} W
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {formatTemperature(device.info.temp)} °C
+                        {formatTemperature(temp)} °C
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {formatTemperature(device.info.vrTemp)} °C
+                        {formatTemperature(vrTemp)} °C
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {formatDifficulty(currentDiff)}
+                        {formatDifficulty(device.info.best_session_difficulty ?? "0")}
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {formatDifficulty(device.info.bestDiff)}
+                        {formatDifficulty(device.info.best_difficulty ?? "0")}
                       </td>
                       <td
                         className="border-t border-border p-3 text-center font-accent text-sm font-normal"
-                        title={formatDetailedTime(device.info.uptimeSeconds)}
+                        title={formatDetailedTime(device.info.uptime ?? 0)}
                       >
-                        {formatTime(device.info.uptimeSeconds)}
+                        {formatTime(device.info.uptime ?? 0)}
                       </td>
                       <td className="border-t border-border p-3 text-center">
                         <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />

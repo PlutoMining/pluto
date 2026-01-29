@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import axios from "axios";
 
 import { DeviceSettingsAccordion } from "@/components/Accordion";
+import { createDeviceFixture } from "../../fixtures/pyasic-miner-info.fixture";
 
 jest.mock("axios");
 
@@ -20,27 +21,57 @@ const axiosMock = axios as unknown as {
 };
 
 const makeDevice = (mac: string, hostname: string) =>
-  ({
+  createDeviceFixture({
     mac,
     ip: "10.0.0.1",
     tracing: true,
     presetUuid: null,
     info: {
+      ...createDeviceFixture().info,
       hostname,
-      stratumUser: "user.worker",
-      stratumURL: "pool.example.com",
-      stratumPort: 3333,
-      stratumPassword: "pass",
-      flipscreen: 0,
-      invertfanpolarity: 0,
-      autofanspeed: 1,
-      fanspeed: 50,
-      frequency: 100,
+      config: {
+        pools: {
+          groups: [
+            {
+              pools: [
+                {
+                  url: "stratum+tcp://pool.example.com:3333",
+                  user: "user.worker",
+                  password: "pass",
+                },
+              ],
+              quota: 1,
+              name: null,
+            },
+          ],
+        },
+        fan_mode: {
+          mode: "manual",
+          speed: 50,
+          minimum_fans: 1,
+        },
+        temperature: {
+          target: null,
+          hot: null,
+          danger: null,
+        },
+        mining_mode: {
+          mode: "normal",
+        },
+        extra_config: {
+          rotation: 0,
+          invertscreen: 0,
+          display_timeout: 0,
+          overheat_mode: 0,
+          overclock_enabled: 0,
+          stats_frequency: 0,
+          min_fan_speed: 0,
+        },
+      },
       frequencyOptions: [{ label: "100", value: 100 }],
-      coreVoltage: 900,
       coreVoltageOptions: [{ label: "900", value: 900 }],
     },
-  }) as any;
+  });
 
 describe("DeviceSettingsAccordion actions", () => {
   beforeEach(() => {
@@ -312,7 +343,7 @@ describe("DeviceSettingsAccordion actions", () => {
       .mockResolvedValueOnce({ data: { data: { mac: "aa", info: { hostname: "miner-01" } } } });
 
     const device = makeDevice("aa", "miner-01");
-    device.info.stratumUser = "other.worker";
+    device.info.config.pools.groups[0].pools[0].user = "other.worker";
 
     const { container } = render(
       <DeviceSettingsAccordion
@@ -348,6 +379,8 @@ describe("DeviceSettingsAccordion actions", () => {
 
     const firstPayload = axiosMock.patch.mock.calls[0][1];
     expect(firstPayload.presetUuid).toBe("preset-1");
+    // In the pyasic-based model, the effective mining user is stored on info.stratumUser,
+    // while the underlying config pool user remains whatever the device reported.
     expect(firstPayload.info.stratumUser).toBe("user.worker");
   });
 

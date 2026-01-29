@@ -67,7 +67,7 @@ export default function PresetsClient() {
     }
   };
 
-  const fetchPresetsWithAssociatedDevices = async () => {
+  const fetchPresetsWithAssociatedDevices = useCallback(async () => {
     try {
       const presets = await fetchPresets();
 
@@ -83,11 +83,11 @@ export default function PresetsClient() {
       console.error("Error during presets' update:", error);
       setPresets([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPresetsWithAssociatedDevices();
-  }, [alert]);
+  }, [alert, fetchPresetsWithAssociatedDevices]);
 
   const closeAlert = useCallback(() => {
     setAlert(undefined);

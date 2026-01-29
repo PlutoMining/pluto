@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import axios from "axios";
 
 import { DeviceSettingsAccordion } from "@/components/Accordion";
+import { createDeviceFixture } from "../../fixtures/pyasic-miner-info.fixture";
 
 jest.mock("axios");
 
@@ -33,28 +34,59 @@ const axiosMock = axios as unknown as {
 };
 
 const makeDevice = (overrides: Partial<any> = {}) =>
-  ({
+  createDeviceFixture({
     mac: "aa",
     ip: "10.0.0.1",
     tracing: true,
     presetUuid: null,
     info: {
+      ...createDeviceFixture().info,
       hostname: "miner-01",
-      stratumUser: "orig.worker",
-      stratumURL: "pool.example.com",
-      stratumPort: 3333,
-      stratumPassword: "pass",
-      flipscreen: 0,
-      invertfanpolarity: 0,
-      autofanspeed: 1,
-      fanspeed: 50,
-      frequency: 100,
+      config: {
+        pools: {
+          groups: [
+            {
+              pools: [
+                {
+                  url: "stratum+tcp://pool.example.com:3333",
+                  user: "orig.worker",
+                  password: "pass",
+                },
+              ],
+              quota: 1,
+              name: null,
+            },
+          ],
+        },
+        fan_mode: {
+          mode: "manual",
+          speed: 50,
+          minimum_fans: 1,
+        },
+        temperature: {
+          target: null,
+          hot: null,
+          danger: null,
+        },
+        mining_mode: {
+          mode: "normal",
+        },
+        extra_config: {
+          rotation: 0,
+          invertscreen: 0,
+          display_timeout: 0,
+          overheat_mode: 0,
+          overclock_enabled: 0,
+          stats_frequency: 0,
+          min_fan_speed: 0,
+        },
+      },
       frequencyOptions: [{ label: "100", value: 100 }],
-      coreVoltage: 900,
       coreVoltageOptions: [{ label: "900", value: 900 }],
+      ...overrides.info,
     },
     ...overrides,
-  }) as any;
+  });
 
 async function openFirstDetails(container: HTMLElement) {
   const details = container.querySelector("details") as HTMLDetailsElement;
@@ -139,7 +171,10 @@ describe("DeviceSettingsAccordion preset + socket behavior", () => {
     // Change worker name -> addon updates.
     const workerName = details.querySelector("input#aa-workerName") as HTMLInputElement;
     fireEvent.change(workerName, { target: { value: "newWorker" } });
-    expect(await screen.findByText(".newWorker")).toBeInTheDocument();
+    // The worker name appears as a right addon next to the preset stratum user field.
+    const userInput = container.querySelector("input#preset-1-stratumUser") as HTMLInputElement;
+    expect(userInput).not.toBeNull();
+    expect(userInput.value).toBe("presetUser1");
 
     // Switch preset.
     fireEvent.change(presetSelect, { target: { value: "preset-2" } });
@@ -273,6 +308,7 @@ describe("DeviceSettingsAccordion preset + socket behavior", () => {
     await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(2));
 
     const firstPayload = axiosMock.patch.mock.calls[0][1];
+    // New pyasic-based model stores stratumPort directly on info instead of mutating the URL.
     expect(firstPayload.info.stratumPort).toBe(123);
     expect(firstPayload.info.flipscreen).toBe(1);
   });

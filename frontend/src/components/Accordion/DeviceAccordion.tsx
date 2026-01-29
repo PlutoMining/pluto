@@ -8,7 +8,6 @@
 
 import { Device } from "@pluto/interfaces";
 import { DeviceStatusBadge } from "../Badge";
-import { getMinerName } from "@/utils/minerMap";
 import { formatDetailedTime } from "@/utils/formatTime";
 
 interface DeviceAccordionProps {
@@ -69,10 +68,10 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
         <div className="flex flex-col gap-2">
           <Row label="Date added" value={new Date(device.createdAt!).toLocaleDateString()} />
           <Row label="IP" value={device.ip} />
-          <Row label="Miner" value={getMinerName(device.info.boardVersion) || device.info?.deviceModel} />
-          <Row label="ASIC" value={device.info.ASICModel} />
-          <Row label="FW v." value={device.info.version} />
-          <Row label="Uptime" value={formatDetailedTime(device.info.uptimeSeconds)} />
+          <Row label="Miner" value={device.info.device_info?.model || device.info.model || "unknown"} />
+          <Row label="ASIC" value={device.info.device_info?.model || device.info.model || "unknown"} />
+          <Row label="FW v." value={device.info.fw_ver || device.info.api_ver || "unknown"} />
+          <Row label="Uptime" value={formatDetailedTime(device.info.uptime ?? 0)} />
         </div>
       </div>
     </>

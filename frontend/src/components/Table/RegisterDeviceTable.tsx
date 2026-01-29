@@ -8,7 +8,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Device } from "@pluto/interfaces";
-import { getMinerName } from "@/utils/minerMap";
 import { Checkbox } from "../Checkbox";
 
 interface RegisterDeviceTableProps {
@@ -117,13 +116,13 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                         {device.mac}
                       </td>
                       <td className="border-t border-border p-3 font-accent text-[13px]">
-                        {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
+                        {device.info.device_info?.model || device.info.model || "unknown"}
                       </td>
                       <td className="border-t border-border p-3 font-accent text-[13px]">
-                        {device.info.ASICModel}
+                        {device.info.device_info?.model || device.info.model || "unknown"}
                       </td>
                       <td className="border-t border-border p-3 font-accent text-[13px]">
-                        {device.info.version}
+                        {device.info.fw_ver || device.info.api_ver || "unknown"}
                       </td>
                     </tr>
                   ))}
@@ -162,19 +161,19 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">Miner</span>
                         <span className="font-accent text-sm text-muted-foreground">
-                          {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
+                          {device.info.device_info?.model || device.info.model || "unknown"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">ASIC</span>
                         <span className="font-accent text-sm text-muted-foreground">
-                          {device.info.ASICModel}
+                          {device.info.device_info?.model || device.info.model || "unknown"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">FW v.</span>
                         <span className="font-accent text-sm text-muted-foreground">
-                          {device.info.version}
+                          {device.info.fw_ver || device.info.api_ver || "unknown"}
                         </span>
                       </div>
                     </div>

@@ -387,7 +387,9 @@ export default function MonitoringClient({ id }: { id: string }) {
           </CardHeader>
           <CardContent>
             <p className="font-accent text-xl text-foreground">
-              {formatNumber(device?.info.hashRate_10m || device?.info.hashRate, 2)} GH/s
+              {device?.info.hashrate?.rate != null
+                ? `${formatNumber(device.info.hashrate.rate, 2)} GH/s`
+                : "-"}
             </p>
           </CardContent>
         </Card>
@@ -397,8 +399,8 @@ export default function MonitoringClient({ id }: { id: string }) {
           </CardHeader>
           <CardContent>
             <p className="font-accent text-xl text-foreground">
-              {device?.info.sharesAccepted ?? "-"} <span className="text-muted-foreground">|</span>{" "}
-              <span className="text-destructive">{device?.info.sharesRejected ?? "-"}</span>
+              {device?.info.shares_accepted ?? "-"} <span className="text-muted-foreground">|</span>{" "}
+              <span className="text-destructive">{device?.info.shares_rejected ?? "-"}</span>
             </p>
           </CardContent>
         </Card>
@@ -407,7 +409,7 @@ export default function MonitoringClient({ id }: { id: string }) {
             <CardTitle>Power</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="font-accent text-xl text-foreground">{formatNumber(device?.info.power, 2)} W</p>
+            <p className="font-accent text-xl text-foreground">{formatNumber(device?.info.wattage, 2)} W</p>
           </CardContent>
         </Card>
         <Card className="rounded-none">
@@ -415,7 +417,7 @@ export default function MonitoringClient({ id }: { id: string }) {
             <CardTitle>Frequency</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="font-accent text-xl text-foreground">{formatNumber((device?.info as any)?.frequency, 0)} MHz</p>
+            <p className="font-accent text-xl text-foreground">-</p>
           </CardContent>
         </Card>
         <Card className="rounded-none">
@@ -425,8 +427,13 @@ export default function MonitoringClient({ id }: { id: string }) {
           </CardHeader>
           <CardContent>
             <p className="font-accent text-xl text-foreground">
-              {formatNumber(device?.info.temp, 1)}°C <span className="text-muted-foreground">|</span>{" "}
-              {formatNumber(device?.info.vrTemp, 1)}°C
+              {formatNumber(device?.info.temperature_avg, 1)}°C <span className="text-muted-foreground">|</span>{" "}
+              {formatNumber(
+                device?.info.hashboards && device.info.hashboards.length > 0
+                  ? Math.max(...device.info.hashboards.map((h) => h.chip_temp ?? 0).filter((t) => t > 0))
+                  : null,
+                1
+              )}°C
             </p>
           </CardContent>
         </Card>
@@ -457,9 +464,9 @@ export default function MonitoringClient({ id }: { id: string }) {
           </CardHeader>
           <CardContent>
             <p className="font-accent text-xl text-foreground">
-              {formatDifficulty((device?.info as any)?.currentDiff ?? device?.info.bestSessionDiff)}
+              {formatDifficulty(device?.info.best_session_difficulty ?? "0")}
               <span className="text-muted-foreground"> | </span>
-              {formatDifficulty(device?.info.bestDiff)}
+              {formatDifficulty(device?.info.best_difficulty ?? "0")}
             </p>
           </CardContent>
         </Card>
@@ -470,9 +477,9 @@ export default function MonitoringClient({ id }: { id: string }) {
           <CardContent>
             <p
               className="font-accent text-xl text-foreground"
-              title={device?.info.uptimeSeconds ? formatDetailedTime(device.info.uptimeSeconds) : "-"}
+              title={device?.info.uptime ? formatDetailedTime(device.info.uptime) : "-"}
             >
-              {device?.info.uptimeSeconds ? formatTime(device.info.uptimeSeconds) : "-"}
+              {device?.info.uptime ? formatTime(device.info.uptime) : "-"}
             </p>
           </CardContent>
         </Card>
