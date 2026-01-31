@@ -11,6 +11,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -100,15 +101,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
 
             <Sheet open={notificationsOpen} onOpenChange={setNotificationsOpen}>
-              <SheetContent side="right" className="w-[360px] p-0">
-                <SheetHeader className="border-b border-border p-4">
-                  <SheetTitle className="font-heading text-sm tracking-[0.07px]">Notifications</SheetTitle>
-                </SheetHeader>
-                <div className="p-4">
-                  <p className="font-body text-sm text-muted-foreground">No notifications yet.</p>
-                  <p className="mt-2 font-body text-xs text-muted-foreground">You&apos;re all caught up.</p>
-                </div>
-              </SheetContent>
+                <SheetContent side="right" className="w-[360px] p-0">
+                  <SheetHeader className="border-b border-border p-4">
+                    <SheetTitle className="font-heading text-sm tracking-[0.07px]">Notifications</SheetTitle>
+                    <SheetDescription className="sr-only">A list of notifications.</SheetDescription>
+                  </SheetHeader>
+                  <div className="p-4">
+                    <p className="font-body text-sm text-muted-foreground">No notifications yet.</p>
+                    <p className="mt-2 font-body text-xs text-muted-foreground">You&apos;re all caught up.</p>
+                  </div>
+                </SheetContent>
             </Sheet>
           </div>
         </header>

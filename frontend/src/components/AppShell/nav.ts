@@ -21,7 +21,7 @@ export const APP_NAV: AppNavItem[] = [
   {
     key: "overview",
     href: "/",
-    label: "Overview Dashboard",
+    label: "Overview",
     Icon: IconNavOverview,
     match: (p) => p === "/",
   },
@@ -64,6 +64,10 @@ export const SETTINGS_NAV: AppNavItem = {
 };
 
 export function getPageTitle(pathname: string) {
+  if (pathname === "/") {
+    return "Overview Dashboard";
+  }
+
   if (pathname.startsWith("/monitoring/")) {
     const id = pathname.replace(/^\/monitoring\//, "").split("/")[0];
     if (id) {
