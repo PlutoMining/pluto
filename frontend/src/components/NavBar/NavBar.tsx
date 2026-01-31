@@ -74,7 +74,7 @@ export const NavBar = () => {
 
   return (
     <header className={cn("sticky top-0 z-20 border-b border-border bg-background")}> 
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-4 px-4 tablet:px-8">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-4 px-4 md:px-8">
         <div className="flex items-end gap-2 text-foreground">
           <NextLink href="/" aria-label="Home">
             <Logo className="text-foreground" />
@@ -82,7 +82,7 @@ export const NavBar = () => {
           {version ? <span className="mb-1 text-xs font-accent text-muted-foreground">v.{version}</span> : null}
         </div>
 
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 rounded-md px-3 py-2 tabletL:flex">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 rounded-md px-3 py-2 lg:flex">
           {links.map((link) => {
             const active = link.match(pathname);
             return (
@@ -114,7 +114,7 @@ export const NavBar = () => {
 
           <button
             type="button"
-            className="tabletL:hidden"
+            className="lg:hidden"
             aria-label={isOpen ? "Close menu" : "Open menu"}
             onClick={() => setIsOpen((v) => !v)}
           >
@@ -124,7 +124,7 @@ export const NavBar = () => {
       </div>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-30 bg-black/30 tabletL:hidden">
+        <div className="fixed inset-0 z-30 bg-black/30 lg:hidden">
           <div
             ref={slideRef}
             className="absolute right-0 top-16 h-[calc(100vh-4rem)] w-[calc(50%+160px)] max-w-[100vw] border-l border-t border-border bg-background p-8"

@@ -124,16 +124,15 @@ export default function MonitoringTableClient() {
   return (
     <div className="container flex-1 py-6">
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
-          <h1 className="font-heading text-3xl font-bold uppercase">Monitoring</h1>
-          <div className="w-full tablet:w-auto">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
+          <div className="w-full md:w-auto">
             <SearchInput label="Search device" onChange={handleSearch} placeholder="Search device" />
           </div>
         </div>
 
         {registeredDevices && registeredDevices.length > 0 ? (
           <div className="bg-card">
-            <div className="hidden tablet:block overflow-x-auto border border-border">
+            <div className="hidden md:block overflow-x-auto border border-border">
               <table className="w-full border-collapse">
                 <thead className="bg-muted">
                   <tr>
@@ -226,7 +225,7 @@ export default function MonitoringTableClient() {
               </table>
             </div>
 
-            <div className="tablet:hidden">
+            <div className="md:hidden">
               <DeviceMonitoringAccordion devices={registeredDevices} />
             </div>
           </div>

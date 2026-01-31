@@ -66,7 +66,7 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
       <div ref={boxRef} className="h-full overflow-auto">
         {devices && devices.length > 0 ? (
           <>
-            <div className="hidden tablet:block">
+            <div className="hidden md:block">
               <table className="w-full border-collapse border border-border">
                 <thead className="sticky top-0 bg-muted">
                   <tr>
@@ -131,7 +131,7 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
               </table>
             </div>
 
-            <div className="tablet:hidden border border-border bg-card">
+            <div className="md:hidden border border-border bg-card">
               {devices.map((device, index) => (
                 <details
                   key={`tab${selectedTab}-device-${device.ip}`}

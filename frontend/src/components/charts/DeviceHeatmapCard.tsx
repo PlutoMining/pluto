@@ -88,7 +88,7 @@ export function DeviceHeatmapCard({
 
   return (
     <Card className="rounded-none">
-      <CardHeader className="flex flex-col gap-2 tablet:flex-row tablet:items-center tablet:justify-between">
+      <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <CardTitle>{title}</CardTitle>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
@@ -119,7 +119,7 @@ export function DeviceHeatmapCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-2 mobileL:grid-cols-3 tablet:grid-cols-4 desktop:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
           {items.map((item) => {
             const bg = item.online ? temperatureToColor(item.effectiveTemp) : "hsl(var(--muted))";
             const textStyle = item.online

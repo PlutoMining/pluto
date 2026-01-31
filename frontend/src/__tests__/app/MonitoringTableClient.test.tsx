@@ -97,7 +97,7 @@ describe('MonitoringTableClient', () => {
 
     render(<MonitoringTableClient />);
 
-    expect(await screen.findByText('Monitoring')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Search device')).toBeInTheDocument();
     expect(await screen.findByText('rig-1')).toBeInTheDocument();
 
     const link = screen.getByRole('link', { name: /Dashboard/i }) as HTMLAnchorElement;

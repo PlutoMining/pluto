@@ -4,17 +4,17 @@ module.exports = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     screens: {
-      mobile: "375px",
-      mobileL: "570px",
-      tablet: "834px",
-      tabletL: "935px",
-      desktop: "1440px",
+      // Standard Tailwind breakpoints (keeps existing design widths)
+      sm: "570px", // was mobileL
+      md: "834px", // was tablet
+      lg: "935px", // was tabletL
+      xl: "1440px", // was desktop
     },
     container: {
       center: true,
       padding: "2rem",
       screens: {
-        desktop: "1440px",
+        xl: "1440px",
       },
     },
     extend: {
@@ -51,6 +51,16 @@ module.exports = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
         },
       },
       borderRadius: {

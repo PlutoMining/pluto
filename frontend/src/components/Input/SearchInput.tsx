@@ -9,9 +9,8 @@
 import React, { ChangeEventHandler } from "react";
 
 import { Input as UiInput } from "@/components/ui/input";
+import { Icon } from "@/components/Icon";
 import { cn } from "@/lib/utils";
-
-import { SearchIcon } from "../icons/SearchIcon";
 
 interface SearchInputProps {
   label: string;
@@ -28,7 +27,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
 }) => {
   return (
     <div className="relative">
-      <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-primary" />
+      <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-primary" />
       <UiInput
         type={type}
         placeholder={placeholder}
