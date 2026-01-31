@@ -155,21 +155,22 @@ export default function DevicesClient() {
   }, [onCloseAlert]);
 
   return (
-    <div className="container flex-1 py-6">
-      {alert ? (
-        <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
-      ) : null}
+    <div className="flex-1 py-6">
+      <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+        {alert ? (
+          <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
+        ) : null}
 
-      <form className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
-          <Button
-            variant={"primary"}
-            onClick={onOpen}
-            rightIcon={<AddIcon color="currentColor" />}
-            label="Add device"
-            className="w-full md:w-auto"
-          />
-        </div>
+        <form className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
+            <Button
+              variant={"primary"}
+              onClick={onOpen}
+              rightIcon={<AddIcon color="currentColor" />}
+              label="Add device"
+              className="w-full md:w-auto"
+            />
+          </div>
 
         {registeredDevices ? (
           registeredDevices.length > 0 ? (
@@ -206,7 +207,8 @@ export default function DevicesClient() {
           secondaryActionLabel={"Cancel"}
           secondaryAction={onConfirmationModalClose}
         />
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

@@ -46,9 +46,10 @@ export default function SettingsClient() {
   }, [setTheme]);
 
   return (
-    <div className="container flex-1 py-6">
-      <form className="flex flex-col gap-8">
-        <div className="flex flex-col gap-6 lg:px-40">
+    <div className="flex-1 py-6">
+      <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+        <form className="flex flex-col gap-8">
+          <div className="flex flex-col gap-6 md:max-w-[640px]">
           <h2 className="font-heading text-lg font-medium uppercase text-muted-foreground">
             System settings
           </h2>
@@ -60,8 +61,9 @@ export default function SettingsClient() {
             value={selectedColorMode}
             optionValues={colorModes}
           />
-        </div>
-      </form>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

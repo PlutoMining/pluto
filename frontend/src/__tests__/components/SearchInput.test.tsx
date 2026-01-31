@@ -14,6 +14,6 @@ describe("SearchInput", () => {
     fireEvent.change(input, { target: { value: "abc" } });
     expect(onChange).toHaveBeenCalled();
 
-    expect(container.querySelector("[data-icon='material']")).not.toBeNull();
+    expect(container.querySelector("svg")).not.toBeNull();
   });
 });

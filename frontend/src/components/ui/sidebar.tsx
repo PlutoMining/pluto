@@ -4,7 +4,7 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
-import { Icon } from "@/components/Icon";
+import { IconSidebarToggle } from "@/components/icons/FigmaIcons";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -123,6 +123,7 @@ export function SidebarProvider({
       <TooltipProvider delayDuration={0}>
         <div
           data-slot="sidebar-wrapper"
+          data-state={state}
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH,
@@ -256,7 +257,11 @@ export function SidebarTrigger({
       }}
       {...props}
     >
-      <Icon name={state === "collapsed" ? "chevron_right" : "chevron_left"} size={20} />
+      {state === "collapsed" ? (
+        <IconSidebarToggle direction="right" className="h-5 w-5 text-current" />
+      ) : (
+        <IconSidebarToggle direction="left" className="h-5 w-5 text-current" />
+      )}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
@@ -456,7 +461,7 @@ export function SidebarMenuItem({ className, ...props }: React.ComponentProps<"l
 }
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate",
+  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&>span:last-child]:hidden [&>span:last-child]:truncate",
   {
     variants: {
       variant: {
@@ -484,6 +489,7 @@ export function SidebarMenuButton({
   size = "default",
   tooltip,
   className,
+  onClick,
   ...props
 }: React.ComponentProps<"button"> & {
   asChild?: boolean;
@@ -491,7 +497,7 @@ export function SidebarMenuButton({
   tooltip?: string | React.ComponentProps<typeof TooltipContent>;
 } & VariantProps<typeof sidebarMenuButtonVariants>) {
   const Comp = asChild ? Slot : "button";
-  const { isMobile, state } = useSidebar();
+  const { isMobile, state, setOpenMobile } = useSidebar();
 
   const button = (
     <Comp
@@ -500,6 +506,10 @@ export function SidebarMenuButton({
       data-size={size}
       data-active={isActive}
       className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+      onClick={(event: any) => {
+        onClick?.(event);
+        if (isMobile) setOpenMobile(false);
+      }}
       {...props}
     />
   );
@@ -626,6 +636,7 @@ export function SidebarMenuSubButton({
   size = "md",
   isActive = false,
   className,
+  onClick,
   ...props
 }: React.ComponentProps<"a"> & {
   asChild?: boolean;
@@ -633,6 +644,7 @@ export function SidebarMenuSubButton({
   isActive?: boolean;
 }) {
   const Comp = asChild ? Slot : "a";
+  const { isMobile, setOpenMobile } = useSidebar();
 
   return (
     <Comp
@@ -648,6 +660,10 @@ export function SidebarMenuSubButton({
         "group-data-[collapsible=icon]:hidden",
         className
       )}
+      onClick={(event: any) => {
+        onClick?.(event);
+        if (isMobile) setOpenMobile(false);
+      }}
       {...props}
     />
   );

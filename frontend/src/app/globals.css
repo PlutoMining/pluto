@@ -6,7 +6,7 @@
   --radius: 0rem;
 
   /* shadcn/ui tokens (HSL values) */
-  --background: 0 0% 100%;
+  --background: 0 0% 98%;
   --foreground: 0 0% 0%;
 
   --card: 0 0% 100%;
@@ -15,7 +15,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 0%;
 
-  --primary: 174 100% 40%;
+  --primary: 175 100% 54%;
   --primary-foreground: 210 18% 4%;
 
   --secondary: 180 13% 95%;
@@ -32,7 +32,7 @@
 
   --border: 180 1% 80%;
   --input: 180 1% 80%;
-  --ring: 174 100% 40%;
+  --ring: 175 100% 54%;
 
   /*
    * Chart palette
@@ -46,15 +46,18 @@
   --chart-4: 25 95% 55%;
   --chart-5: 140 65% 45%;
 
-  /* shadcn sidebar tokens (HSL values) - tuned to match Figma nav */
-  --sidebar-background: 0 0% 0%;
-  --sidebar-foreground: 180 1% 80%;
-  --sidebar-primary: 174 100% 40%;
+  /* Sidebar tokens (light theme) */
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 210 18% 4%;
+  --sidebar-primary: 175 100% 54%;
   --sidebar-primary-foreground: 210 18% 4%;
-  --sidebar-accent: 200 14% 11%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-border: 200 21% 15%;
-  --sidebar-ring: 174 100% 40%;
+  --sidebar-accent: 180 13% 95%;
+  --sidebar-accent-foreground: 210 18% 4%;
+  --sidebar-border: 180 1% 80%;
+  --sidebar-ring: 175 100% 54%;
+
+  /* Content max-width (matches Figma; expands when sidebar is collapsed) */
+  --pluto-content-max: 1165px;
 }
 
 .dark {
@@ -93,7 +96,7 @@
   --chart-4: 25 95% 60%;
   --chart-5: 140 65% 50%;
 
-  /* Sidebar tokens (keep consistent in dark mode) */
+  /* Sidebar tokens (dark theme) */
   --sidebar-background: 0 0% 0%;
   --sidebar-foreground: 180 1% 80%;
   --sidebar-primary: 175 100% 54%;
@@ -102,6 +105,11 @@
   --sidebar-accent-foreground: 0 0% 100%;
   --sidebar-border: 200 21% 15%;
   --sidebar-ring: 175 100% 54%;
+}
+
+/* When the sidebar is collapsed, Figma allows the content column to expand */
+[data-slot="sidebar-wrapper"][data-state="collapsed"] {
+  --pluto-content-max: 1344px;
 }
 
 * {

@@ -19,7 +19,7 @@ export const Footer = () => {
             <span className="font-heading text-xs font-medium text-foreground">Terms & Conditions</span>
             <div className="flex items-center gap-2">
               <GithubLogo url="https://github.com/PlutoMining/pluto" target="_blank" className="text-primary" />
-              <DiscordLogo url="https://discord.gg/osmu" target="_blank" className="text-primary" />
+          <DiscordLogo url="https://discord.gg/Nksp22hA" target="_blank" className="text-primary" />
             </div>
           </div>
           <p className="text-xs font-light">© 2024 Pluto. All rights reserved. This open-source application software is licensed under the AGPL 3.0 License.</p>

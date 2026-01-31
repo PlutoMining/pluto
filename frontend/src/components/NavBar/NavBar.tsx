@@ -156,7 +156,7 @@ export const NavBar = () => {
                     target="_blank"
                     className="text-primary"
                   />
-                  <DiscordLogo url="https://discord.gg/osmu" target="_blank" className="text-primary" />
+                  <DiscordLogo url="https://discord.gg/Nksp22hA" target="_blank" className="text-primary" />
                 </div>
 
                 <a className="text-xs font-heading text-muted-foreground underline">Terms & Conditions</a>
