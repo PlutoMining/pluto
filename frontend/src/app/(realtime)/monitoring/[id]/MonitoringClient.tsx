@@ -7,14 +7,12 @@
  * See <https://www.gnu.org/licenses/>.
  */
 
-import NextLink from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { LineChartCard } from "@/components/charts/LineChartCard";
 import { MultiLineChartCard } from "@/components/charts/MultiLineChartCard";
 import { ChartsToolbar } from "@/components/charts/ChartsToolbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatDifficulty } from "@/utils/formatDifficulty";
 import { formatDetailedTime, formatTime } from "@/utils/formatTime";
@@ -348,13 +346,7 @@ export default function MonitoringClient({ id }: { id: string }) {
   return (
     <div className="flex-1 py-6">
       <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
-        <div className="mb-3 flex flex-col gap-4 md:mb-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <NextLink href="/monitoring">
-              <Button variant="outlined">Go back</Button>
-            </NextLink>
-          </div>
-        </div>
+        <div className="mb-3 md:mb-4" />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="rounded-none">

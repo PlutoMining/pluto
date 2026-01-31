@@ -18,7 +18,13 @@ export type AppNavItem = {
 };
 
 export const APP_NAV: AppNavItem[] = [
-  { key: "overview", href: "/", label: "Overview", Icon: IconNavOverview, match: (p) => p === "/" },
+  {
+    key: "overview",
+    href: "/",
+    label: "Overview Dashboard",
+    Icon: IconNavOverview,
+    match: (p) => p === "/",
+  },
   {
     key: "monitoring",
     href: "/monitoring",
