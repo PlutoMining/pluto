@@ -31,7 +31,7 @@ import { sanitizeHostname } from "@pluto/utils";
 import type { Device, Preset } from "@pluto/interfaces";
 import axios from "axios";
 
-function formatNumber(value: number | undefined, digits = 2) {
+function formatNumber(value: number | null | undefined, digits = 2) {
   if (value === undefined || value === null) return "-";
   if (!Number.isFinite(value)) return "-";
   return value.toFixed(digits);
@@ -81,6 +81,29 @@ export default function MonitoringClient({ id }: { id: string }) {
 
   const host = useMemo(() => sanitizeHostname(id), [id]);
 
+  const hasFrequency = useMemo(
+    () =>
+      device?.info.frequency !== undefined ||
+      (device?.info.frequencyOptions?.length ?? 0) > 0,
+    [device?.info.frequency, device?.info.frequencyOptions]
+  );
+  const hasCoreVoltage = useMemo(
+    () =>
+      device?.info.coreVoltage !== undefined ||
+      (device?.info.coreVoltageOptions?.length ?? 0) > 0,
+    [device?.info.coreVoltage, device?.info.coreVoltageOptions]
+  );
+  const hasFanConfig = useMemo(
+    () =>
+      device?.info.config?.fan_mode != null ||
+      device?.info.config?.extra_config?.min_fan_speed !== undefined,
+    [device?.info.config?.fan_mode, device?.info.config?.extra_config]
+  );
+  const hasFreeHeapConfig = useMemo(
+    () => device?.info.config?.extra_config?.free_heap !== undefined,
+    [device?.info.config?.extra_config]
+  );
+
   const temperatureSeries = useMemo(
     () => [
       { key: "temp", label: "ASIC", color: "hsl(var(--chart-2))", points: temp },
@@ -89,33 +112,41 @@ export default function MonitoringClient({ id }: { id: string }) {
     [temp, vrTemp]
   );
 
-  const voltageSeries = useMemo(
-    () => [
-      { key: "voltage", label: "Input", color: "hsl(var(--chart-3))", points: voltage, renderOrder: 0 },
-      {
-        key: "coreActual",
-        label: "Core (actual)",
-        color: "hsl(var(--chart-2))",
-        points: coreVActual,
-        // Keep the actual value visible even when it matches the target by
-        // drawing it underneath the dashed target line.
-        strokeOpacity: 1,
-        renderOrder: 1,
-      },
-      {
-        key: "coreTarget",
-        label: "Core (target)",
-        color: "hsl(var(--chart-5))",
-        points: coreV,
-        // Put target on top so both lines are visible (dashes reveal the solid line below).
-        strokeDasharray: "5 7",
-        strokeLinecap: "butt" as const,
-        strokeOpacity: 1,
-        renderOrder: 2,
-      },
-    ],
-    [voltage, coreVActual, coreV]
-  );
+  const voltageSeries = useMemo(() => {
+    const series: Array<{
+      key: string;
+      label: string;
+      color: string;
+      points: Array<{ t: number; v: number }>;
+      renderOrder?: number;
+      strokeOpacity?: number;
+      strokeDasharray?: string;
+      strokeLinecap?: "butt" | "round" | "square";
+    }> = [{ key: "voltage", label: "Input", color: "hsl(var(--chart-3))", points: voltage, renderOrder: 0 }];
+    if (hasCoreVoltage) {
+      series.push(
+        {
+          key: "coreActual",
+          label: "Core (actual)",
+          color: "hsl(var(--chart-2))",
+          points: coreVActual,
+          strokeOpacity: 1,
+          renderOrder: 1,
+        },
+        {
+          key: "coreTarget",
+          label: "Core (target)",
+          color: "hsl(var(--chart-5))",
+          points: coreV,
+          strokeDasharray: "5 7",
+          strokeLinecap: "butt" as const,
+          strokeOpacity: 1,
+          renderOrder: 2,
+        }
+      );
+    }
+    return series;
+  }, [voltage, coreVActual, coreV, hasCoreVoltage]);
 
   const psramAvailable = useMemo(() => Number(device?.info.isPSRAMAvailable) === 1, [device?.info.isPSRAMAvailable]);
 
@@ -437,26 +468,28 @@ export default function MonitoringClient({ id }: { id: string }) {
             </p>
           </CardContent>
         </Card>
-        <Card className="rounded-none">
-          <CardHeader className="flex flex-row items-center justify-between gap-3">
-            <CardTitle>Free heap</CardTitle>
-            <span className="ml-auto whitespace-nowrap font-accent text-xs text-muted-foreground">
-              {psramAvailable ? "Internal | PSRAM" : "Internal"}
-            </span>
-          </CardHeader>
-          <CardContent>
-            <p className="font-accent text-xl text-foreground">
-              {psramAvailable ? (
-                <>
-                  {formatNumber(freeHeapInternalCurrentMb, 2)} MB <span className="text-muted-foreground">|</span>{" "}
-                  {formatNumber(freeHeapSpiramCurrentMb, 2)} MB
-                </>
-              ) : (
-                <>{formatNumber(freeHeapInternalCurrentMb, 2)} MB</>
-              )}
-            </p>
-          </CardContent>
-        </Card>
+        {hasFreeHeapConfig && (
+          <Card className="rounded-none">
+            <CardHeader className="flex flex-row items-center justify-between gap-3">
+              <CardTitle>Free heap</CardTitle>
+              <span className="ml-auto whitespace-nowrap font-accent text-xs text-muted-foreground">
+                {psramAvailable ? "Internal | PSRAM" : "Internal"}
+              </span>
+            </CardHeader>
+            <CardContent>
+              <p className="font-accent text-xl text-foreground">
+                {psramAvailable ? (
+                  <>
+                    {formatNumber(freeHeapInternalCurrentMb, 2)} MB <span className="text-muted-foreground">|</span>{" "}
+                    {formatNumber(freeHeapSpiramCurrentMb, 2)} MB
+                  </>
+                ) : (
+                  <>{formatNumber(freeHeapInternalCurrentMb, 2)} MB</>
+                )}
+              </p>
+            </CardContent>
+          </Card>
+        )}
         <Card className="rounded-none">
           <CardHeader className="flex flex-row items-center justify-between gap-3">
             <CardTitle>Difficulty</CardTitle>
@@ -505,18 +538,20 @@ export default function MonitoringClient({ id }: { id: string }) {
       </div>
 
       <div className="mt-3 grid gap-4 tablet:mt-4 tablet:grid-cols-2">
-        <LineChartCard title="Fan speed" points={fan} unit="RPM" />
+        {hasFanConfig && <LineChartCard title="Fan speed" points={fan} unit="RPM" />}
         <MultiLineChartCard title="Voltages" series={voltageSeries} unit="V" valueDigits={3} yDomain={[0, 6]} />
       </div>
 
       <div className="mt-3 grid gap-4 tablet:mt-4 tablet:grid-cols-2">
-        <LineChartCard title="Frequency" points={frequency} unit="MHz" curve="step" />
-        <MultiLineChartCard
-          title="Free heap"
-          unit="MB"
-          valueDigits={2}
-          series={heapSeries}
-        />
+        {hasFrequency && <LineChartCard title="Frequency" points={frequency} unit="MHz" curve="step" />}
+        {hasFreeHeapConfig && (
+          <MultiLineChartCard
+            title="Free heap"
+            unit="MB"
+            valueDigits={2}
+            series={heapSeries}
+          />
+        )}
       </div>
     </div>
   );

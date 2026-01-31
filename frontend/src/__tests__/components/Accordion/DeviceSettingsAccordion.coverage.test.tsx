@@ -301,10 +301,11 @@ describe("DeviceSettingsAccordion additional coverage", () => {
     await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(2));
 
     const firstPayload = axiosMock.patch.mock.calls[0][1];
-    expect(firstPayload.info.stratumPort).toBe(1234);
-    expect(firstPayload.info.stratumPassword).toBe("1234");
-    expect(typeof firstPayload.info.stratumPassword).toBe("string");
-    expect(firstPayload.info.flipscreen).toBe(0);
+    const pool = firstPayload.info.config.pools.groups[0].pools[0];
+    expect(pool.url).toContain(":1234");
+    expect(pool.password).toBe("1234");
+    expect(typeof pool.password).toBe("string");
+    expect(firstPayload.info.config.extra_config.invertscreen).toBe(0);
   });
 
   it("surfaces axios response message when saving device settings fails", async () => {

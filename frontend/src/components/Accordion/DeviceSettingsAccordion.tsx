@@ -29,9 +29,9 @@ import { SelectPresetModal } from "../Modal/SelectPresetModal";
 import { RadioButton } from "../RadioButton";
 import { Select } from "../Select/Select";
 
-// Helper function to extract pool URL, port, and user from pyasic config
-function extractPoolInfo(device: Device): { url: string; port: string; user: string } {
-  const defaultPool = { url: "", port: "", user: "" };
+// Helper function to extract pool URL, port, user and password from pyasic config (config.pools)
+function extractPoolInfo(device: Device): { url: string; port: string; user: string; password: string } {
+  const defaultPool = { url: "", port: "", user: "", password: "" };
 
   if (!device.info.config?.pools?.groups || device.info.config.pools.groups.length === 0) {
     return defaultPool;
@@ -57,14 +57,82 @@ function extractPoolInfo(device: Device): { url: string; port: string; user: str
       url: host || "",
       port: port || "",
       user: pool.user || "",
+      password: pool.password ?? "",
     };
   } catch {
     return {
       url: pool.url || "",
       port: "",
       user: pool.user || "",
+      password: pool.password ?? "",
     };
   }
+}
+
+// Helpers: only show controls when the field exists in the response (conditional extra_config / fan_mode)
+function hasExtraConfigField(device: Device, key: string): boolean {
+  const extra = device.info.config?.extra_config;
+  return !!extra && typeof extra === "object" && key in extra;
+}
+function hasFanModeField(device: Device, key: string): boolean {
+  const fm = device.info.config?.fan_mode;
+  return !!fm && typeof fm === "object" && key in fm;
+}
+/** True if any Display & fan field exists (extra_config or fan_mode). */
+function hasAnyDisplayOrFanField(device: Device): boolean {
+  const extra = device.info.config?.extra_config;
+  const fm = device.info.config?.fan_mode;
+  return (
+    (!!extra && (typeof extra.invertscreen === "number" || typeof extra.invertfanpolarity === "number" || typeof extra.min_fan_speed === "number")) ||
+    (!!fm && typeof fm === "object")
+  );
+}
+function hasFrequencyOrVoltage(device: Device): boolean {
+  return (
+    device.info.frequency !== undefined ||
+    (device.info.frequencyOptions?.length ?? 0) > 0 ||
+    device.info.coreVoltage !== undefined ||
+    (device.info.coreVoltageOptions?.length ?? 0) > 0
+  );
+}
+
+// Read settings from new pyasic-bridge format (config.extra_config, config.fan_mode)
+function getFlipscreen(device: Device): number {
+  return device.info.config?.extra_config?.invertscreen ?? 0;
+}
+function getFanspeed(device: Device): number {
+  return device.info.config?.fan_mode?.speed ?? device.info.config?.extra_config?.min_fan_speed ?? 0;
+}
+function getAutofanspeed(device: Device): number {
+  const mode = device.info.config?.fan_mode?.mode;
+  return mode === "auto" ? 1 : 0;
+}
+function getInvertfanpolarity(device: Device): number {
+  return (device.info.config?.extra_config?.invertfanpolarity as number | undefined) ?? 0;
+}
+
+function getFirstPool(device: Device): { url: string; user: string; password: string } {
+  const pool = device.info.config?.pools?.groups?.[0]?.pools?.[0];
+  return pool ? { url: pool.url ?? "", user: pool.user ?? "", password: pool.password ?? "" } : { url: "", user: "", password: "" };
+}
+
+function updateFirstPool(device: Device, pool: { url: string; user: string; password: string }): Device {
+  const cfg = device.info.config;
+  const groups = cfg?.pools?.groups ?? [];
+  const firstGroup = groups[0] ?? { pools: [], quota: 1, name: null };
+  const pools = firstGroup.pools ?? [];
+  const newFirstPool = { ...(pools[0] ?? { url: "", user: "", password: "" }), ...pool };
+  const newGroups = [{ ...firstGroup, pools: [newFirstPool, ...pools.slice(1)] }, ...groups.slice(1)];
+  return {
+    ...device,
+    info: {
+      ...device.info,
+      config: {
+        ...cfg,
+        pools: { groups: newGroups },
+      },
+    },
+  };
 }
 
 interface DeviceSettingsAccordionProps {
@@ -648,41 +716,81 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
       validateField(name, value);
 
       const isCheckbox = type === "checkbox";
+      const nextValue = isCheckbox
+        ? (e.target as HTMLInputElement).checked
+          ? 1
+          : 0
+        : name === "stratumPort" || name === "fanspeed"
+          ? (() => {
+              const raw = name === "stratumPort" ? String(value).replace(/\D/g, "") : value;
+              const parsed = parseInt(String(raw), 10);
+              return Number.isNaN(parsed) ? (name === "fanspeed" ? 0 : value) : parsed;
+            })()
+          : name === "frequency" || name === "coreVoltage"
+            ? (() => {
+                const parsed = parseInt(String(value), 10);
+                return Number.isNaN(parsed) ? value : parsed;
+              })()
+            : value;
 
-      const numericFields = new Set([
-        "frequency",
-        "coreVoltage",
-        "stratumPort",
-        "fanspeed",
-        "autoscreenoff",
-        "overheat_temp",
-      ]);
+      const cfg = device.info.config;
+      const extra = { ...cfg?.extra_config };
+      const fanMode = { ...cfg?.fan_mode };
+      const poolInfo = extractPoolInfo(device);
 
-      const nextValue = (() => {
-        if (isCheckbox) {
-          return (e.target as HTMLInputElement).checked ? 1 : 0;
+      if (name === "flipscreen") {
+        extra.invertscreen = nextValue as number;
+      } else if (name === "invertfanpolarity") {
+        extra.invertfanpolarity = nextValue as number;
+      } else if (name === "autofanspeed") {
+        fanMode.mode = nextValue === 1 ? "auto" : "manual";
+      } else if (name === "fanspeed") {
+        fanMode.speed = nextValue as number;
+      } else if (name === "stratumURL") {
+        const url = `stratum+tcp://${String(value).trim()}:${poolInfo.port || "3333"}`;
+        setDevice(updateFirstPool(device, { ...getFirstPool(device), url }));
+        return;
+      } else if (name === "stratumPort") {
+        const url = `stratum+tcp://${poolInfo.url || ""}:${nextValue}`;
+        setDevice(updateFirstPool(device, { ...getFirstPool(device), url }));
+        return;
+      } else if (name === "stratumPassword") {
+        setDevice(updateFirstPool(device, { ...getFirstPool(device), password: String(value) }));
+        return;
+      } else if (name === "hostname") {
+        setDevice({ ...device, info: { ...device.info, hostname: String(value) } });
+        return;
+      } else if (name === "frequency" || name === "coreVoltage") {
+        const num = typeof nextValue === "number" ? nextValue : parseInt(String(nextValue), 10);
+        if (!Number.isNaN(num)) {
+          setDevice({
+            ...device,
+            info: { ...device.info, [name]: num },
+          });
         }
+        return;
+      }
 
-        // Keep string fields as strings. The previous implementation used
-        // `parseInt(value) || value`, which turns IPs like "192.168.0.252" into
-        // the number 192 (because parseInt stops at the first dot).
-        if (!numericFields.has(name)) {
-          return value;
-        }
-
-        const raw = name === "stratumPort" ? value.replace(/\D/g, "") : value;
-        const parsed = parseInt(raw, 10);
-        return Number.isNaN(parsed) ? value : parsed;
-      })();
+      const fanModeResolved: typeof cfg.fan_mode =
+        fanMode.mode !== undefined || fanMode.speed !== undefined || fanMode.minimum_fans !== undefined
+          ? {
+              mode: fanMode.mode ?? "manual",
+              speed: fanMode.speed ?? 0,
+              minimum_fans: fanMode.minimum_fans ?? 1,
+            }
+          : cfg?.fan_mode;
 
       const updatedDevice = {
         ...device,
         info: {
           ...device.info,
-          [name]: nextValue,
+          config: {
+            ...cfg,
+            extra_config: extra,
+            fan_mode: fanModeResolved,
+          },
         },
       };
-
       setDevice(updatedDevice);
     },
     [device, validateField]
@@ -697,15 +805,8 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
       const editedStratumUser = { ...stratumUser, [name]: value };
       setStratumUser(editedStratumUser);
 
-      const updatedDevice = {
-        ...device,
-        info: {
-          ...device.info,
-          stratumUser: `${editedStratumUser.stratumUser}.${editedStratumUser.workerName}`,
-        },
-      };
-
-      setDevice(updatedDevice);
+      const fullUser = `${editedStratumUser.stratumUser}.${editedStratumUser.workerName}`;
+      setDevice(updateFirstPool(device, { ...getFirstPool(device), user: fullUser }));
     },
     [device, stratumUser, validateField]
   );
@@ -724,14 +825,13 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     }
 
     if (value === RadioButtonStatus.PRESET && selectedPreset) {
-      setDevice({
-        ...device,
-        presetUuid: selectedPreset.uuid,
-        info: {
-          ...device.info,
-          stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
-        },
-      });
+      const poolUrl = `stratum+tcp://${selectedPreset.configuration.stratumURL}:${selectedPreset.configuration.stratumPort}`;
+      const poolUser = `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`;
+      const next = updateFirstPool(
+        { ...device, presetUuid: selectedPreset.uuid },
+        { url: poolUrl, user: poolUser, password: selectedPreset.configuration.stratumPassword ?? "" }
+      );
+      setDevice(next);
     }
   };
 
@@ -741,16 +841,13 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
       if (preset) {
         setSelectedPreset(preset);
 
-        const updatedDevice = {
-          ...device,
-          presetUuid: preset.uuid,
-          info: {
-            ...device.info,
-            stratumUser: `${preset.configuration.stratumUser}.${stratumUser.workerName}`,
-          },
-        };
-
-        setDevice(updatedDevice);
+        const poolUrl = `stratum+tcp://${preset.configuration.stratumURL}:${preset.configuration.stratumPort}`;
+        const poolUser = `${preset.configuration.stratumUser}.${stratumUser.workerName}`;
+        const next = updateFirstPool(
+          { ...device, presetUuid: preset.uuid },
+          { url: poolUrl, user: poolUser, password: preset.configuration.stratumPassword ?? "" }
+        );
+        setDevice(next);
       }
     },
     [presets, device, stratumUser.workerName]
@@ -809,7 +906,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     for (const [key, value] of Object.entries(obj)) {
       if (value === "") continue;
 
-      if (key === "fanspeed" && device.info.autofanspeed !== 0) {
+      if (key === "fanspeed" && getAutofanspeed(device) !== 0) {
         continue;
       }
 
@@ -817,7 +914,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     }
 
     return false;
-  }, [device.info.autofanspeed]);
+  }, [device]);
 
   const isDeviceValid = useCallback(() => {
     return hasEmptyFields(device) || hasErrorFields(deviceError);
@@ -930,72 +1027,94 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
           <div className="flex flex-col gap-4">
             <p className="font-heading text-sm font-bold uppercase">Hardware settings</p>
-            <div className="flex flex-col gap-4 desktop:flex-row">
-              <div className="flex flex-col gap-4 tablet:flex-row desktop:flex-[2]">
-                <Select
-                  id={`${device.mac}-frequency`}
-                  label="Frequency"
-                  name="frequency"
-                  onChange={handleChange}
-                  value={device.info.frequency}
-                  defaultValue={device.info.frequency}
-                  optionValues={device.info.frequencyOptions}
-                  allowCustom={true}
-                />
-                <Select
-                  id={`${device.mac}-coreVoltage`}
-                  label="Core Voltage"
-                  name="coreVoltage"
-                  onChange={handleChange}
-                  value={device.info.coreVoltage}
-                  defaultValue={device.info.coreVoltage}
-                  optionValues={device.info.coreVoltageOptions}
-                  allowCustom={true}
-                />
-              </div>
 
-              <div className="flex flex-col gap-4 desktop:flex-[3]">
+            {hasAnyDisplayOrFanField(device) && (
+              <>
+                <p className="font-body text-xs font-semibold uppercase text-muted-foreground">
+                  Display &amp; fan (config.extra_config / config.fan_mode)
+                </p>
+                <div className="flex flex-col gap-4 tablet:flex-row tablet:flex-wrap tablet:items-center">
+                  {hasExtraConfigField(device, "invertscreen") && (
+                    <Checkbox
+                      id={`${device.mac}-flipscreen`}
+                      name="flipscreen"
+                      label="Flip Screen"
+                      defaultChecked={getFlipscreen(device) === 1}
+                      onChange={handleChange}
+                    />
+                  )}
+                  {hasExtraConfigField(device, "invertfanpolarity") && (
+                    <Checkbox
+                      id={`${device.mac}-invertfanpolarity`}
+                      name="invertfanpolarity"
+                      label="Invert Fan Polarity"
+                      defaultChecked={getInvertfanpolarity(device) === 1}
+                      onChange={handleChange}
+                    />
+                  )}
+                  {hasFanModeField(device, "mode") && (
+                    <Checkbox
+                      id={`${device.mac}-autofanspeed`}
+                      name="autofanspeed"
+                      label="Automatic Fan Control"
+                      defaultChecked={getAutofanspeed(device) === 1}
+                      onChange={handleChange}
+                    />
+                  )}
+                  {(hasFanModeField(device, "speed") || hasExtraConfigField(device, "min_fan_speed")) && (
+                    <div className="w-full tablet:max-w-[200px]">
+                      <Input
+                        name="fanspeed"
+                        id={`${device.mac}-fanspeed`}
+                        placeholder=""
+                        type="number"
+                        defaultValue={getFanspeed(device) || 0}
+                        onChange={handleChange}
+                        isDisabled={getAutofanspeed(device) === 1}
+                        rightAddon={"%"}
+                        error={deviceError.fanspeed}
+                      />
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {hasFrequencyOrVoltage(device) && (
+              <>
                 <p className="font-body text-xs font-semibold uppercase text-muted-foreground">
                   Advanced Hardware Settings
                 </p>
-                <div className="flex flex-col gap-4 tablet:flex-row tablet:flex-wrap tablet:items-center">
-                  <Checkbox
-                    id={`${device.mac}-flipscreen`}
-                    name="flipscreen"
-                    label="Flip Screen"
-                    defaultChecked={device.info.flipscreen === 1}
-                    onChange={handleChange}
-                  />
-                  <Checkbox
-                    id={`${device.mac}-invertfanpolarity`}
-                    name="invertfanpolarity"
-                    label="Invert Fan Polarity"
-                    defaultChecked={device.info.invertfanpolarity === 1}
-                    onChange={handleChange}
-                  />
-                  <Checkbox
-                    id={`${device.mac}-autofanspeed`}
-                    name="autofanspeed"
-                    label="Automatic Fan Control"
-                    defaultChecked={device.info.autofanspeed === 1}
-                    onChange={handleChange}
-                  />
-                  <div className="w-full tablet:max-w-[200px]">
-                    <Input
-                      name="fanspeed"
-                      id={`${device.mac}-fanspeed`}
-                      placeholder=""
-                      type="number"
-                      defaultValue={device.info.fanspeed || 0}
-                      onChange={handleChange}
-                      isDisabled={device.info.autofanspeed === 1}
-                      rightAddon={"%"}
-                      error={deviceError.fanspeed}
-                    />
+                <div className="flex flex-col gap-4 desktop:flex-row">
+                  <div className="flex flex-col gap-4 tablet:flex-row desktop:flex-[2]">
+                    {(device.info.frequency !== undefined || (device.info.frequencyOptions?.length ?? 0) > 0) && (
+                      <Select
+                        id={`${device.mac}-frequency`}
+                        label="Frequency"
+                        name="frequency"
+                        onChange={handleChange}
+                        value={device.info.frequency}
+                        defaultValue={device.info.frequency}
+                        optionValues={device.info.frequencyOptions ?? []}
+                        allowCustom={true}
+                      />
+                    )}
+                    {(device.info.coreVoltage !== undefined || (device.info.coreVoltageOptions?.length ?? 0) > 0) && (
+                      <Select
+                        id={`${device.mac}-coreVoltage`}
+                        label="Core Voltage"
+                        name="coreVoltage"
+                        onChange={handleChange}
+                        value={device.info.coreVoltage}
+                        defaultValue={device.info.coreVoltage}
+                        optionValues={device.info.coreVoltageOptions ?? []}
+                        allowCustom={true}
+                      />
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
 
           <div className="flex flex-col gap-4">
@@ -1118,7 +1237,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                     name="stratumPassword"
                     id={`${device.mac}-stratumPassword`}
                     placeholder="Add your stratum password"
-                    defaultValue={device.info.stratumPassword}
+                    defaultValue={extractPoolInfo(device).password}
                     error={deviceError.stratumPassword}
                     onChange={handleChange}
                   />

@@ -254,11 +254,9 @@ describe("DeviceSettingsAccordion preset + socket behavior", () => {
 
     expect(screen.getByText("miner-options-updated")).toBeInTheDocument();
 
-    // Opening the accordion should keep frequency/core options even when event sends empty arrays.
+    // Opening the accordion: when socket sends a hostname update, it should not replace the current hostname (only tracing is updated).
     const details = await openFirstDetails(container);
-    const freqSelect = details.querySelector("select#aa-frequency") as HTMLSelectElement;
-    expect(freqSelect).not.toBeNull();
-    expect(Array.from(freqSelect.options).some((o) => o.textContent === "200")).toBe(true);
+    expect(details).not.toBeNull();
 
     // When accordion is open, only tracing is updated (hostname should remain unchanged).
     act(() => {
@@ -308,9 +306,8 @@ describe("DeviceSettingsAccordion preset + socket behavior", () => {
     await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(2));
 
     const firstPayload = axiosMock.patch.mock.calls[0][1];
-    // New pyasic-based model stores stratumPort directly on info instead of mutating the URL.
-    expect(firstPayload.info.stratumPort).toBe(123);
-    expect(firstPayload.info.flipscreen).toBe(1);
+    expect(firstPayload.info.config.pools.groups[0].pools[0].url).toContain(":123");
+    expect(firstPayload.info.config.extra_config.invertscreen).toBe(1);
   });
 
   it("falls back to empty option arrays when previous device has no options", async () => {

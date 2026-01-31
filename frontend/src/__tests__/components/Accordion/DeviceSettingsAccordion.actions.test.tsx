@@ -138,7 +138,7 @@ describe("DeviceSettingsAccordion actions", () => {
     await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(2));
 
     const firstPayload = axiosMock.patch.mock.calls[0][1];
-    expect(firstPayload.info.stratumURL).toBe("192.168.0.252");
+    expect(firstPayload.info.config.pools.groups[0].pools[0].url).toContain("192.168.0.252");
   });
 
   it("restarts selected devices (success)", async () => {
@@ -338,6 +338,25 @@ describe("DeviceSettingsAccordion actions", () => {
   });
 
   it("uses the selected preset values when saving device settings", async () => {
+    (global as any).fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        data: [
+          {
+            uuid: "preset-1",
+            name: "Preset 1",
+            configuration: {
+              stratumURL: "pool.example.com",
+              stratumPort: 3333,
+              stratumUser: "user",
+              stratumPassword: "preset-pass",
+            },
+            associatedDevices: [],
+          },
+        ],
+      }),
+    }));
+
     axiosMock.patch
       .mockResolvedValueOnce({ data: { data: { mac: "aa" } } })
       .mockResolvedValueOnce({ data: { data: { mac: "aa", info: { hostname: "miner-01" } } } });
@@ -379,9 +398,7 @@ describe("DeviceSettingsAccordion actions", () => {
 
     const firstPayload = axiosMock.patch.mock.calls[0][1];
     expect(firstPayload.presetUuid).toBe("preset-1");
-    // In the pyasic-based model, the effective mining user is stored on info.stratumUser,
-    // while the underlying config pool user remains whatever the device reported.
-    expect(firstPayload.info.stratumUser).toBe("user.worker");
+    expect(firstPayload.info.config.pools.groups[0].pools[0].user).toBe("user.worker");
   });
 
   it("restarts an individual device via RestartModal", async () => {
