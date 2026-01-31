@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "plane": {
+      "type": "remote",
+      "url": "https://mcp.plane.so/http/mcp",
+      "enabled": true
+    }
+  }
+}
