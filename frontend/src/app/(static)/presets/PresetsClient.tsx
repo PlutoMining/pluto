@@ -159,23 +159,24 @@ export default function PresetsClient() {
   };
 
   return (
-    <div className="container flex-1 py-6">
-      {alert ? (
-        <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
-      ) : null}
-
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
-        {presets && presets.length > 0 ? (
-          <Button
-            variant="primary"
-            onClick={handleNewPreset()}
-            label="Add a New Preset"
-            className="w-full md:w-auto"
-          />
+    <div className="flex-1 py-6">
+      <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+        {alert ? (
+          <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
         ) : null}
-      </div>
 
-      <div className="mt-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
+          {presets && presets.length > 0 ? (
+            <Button
+              variant="primary"
+              onClick={handleNewPreset()}
+              label="Add a New Preset"
+              className="w-full md:w-auto"
+            />
+          ) : null}
+        </div>
+
+        <div className="mt-8">
         {presets ? (
           presets.length > 0 ? (
             <div className="flex flex-col gap-4">
@@ -203,24 +204,25 @@ export default function PresetsClient() {
             <CircularProgressWithDots />
           </div>
         )}
+        </div>
+
+        <AddNewPresetModal
+          isOpen={isNewPresetModalOpen}
+          onClose={onNewPresetModalClose}
+          onCloseSuccessfully={onNewPresetModalCloseSuccessfully}
+          presetId={selectedPresetUuid}
+        />
+
+        <BasicModal
+          isOpen={isDeletePresetModalOpen}
+          onClose={onDeletePresetModalClose}
+          primaryActionLabel="Proceed and Delete"
+          primaryAction={handleDeletePreset}
+          title="Are you sure?"
+          body="If you proceed, the Preset Pool will be permanently deleted."
+          secondaryActionLabel="Cancel"
+        />
       </div>
-
-      <AddNewPresetModal
-        isOpen={isNewPresetModalOpen}
-        onClose={onNewPresetModalClose}
-        onCloseSuccessfully={onNewPresetModalCloseSuccessfully}
-        presetId={selectedPresetUuid}
-      />
-
-      <BasicModal
-        isOpen={isDeletePresetModalOpen}
-        onClose={onDeletePresetModalClose}
-        primaryActionLabel="Proceed and Delete"
-        primaryAction={handleDeletePreset}
-        title="Are you sure?"
-        body="If you proceed, the Preset Pool will be permanently deleted."
-        secondaryActionLabel="Cancel"
-      />
     </div>
   );
 }

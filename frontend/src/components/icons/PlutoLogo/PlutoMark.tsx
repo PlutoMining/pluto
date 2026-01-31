@@ -2,10 +2,11 @@ import * as React from "react";
 
 interface PlutoMarkProps {
   color: string;
+  className?: string;
 }
 
 // App mark only (no wordmark). Derived from PlutoCircleLogo.
-export function PlutoMark({ color }: PlutoMarkProps) {
+export function PlutoMark({ color, className }: PlutoMarkProps) {
   return (
     <svg
       width="44"
@@ -13,6 +14,7 @@ export function PlutoMark({ color }: PlutoMarkProps) {
       viewBox="0 0 44 44"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      className={className}
     >
       <g clipPath="url(#clip0_pluto_mark)">
         <rect width="44" height="44" rx="22" fill="black" />

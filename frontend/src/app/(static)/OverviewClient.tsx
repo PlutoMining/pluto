@@ -281,14 +281,17 @@ export default function OverviewClient() {
 
   if (devices.length === 0) {
     return (
-      <div className="container flex-1 px-4 py-4 md:px-8 md:py-6">
-        <NoDeviceAddedSection />
+      <div className="flex-1 py-6">
+        <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+          <NoDeviceAddedSection />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container flex-1 px-4 py-4 md:px-8 md:py-6">
+    <div className="flex-1 py-6">
+      <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="rounded-none">
           <CardHeader>
@@ -401,6 +404,7 @@ export default function OverviewClient() {
             </div>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );

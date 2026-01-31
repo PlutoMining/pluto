@@ -1,41 +1,50 @@
-import type { MaterialSymbolName } from "@/components/Icon";
+import type { ComponentType, SVGProps } from "react";
+
+import {
+  IconNavDeviceSettings,
+  IconNavMonitoring,
+  IconNavOverview,
+  IconNavPoolPresets,
+  IconNavSettings,
+  IconNavYourDevices,
+} from "@/components/icons/FigmaIcons";
 
 export type AppNavItem = {
   key: string;
   href: string;
   label: string;
-  icon: MaterialSymbolName;
+  Icon: ComponentType<SVGProps<SVGSVGElement>>;
   match: (pathname: string) => boolean;
 };
 
 export const APP_NAV: AppNavItem[] = [
-  { key: "overview", href: "/", label: "Overview", icon: "speed", match: (p) => p === "/" },
+  { key: "overview", href: "/", label: "Overview", Icon: IconNavOverview, match: (p) => p === "/" },
   {
     key: "monitoring",
     href: "/monitoring",
     label: "Monitoring",
-    icon: "signal_cellular_alt",
+    Icon: IconNavMonitoring,
     match: (p) => p === "/monitoring" || p.startsWith("/monitoring/"),
   },
   {
     key: "device-settings",
     href: "/device-settings",
     label: "Device Settings",
-    icon: "tune",
+    Icon: IconNavDeviceSettings,
     match: (p) => p === "/device-settings" || p.startsWith("/device-settings/"),
   },
   {
     key: "presets",
     href: "/presets",
     label: "Pool Presets",
-    icon: "grid_view",
+    Icon: IconNavPoolPresets,
     match: (p) => p === "/presets" || p.startsWith("/presets/"),
   },
   {
     key: "devices",
     href: "/devices",
     label: "Your Devices",
-    icon: "content_copy",
+    Icon: IconNavYourDevices,
     match: (p) => p === "/devices" || p.startsWith("/devices/"),
   },
 ];
@@ -44,7 +53,7 @@ export const SETTINGS_NAV: AppNavItem = {
   key: "settings",
   href: "/settings",
   label: "Settings",
-  icon: "settings",
+  Icon: IconNavSettings,
   match: (p) => p === "/settings" || p.startsWith("/settings/"),
 };
 

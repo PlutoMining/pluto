@@ -122,122 +122,124 @@ export default function MonitoringTableClient() {
   }, [fetchDevicesAndUpdate, searchQuery]);
 
   return (
-    <div className="container flex-1 py-6">
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
-          <div className="w-full md:w-auto">
-            <SearchInput label="Search device" onChange={handleSearch} placeholder="Search device" />
+    <div className="flex-1 py-6">
+      <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
+            <div className="w-full">
+              <SearchInput label="Search device" onChange={handleSearch} placeholder="Search device" />
+            </div>
           </div>
-        </div>
 
-        {registeredDevices && registeredDevices.length > 0 ? (
-          <div className="bg-card">
-            <div className="hidden md:block overflow-x-auto border border-border">
-              <table className="w-full border-collapse">
-                <thead className="bg-muted">
-                  <tr>
-                    <th className="border-b border-border p-3 text-left font-accent text-xs font-normal uppercase text-muted-foreground">
-                      Name
-                    </th>
-                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                      Hashrate
-                    </th>
-                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                      Shares
-                    </th>
-                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                      Power
-                    </th>
-                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                      Temp
-                    </th>
-                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                      VR Temp
-                    </th>
-                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                      Current difficulty
-                    </th>
-                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                      Best difficulty
-                    </th>
-                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                      Uptime
-                    </th>
-                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                      Status
-                    </th>
-                    <th className="border-b border-border p-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {registeredDevices.map((device) => {
-                    const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
-
-                    return (
-                    <tr key={device.mac} className="bg-card">
-                      <td className="border-t border-border p-3 text-left font-accent text-sm font-normal">
-                        {device.info.hostname}
-                      </td>
-                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {(device.info.hashRate_10m || device.info.hashRate)?.toFixed(2)} GH/s
-                      </td>
-                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        <span className="text-muted-foreground">{device.info.sharesAccepted}</span>{" "}
-                        <span className="text-muted-foreground">|</span>{" "}
-                        <span className="text-primary">{device.info.sharesRejected}</span>
-                      </td>
-                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {device.info.power.toFixed(2)} W
-                      </td>
-                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {formatTemperature(device.info.temp)} °C
-                      </td>
-                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {formatTemperature(device.info.vrTemp)} °C
-                      </td>
-                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {formatDifficulty(currentDiff)}
-                      </td>
-                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {formatDifficulty(device.info.bestDiff)}
-                      </td>
-                      <td
-                        className="border-t border-border p-3 text-center font-accent text-sm font-normal"
-                        title={formatDetailedTime(device.info.uptimeSeconds)}
-                      >
-                        {formatTime(device.info.uptimeSeconds)}
-                      </td>
-                      <td className="border-t border-border p-3 text-center">
-                        <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
-                      </td>
-                      <td className="border-t border-border p-3 text-center">
-                        <NextLink
-                          href={`/monitoring/${device.info.hostname}`}
-                          className="inline-flex items-center gap-1 font-accent text-sm font-medium underline"
-                        >
-                          Dashboard <ArrowLeftSmallIcon color="currentColor" />
-                        </NextLink>
-                      </td>
+          {registeredDevices && registeredDevices.length > 0 ? (
+            <div className="bg-card">
+              <div className="hidden overflow-x-auto border border-border md:block">
+                <table className="w-full border-collapse">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="border-b border-border p-3 text-left font-accent text-xs font-normal uppercase text-muted-foreground">
+                        Name
+                      </th>
+                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                        Hashrate
+                      </th>
+                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                        Shares
+                      </th>
+                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                        Power
+                      </th>
+                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                        Temp
+                      </th>
+                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                        VR Temp
+                      </th>
+                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                        Current difficulty
+                      </th>
+                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                        Best difficulty
+                      </th>
+                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                        Uptime
+                      </th>
+                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                        Status
+                      </th>
+                      <th className="border-b border-border p-3" />
                     </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {registeredDevices.map((device) => {
+                      const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
 
-            <div className="md:hidden">
-              <DeviceMonitoringAccordion devices={registeredDevices} />
+                      return (
+                        <tr key={device.mac} className="bg-card">
+                          <td className="border-t border-border p-3 text-left font-accent text-sm font-normal">
+                            {device.info.hostname}
+                          </td>
+                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                            {(device.info.hashRate_10m || device.info.hashRate)?.toFixed(2)} GH/s
+                          </td>
+                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                            <span className="text-muted-foreground">{device.info.sharesAccepted}</span>{" "}
+                            <span className="text-muted-foreground">|</span>{" "}
+                            <span className="text-primary">{device.info.sharesRejected}</span>
+                          </td>
+                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                            {device.info.power.toFixed(2)} W
+                          </td>
+                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                            {formatTemperature(device.info.temp)} °C
+                          </td>
+                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                            {formatTemperature(device.info.vrTemp)} °C
+                          </td>
+                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                            {formatDifficulty(currentDiff)}
+                          </td>
+                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                            {formatDifficulty(device.info.bestDiff)}
+                          </td>
+                          <td
+                            className="border-t border-border p-3 text-center font-accent text-sm font-normal"
+                            title={formatDetailedTime(device.info.uptimeSeconds)}
+                          >
+                            {formatTime(device.info.uptimeSeconds)}
+                          </td>
+                          <td className="border-t border-border p-3 text-center">
+                            <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
+                          </td>
+                          <td className="border-t border-border p-3 text-center">
+                            <NextLink
+                              href={`/monitoring/${device.info.hostname}`}
+                              className="inline-flex items-center gap-1 font-accent text-sm font-medium underline"
+                            >
+                              Dashboard <ArrowLeftSmallIcon color="currentColor" />
+                            </NextLink>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="md:hidden">
+                <DeviceMonitoringAccordion devices={registeredDevices} />
+              </div>
             </div>
-          </div>
-        ) : (
-          <p className="text-center text-sm text-muted-foreground">
-            To start using Pluto, go to{" "}
-            <NextLink href={"/devices"} className="underline">
-              Your Devices
-            </NextLink>{" "}
-            and add one or more devices.
-          </p>
-        )}
+          ) : (
+            <p className="text-center text-sm text-muted-foreground">
+              To start using Pluto, go to{" "}
+              <NextLink href={"/devices"} className="underline">
+                Your Devices
+              </NextLink>{" "}
+              and add one or more devices.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

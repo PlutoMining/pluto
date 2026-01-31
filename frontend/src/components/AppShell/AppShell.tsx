@@ -3,7 +3,17 @@
 import * as React from "react";
 import { usePathname } from "next/navigation";
 
-import { Icon } from "@/components/Icon";
+import {
+  IconHeaderHelp,
+  IconHeaderNotifications,
+  IconHeaderSupport,
+} from "@/components/icons/FigmaIcons";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,6 +35,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
   const title = getPageTitle(pathname);
 
+  const [notificationsOpen, setNotificationsOpen] = React.useState(false);
+
   return (
     <SidebarProvider
       style={
@@ -43,12 +55,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
         >
           <div className="flex flex-1 items-center gap-2">
-            <SidebarTrigger className="-ml-1 text-[#CBCCCC] hover:bg-[#161B1F] hover:text-white" />
+            <SidebarTrigger className="-ml-1 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
             <Separator orientation="vertical" className="mx-2 h-4 bg-sidebar-border" />
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbPage className="font-heading text-sm tracking-[0.07px] text-white">
+                  <BreadcrumbPage className="font-heading text-sm tracking-[0.07px] text-sidebar-accent-foreground">
                     {title}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
@@ -57,20 +69,47 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[6px] text-[#CBCCCC] hover:bg-[#161B1F] hover:text-white"
+            <a
+              href="https://discord.com/channels/1441408195405807648/1461369790672273468"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-[6px] text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              aria-label="Support"
+              title="Support"
+            >
+              <IconHeaderSupport className="h-5 w-5" />
+            </a>
+            <a
+              href="https://discord.com/channels/1441408195405807648/1452965862863536138"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-[6px] text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               aria-label="Help"
+              title="Help"
             >
-              <Icon name="help" size={20} />
-            </button>
+              <IconHeaderHelp className="h-5 w-5" />
+            </a>
             <button
               type="button"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[6px] text-[#CBCCCC] hover:bg-[#161B1F] hover:text-white"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-[6px] text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               aria-label="Notifications"
+              title="Notifications"
+              onClick={() => setNotificationsOpen(true)}
             >
-              <Icon name="notifications" size={20} />
+              <IconHeaderNotifications className="h-5 w-5" />
             </button>
+
+            <Sheet open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+              <SheetContent side="right" className="w-[360px] p-0">
+                <SheetHeader className="border-b border-border p-4">
+                  <SheetTitle className="font-heading text-sm tracking-[0.07px]">Notifications</SheetTitle>
+                </SheetHeader>
+                <div className="p-4">
+                  <p className="font-body text-sm text-muted-foreground">No notifications yet.</p>
+                  <p className="mt-2 font-body text-xs text-muted-foreground">You're all caught up.</p>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </header>
 

@@ -346,14 +346,15 @@ export default function MonitoringClient({ id }: { id: string }) {
   }, [host, rangeSeconds, refreshMs]);
 
   return (
-    <div className="container flex-1 px-4 py-4 md:px-8 md:py-6">
-      <div className="mb-3 flex flex-col gap-4 md:mb-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <NextLink href="/monitoring">
-            <Button variant="outlined">Go back</Button>
-          </NextLink>
+    <div className="flex-1 py-6">
+      <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+        <div className="mb-3 flex flex-col gap-4 md:mb-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <NextLink href="/monitoring">
+              <Button variant="outlined">Go back</Button>
+            </NextLink>
+          </div>
         </div>
-      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="rounded-none">
@@ -509,6 +510,7 @@ export default function MonitoringClient({ id }: { id: string }) {
           valueDigits={2}
           series={heapSeries}
         />
+      </div>
       </div>
     </div>
   );
