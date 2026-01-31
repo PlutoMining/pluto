@@ -106,7 +106,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SheetHeader>
                 <div className="p-4">
                   <p className="font-body text-sm text-muted-foreground">No notifications yet.</p>
-                  <p className="mt-2 font-body text-xs text-muted-foreground">You're all caught up.</p>
+                  <p className="mt-2 font-body text-xs text-muted-foreground">You&apos;re all caught up.</p>
                 </div>
               </SheetContent>
             </Sheet>

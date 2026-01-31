@@ -129,7 +129,7 @@ describe('MonitoringClient', () => {
 
     await flushEffects();
 
-    expect(screen.getByRole('button', { name: 'Go back' })).toBeInTheDocument();
+    expect(screen.getByText('Pool preset')).toBeInTheDocument();
     expect(screen.getByText('Pool preset')).toBeInTheDocument();
     expect(screen.getByText('Custom')).toBeInTheDocument();
 
@@ -386,7 +386,7 @@ describe('MonitoringClient', () => {
       await Promise.resolve();
     });
 
-    expect(await screen.findByRole('button', { name: 'Go back' })).toBeInTheDocument();
+    expect(await screen.findByText('Pool preset')).toBeInTheDocument();
     await waitFor(() => {
       expect(prom.matrixToSeries).toHaveBeenCalled();
     });

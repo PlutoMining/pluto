@@ -42,7 +42,7 @@ export default function PresetsClient() {
 
   const [selectedPresetUuid, setSelectedPresetUuid] = useState<string | undefined>(undefined);
 
-  const fetchPresets = async () => {
+  const fetchPresets = useCallback(async () => {
     try {
       const response = await fetch("/api/presets");
       if (response.ok) {
@@ -54,9 +54,9 @@ export default function PresetsClient() {
     } catch (error) {
       console.error("Error fetching presets", error);
     }
-  };
+  }, []);
 
-  const fetchAssociatedDevices = async (presetId: string) => {
+  const fetchAssociatedDevices = useCallback(async (presetId: string) => {
     try {
       const response = await axios.get(`/api/devices/presets/${presetId}`);
       const discoveredDevices: Device[] = response.data.data;
@@ -65,9 +65,9 @@ export default function PresetsClient() {
       console.error("Error discovering preset devices:", error);
       return [];
     }
-  };
+  }, []);
 
-  const fetchPresetsWithAssociatedDevices = async () => {
+  const fetchPresetsWithAssociatedDevices = useCallback(async () => {
     try {
       const presets = await fetchPresets();
 
@@ -83,11 +83,11 @@ export default function PresetsClient() {
       console.error("Error during presets' update:", error);
       setPresets([]);
     }
-  };
+  }, [fetchAssociatedDevices, fetchPresets]);
 
   useEffect(() => {
     fetchPresetsWithAssociatedDevices();
-  }, [alert]);
+  }, [alert, fetchPresetsWithAssociatedDevices]);
 
   const closeAlert = useCallback(() => {
     setAlert(undefined);
