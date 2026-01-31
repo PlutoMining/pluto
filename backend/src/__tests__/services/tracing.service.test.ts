@@ -281,6 +281,86 @@ describe("tracing.service", () => {
     expect(updatePayload.info.coreVoltageOptions).toEqual([]);
   });
 
+  it("calls createMetricsForDevice with sanitized IP when hostname is missing", async () => {
+    const { tracingService, axios, metricsService, db } = await loadTracingService();
+    tracingService.startIoHandler({} as any);
+
+    axios.get.mockResolvedValue({
+      data: createPyasicMinerInfoFixture({
+        hostname: "miner-1",
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
+      }),
+    });
+
+    db.updateOne.mockResolvedValue({ ok: true });
+
+    const device = makeDevice({
+      info: createPyasicMinerInfoFixture({
+        hostname: undefined,
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
+      }),
+    });
+
+    await tracingService.updateOriginalIpsListeners([device], false);
+    await flushMicrotasks();
+
+    expect(metricsService.createMetricsForDevice).toHaveBeenCalledWith("10__0__0__1");
+  });
+
+  it("moves top-level device fields into config.extra_config when pyasic returns flat format", async () => {
+    const { tracingService, axios, db } = await loadTracingService();
+    tracingService.startIoHandler({} as any);
+
+    const baseData = createPyasicMinerInfoFixture({
+      hostname: "miner-1",
+      device_info: {
+        make: "BitAxe",
+        model: "BM1368",
+        firmware: "Stock",
+        algo: "SHA256",
+      },
+      model: "BM1368",
+    });
+    const rawResponse = {
+      ...baseData,
+      frequency: 525,
+      coreVoltage: 1150,
+      coreVoltageActual: 1148,
+      freeHeap: 120000,
+      isPSRAMAvailable: true,
+    };
+    axios.get.mockResolvedValue({ data: rawResponse });
+
+    db.updateOne.mockResolvedValue({ ok: true });
+
+    const device = makeDevice();
+    await tracingService.updateOriginalIpsListeners([device], false);
+    await flushMicrotasks();
+
+    const updatePayload = db.updateOne.mock.calls[0][3];
+    expect(updatePayload.info.config?.extra_config).toEqual(
+      expect.objectContaining({
+        frequency: 525,
+        core_voltage: 1150,
+        core_voltage_actual: 1148,
+        free_heap: 120000,
+        is_psram_available: true,
+      })
+    );
+  });
+
   it("handles polling errors and emits an error event", async () => {
     const { tracingService, axios, metricsService } = await loadTracingService();
     tracingService.startIoHandler({} as any);

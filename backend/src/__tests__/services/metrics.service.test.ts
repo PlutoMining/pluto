@@ -17,14 +17,14 @@ jest.mock('prom-client', () => {
   }
 
   class Registry {
-    private metrics = new Map<string, Gauge>();
+    private metrics = new Map<string, Gauge | unknown>();
 
     registerMetric(metric: Gauge) {
       this.metrics.set(metric.name, metric);
     }
 
     getMetricsAsArray() {
-      return Array.from(this.metrics.values());
+      return Array.from(this.metrics.values()).filter((m): m is Gauge => m instanceof Gauge);
     }
 
     getSingleMetric(name: string) {
@@ -33,6 +33,11 @@ jest.mock('prom-client', () => {
 
     removeSingleMetric(name: string) {
       this.metrics.delete(name);
+    }
+
+    /** Test helper: inject a non-Gauge so getOrCreateGauge hits "exists but is not a Gauge" branch */
+    __injectNonGauge(name: string) {
+      this.metrics.set(name, { notAGauge: true });
     }
   }
 
@@ -54,7 +59,12 @@ import promClient from 'prom-client';
 const gaugeInstances = (promClient as unknown as { __gaugeInstances: Map<string, any> }).__gaugeInstances;
 const { logger } = jest.requireMock('@pluto/logger');
 
-import { createMetricsForDevice, deleteMetricsForDevice, register, updateOverviewMetrics } from '@/services/metrics.service';
+import {
+  createMetricsForDevice,
+  deleteMetricsForDevice,
+  register,
+  updateOverviewMetrics,
+} from '@/services/metrics.service';
 
 describe('metrics.service', () => {
   beforeEach(() => {
@@ -155,6 +165,49 @@ describe('metrics.service', () => {
       expect(powerGauge?.set).toHaveBeenCalledWith(200);
       // Should have logged that we're reusing the metric
       expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('Reusing existing metric'));
+    });
+
+    it('removes and recreates metric when existing metric is not a Gauge', () => {
+      (register as { __injectNonGauge?: (name: string) => void }).__injectNonGauge?.(
+        'recreate_rig_power_watts'
+      );
+      const { updatePrometheusMetrics } = createMetricsForDevice('recreate_rig');
+      updatePrometheusMetrics(createPyasicMinerInfoFixture({ wattage: 100 }));
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringMatching(/recreate_rig_power_watts.*not a Gauge/)
+      );
+      expect(gaugeInstances.get('recreate_rig_power_watts')?.set).toHaveBeenCalledWith(100);
+    });
+
+    it('uses temperature from hashboards when temperature_avg is missing', () => {
+      const { updatePrometheusMetrics } = createMetricsForDevice('rig');
+      const base = createPyasicMinerInfoFixture();
+      const info = {
+        ...base,
+        temperature_avg: undefined,
+        hashboards: [
+          { ...base.hashboards![0], temp: 0, chip_temp: 0 },
+          { ...base.hashboards![0], slot: 1, temp: 70, chip_temp: 65 },
+        ],
+      };
+      updatePrometheusMetrics(info);
+
+      expect(gaugeInstances.get('rig_temperature_celsius')?.set).toHaveBeenCalledWith(70);
+      expect(gaugeInstances.get('rig_vr_temperature_celsius')?.set).toHaveBeenCalledWith(65);
+    });
+
+    it('computes efficiency from wattage and hashrate when efficiency.rate is missing', () => {
+      const { updatePrometheusMetrics } = createMetricsForDevice('rig');
+      const info = createPyasicMinerInfoFixture({
+        wattage: 100,
+        hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 10 },
+      });
+      (info as any).efficiency = undefined;
+      updatePrometheusMetrics(info);
+
+      // 100W / (10 Gh/s / 1000) = 10000
+      expect(gaugeInstances.get('rig_efficiency')?.set).toHaveBeenCalledWith(10000);
     });
   });
 
@@ -366,6 +419,46 @@ describe('metrics.service', () => {
       expect(gaugeInstances.get('average_hashrate')?.set).toHaveBeenCalledWith(0);
       expect(gaugeInstances.get('total_power_watts')?.set).toHaveBeenCalledWith(0);
       expect(gaugeInstances.get('total_efficiency')?.set).toHaveBeenCalledWith(0);
+    });
+
+    it('attributes shares to unknown when config has empty groups or empty pools', () => {
+      const devices = [
+        {
+          ...createPyasicMinerInfoFixture({
+            mac: 'a',
+            wattage: 100,
+            hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 50 },
+            shares_accepted: 5,
+            shares_rejected: 1,
+            config: { pools: { groups: [] }, fan_mode: { mode: 'auto', speed: 0, minimum_fans: 0 }, temperature: { target: null, hot: null, danger: null }, mining_mode: { mode: 'normal' }, extra_config: {} },
+          }),
+          tracing: true,
+        },
+        {
+          ...createPyasicMinerInfoFixture({
+            mac: 'b',
+            wattage: 0,
+            hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 0 },
+            shares_accepted: 3,
+            shares_rejected: 2,
+            config: {
+              pools: { groups: [{ pools: [], quota: 1, name: null }] },
+              fan_mode: { mode: 'auto', speed: 0, minimum_fans: 0 },
+              temperature: { target: null, hot: null, danger: null },
+              mining_mode: { mode: 'normal' },
+              extra_config: {},
+            },
+          }),
+          tracing: true,
+        },
+      ];
+
+      updateOverviewMetrics(devices);
+
+      const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');
+      expect(acceptedGauge?.labels).toHaveBeenCalledWith('unknown');
+      // Both devices have empty pools config so shares are attributed to "unknown" (one label call)
+      expect(acceptedGauge?.labels).toHaveBeenCalled();
     });
 
     it('handles missing values and extracts hashrate from pyasic schema', () => {

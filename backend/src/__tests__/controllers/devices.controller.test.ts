@@ -702,6 +702,90 @@ describe("devices.controller", () => {
       expect(patchBody.coreVoltage).toBeUndefined();
     });
 
+    it("drops numeric field when value coerces to NaN (delete key)", async () => {
+      const req = {
+        params: { id: "mac" },
+        body: {
+          info: {
+            stratumURL: "pool",
+            stratumPort: "not-a-number",
+            fanspeed: {},
+          },
+          mac: "mac",
+        },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([
+        { mac: "mac", ip: "10.0.0.3" },
+      ] as unknown as Device[]);
+      mockedPyasicBridgeClient.updateMinerConfig.mockResolvedValue();
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      const patchBody = mockedPyasicBridgeClient.updateMinerConfig.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(patchBody).toBeDefined();
+      expect(patchBody.stratumURL).toBe("pool");
+      expect(patchBody.stratumPort).toBeUndefined();
+      expect(patchBody.fanspeed).toBeUndefined();
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("when applying preset with info.config.pools.groups[0].pools present, updates pool in config", async () => {
+      const req = {
+        params: { id: "mac" },
+        body: {
+          presetUuid: "preset",
+          mac: "mac",
+          info: {
+            config: {
+              pools: {
+                groups: [
+                  {
+                    pools: [
+                      { url: "stratum+tcp://old:1111", user: "olduser", password: "oldpass" },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([
+        { mac: "mac", ip: "10.0.0.3" },
+      ] as unknown as Device[]);
+      presetsService.getPreset.mockResolvedValue({
+        name: "Test Preset",
+        configuration: {
+          stratumPort: 4444,
+          stratumURL: "newpool.example.com",
+          stratumUser: "newuser",
+          stratumPassword: "newsecret",
+        },
+      });
+      mockedPyasicBridgeClient.updateMinerConfig.mockResolvedValue();
+
+      await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
+
+      const patchBody = mockedPyasicBridgeClient.updateMinerConfig.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(patchBody).toBeDefined();
+      const groups = (patchBody.pools as { groups: Array<{ pools: Array<{ url: string; user: string; password: string }> }> })
+        ?.groups;
+      expect(groups?.[0]?.pools?.[0]).toEqual({
+        url: "stratum+tcp://newpool.example.com:4444",
+        user: "newuser",
+        password: "newsecret",
+      });
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
 
     it("drops non-string values from string system fields", async () => {
       const req = {
