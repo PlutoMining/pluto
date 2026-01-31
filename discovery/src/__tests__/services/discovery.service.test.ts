@@ -231,6 +231,18 @@ describe('discovery.service helpers', () => {
   });
 
   describe('discoverDevices', () => {
+    it('returns empty array when direct IP validation returns no result', async () => {
+      mockedAxios.post.mockResolvedValue({
+        data: [],
+      });
+
+      const result = await discoverDevices({ ip: '1.2.3.4' });
+
+      expect(result).toEqual([]);
+      expect(mockedAxios.get).not.toHaveBeenCalled();
+      expect(insertOne).not.toHaveBeenCalled();
+    });
+
     it('short-circuits to direct ip lookup and stores device', async () => {
       mockedAxios.post.mockResolvedValue({
         data: [{ ip: '1.2.3.4', is_miner: true, model: 'TestModel', error: null }],
@@ -353,6 +365,54 @@ describe('discovery.service helpers', () => {
       );
     });
 
+    it('uses minimal data when fetch full miner data fails during direct IP lookup', async () => {
+      mockedAxios.post.mockResolvedValue({
+        data: [{ ip: '1.2.3.4', is_miner: true, model: 'TestModel', error: null }],
+      });
+      mockedAxios.get.mockRejectedValue(new Error('fetch failed'));
+      DeviceConverterService.convertMinerInfoToDevice.mockReturnValue({
+        ip: '1.2.3.4',
+        mac: 'aa:bb',
+        type: 'TestModel',
+        info: {},
+      });
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices({ ip: '1.2.3.4', mac: 'aa:bb' });
+
+      expect(result).toHaveLength(1);
+      expect(DeviceConverterService.convertMinerInfoToDevice).toHaveBeenCalledWith(
+        '1.2.3.4',
+        'aa:bb',
+        'TestModel',
+        undefined,
+        {}
+      );
+      expect(insertOne).toHaveBeenCalled();
+    });
+
+    it('handles axios error with no response during direct IP lookup', async () => {
+      const networkError = new MockAxiosError('Network Error', 'ERR_NETWORK');
+      mockedAxios.post.mockRejectedValue(networkError);
+
+      const result = await discoverDevices({ ip: '9.9.9.9' });
+
+      expect(result).toEqual([]);
+      expect(mockedAxios.get).not.toHaveBeenCalled();
+    });
+
+    it('handles axios error with response during direct IP lookup', async () => {
+      mockedAxios.post.mockResolvedValue({
+        data: [{ ip: '1.2.3.4', is_miner: true, model: 'TestModel', error: null }],
+      });
+      const serverError = new MockAxiosError('Server Error');
+      (serverError as any).response = { status: 500, statusText: 'Internal Server Error' };
+      mockedAxios.get.mockRejectedValue(serverError);
+
+      const result = await discoverDevices({ ip: '1.2.3.4' });
+
+      expect(result).toEqual([]);
+    });
 
     it('updates device when it already exists during direct ip lookup', async () => {
       mockedAxios.post.mockResolvedValue({
@@ -411,6 +471,48 @@ describe('discovery.service helpers', () => {
       const result = await discoverDevices({ ip: '9.9.9.9' });
 
       expect(result).toEqual([]);
+    });
+
+    it('skips validated IP with no matching ARP device during scan', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      MinerValidationService.validateBatch.mockResolvedValue([
+        { ip: '10.0.0.1', is_miner: true, model: 'ModelA', error: null },
+        { ip: '10.0.0.99', is_miner: true, model: 'ModelX', error: null },
+      ]);
+      MinerValidationService.fetchMinerData.mockResolvedValueOnce({
+        device_info: { make: 'Test', model: 'ModelA', firmware: '1.0', algo: 'SHA256' },
+        model: 'ModelA',
+      });
+      DeviceConverterService.convertMinerInfoToDevice.mockReturnValueOnce({
+        ip: '10.0.0.1',
+        mac: 'aa:bb:cc',
+        type: 'ModelA',
+        info: {},
+      });
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].ip).toBe('10.0.0.1');
+      expect(insertOne).toHaveBeenCalledTimes(1);
+    });
+
+    it('continues when validation result is not a miner during scan', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      MinerValidationService.validateBatch.mockResolvedValue([
+        { ip: '10.0.0.1', is_miner: false, model: null, error: 'not supported' },
+      ]);
+
+      const result = await discoverDevices();
+
+      expect(result).toEqual([]);
+      expect(MinerValidationService.fetchMinerData).not.toHaveBeenCalled();
+      expect(insertOne).not.toHaveBeenCalled();
     });
 
     it('scans network interfaces and handles insert/update flows', async () => {
@@ -705,6 +807,101 @@ describe('discovery.service helpers', () => {
       expect(result).toHaveLength(1);
       expect(result[0].ip).toContain('host.docker.internal');
       expect(MinerValidationService.validateBatch).not.toHaveBeenCalled();
+
+      config.detectMockDevices = false;
+      config.mockDeviceHost = undefined;
+    });
+
+    it('updates mock device when it already exists', async () => {
+      config.detectMockDevices = true;
+      config.mockDiscoveryHost = 'http://mock-host:7000';
+      config.mockDeviceHost = 'host.docker.internal';
+
+      getActiveNetworkInterfaces.mockResolvedValue([]);
+      arpScan.mockResolvedValue([]);
+
+      mockedAxios.get.mockResolvedValueOnce({ data: { servers: [{ port: 9001 }] } });
+      mockedAxios.get.mockResolvedValueOnce({
+        data: createPyasicMinerInfoFixture({
+          ip: 'host.docker.internal:9001',
+          device_info: { make: 'Mock', model: 'MockModel', firmware: '1.0', algo: 'SHA256' },
+          model: 'MockModel',
+        }),
+      });
+      DeviceConverterService.convertMinerInfoToDevice.mockReturnValue({
+        ip: 'host.docker.internal:9001',
+        mac: 'ff:ff:ff:ff:23:29',
+        type: 'MockModel',
+        info: {},
+      });
+      UtilsService.mockMacFromPort.mockReturnValue('ff:ff:ff:ff:23:29');
+      insertOne.mockRejectedValue(new Error('already exists'));
+      updateOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices();
+
+      expect(result).toHaveLength(1);
+      expect(updateOne).toHaveBeenCalledWith(
+        'pluto_discovery',
+        'devices:discovered',
+        'ff:ff:ff:ff:23:29',
+        expect.objectContaining({ ip: 'host.docker.internal:9001', mac: 'ff:ff:ff:ff:23:29' })
+      );
+
+      config.detectMockDevices = false;
+      config.mockDeviceHost = undefined;
+    });
+
+    it('continues when one mock device fetch fails', async () => {
+      config.detectMockDevices = true;
+      config.mockDiscoveryHost = 'http://mock-host:7000';
+      config.mockDeviceHost = undefined;
+
+      getActiveNetworkInterfaces.mockResolvedValue([]);
+      arpScan.mockResolvedValue([]);
+
+      mockedAxios.get
+        .mockResolvedValueOnce({ data: { servers: [{ port: 9001 }] } })
+        .mockRejectedValueOnce(new Error('fetch failed'));
+
+      const result = await discoverDevices();
+
+      expect(result).toEqual([]);
+      expect(insertOne).not.toHaveBeenCalled();
+
+      config.detectMockDevices = false;
+    });
+
+    it('handles mock device when insert fails with unexpected error', async () => {
+      config.detectMockDevices = true;
+      config.mockDiscoveryHost = 'http://mock-host:7000';
+      config.mockDeviceHost = 'host.docker.internal';
+
+      getActiveNetworkInterfaces.mockResolvedValue([]);
+      arpScan.mockResolvedValue([]);
+
+      mockedAxios.get.mockResolvedValueOnce({ data: { servers: [{ port: 9001 }] } });
+      mockedAxios.get.mockResolvedValueOnce({
+        data: createPyasicMinerInfoFixture({
+          ip: 'host.docker.internal:9001',
+          device_info: { make: 'Mock', model: 'MockModel', firmware: '1.0', algo: 'SHA256' },
+          model: 'MockModel',
+        }),
+      });
+      DeviceConverterService.convertMinerInfoToDevice.mockReturnValue({
+        ip: 'host.docker.internal:9001',
+        mac: 'ff:ff:ff:ff:23:29',
+        type: 'MockModel',
+        info: {},
+      });
+      UtilsService.mockMacFromPort.mockReturnValue('ff:ff:ff:ff:23:29');
+      insertOne.mockRejectedValue(new Error('db down'));
+
+      const result = await discoverDevices();
+
+      expect(result).toHaveLength(1);
+      expect(insertOne).toHaveBeenCalled();
+      expect(updateOne).not.toHaveBeenCalled();
 
       config.detectMockDevices = false;
       config.mockDeviceHost = undefined;
