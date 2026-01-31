@@ -231,7 +231,7 @@ function ModalBodyContent({
       <div className="flex-1 overflow-y-auto">
         {tabIndex === 0 ? (
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 gap-4 mobileL:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input
                 label="IP Address"
                 name="ipAddress"
@@ -259,7 +259,7 @@ function ModalBodyContent({
                 isLoading={isLoadingData}
                 disabled={areManuallySearchFieldsValid()}
                 label="Search"
-                className="w-full tablet:w-auto"
+                className="w-full md:w-auto"
               />
             </div>
 
@@ -277,15 +277,15 @@ function ModalBodyContent({
                     handleAllCheckbox={handleAllCheckbox}
                     selectedTab={tabIndex}
                   />
-                  <div className="flex flex-col gap-3 tablet:flex-row tablet:gap-4">
-                    <Button variant="outlined" onClick={onClose} label="Cancel" className="w-full tablet:w-auto" />
+                  <div className="flex flex-col gap-3 md:flex-row md:gap-4">
+                    <Button variant="outlined" onClick={onClose} label="Cancel" className="w-full md:w-auto" />
                     <Button
                       variant="primary"
                       onClick={() => registerDevice()}
                       rightIcon={<AddIcon color="currentColor" />}
                       disabled={discoveredDevices.length !== 1}
                       label="Add device"
-                      className="w-full tablet:w-auto"
+                      className="w-full md:w-auto"
                     />
                   </div>
                 </div>
@@ -307,7 +307,7 @@ function ModalBodyContent({
                   <p className="text-xs text-muted-foreground">
                     “{discoveredDevices.length}” new devices found
                   </p>
-                  <label className="flex items-center gap-2 tablet:hidden">
+                  <label className="flex items-center gap-2 md:hidden">
                     <span className="text-xs text-muted-foreground">Select all</span>
                     <input
                       type="checkbox"
@@ -327,8 +327,8 @@ function ModalBodyContent({
                   selectedTab={tabIndex}
                 />
 
-                <div className="flex flex-col gap-3 tablet:flex-row tablet:gap-4">
-                  <Button variant="outlined" onClick={onClose} label="Cancel" className="w-full tablet:w-auto" />
+                <div className="flex flex-col gap-3 md:flex-row md:gap-4">
+                  <Button variant="outlined" onClick={onClose} label="Cancel" className="w-full md:w-auto" />
                   <Button
                     variant="primary"
                     onClick={() => registerDevices()}
@@ -339,7 +339,7 @@ function ModalBodyContent({
                         ? checkedFetchedItems.filter((el) => el === true).length
                         : ""
                     } device`}
-                    className="w-full tablet:w-auto"
+                    className="w-full md:w-auto"
                   />
                 </div>
               </div>
@@ -361,7 +361,7 @@ export const RegisterDevicesModal: React.FC<RegisterDevicesModalProps> = ({
   return (
     <Modal open={isOpen} onClose={onClose} variant="sheet">
       <div className="w-full max-w-[1440px] border border-border bg-card text-card-foreground">
-        <div className="relative mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto p-6 tablet:p-8">
+        <div className="relative mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto p-6 md:p-8">
           <div className="flex items-start justify-between gap-6">
             <h2 className="font-heading text-2xl font-medium">Add a new Device</h2>
             <button
