@@ -161,14 +161,13 @@ export default function DevicesClient() {
       ) : null}
 
       <form className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
-          <h1 className="font-heading text-3xl font-bold uppercase">Your devices</h1>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
           <Button
             variant={"primary"}
             onClick={onOpen}
             rightIcon={<AddIcon color="currentColor" />}
             label="Add device"
-            className="w-full tablet:w-auto"
+            className="w-full md:w-auto"
           />
         </div>
 
@@ -176,7 +175,7 @@ export default function DevicesClient() {
           registeredDevices.length > 0 ? (
             <div className="border border-border bg-card text-card-foreground">
               <DeviceTable devices={registeredDevices} removeDeviceFunction={removeRegisteredDevice} />
-              <div className="tablet:hidden border-t border-border">
+              <div className="md:hidden border-t border-border">
                 <DeviceAccordion removeFunction={removeRegisteredDevice} devices={registeredDevices} />
               </div>
             </div>

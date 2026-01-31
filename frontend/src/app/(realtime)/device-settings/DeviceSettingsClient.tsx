@@ -149,9 +149,8 @@ export default function DeviceSettingsClient() {
       ) : null}
 
       <form className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4 border-b border-border pb-4 tablet:flex-row tablet:items-center tablet:justify-between">
-          <h1 className="font-heading text-3xl font-bold uppercase">Device settings</h1>
-          <div className="flex w-full flex-col gap-4 tablet:w-auto tablet:flex-row tablet:items-center">
+        <div className="flex flex-col gap-4 border-b border-border pb-4 md:flex-row md:items-center md:justify-end">
+          <div className="flex w-full flex-col gap-4 md:w-auto md:flex-row md:items-center">
             <SearchInput label="Search device" onChange={handleSearch} placeholder="Search device" />
             <Button
               variant="primary"
@@ -159,7 +158,7 @@ export default function DeviceSettingsClient() {
               onClick={onOpenModal}
               label="Restart all"
               disabled={!imprintedDevices || imprintedDevices.length === 0}
-              className="w-full tablet:w-auto"
+              className="w-full md:w-auto"
             />
           </div>
         </div>

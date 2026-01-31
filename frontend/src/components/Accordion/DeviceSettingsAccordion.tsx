@@ -259,7 +259,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   return (
     <>
       <div className="flex flex-col gap-4">
-	        <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
+	        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 	          <label className="flex shrink-0 items-center gap-2">
 	            <input
 	              type="checkbox"
@@ -284,7 +284,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 	            </span>
 	          </label>
 
-	          <div className="flex w-full flex-wrap items-center justify-between gap-4 mobileL:justify-end tablet:w-auto tablet:flex-1 tablet:justify-end">
+	          <div className="flex w-full flex-wrap items-center justify-between gap-4 sm:justify-end md:w-auto md:flex-1 md:justify-end">
 	            <Button
 	              onClick={() => setIsSelectPoolPresetModalOpen(true)}
 	              variant="text"
@@ -305,9 +305,9 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
         </div>
 
         <div className="border border-border bg-card text-card-foreground">
-          <div className="hidden items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 tablet:flex">
+          <div className="hidden items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 md:flex">
             <div className="flex flex-[8] items-center gap-3">
-              <div className="hidden w-4 tablet:block" aria-hidden="true" />
+              <div className="hidden w-4 md:block" aria-hidden="true" />
               <span className="select-none text-xs leading-none text-primary opacity-0" aria-hidden="true">
                 ▾
               </span>
@@ -319,7 +319,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
               <span className="font-accent text-xs font-semibold uppercase text-muted-foreground">
                 Status
               </span>
-              <span className="hidden w-24 shrink-0 tablet:inline-flex" aria-hidden="true" />
+              <span className="hidden w-24 shrink-0 md:inline-flex" aria-hidden="true" />
             </div>
           </div>
 
@@ -810,7 +810,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     <>
       <summary className="flex cursor-pointer items-center justify-between gap-4 bg-card px-4 py-3 hover:bg-muted">
         <div className="flex flex-[8] items-center gap-3">
-          <div className="hidden tablet:block" onClick={(e) => e.stopPropagation()}>
+          <div className="hidden md:block" onClick={(e) => e.stopPropagation()}>
             <input
               type="checkbox"
               className="h-4 w-4 rounded-none border border-input bg-background accent-primary"
@@ -821,8 +821,8 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
           <span className="text-primary">▾</span>
           <div className="flex items-center gap-2">
             <span className="font-accent text-sm font-normal capitalize">{device.info.hostname}</span>
-            <span className="hidden tablet:inline text-sm text-muted-foreground">-</span>
-            <span className="hidden tablet:inline">
+            <span className="hidden md:inline text-sm text-muted-foreground">-</span>
+            <span className="hidden md:inline">
               <Link
                 href={`http://${device.ip}`}
                 isExternal={true}
@@ -838,11 +838,11 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
           </div>
         </div>
 
-        <div className="flex flex-[5] items-center justify-between gap-4 tablet:justify-end">
+        <div className="flex flex-[5] items-center justify-between gap-4 md:justify-end">
           <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
           <button
             type="button"
-            className="hidden items-center gap-2 font-accent text-sm font-medium uppercase text-foreground underline tablet:inline-flex"
+            className="hidden items-center gap-2 font-accent text-sm font-medium uppercase text-foreground underline md:inline-flex"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -852,7 +852,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
             <RestartIcon color="currentColor" />
             Restart
           </button>
-          <div className="tablet:hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="md:hidden" onClick={(e) => e.stopPropagation()}>
             <input
               type="checkbox"
               className="h-4 w-4 rounded-none border border-input bg-background accent-primary"
@@ -867,7 +867,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-4">
             <p className="font-heading text-sm font-bold uppercase">General</p>
-            <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Input
                 label="Hostname"
                 name="hostname"
@@ -891,8 +891,8 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
           <div className="flex flex-col gap-4">
             <p className="font-heading text-sm font-bold uppercase">Hardware settings</p>
-            <div className="flex flex-col gap-4 desktop:flex-row">
-              <div className="flex flex-col gap-4 tablet:flex-row desktop:flex-[2]">
+            <div className="flex flex-col gap-4 xl:flex-row">
+              <div className="flex flex-col gap-4 md:flex-row xl:flex-[2]">
                 <Select
                   id={`${device.mac}-frequency`}
                   label="Frequency"
@@ -915,11 +915,11 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                 />
               </div>
 
-              <div className="flex flex-col gap-4 desktop:flex-[3]">
+              <div className="flex flex-col gap-4 xl:flex-[3]">
                 <p className="font-body text-xs font-semibold uppercase text-muted-foreground">
                   Advanced Hardware Settings
                 </p>
-                <div className="flex flex-col gap-4 tablet:flex-row tablet:flex-wrap tablet:items-center">
+                <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-center">
                   <Checkbox
                     id={`${device.mac}-flipscreen`}
                     name="flipscreen"
@@ -941,7 +941,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                     defaultChecked={device.info.autofanspeed === 1}
                     onChange={handleChange}
                   />
-                  <div className="w-full tablet:max-w-[200px]">
+                  <div className="w-full md:max-w-[200px]">
                     <Input
                       name="fanspeed"
                       id={`${device.mac}-fanspeed`}
@@ -997,7 +997,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                         label: preset.name,
                       }))}
                     />
-                    <div className="flex flex-col gap-4 tablet:flex-row">
+                    <div className="flex flex-col gap-4 md:flex-row">
                       <div className="flex-1">
                         <Input
                           isDisabled={true}
@@ -1034,8 +1034,8 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                 ) : null}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-6">
-                <div className="desktop:col-span-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+                <div className="xl:col-span-2">
                   <Input
                     type="text"
                     label="Stratum URL"
@@ -1047,7 +1047,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                     error={deviceError.stratumURL}
                   />
                 </div>
-                <div className="desktop:col-span-2">
+                <div className="xl:col-span-2">
                   <Input
                     type="number"
                     label="Stratum Port"
@@ -1059,7 +1059,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                     error={deviceError.stratumPort}
                   />
                 </div>
-                <div className="desktop:col-span-2">
+                <div className="xl:col-span-2">
                   <Input
                     type="text"
                     label="Stratum User"
@@ -1072,7 +1072,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                     error={deviceError.stratumUser}
                   />
                 </div>
-                <div className="desktop:col-span-2">
+                <div className="xl:col-span-2">
                   <Input
                     type="password"
                     label="Stratum Password"
@@ -1100,7 +1100,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 border-t border-border bg-muted px-4 py-2 tablet:hidden">
+      <div className="flex items-center justify-between gap-4 border-t border-border bg-muted px-4 py-2 md:hidden">
         <div className="flex items-center gap-2 font-accent">
           <span className="text-sm font-medium">IP</span>
           <span className="text-sm font-medium text-muted-foreground">-</span>

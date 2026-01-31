@@ -46,7 +46,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
         <div className="flex flex-col gap-4">
           <p className="font-heading text-sm font-semibold uppercase">Settings</p>
 
-          <div className="flex flex-col gap-4 tablet:flex-row">
+          <div className="flex flex-col gap-4 md:flex-row">
             <div className="flex-1">
               <Input
                 isDisabled={true}

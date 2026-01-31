@@ -346,17 +346,16 @@ export default function MonitoringClient({ id }: { id: string }) {
   }, [host, rangeSeconds, refreshMs]);
 
   return (
-    <div className="container flex-1 px-4 py-4 tablet:px-8 tablet:py-6">
-      <div className="mb-3 flex flex-col gap-4 tablet:mb-4 tablet:flex-row tablet:items-center tablet:justify-between">
+    <div className="container flex-1 px-4 py-4 md:px-8 md:py-6">
+      <div className="mb-3 flex flex-col gap-4 md:mb-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <NextLink href="/monitoring">
             <Button variant="outlined">Go back</Button>
           </NextLink>
-          <h1 className="font-heading text-3xl font-bold uppercase">{id} Dashboard</h1>
         </div>
       </div>
 
-      <div className="grid gap-4 tablet:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card className="rounded-none">
           <CardHeader>
             <CardTitle>Device status</CardTitle>
@@ -380,7 +379,7 @@ export default function MonitoringClient({ id }: { id: string }) {
         </Card>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-4 tablet:mt-4 tablet:grid-cols-4 desktop:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-4 md:mt-4 md:grid-cols-4 xl:grid-cols-4">
         <Card className="rounded-none">
           <CardHeader>
             <CardTitle>Hashrate</CardTitle>
@@ -479,7 +478,7 @@ export default function MonitoringClient({ id }: { id: string }) {
       </div>
 
       <ChartsToolbar
-        className="mt-3 tablet:mt-4"
+        className="mt-3 md:mt-4"
         range={range}
         onRangeChange={setRange}
         polling={polling}
@@ -487,22 +486,22 @@ export default function MonitoringClient({ id }: { id: string }) {
         autoRefreshMs={autoRefreshMs}
       />
 
-      <div className="mt-3 grid gap-4 tablet:mt-4 tablet:grid-cols-2">
+      <div className="mt-3 grid gap-4 md:mt-4 md:grid-cols-2">
         <LineChartCard title="Hashrate" points={hashrate} unit="GH/s" />
         <LineChartCard title="Power" points={power} unit="W" curve="step" />
       </div>
 
-      <div className="mt-3 grid gap-4 tablet:mt-4 tablet:grid-cols-2">
+      <div className="mt-3 grid gap-4 md:mt-4 md:grid-cols-2">
         <LineChartCard title="Efficiency" points={efficiency} unit="J/TH" />
         <MultiLineChartCard title="Temperatures" series={temperatureSeries} unit="°C" valueDigits={1} />
       </div>
 
-      <div className="mt-3 grid gap-4 tablet:mt-4 tablet:grid-cols-2">
+      <div className="mt-3 grid gap-4 md:mt-4 md:grid-cols-2">
         <LineChartCard title="Fan speed" points={fan} unit="RPM" />
         <MultiLineChartCard title="Voltages" series={voltageSeries} unit="V" valueDigits={3} yDomain={[0, 6]} />
       </div>
 
-      <div className="mt-3 grid gap-4 tablet:mt-4 tablet:grid-cols-2">
+      <div className="mt-3 grid gap-4 md:mt-4 md:grid-cols-2">
         <LineChartCard title="Frequency" points={frequency} unit="MHz" curve="step" />
         <MultiLineChartCard
           title="Free heap"

@@ -48,9 +48,7 @@ export default function SettingsClient() {
   return (
     <div className="container flex-1 py-6">
       <form className="flex flex-col gap-8">
-        <h1 className="font-heading text-3xl font-bold uppercase">Settings</h1>
-
-        <div className="flex flex-col gap-6 tabletL:px-40">
+        <div className="flex flex-col gap-6 lg:px-40">
           <h2 className="font-heading text-lg font-medium uppercase text-muted-foreground">
             System settings
           </h2>

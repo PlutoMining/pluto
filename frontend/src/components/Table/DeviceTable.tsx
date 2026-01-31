@@ -19,7 +19,7 @@ interface DeviceTableProps {
 
 export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceFunction }) => {
   return (
-    <div className="hidden overflow-x-auto tablet:block">
+    <div className="hidden overflow-x-auto md:block">
       <table className="w-full border-collapse">
         <thead>
           <tr className="bg-muted">

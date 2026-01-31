@@ -243,7 +243,7 @@ export const PresetEditor = ({
 
             <div className="flex flex-col gap-4">
               <p className="font-heading text-sm font-medium">Settings</p>
-              <div className="grid grid-cols-1 gap-8 tablet:grid-cols-2 desktop:grid-cols-4">
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-4">
                 <Input
                   label="Stratum URL"
                   name="stratumURL"
