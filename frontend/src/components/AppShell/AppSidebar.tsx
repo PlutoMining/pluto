@@ -4,7 +4,6 @@ import axios from "axios";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
-import { useTheme } from "next-themes";
 
 import { PlutoLogo } from "@/components/icons/PlutoLogo/PlutoLogo";
 import { PlutoMark } from "@/components/icons/PlutoLogo/PlutoMark";
@@ -28,8 +27,6 @@ export function AppSidebar() {
   const pathname = usePathname() ?? "/";
   const { state } = useSidebar();
   const [version, setVersion] = React.useState<string>("");
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
 
   const settingsActive = SETTINGS_NAV.match(pathname);
   const SettingsIcon = SETTINGS_NAV.Icon;
@@ -69,7 +66,7 @@ export function AppSidebar() {
             <PlutoMark color="#13FFEB" className="h-9 w-9" />
           ) : (
             <div className="flex items-end gap-2">
-              <PlutoLogo color={isDark ? "#FFFFFF" : "#090B0D"} />
+              <PlutoLogo color="hsl(var(--sidebar-accent-foreground))" />
               {version ? (
                 <span className="mb-1 text-xs font-accent text-sidebar-foreground/70">v.{version}</span>
               ) : null}

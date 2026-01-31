@@ -6,10 +6,6 @@ jest.mock("next/navigation", () => ({
   usePathname: jest.fn(),
 }));
 
-jest.mock("next-themes", () => ({
-  useTheme: jest.fn(),
-}));
-
 jest.mock("axios", () => ({
   __esModule: true,
   default: {
@@ -18,13 +14,11 @@ jest.mock("axios", () => ({
 }));
 
 const navigation = jest.requireMock("next/navigation") as { usePathname: jest.Mock };
-const themes = jest.requireMock("next-themes") as { useTheme: jest.Mock };
 const axiosMock = jest.requireMock("axios").default as { get: jest.Mock };
 
 describe("AppShell", () => {
   beforeEach(() => {
     navigation.usePathname.mockReturnValue("/");
-    themes.useTheme.mockReturnValue({ resolvedTheme: "dark" });
     axiosMock.get.mockResolvedValue({ data: { version: "1.2.3" } });
   });
 
@@ -64,16 +58,13 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
   });
 
-  it("uses light wordmark color in light theme", async () => {
-    themes.useTheme.mockReturnValue({ resolvedTheme: "light" });
-
+  it("uses CSS tokens for wordmark color", () => {
     const { container } = render(
       <AppShell>
         <div>child</div>
       </AppShell>
     );
 
-    // PlutoLogo renders with the provided wordmark color; in light theme we pass #090B0D
-    expect(container.innerHTML).toContain("#090B0D");
+    expect(container.innerHTML).toContain("hsl(var(--sidebar-accent-foreground))");
   });
 });
