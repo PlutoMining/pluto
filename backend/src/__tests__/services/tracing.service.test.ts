@@ -241,7 +241,7 @@ describe("tracing.service", () => {
     expect(updatePayload.presetUuid).toBeUndefined();
   });
 
-  it("supports unknown ASICModel by falling back to existing tuning options", async () => {
+  it("uses miner-type factory for unknown miner (empty options)", async () => {
     const { tracingService, axios, db } = await loadTracingService();
     tracingService.startIoHandler({} as any);
 
@@ -255,8 +255,6 @@ describe("tracing.service", () => {
           algo: "SHA256",
         },
         model: "UNKNOWN",
-        frequencyOptions: [{ label: "fallback", value: 1 }],
-        coreVoltageOptions: [{ label: "fallback", value: 2 }],
       }),
     });
 
@@ -279,8 +277,8 @@ describe("tracing.service", () => {
     await flushMicrotasks();
 
     const updatePayload = db.updateOne.mock.calls[0][3];
-    expect(updatePayload.info.frequencyOptions).toEqual([{ label: "fallback", value: 1 }]);
-    expect(updatePayload.info.coreVoltageOptions).toEqual([{ label: "fallback", value: 2 }]);
+    expect(updatePayload.info.frequencyOptions).toEqual([]);
+    expect(updatePayload.info.coreVoltageOptions).toEqual([]);
   });
 
   it("handles polling errors and emits an error event", async () => {

@@ -7,7 +7,7 @@
 */
 
 import { updateOne } from "@pluto/db";
-import { Device, DeviceFrequencyOptions, DeviceVoltageOptions, PyasicMinerInfo } from "@pluto/interfaces";
+import { Device, getMinerExtraFieldConfig, PyasicMinerInfo, resolveMinerType } from "@pluto/interfaces";
 import { createCustomLogger, logger } from "@pluto/logger";
 import { asyncForEach, sanitizeHostname } from "@pluto/utils";
 import axios from "axios";
@@ -15,7 +15,6 @@ import { Server as NetServer } from "http";
 import { Server as ServerIO } from "socket.io";
 import WebSocket from "ws";
 import { config } from "../config/environment";
-import { resolveAsicModelKey } from "./tracing.helpers";
 import {
   createMetricsForDevice,
   deleteMetricsForDevice,
@@ -196,34 +195,33 @@ function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
         timeout: config.systemInfoTimeoutMs,
       });
 
-      // Store pyasic response directly (no transformation)
-      const pyasicInfo = response.data as PyasicMinerInfo;
+      // Store pyasic response; normalize device-specific fields into config.extra_config (pyasic model)
+      const raw = response.data as PyasicMinerInfo & Record<string, unknown>;
+      const baseExtra = (raw.config as { extra_config?: Record<string, unknown> } | undefined)?.extra_config ?? {};
+      const extra_config: Record<string, unknown> = { ...baseExtra };
+      if (raw.frequency !== undefined) extra_config.frequency = raw.frequency;
+      if (raw.coreVoltage !== undefined) extra_config.core_voltage = raw.coreVoltage;
+      if (raw.coreVoltageActual !== undefined) extra_config.core_voltage_actual = raw.coreVoltageActual;
+      if (raw.freeHeap !== undefined) extra_config.free_heap = raw.freeHeap;
+      if (raw.isPSRAMAvailable !== undefined) extra_config.is_psram_available = raw.isPSRAMAvailable;
 
-      // Resolve ASIC model from device_info.model or model field for enrichment
-      const modelString = pyasicInfo.device_info?.model || pyasicInfo.model || "";
-      const asicModelKey = resolveAsicModelKey(modelString);
-      const mappedFrequencyOptions =
-        (asicModelKey ? DeviceFrequencyOptions[asicModelKey] : undefined) || [];
-      const mappedCoreVoltageOptions =
-        (asicModelKey ? DeviceVoltageOptions[asicModelKey] : undefined) || [];
+      const { frequency, coreVoltage, coreVoltageActual, freeHeap, isPSRAMAvailable, ...rest } = raw;
+      const pyasicInfo: PyasicMinerInfo = {
+        ...rest,
+        config: { ...(rest.config as object), extra_config },
+      } as PyasicMinerInfo;
 
-      // Enrich with Pluto-specific tuning options (additions, not transformations)
+      // Enrich with miner-type extra field config (presets or input-only)
+      const minerType = resolveMinerType({
+        make: pyasicInfo.device_info?.make ?? pyasicInfo.make,
+        model: pyasicInfo.device_info?.model ?? pyasicInfo.model,
+      });
+      const extraFieldConfig = getMinerExtraFieldConfig(minerType);
+
       const enrichedInfo: PyasicMinerInfo = {
         ...pyasicInfo,
-        // If we have known options for this ASIC model, prefer them.
-        // Otherwise, fall back to whatever options the pyasic info already provides.
-        frequencyOptions:
-          mappedFrequencyOptions.length > 0
-            ? mappedFrequencyOptions
-            : Array.isArray(pyasicInfo.frequencyOptions)
-            ? pyasicInfo.frequencyOptions
-            : [],
-        coreVoltageOptions:
-          mappedCoreVoltageOptions.length > 0
-            ? mappedCoreVoltageOptions
-            : Array.isArray(pyasicInfo.coreVoltageOptions)
-            ? pyasicInfo.coreVoltageOptions
-            : [],
+        frequencyOptions: extraFieldConfig.frequency?.presetOptions ?? [],
+        coreVoltageOptions: extraFieldConfig.core_voltage?.presetOptions ?? [],
       };
 
       const extendedDevice: Device = {

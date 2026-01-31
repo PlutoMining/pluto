@@ -83,7 +83,7 @@ export class BitaxeAxeOSDataGenerator
       freeHeapSpiram: getRandomInt(8_000_000, 8_500_000),
       coreVoltage: 1100,
       coreVoltageActual: getRandomInt(1080, 1110),
-      frequency: 490,
+      frequency: getRandomInt(490, 550),
       ssid: "FRITZ!Box 5530 AG",
       macAddr: generateMacAddress(hostname),
       // Use the actual server hostname (mockaxe1, mockaxe2, etc.) for identification

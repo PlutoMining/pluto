@@ -16,8 +16,8 @@ describe("DeviceConverterService", () => {
       const model = "Antminer S19";
       const minerData: any = {
         hashrate: { rate: 95.0, unit: { value: 1000000000, suffix: "Th/s" } },
-        temperature: 65,
-        power: 3250,
+        temperature_avg: 65,
+        wattage: 3250,
       };
 
       const result = DeviceConverterService.convertMinerInfoToDevice(
@@ -34,7 +34,11 @@ describe("DeviceConverterService", () => {
         type: model,
         source: "real",
       });
-      expect(result.info).toMatchObject(minerData);
+      expect(result.info).toMatchObject({
+        hashrate: minerData.hashrate,
+        temperature_avg: 65,
+        wattage: 3250,
+      });
     });
 
     it("should use fallback type when model is null", () => {
@@ -173,9 +177,9 @@ describe("DeviceConverterService", () => {
           rate: 95.0,
           unit: { value: 1000000000, suffix: "Th/s" },
         },
-        temperature: 65,
-        power: 3250,
-        fans: [4500, 4600, 4700, 4800],
+        temperature_avg: 65,
+        wattage: 3250,
+        fans: [4500, 4600, 4700, 4800] as any,
         pools: [
           {
             url: "stratum+tcp://pool.example.com:3333",
@@ -192,14 +196,20 @@ describe("DeviceConverterService", () => {
         minerData
       );
 
-      expect(result.info).toMatchObject(minerData);
+      expect(result.info).toMatchObject({
+        hashrate: minerData.hashrate,
+        temperature_avg: 65,
+        wattage: 3250,
+        fans: minerData.fans,
+        pools: minerData.pools,
+      });
     });
 
     it("should preserve all Device fields correctly", () => {
       const ip = "192.168.1.200";
       const mac = "aa:bb:cc:dd:ee:ff";
       const model = "Whatsminer M50";
-      const minerData: any = { test: "data" };
+      const minerData: any = {};
 
       const result = DeviceConverterService.convertMinerInfoToDevice(
         ip,
@@ -213,12 +223,16 @@ describe("DeviceConverterService", () => {
         ip,
         mac,
         type: model,
-        info: minerData,
+        source: "real",
       });
       expect(result).toHaveProperty("ip");
       expect(result).toHaveProperty("mac");
       expect(result).toHaveProperty("type");
       expect(result).toHaveProperty("info");
+      expect(result.info).toBeDefined();
+      expect((result.info as any).device_info?.model).toBe(model);
+      expect((result.info as any).ip).toBe(ip);
+      expect((result.info as any).mac).toBe(mac);
     });
 
     it("should handle empty string model", () => {

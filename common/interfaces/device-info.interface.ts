@@ -125,6 +125,7 @@ export interface MiningModeConfig {
 
 /**
  * Extra configuration from pyasic-bridge (vendor-specific settings).
+ * Only device-specific fields live here; general fields are at top level of PyasicMinerInfo.
  */
 export interface ExtraConfig {
   rotation?: number;
@@ -134,18 +135,28 @@ export interface ExtraConfig {
   overclock_enabled?: number;
   stats_frequency?: number;
   min_fan_speed?: number;
+  free_heap?: number;
+  /** Device-specific: ASIC frequency (e.g. MHz) */
+  frequency?: number;
+  /** Device-specific: core voltage (e.g. mV) */
+  core_voltage?: number;
+  /** Device-specific: actual core voltage */
+  core_voltage_actual?: number;
+  /** Device-specific: PSRAM available (0 | 1) */
+  is_psram_available?: number;
   [key: string]: unknown;
 }
 
 /**
  * Miner configuration structure from pyasic-bridge.
+ * extra_config and fan_mode are optional; only present fields should be shown in the UI.
  */
 export interface MinerConfig {
   pools: PoolsConfig;
-  fan_mode: FanModeConfig;
-  temperature: TemperatureConfig;
-  mining_mode: MiningModeConfig;
-  extra_config: ExtraConfig;
+  fan_mode?: FanModeConfig;
+  temperature?: TemperatureConfig;
+  mining_mode?: MiningModeConfig;
+  extra_config?: ExtraConfig;
 }
 
 /**
@@ -200,7 +211,7 @@ export interface PyasicMinerInfo {
   model: string;
   firmware: string;
   algo: string;
-  // Pluto-specific enrichment fields (added by backend, not part of pyasic response)
+  // Pluto-specific enrichment (backend adds for UI; not in pyasic response)
   frequencyOptions?: DropdownOption[];
   coreVoltageOptions?: DropdownOption[];
 }
@@ -230,6 +241,91 @@ export interface Device extends Entity {
 export interface DropdownOption {
   label: string;
   value: number;
+}
+
+/**
+ * Config for a single miner extra field (e.g. frequency, core_voltage).
+ * Used by the miner-type factory to drive UI: presets + optional custom input.
+ */
+export interface MinerExtraFieldConfig {
+  presetOptions: DropdownOption[];
+  defaultValue?: number;
+  allowCustom: boolean;
+}
+
+/**
+ * Map of field name to config. Keys match extra_config (e.g. "frequency", "core_voltage").
+ */
+export interface MinerExtraFieldConfigMap {
+  frequency?: MinerExtraFieldConfig;
+  core_voltage?: MinerExtraFieldConfig;
+}
+
+/** Miner-type key; e.g. "bitaxe". Used to look up miner-specific extra field config. */
+export type MinerType = string;
+
+/**
+ * Resolves miner type from device_info (make/model) for the extra-field factory.
+ * Returns a key used in MINER_EXTRA_FIELD_CONFIGS, or null for default (input-only) behaviour.
+ */
+export function resolveMinerType(deviceInfo: { make?: string; model?: string }): MinerType | null {
+  const make = (deviceInfo.make ?? "").trim().toLowerCase();
+  const model = (deviceInfo.model ?? "").trim().toLowerCase();
+  const combined = `${make} ${model}`;
+  if (combined.includes("bitaxe")) return "bitaxe";
+  return null;
+}
+
+/**
+ * Default extra-field config when no miner-specific class is defined:
+ * only an input for custom value (no preset dropdown).
+ */
+export const DEFAULT_MINER_EXTRA_FIELD_CONFIG: MinerExtraFieldConfigMap = {
+  frequency: { presetOptions: [], allowCustom: true },
+  core_voltage: { presetOptions: [], allowCustom: true },
+};
+
+/**
+ * Miner-type-specific extra field configs (presets + allowCustom).
+ * Used by backend to build frequencyOptions / coreVoltageOptions for the UI.
+ */
+export const MINER_EXTRA_FIELD_CONFIGS: Record<string, MinerExtraFieldConfigMap> = {
+  bitaxe: {
+    frequency: {
+      presetOptions: [
+        { label: "400", value: 400 },
+        { label: "490", value: 490 },
+        { label: "525 (default)", value: 525 },
+        { label: "550", value: 550 },
+        { label: "575", value: 575 },
+        { label: "600", value: 600 },
+        { label: "625", value: 625 },
+      ],
+      defaultValue: 525,
+      allowCustom: true,
+    },
+    core_voltage: {
+      presetOptions: [
+        { label: "1000", value: 1000 },
+        { label: "1060", value: 1060 },
+        { label: "1100", value: 1100 },
+        { label: "1150 (default)", value: 1150 },
+        { label: "1200", value: 1200 },
+        { label: "1250", value: 1250 },
+      ],
+      defaultValue: 1150,
+      allowCustom: true,
+    },
+  },
+};
+
+/**
+ * Returns extra-field config for the given miner type.
+ * Use null for unknown miner type (default = input-only, no presets).
+ */
+export function getMinerExtraFieldConfig(minerType: MinerType | null): MinerExtraFieldConfigMap {
+  if (!minerType) return DEFAULT_MINER_EXTRA_FIELD_CONFIG;
+  return MINER_EXTRA_FIELD_CONFIGS[minerType] ?? DEFAULT_MINER_EXTRA_FIELD_CONFIG;
 }
 
 export const DeviceFrequencyOptions: Record<string, DropdownOption[]> = {

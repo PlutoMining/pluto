@@ -10,22 +10,16 @@ import { logger } from "@pluto/logger";
 import { Request, Response } from "express";
 import * as deviceService from "../services/device.service";
 import * as presetsService from "../services/presets.service";
-import { Device, DeviceFrequencyOptions, DeviceVoltageOptions } from "@pluto/interfaces";
+import {
+  Device,
+  getMinerExtraFieldConfig,
+  resolveMinerType,
+} from "@pluto/interfaces";
 import axios from "axios";
 import { pyasicBridgeClient } from "../services/pyasic-bridge.service";
 
-function resolveAsicModelKey(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined;
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  const bmMatch = trimmed.match(/BM\d{4}/);
-  return bmMatch?.[0] ?? trimmed;
-}
-
 const WRITABLE_SYSTEM_FIELDS = [
   "hostname",
-  "frequency",
-  "coreVoltage",
   "flipscreen",
   "invertscreen",
   "invertfanpolarity",
@@ -68,8 +62,6 @@ function pickWritableSystemInfo(info: unknown) {
     out[key] = n;
   };
 
-  coerceNumberField("frequency");
-  coerceNumberField("coreVoltage");
   coerceNumberField("stratumPort");
   coerceNumberField("fanspeed");
   coerceNumberField("overheat_temp");
@@ -184,23 +176,16 @@ export const getImprintedDevices = async (req: Request, res: Response) => {
     const data = await deviceService.getImprintedDevices({ q });
 
     const enrichedDevices = data.map((device) => {
-      const modelKey = resolveAsicModelKey((device as any)?.info?.ASICModel);
-      const mappedFrequencyOptions = (modelKey ? DeviceFrequencyOptions[modelKey] : undefined) || [];
-      const mappedCoreVoltageOptions = (modelKey ? DeviceVoltageOptions[modelKey] : undefined) || [];
+      const minerType = resolveMinerType({
+        make: device.info.make ?? device.info.device_info?.make,
+        model: device.info.model ?? device.info.device_info?.model,
+      });
+      const extraFieldConfig = getMinerExtraFieldConfig(minerType);
 
       const frequencyOptions =
-        mappedFrequencyOptions.length > 0
-          ? mappedFrequencyOptions
-          : Array.isArray(device.info.frequencyOptions)
-          ? device.info.frequencyOptions
-          : [];
-
+        extraFieldConfig.frequency?.presetOptions ?? [];
       const coreVoltageOptions =
-        mappedCoreVoltageOptions.length > 0
-          ? mappedCoreVoltageOptions
-          : Array.isArray(device.info.coreVoltageOptions)
-          ? device.info.coreVoltageOptions
-          : [];
+        extraFieldConfig.core_voltage?.presetOptions ?? [];
 
       return {
         ...device,
@@ -382,23 +367,30 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
           presetPortType: typeof preset.configuration.stratumPort,
         });
 
-        // Ensure we forward correct types to the miner API.
-        // Bitaxe expects a numeric port; if we pass a string (as stored in presets),
-        // the firmware can treat it as 0, effectively disabling the port.
         const presetPort = preset.configuration.stratumPort;
+        const port = typeof presetPort === "number" ? presetPort : Number(presetPort) || 0;
+        const poolUrl = `stratum+tcp://${preset.configuration.stratumURL}:${port}`;
+        const poolUser = preset.configuration.stratumUser ?? "";
+        const poolPassword = preset.configuration.stratumPassword ?? "";
 
-        // Cast to any to allow setting legacy properties for pyasic-bridge API compatibility
         const info = payload.info as any;
-        info.stratumPort =
-          typeof presetPort === "number" ? presetPort : Number(presetPort) || 0;
-        info.stratumURL = preset.configuration.stratumURL;
-        // info.stratumUser = preset.configuration.stratumUser;
-        info.stratumPassword = preset.configuration.stratumPassword;
+        if (info.config?.pools?.groups?.[0]?.pools) {
+          info.config.pools.groups[0].pools[0] = {
+            ...info.config.pools.groups[0].pools[0],
+            url: poolUrl,
+            user: poolUser,
+            password: poolPassword,
+          };
+        } else {
+          info.stratumPort = port;
+          info.stratumURL = preset.configuration.stratumURL;
+          info.stratumPassword = poolPassword;
+        }
 
         logger.info("Final system info payload to device", {
           mac: payload.mac,
-          stratumPort: info.stratumPort,
-          stratumURL: info.stratumURL,
+          stratumURL: preset.configuration.stratumURL,
+          stratumPort: port,
         });
       } else {
         logger.error("Preset not found", { presetUuid: payload.presetUuid });
@@ -406,26 +398,39 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
       }
     }
 
-    const systemInfoPatch = pickWritableSystemInfo(payload.info ?? originalInfo);
     const infoForLog = (payload.info ?? originalInfo) as any;
+    let configPayload: Record<string, unknown>;
 
-    logger.info("Sending PATCH to device", {
-      url: `pyasic-bridge:/miner/${deviceIp}/config`,
-      stratumPort: infoForLog?.stratumPort,
-      stratumURL: infoForLog?.stratumURL,
-      stratumUser: infoForLog?.stratumUser,
-      hasPassword: !!infoForLog?.stratumPassword,
-      frequency: (systemInfoPatch as any).frequency,
-      coreVoltage: (systemInfoPatch as any).coreVoltage,
-    });
+    if (infoForLog?.config && typeof infoForLog.config === "object") {
+      configPayload = infoForLog.config as Record<string, unknown>;
+      logger.info("Sending PATCH to device (config format)", {
+        url: `pyasic-bridge:/miner/${deviceIp}/config`,
+        configKeys: Object.keys(configPayload),
+      });
+    } else {
+      configPayload = pickWritableSystemInfo(payload.info ?? originalInfo) as Record<string, unknown>;
+      logger.info("Sending PATCH to device (legacy flat format)", {
+        url: `pyasic-bridge:/miner/${deviceIp}/config`,
+        stratumPort: infoForLog?.stratumPort,
+        stratumURL: infoForLog?.stratumURL,
+        stratumUser: infoForLog?.stratumUser,
+        hasPassword: !!infoForLog?.stratumPassword,
+      });
+    }
 
-    // Delegate config update to pyasic-bridge (handles both real and mock devices transparently)
-    await pyasicBridgeClient.updateMinerConfig(deviceIp, systemInfoPatch);
+    await pyasicBridgeClient.updateMinerConfig(deviceIp, configPayload);
+
+    // Persist updated device (including config.pools with new URL/port) so reload shows correct values
+    const mergedDevice: Device = {
+      ...device,
+      info: { ...device.info, ...payload.info },
+    };
+    await deviceService.patchImprintedDevice(device.mac, mergedDevice);
 
     // Inoltra la risposta al client
     res.status(200).json({
       message: "Device system info updated successfully",
-      data: payload,
+      data: mergedDevice,
     });
   } catch (error) {
     logger.error("Error in putDeviceSystemInfo request:", error);

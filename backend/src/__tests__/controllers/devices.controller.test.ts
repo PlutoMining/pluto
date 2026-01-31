@@ -185,25 +185,27 @@ describe("devices.controller", () => {
   });
 
   describe("getImprintedDevices", () => {
-    it("enriches options", async () => {
+    it("enriches options from miner-type factory", async () => {
       const req = { query: { q: "10.0" } } as unknown as Request;
       const res = createMockResponse();
       deviceService.getImprintedDevices.mockResolvedValue([
-        { mac: "x", info: { ASICModel: "BM1397" } },
+        { mac: "x", info: { make: "Other", model: "Unknown" } },
       ] as unknown as Device[]);
 
       await deviceController.getImprintedDevices(req, res as unknown as Response);
 
       const payload = res.json.mock.calls[0][0];
       expect(payload.data[0].info.frequencyOptions).toBeDefined();
+      expect(payload.data[0].info.frequencyOptions).toEqual([]);
+      expect(payload.data[0].info.coreVoltageOptions).toEqual([]);
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
-    it("enriches options when ASICModel contains extra text", async () => {
+    it("enriches BitAxe with preset options when make/model contains bitaxe", async () => {
       const req = { query: {} } as unknown as Request;
       const res = createMockResponse();
       deviceService.getImprintedDevices.mockResolvedValue([
-        { mac: "x", info: { ASICModel: "Bitaxe BM1397 rev2" } },
+        { mac: "x", info: { make: "Bitaxe", model: "BM1397" } },
       ] as unknown as Device[]);
 
       await deviceController.getImprintedDevices(req, res as unknown as Response);
@@ -216,11 +218,11 @@ describe("devices.controller", () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
-    it("handles unknown ASICModel with empty options", async () => {
+    it("handles unknown miner type with empty options", async () => {
       const req = { query: {} } as unknown as Request;
       const res = createMockResponse();
       deviceService.getImprintedDevices.mockResolvedValue([
-        { mac: "x", info: { ASICModel: "UNKNOWN_MODEL" } },
+        { mac: "x", info: { make: "Acme", model: "UNKNOWN_MODEL" } },
       ] as unknown as Device[]);
 
       await deviceController.getImprintedDevices(req, res as unknown as Response);
@@ -231,24 +233,17 @@ describe("devices.controller", () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
-    it("falls back to device-provided options when ASICModel is missing", async () => {
+    it("uses factory only (no device-provided options fallback)", async () => {
       const req = { query: {} } as unknown as Request;
       const res = createMockResponse();
       deviceService.getImprintedDevices.mockResolvedValue([
         {
-          mac: 'x',
+          mac: "x",
           info: {
-            ASICModel: 123,
-            frequencyOptions: [500, 525],
-            coreVoltageOptions: [1100],
-          },
-        },
-        {
-          mac: 'y',
-          info: {
-            ASICModel: "   ",
-            frequencyOptions: [400],
-            coreVoltageOptions: [1000],
+            make: "Other",
+            model: "X1",
+            frequencyOptions: [{ label: "500", value: 500 }],
+            coreVoltageOptions: [{ label: "1100", value: 1100 }],
           },
         },
       ] as unknown as Device[]);
@@ -256,10 +251,9 @@ describe("devices.controller", () => {
       await deviceController.getImprintedDevices(req, res as unknown as Response);
 
       const payload = res.json.mock.calls[0][0];
-      expect(payload.data[0].info.frequencyOptions).toEqual([500, 525]);
-      expect(payload.data[0].info.coreVoltageOptions).toEqual([1100]);
-      expect(payload.data[1].info.frequencyOptions).toEqual([400]);
-      expect(payload.data[1].info.coreVoltageOptions).toEqual([1000]);
+      expect(payload.data[0].info.frequencyOptions).toEqual([]);
+      expect(payload.data[0].info.coreVoltageOptions).toEqual([]);
+      expect(res.status).toHaveBeenCalledWith(200);
     });
 
     it("handles service errors", async () => {
@@ -506,6 +500,10 @@ describe("devices.controller", () => {
   });
 
   describe("patchDeviceSystemInfo", () => {
+    beforeEach(() => {
+      deviceService.patchImprintedDevice.mockResolvedValue({});
+    });
+
     it("updates real miner via preset data with number port", async () => {
       const req = {
         params: { id: "mac" },
@@ -645,12 +643,17 @@ describe("devices.controller", () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
-    it("forwards frequency and voltage as numbers", async () => {
+    it("forwards frequency and voltage via config.extra_config (pyasic model)", async () => {
       const req = {
         params: { id: "mac" },
         body: {
-          info: { frequency: "525", coreVoltage: "1150", stratumURL: "pool", stratumPort: "3333" },
           mac: "mac",
+          info: {
+            config: {
+              extra_config: { frequency: 525, core_voltage: 1150 },
+              pools: { groups: [{ pools: [{ url: "stratum+tcp://pool:3333", user: "u", password: "" }], quota: 1, name: null }] },
+            },
+          },
         },
       } as unknown as Request;
       const res = createMockResponse();
@@ -661,15 +664,9 @@ describe("devices.controller", () => {
 
       await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
 
-      expect(mockedPyasicBridgeClient.updateMinerConfig).toHaveBeenCalledWith(
-        "10.0.0.3",
-        expect.objectContaining({
-          frequency: 525,
-          coreVoltage: 1150,
-          stratumPort: 3333,
-          stratumURL: "pool",
-        }),
-      );
+      const patchBody = mockedPyasicBridgeClient.updateMinerConfig.mock.calls[0]?.[1] as Record<string, unknown>;
+      expect(patchBody).toBeDefined();
+      expect(patchBody.extra_config).toEqual(expect.objectContaining({ frequency: 525, core_voltage: 1150 }));
       expect(res.status).toHaveBeenCalledWith(200);
     });
 

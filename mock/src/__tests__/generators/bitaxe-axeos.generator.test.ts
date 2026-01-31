@@ -27,7 +27,6 @@ describe("BitaxeAxeOSDataGenerator", () => {
       poolAddrFamily: 2,
       isPSRAMAvailable: 1,
       coreVoltage: 1100,
-      frequency: 490,
       ssid: "FRITZ!Box 5530 AG",
       ipv4: "192.168.178.229",
       ipv6: "FE80::32ED:A0FF:FE30:1030",
@@ -60,6 +59,9 @@ describe("BitaxeAxeOSDataGenerator", () => {
       networkDifficulty: 141_668_107_417_558,
     });
 
+    expect(typeof result.frequency).toBe("number");
+    expect(result.frequency).toBeGreaterThanOrEqual(490);
+    expect(result.frequency).toBeLessThanOrEqual(550);
     expect(typeof result.power).toBe("number");
     expect(typeof result.voltage).toBe("number");
     expect(typeof result.temp).toBe("number");

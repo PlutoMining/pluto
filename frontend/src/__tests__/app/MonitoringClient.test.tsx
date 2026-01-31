@@ -299,11 +299,12 @@ describe('MonitoringClient', () => {
     expect(screen.getByRole('button', { name: 'Auto (5m)' })).toBeInTheDocument();
   });
 
-  it('renders PSRAM heap values and skips polling when hidden', async () => {
+  it('renders free heap value and skips polling when hidden', async () => {
     const originalVisibilityState = document.visibilityState;
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
 
     try {
+      const freeHeapBytes = 2 * 1024 * 1024;
       axios.get.mockResolvedValue({
         data: {
           data: [
@@ -320,10 +321,7 @@ describe('MonitoringClient', () => {
                 sharesRejected: 0,
                 bestDiff: '1',
                 bestSessionDiff: '1',
-                isPSRAMAvailable: 1,
-                freeHeapInternal: Number.POSITIVE_INFINITY,
-                freeHeapSpiram: 2 * 1024 * 1024,
-                config: { extra_config: { free_heap: 1 }, pools: { groups: [] } },
+                config: { extra_config: { free_heap: freeHeapBytes }, pools: { groups: [] } },
               },
             },
           ],
@@ -335,13 +333,8 @@ describe('MonitoringClient', () => {
       await flushEffects();
 
       expect(await screen.findByText('online')).toBeInTheDocument();
-      expect(screen.getByText('Internal | PSRAM')).toBeInTheDocument();
-
-      const heapValue = screen.getByText((content, element) => {
-        return element?.tagName === 'P' && content.includes('2.00') && content.includes('MB');
-      });
-      expect(heapValue).toHaveTextContent(/-\s*MB/);
-      expect(heapValue).toHaveTextContent(/2\.00\s*MB/);
+      expect(screen.getByRole('heading', { name: 'Free heap' })).toBeInTheDocument();
+      expect(screen.getByText('2.00 MB')).toBeInTheDocument();
 
       expect(prom.promQueryRange).not.toHaveBeenCalled();
 
@@ -418,10 +411,7 @@ describe('MonitoringClient', () => {
               bestSessionDiff: '1',
               sharesAccepted: 0,
               sharesRejected: 0,
-              isPSRAMAvailable: 1,
-              freeHeapInternal: 1024 * 1024,
-              freeHeapSpiram: 2 * 1024 * 1024,
-              config: { extra_config: { free_heap: 1 }, pools: { groups: [] } },
+              config: { extra_config: { free_heap: 1024 * 1024 }, pools: { groups: [] } },
             },
           },
         ],
@@ -443,11 +433,11 @@ describe('MonitoringClient', () => {
     });
 
     await waitFor(() => {
-      const heapChart = screen
-        .getAllByTestId('multi-line')
-        .find((el) => el.getAttribute('data-title') === 'Free heap');
-      expect(heapChart).toBeTruthy();
-      expect(heapChart).toHaveAttribute('data-series', '3');
+      const heapCharts = screen
+        .getAllByTestId('line-chart')
+        .filter((el) => el.getAttribute('data-title') === 'Free heap');
+      expect(heapCharts.length).toBeGreaterThan(0);
+      expect(heapCharts[0]).toHaveAttribute('data-title', 'Free heap');
     });
   });
 

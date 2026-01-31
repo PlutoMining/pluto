@@ -35,9 +35,8 @@ export interface BitaxeAxeOSInfo {
 
   isPSRAMAvailable: number;
   freeHeap: number;
-  freeHeapInternal: number;
-  freeHeapSpiram: number;
-
+  freeHeapInternal?: number;
+  freeHeapSpiram?: number;
   coreVoltage: number;
   coreVoltageActual: number;
   frequency: number;

@@ -88,11 +88,12 @@ function hasAnyDisplayOrFanField(device: Device): boolean {
   );
 }
 function hasFrequencyOrVoltage(device: Device): boolean {
+  const extra = device.info.config?.extra_config;
   return (
-    device.info.frequency !== undefined ||
-    (device.info.frequencyOptions?.length ?? 0) > 0 ||
-    device.info.coreVoltage !== undefined ||
-    (device.info.coreVoltageOptions?.length ?? 0) > 0
+    extra?.frequency !== undefined ||
+    device.info.frequencyOptions !== undefined ||
+    extra?.core_voltage !== undefined ||
+    device.info.coreVoltageOptions !== undefined
   );
 }
 
@@ -763,9 +764,14 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
       } else if (name === "frequency" || name === "coreVoltage") {
         const num = typeof nextValue === "number" ? nextValue : parseInt(String(nextValue), 10);
         if (!Number.isNaN(num)) {
+          const key = name === "frequency" ? "frequency" : "core_voltage";
+          const nextExtra = { ...extra, [key]: num };
           setDevice({
             ...device,
-            info: { ...device.info, [name]: num },
+            info: {
+              ...device.info,
+              config: { ...cfg, extra_config: nextExtra },
+            },
           });
         }
         return;
@@ -891,13 +897,15 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     }
   }, [isAccordionOpen, isConnected, socket]);
 
-  const hasEmptyFields = useCallback((obj: any): boolean => {
-    for (const key in obj) {
-      if (typeof obj[key] === "object" && obj[key] !== null) {
-        if (hasEmptyFields(obj[key])) return true; // Ricorsione per oggetti annidati
-      } else if (obj[key] === "") {
-        return true;
-      }
+  // Only treat required form fields as "empty" — do not recurse the whole device
+  // (e.g. pool password and many optional API fields are valid when "")
+  const hasEmptyRequiredFields = useCallback((d: Device): boolean => {
+    if (!d?.info) return true;
+    if (typeof d.info.hostname === "string" && d.info.hostname.trim() === "") return true;
+    const pool = d.info.config?.pools?.groups?.[0]?.pools?.[0];
+    if (pool) {
+      if (typeof pool.url !== "string" || pool.url.trim() === "") return true;
+      if (typeof pool.user !== "string" || pool.user.trim() === "") return true;
     }
     return false;
   }, []);
@@ -917,8 +925,8 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
   }, [device]);
 
   const isDeviceValid = useCallback(() => {
-    return hasEmptyFields(device) || hasErrorFields(deviceError);
-  }, [device, deviceError, hasEmptyFields, hasErrorFields]);
+    return hasEmptyRequiredFields(device) || hasErrorFields(deviceError);
+  }, [device, deviceError, hasEmptyRequiredFields, hasErrorFields]);
 
   const handleSaveAndRestartModalClose = async (value: string) => {
     // Funzione di callback per gestire il valore restituito dalla modale
@@ -1087,30 +1095,74 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                 </p>
                 <div className="flex flex-col gap-4 desktop:flex-row">
                   <div className="flex flex-col gap-4 tablet:flex-row desktop:flex-[2]">
-                    {(device.info.frequency !== undefined || (device.info.frequencyOptions?.length ?? 0) > 0) && (
-                      <Select
-                        id={`${device.mac}-frequency`}
-                        label="Frequency"
-                        name="frequency"
-                        onChange={handleChange}
-                        value={device.info.frequency}
-                        defaultValue={device.info.frequency}
-                        optionValues={device.info.frequencyOptions ?? []}
-                        allowCustom={true}
-                      />
-                    )}
-                    {(device.info.coreVoltage !== undefined || (device.info.coreVoltageOptions?.length ?? 0) > 0) && (
-                      <Select
-                        id={`${device.mac}-coreVoltage`}
-                        label="Core Voltage"
-                        name="coreVoltage"
-                        onChange={handleChange}
-                        value={device.info.coreVoltage}
-                        defaultValue={device.info.coreVoltage}
-                        optionValues={device.info.coreVoltageOptions ?? []}
-                        allowCustom={true}
-                      />
-                    )}
+                    {(device.info.config?.extra_config?.frequency !== undefined ||
+                      device.info.frequencyOptions !== undefined) &&
+                      ((device.info.frequencyOptions?.length ?? 0) > 0 ? (
+                        <Select
+                          id={`${device.mac}-frequency`}
+                          label="Frequency"
+                          name="frequency"
+                          onChange={handleChange}
+                          value={device.info.config?.extra_config?.frequency}
+                          defaultValue={device.info.config?.extra_config?.frequency}
+                          optionValues={device.info.frequencyOptions ?? []}
+                          allowCustom={true}
+                        />
+                      ) : (
+                        <div className="grid gap-1.5">
+                          <label
+                            htmlFor={`${device.mac}-frequency-custom`}
+                            className="text-xs font-semibold uppercase font-body"
+                          >
+                            Frequency
+                          </label>
+                          <input
+                            id={`${device.mac}-frequency-custom`}
+                            name="frequency"
+                            type="number"
+                            inputMode="numeric"
+                            value={
+                              device.info.config?.extra_config?.frequency ?? ""
+                            }
+                            onChange={handleChange}
+                            className="h-10 w-full rounded-none border border-input bg-background px-3 font-accent text-[13px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          />
+                        </div>
+                      ))}
+                    {(device.info.config?.extra_config?.core_voltage !== undefined ||
+                      device.info.coreVoltageOptions !== undefined) &&
+                      ((device.info.coreVoltageOptions?.length ?? 0) > 0 ? (
+                        <Select
+                          id={`${device.mac}-coreVoltage`}
+                          label="Core Voltage"
+                          name="coreVoltage"
+                          onChange={handleChange}
+                          value={device.info.config?.extra_config?.core_voltage}
+                          defaultValue={device.info.config?.extra_config?.core_voltage}
+                          optionValues={device.info.coreVoltageOptions ?? []}
+                          allowCustom={true}
+                        />
+                      ) : (
+                        <div className="grid gap-1.5">
+                          <label
+                            htmlFor={`${device.mac}-coreVoltage-custom`}
+                            className="text-xs font-semibold uppercase font-body"
+                          >
+                            Core Voltage
+                          </label>
+                          <input
+                            id={`${device.mac}-coreVoltage-custom`}
+                            name="coreVoltage"
+                            type="number"
+                            inputMode="numeric"
+                            value={
+                              device.info.config?.extra_config?.core_voltage ?? ""
+                            }
+                            onChange={handleChange}
+                            className="h-10 w-full rounded-none border border-input bg-background px-3 font-accent text-[13px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          />
+                        </div>
+                      ))}
                   </div>
                 </div>
               </>
@@ -1200,7 +1252,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                     name="stratumURL"
                     id={`${device.mac}-stratumUrl`}
                     placeholder="Add your stratum URL"
-                    defaultValue={extractPoolInfo(device).url}
+                    value={extractPoolInfo(device).url}
                     onChange={handleChange}
                     error={deviceError.stratumURL}
                   />
@@ -1212,7 +1264,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                     name="stratumPort"
                     id={`${device.mac}-stratumPort`}
                     placeholder="Add your stratum port"
-                    defaultValue={extractPoolInfo(device).port}
+                    value={extractPoolInfo(device).port}
                     onChange={handleChange}
                     error={deviceError.stratumPort}
                   />

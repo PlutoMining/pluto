@@ -62,8 +62,6 @@ export default function MonitoringClient({ id }: { id: string }) {
   const [voltage, setVoltage] = useState<Array<{ t: number; v: number }>>([]);
   const [frequency, setFrequency] = useState<Array<{ t: number; v: number }>>([]);
   const [freeHeapMb, setFreeHeapMb] = useState<Array<{ t: number; v: number }>>([]);
-  const [freeHeapInternalMb, setFreeHeapInternalMb] = useState<Array<{ t: number; v: number }>>([]);
-  const [freeHeapSpiramMb, setFreeHeapSpiramMb] = useState<Array<{ t: number; v: number }>>([]);
 
   const rangeSeconds = useMemo(
     () => TIME_RANGES.find((r) => r.key === range)?.seconds ?? 3600,
@@ -81,17 +79,18 @@ export default function MonitoringClient({ id }: { id: string }) {
 
   const host = useMemo(() => sanitizeHostname(id), [id]);
 
+  const extra = device?.info.config?.extra_config;
   const hasFrequency = useMemo(
     () =>
-      device?.info.frequency !== undefined ||
+      extra?.frequency !== undefined ||
       (device?.info.frequencyOptions?.length ?? 0) > 0,
-    [device?.info.frequency, device?.info.frequencyOptions]
+    [extra?.frequency, device?.info.frequencyOptions]
   );
   const hasCoreVoltage = useMemo(
     () =>
-      device?.info.coreVoltage !== undefined ||
+      extra?.core_voltage !== undefined ||
       (device?.info.coreVoltageOptions?.length ?? 0) > 0,
-    [device?.info.coreVoltage, device?.info.coreVoltageOptions]
+    [extra?.core_voltage, device?.info.coreVoltageOptions]
   );
   const hasFanConfig = useMemo(
     () =>
@@ -100,8 +99,9 @@ export default function MonitoringClient({ id }: { id: string }) {
     [device?.info.config?.fan_mode, device?.info.config?.extra_config]
   );
   const hasFreeHeapConfig = useMemo(
-    () => device?.info.config?.extra_config?.free_heap !== undefined,
-    [device?.info.config?.extra_config]
+    () =>
+      extra?.free_heap !== undefined,
+    [extra?.free_heap]
   );
 
   const temperatureSeries = useMemo(
@@ -148,65 +148,9 @@ export default function MonitoringClient({ id }: { id: string }) {
     return series;
   }, [voltage, coreVActual, coreV, hasCoreVoltage]);
 
-  const psramAvailable = useMemo(() => Number(device?.info.isPSRAMAvailable) === 1, [device?.info.isPSRAMAvailable]);
-
-  const heapSeries = useMemo(() => {
-    const series: Array<{
-      key: string;
-      label: string;
-      color: string;
-      points: Array<{ t: number; v: number }>;
-      strokeWidth?: number;
-      strokeDasharray?: string;
-      strokeLinecap?: "butt" | "round" | "square";
-      renderOrder?: number;
-    }> = [
-      {
-        key: "total",
-        label: "Total",
-        color: "hsl(var(--chart-1))",
-        points: freeHeapMb,
-        strokeWidth: 2,
-        renderOrder: 0,
-      },
-    ];
-
-    if (psramAvailable && freeHeapSpiramMb.length > 0) {
-      series.push({
-        key: "psram",
-        label: "PSRAM",
-        color: "hsl(var(--chart-2))",
-        points: freeHeapSpiramMb,
-        strokeDasharray: "5 7",
-        strokeLinecap: "butt" as const,
-        strokeWidth: 2,
-        renderOrder: 1,
-      });
-    }
-
-    if (psramAvailable && freeHeapInternalMb.length > 0) {
-      series.push({
-        key: "internal",
-        label: "Internal",
-        color: "hsl(var(--chart-5))",
-        points: freeHeapInternalMb,
-        strokeDasharray: "2 4",
-        strokeLinecap: "butt" as const,
-        strokeWidth: 2,
-        renderOrder: 2,
-      });
-    }
-
-    return series;
-  }, [freeHeapInternalMb, freeHeapMb, freeHeapSpiramMb, psramAvailable]);
-
-  const freeHeapInternalCurrentMb = useMemo(
-    () => bytesToMb((device?.info as any)?.freeHeapInternal),
-    [device?.info]
-  );
-  const freeHeapSpiramCurrentMb = useMemo(
-    () => bytesToMb((device?.info as any)?.freeHeapSpiram),
-    [device?.info]
+  const freeHeapCurrentMb = useMemo(
+    () => bytesToMb(device?.info.config?.extra_config?.free_heap as number | undefined),
+    [device?.info.config?.extra_config?.free_heap]
   );
 
   useEffect(() => {
@@ -276,8 +220,6 @@ export default function MonitoringClient({ id }: { id: string }) {
           voltage: `${host}_voltage_volts`,
           frequency: `${host}_frequency_mhz`,
           freeHeap: `${host}_free_heap_bytes`,
-          freeHeapInternal: `${host}_free_heap_internal_bytes`,
-          freeHeapSpiram: `${host}_free_heap_spiram_bytes`,
         };
 
         const options = { signal: controller.signal };
@@ -294,8 +236,6 @@ export default function MonitoringClient({ id }: { id: string }) {
           voltRes,
           freqRes,
           freeHeapRes,
-          freeHeapInternalRes,
-          freeHeapSpiramRes,
         ] = await Promise.all([
             promQueryRange(queries.hashrate, start, end, step, options),
             promQueryRange(queries.power, start, end, step, options),
@@ -308,8 +248,6 @@ export default function MonitoringClient({ id }: { id: string }) {
             promQueryRange(queries.voltage, start, end, step, options),
             promQueryRange(queries.frequency, start, end, step, options),
             promQueryRange(queries.freeHeap, start, end, step, options),
-            promQueryRange(queries.freeHeapInternal, start, end, step, options),
-            promQueryRange(queries.freeHeapSpiram, start, end, step, options),
           ]);
 
         if (cancelled || controller.signal.aborted) return;
@@ -328,22 +266,6 @@ export default function MonitoringClient({ id }: { id: string }) {
         const freeHeapPoints = matrixToSeries((freeHeapRes as any).data.result)[0]?.points ?? [];
         setFreeHeapMb(
           freeHeapPoints.map((p) => ({
-            t: p.t,
-            v: p.v / (1024 * 1024),
-          }))
-        );
-
-        const freeHeapInternalPoints = matrixToSeries((freeHeapInternalRes as any).data.result)[0]?.points ?? [];
-        setFreeHeapInternalMb(
-          freeHeapInternalPoints.map((p) => ({
-            t: p.t,
-            v: p.v / (1024 * 1024),
-          }))
-        );
-
-        const freeHeapSpiramPoints = matrixToSeries((freeHeapSpiramRes as any).data.result)[0]?.points ?? [];
-        setFreeHeapSpiramMb(
-          freeHeapSpiramPoints.map((p) => ({
             t: p.t,
             v: p.v / (1024 * 1024),
           }))
@@ -443,14 +365,20 @@ export default function MonitoringClient({ id }: { id: string }) {
             <p className="font-accent text-xl text-foreground">{formatNumber(device?.info.wattage, 2)} W</p>
           </CardContent>
         </Card>
-        <Card className="rounded-none">
-          <CardHeader>
-            <CardTitle>Frequency</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-accent text-xl text-foreground">-</p>
-          </CardContent>
-        </Card>
+        {hasFrequency && (
+          <Card className="rounded-none">
+            <CardHeader>
+              <CardTitle>Frequency</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-accent text-xl text-foreground">
+                {device?.info.config?.extra_config?.frequency != null
+                  ? `${device.info.config!.extra_config!.frequency} MHz`
+                  : "-"}
+              </p>
+            </CardContent>
+          </Card>
+        )}
         <Card className="rounded-none">
           <CardHeader className="flex flex-row items-center justify-between gap-3">
             <CardTitle>Temperatures</CardTitle>
@@ -470,22 +398,12 @@ export default function MonitoringClient({ id }: { id: string }) {
         </Card>
         {hasFreeHeapConfig && (
           <Card className="rounded-none">
-            <CardHeader className="flex flex-row items-center justify-between gap-3">
+            <CardHeader>
               <CardTitle>Free heap</CardTitle>
-              <span className="ml-auto whitespace-nowrap font-accent text-xs text-muted-foreground">
-                {psramAvailable ? "Internal | PSRAM" : "Internal"}
-              </span>
             </CardHeader>
             <CardContent>
               <p className="font-accent text-xl text-foreground">
-                {psramAvailable ? (
-                  <>
-                    {formatNumber(freeHeapInternalCurrentMb, 2)} MB <span className="text-muted-foreground">|</span>{" "}
-                    {formatNumber(freeHeapSpiramCurrentMb, 2)} MB
-                  </>
-                ) : (
-                  <>{formatNumber(freeHeapInternalCurrentMb, 2)} MB</>
-                )}
+                {formatNumber(freeHeapCurrentMb, 2)} MB
               </p>
             </CardContent>
           </Card>
@@ -545,12 +463,7 @@ export default function MonitoringClient({ id }: { id: string }) {
       <div className="mt-3 grid gap-4 tablet:mt-4 tablet:grid-cols-2">
         {hasFrequency && <LineChartCard title="Frequency" points={frequency} unit="MHz" curve="step" />}
         {hasFreeHeapConfig && (
-          <MultiLineChartCard
-            title="Free heap"
-            unit="MB"
-            valueDigits={2}
-            series={heapSeries}
-          />
+          <LineChartCard title="Free heap" points={freeHeapMb} unit="MB" />
         )}
       </div>
     </div>

@@ -53,7 +53,25 @@ export class DeviceConverterService {
       fallbackType ||
       "unknown";
 
-    // Ensure minerData has required fields for PyasicMinerInfo
+    // Normalize device-specific fields into extra_config (pyasic model: only general fields at top level)
+    const raw = minerData as Record<string, unknown> | null | undefined;
+    const baseExtra = (minerData?.config as { extra_config?: Record<string, unknown> } | undefined)?.extra_config ?? {};
+    const extra_config: Record<string, unknown> = { ...baseExtra };
+    if (raw?.frequency !== undefined) extra_config.frequency = raw.frequency;
+    if (raw?.coreVoltage !== undefined) extra_config.core_voltage = raw.coreVoltage;
+    if (raw?.coreVoltageActual !== undefined) extra_config.core_voltage_actual = raw.coreVoltageActual;
+    if (raw?.freeHeap !== undefined) extra_config.free_heap = raw.freeHeap;
+    if (raw?.isPSRAMAvailable !== undefined) extra_config.is_psram_available = raw.isPSRAMAvailable;
+
+    const baseConfig = minerData?.config ?? {
+      pools: { groups: [] },
+      fan_mode: { mode: "auto", speed: 0, minimum_fans: 0 },
+      temperature: { target: null, hot: null, danger: null },
+      mining_mode: { mode: "normal" },
+      extra_config: {},
+    };
+    const config = { ...baseConfig, extra_config };
+
     const pyasicInfo: PyasicMinerInfo = {
       ip: minerData?.ip || ip,
       mac: minerData?.mac || mac,
@@ -87,13 +105,7 @@ export class DeviceConverterService {
       fans: minerData?.fans || [],
       fan_psu: minerData?.fan_psu ?? null,
       hashboards: minerData?.hashboards || [],
-      config: minerData?.config || {
-        pools: { groups: [] },
-        fan_mode: { mode: "auto", speed: 0, minimum_fans: 0 },
-        temperature: { target: null, hot: null, danger: null },
-        mining_mode: { mode: "normal" },
-        extra_config: {},
-      },
+      config,
       fault_light: minerData?.fault_light ?? null,
       errors: minerData?.errors || [],
       is_mining: minerData?.is_mining ?? false,
@@ -121,7 +133,6 @@ export class DeviceConverterService {
       model: deviceModel,
       firmware: minerData?.firmware || minerData?.device_info?.firmware || "unknown",
       algo: minerData?.algo || minerData?.device_info?.algo || "unknown",
-      ...minerData,
     };
 
     return {

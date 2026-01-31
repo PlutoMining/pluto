@@ -103,16 +103,6 @@ export const createMetricsForDevice = (hostname: string) => {
     "Current free heap in bytes"
   );
 
-  const freeHeapInternalGauge = getOrCreateGauge(
-    `${prefix}free_heap_internal_bytes`,
-    "Current free internal heap in bytes"
-  );
-
-  const freeHeapSpiramGauge = getOrCreateGauge(
-    `${prefix}free_heap_spiram_bytes`,
-    "Current free PSRAM heap in bytes"
-  );
-
   const coreVoltageGauge = getOrCreateGauge(
     `${prefix}core_voltage_volts`,
     "Current core voltage in volts"
@@ -181,14 +171,12 @@ export const createMetricsForDevice = (hostname: string) => {
       setGauge(sharesAcceptedGauge, data.shares_accepted);
       setGauge(sharesRejectedGauge, data.shares_rejected);
       setGauge(uptimeGauge, data.uptime);
-      // Heap metrics not available in pyasic schema, leave as 0
-      setGauge(freeHeapGauge, 0);
-      setGauge(freeHeapInternalGauge, 0);
-      setGauge(freeHeapSpiramGauge, 0);
-      // Core voltage and frequency not directly available in pyasic schema, leave as 0
-      setGauge(coreVoltageGauge, 0);
-      setGauge(coreVoltageActualGauge, 0);
-      setGauge(frequencyGauge, 0);
+      // Heap and tuning metrics: read from config.extra_config (pyasic model)
+      const extra = data.config?.extra_config as Record<string, unknown> | undefined;
+      setGauge(freeHeapGauge, (extra?.free_heap as number) ?? 0);
+      setGauge(coreVoltageGauge, (extra?.core_voltage as number) ?? 0);
+      setGauge(coreVoltageActualGauge, (extra?.core_voltage_actual as number) ?? 0);
+      setGauge(frequencyGauge, (extra?.frequency as number) ?? 0);
 
       // Use efficiency from pyasic if available, otherwise compute
       if (data.efficiency?.rate !== undefined && Number.isFinite(data.efficiency.rate)) {
