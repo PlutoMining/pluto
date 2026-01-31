@@ -1,4 +1,4 @@
-import type { DeviceInfo, ExtendedDeviceInfo } from '@pluto/interfaces';
+import { createPyasicMinerInfoFixture } from '../fixtures/pyasic-miner-info.fixture';
 jest.mock('prom-client', () => {
   const gaugeInstances = new Map<string, any>();
 
@@ -17,18 +17,27 @@ jest.mock('prom-client', () => {
   }
 
   class Registry {
-    private metrics = new Map<string, Gauge>();
+    private metrics = new Map<string, Gauge | unknown>();
 
     registerMetric(metric: Gauge) {
       this.metrics.set(metric.name, metric);
     }
 
     getMetricsAsArray() {
-      return Array.from(this.metrics.values());
+      return Array.from(this.metrics.values()).filter((m): m is Gauge => m instanceof Gauge);
+    }
+
+    getSingleMetric(name: string) {
+      return this.metrics.get(name) || null;
     }
 
     removeSingleMetric(name: string) {
       this.metrics.delete(name);
+    }
+
+    /** Test helper: inject a non-Gauge so getOrCreateGauge hits "exists but is not a Gauge" branch */
+    __injectNonGauge(name: string) {
+      this.metrics.set(name, { notAGauge: true });
     }
   }
 
@@ -42,6 +51,7 @@ jest.mock('@pluto/logger', () => ({
     debug: jest.fn(),
     info: jest.fn(),
     error: jest.fn(),
+    warn: jest.fn(),
   },
 }));
 
@@ -49,7 +59,12 @@ import promClient from 'prom-client';
 const gaugeInstances = (promClient as unknown as { __gaugeInstances: Map<string, any> }).__gaugeInstances;
 const { logger } = jest.requireMock('@pluto/logger');
 
-import { createMetricsForDevice, deleteMetricsForDevice, register, updateOverviewMetrics } from '@/services/metrics.service';
+import {
+  createMetricsForDevice,
+  deleteMetricsForDevice,
+  register,
+  updateOverviewMetrics,
+} from '@/services/metrics.service';
 
 describe('metrics.service', () => {
   beforeEach(() => {
@@ -61,57 +76,138 @@ describe('metrics.service', () => {
   });
 
   describe('createMetricsForDevice', () => {
-    it('updates device metrics converting units', () => {
+    it('updates device metrics from pyasic info', () => {
       const { updatePrometheusMetrics } = createMetricsForDevice('rig');
 
-      const payload = {
-        power: 1200,
-        voltage: 12000,
-        current: 6000,
-        fanSpeedRpm: 1200,
-        temp: 45,
-        vrTemp: 70,
-        hashRate: 800,
-        sharesAccepted: 10,
-        sharesRejected: 1,
-        uptimeSeconds: 3600,
-        freeHeap: 512,
-        freeHeapInternal: 128,
-        freeHeapSpiram: 0,
-        coreVoltage: 1100,
-        coreVoltageActual: 1050,
-        frequency: 500,
-        efficiency: 1,
-      } as DeviceInfo;
+      const info = createPyasicMinerInfoFixture();
 
-      updatePrometheusMetrics(payload);
-      updatePrometheusMetrics({ fanspeed: 900 } as unknown as DeviceInfo);
-      updatePrometheusMetrics({ fanrpm: 800 } as unknown as DeviceInfo);
-      updatePrometheusMetrics({ hashRate_10m: 100 } as unknown as DeviceInfo);
-      updatePrometheusMetrics({} as DeviceInfo);
+      updatePrometheusMetrics(info);
 
-      expect(gaugeInstances.get('rig_power_watts')?.set).toHaveBeenCalledWith(1200);
-      expect(gaugeInstances.get('rig_voltage_volts')?.set).toHaveBeenCalledWith(12);
-      expect(gaugeInstances.get('rig_current_amps')?.set).toHaveBeenCalledWith(6);
-      expect(gaugeInstances.get('rig_fanspeed_rpm')?.set).toHaveBeenCalledWith(1200);
-      expect(gaugeInstances.get('rig_temperature_celsius')?.set).toHaveBeenCalledWith(45);
-      expect(gaugeInstances.get('rig_vr_temperature_celsius')?.set).toHaveBeenCalledWith(70);
-      expect(gaugeInstances.get('rig_hashrate_ghs')?.set).toHaveBeenCalledWith(800);
-      expect(gaugeInstances.get('rig_free_heap_bytes')?.set).toHaveBeenCalledWith(512);
-      expect(gaugeInstances.get('rig_free_heap_internal_bytes')?.set).toHaveBeenCalledWith(128);
-      expect(gaugeInstances.get('rig_free_heap_spiram_bytes')?.set).toHaveBeenCalledWith(0);
-      expect(gaugeInstances.get('rig_efficiency')?.set).toHaveBeenCalledWith(1200 / (800 / 1000));
+      // Power comes directly from wattage
+      expect(gaugeInstances.get('rig_power_watts')?.set).toHaveBeenCalledWith(info.wattage);
+
+      // Voltage is derived from hashboard voltage (mV -> V)
+      const expectedVoltageMv = info.hashboards[0].voltage!;
+      expect(gaugeInstances.get('rig_voltage_volts')?.set).toHaveBeenCalledWith(
+        expectedVoltageMv / 1000
+      );
+
+      // Current is not present in pyasic schema, so we expose 0
+      expect(gaugeInstances.get('rig_current_amps')?.set).toHaveBeenCalledWith(0);
+
+      // Fan speed, temperatures, hashrate and shares are mapped from pyasic fields
+      expect(gaugeInstances.get('rig_fanspeed_rpm')?.set).toHaveBeenCalledWith(
+        info.fans[0].speed
+      );
+      expect(gaugeInstances.get('rig_temperature_celsius')?.set).toHaveBeenCalledWith(
+        info.temperature_avg
+      );
+      expect(gaugeInstances.get('rig_vr_temperature_celsius')?.set).toHaveBeenCalledWith(
+        info.hashboards[0].chip_temp
+      );
+      expect(gaugeInstances.get('rig_hashrate_ghs')?.set).toHaveBeenCalledWith(
+        info.hashrate.rate
+      );
+      expect(gaugeInstances.get('rig_shares_accepted')?.set).toHaveBeenCalledWith(
+        info.shares_accepted
+      );
+      expect(gaugeInstances.get('rig_shares_rejected')?.set).toHaveBeenCalledWith(
+        info.shares_rejected
+      );
+
+      // Uptime is taken from pyasic uptime field
+      expect(gaugeInstances.get('rig_uptime_seconds')?.set).toHaveBeenCalledWith(info.uptime);
+
+      // Efficiency prefers the explicit pyasic efficiency metric
+      expect(gaugeInstances.get('rig_efficiency')?.set).toHaveBeenCalledWith(
+        info.efficiency.rate
+      );
     });
 
     it('does not keep stale metrics when values become zero', () => {
       const { updatePrometheusMetrics } = createMetricsForDevice('rig2');
 
-      updatePrometheusMetrics({ power: 100, hashRate: 10 } as unknown as DeviceInfo);
-      updatePrometheusMetrics({ power: 0, hashRate: 0 } as unknown as DeviceInfo);
+      updatePrometheusMetrics(
+        createPyasicMinerInfoFixture({
+          wattage: 100,
+          hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 10 },
+        })
+      );
+      updatePrometheusMetrics(
+        createPyasicMinerInfoFixture({
+          wattage: 0,
+          hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 0 },
+        })
+      );
 
       expect(gaugeInstances.get('rig2_power_watts')?.set).toHaveBeenCalledWith(0);
       expect(gaugeInstances.get('rig2_hashrate_ghs')?.set).toHaveBeenCalledWith(0);
-      expect(gaugeInstances.get('rig2_efficiency')?.set).toHaveBeenCalledWith(0);
+      // With pyasic-native metrics we keep the explicit efficiency value
+      expect(gaugeInstances.get('rig2_efficiency')?.set).toHaveBeenCalledWith(
+        createPyasicMinerInfoFixture().efficiency.rate
+      );
+    });
+
+    it('reuses existing metrics when creating metrics for the same hostname twice', () => {
+      // Create metrics for the first time
+      const { updatePrometheusMetrics: update1 } = createMetricsForDevice('duplicate-rig');
+      const info1 = createPyasicMinerInfoFixture({ wattage: 100 });
+      update1(info1);
+
+      // Create metrics for the same hostname again - should reuse existing metrics
+      const { updatePrometheusMetrics: update2 } = createMetricsForDevice('duplicate-rig');
+      const info2 = createPyasicMinerInfoFixture({ wattage: 200 });
+      update2(info2);
+
+      // Should have reused the same gauge instance
+      const powerGauge = gaugeInstances.get('duplicate-rig_power_watts');
+      expect(powerGauge?.set).toHaveBeenCalledWith(100);
+      expect(powerGauge?.set).toHaveBeenCalledWith(200);
+      // Should have logged that we're reusing the metric
+      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('Reusing existing metric'));
+    });
+
+    it('removes and recreates metric when existing metric is not a Gauge', () => {
+      (register as { __injectNonGauge?: (name: string) => void }).__injectNonGauge?.(
+        'recreate_rig_power_watts'
+      );
+      const { updatePrometheusMetrics } = createMetricsForDevice('recreate_rig');
+      updatePrometheusMetrics(createPyasicMinerInfoFixture({ wattage: 100 }));
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringMatching(/recreate_rig_power_watts.*not a Gauge/)
+      );
+      expect(gaugeInstances.get('recreate_rig_power_watts')?.set).toHaveBeenCalledWith(100);
+    });
+
+    it('uses temperature from hashboards when temperature_avg is missing', () => {
+      const { updatePrometheusMetrics } = createMetricsForDevice('rig');
+      const base = createPyasicMinerInfoFixture();
+      const info = {
+        ...base,
+        temperature_avg: undefined,
+        hashboards: [
+          { ...base.hashboards![0], temp: 0, chip_temp: 0 },
+          { ...base.hashboards![0], slot: 1, temp: 70, chip_temp: 65 },
+        ],
+      };
+      updatePrometheusMetrics(info);
+
+      expect(gaugeInstances.get('rig_temperature_celsius')?.set).toHaveBeenCalledWith(70);
+      expect(gaugeInstances.get('rig_vr_temperature_celsius')?.set).toHaveBeenCalledWith(65);
+    });
+
+    it('computes efficiency from wattage and hashrate when efficiency.rate is missing', () => {
+      const { updatePrometheusMetrics } = createMetricsForDevice('rig');
+      const info = createPyasicMinerInfoFixture({
+        wattage: 100,
+        hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 10 },
+      });
+      (info as any).efficiency = undefined;
+      updatePrometheusMetrics(info);
+
+      // 100W / (10 Gh/s / 1000) = 10000
+      expect(gaugeInstances.get('rig_efficiency')?.set).toHaveBeenCalledWith(10000);
     });
   });
 
@@ -138,29 +234,61 @@ describe('metrics.service', () => {
 
   describe('updateOverviewMetrics', () => {
     it('updates overview metrics and per-pool data', () => {
-      const devices: ExtendedDeviceInfo[] = [
+      const devices = [
         {
-          mac: 'a',
-          power: 100,
-          hashRate: 50,
-          sharesAccepted: 5,
-          sharesRejected: 1,
+          ...createPyasicMinerInfoFixture({
+            mac: 'a',
+            wattage: 100,
+            hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 50 },
+            shares_accepted: 5,
+            shares_rejected: 1,
+            fw_ver: '1.0.0',
+            api_ver: '1.0.0',
+            config: {
+              pools: {
+                groups: [
+                  {
+                    pools: [{ url: 'stratum+tcp://mine.ocean.xyz:3334', user: 'user', password: '' }],
+                    quota: 1,
+                    name: null,
+                  },
+                ],
+              },
+              fan_mode: { mode: 'auto', speed: 0, minimum_fans: 0 },
+              temperature: { target: null, hot: null, danger: null },
+              mining_mode: { mode: 'normal' },
+              extra_config: {},
+            },
+          }),
           tracing: true,
-          version: '1.0.0',
-          stratumURL: 'mine.ocean.xyz',
-          stratumPort: 3334,
-        } as unknown as ExtendedDeviceInfo,
+        },
         {
-          mac: 'b',
-          power: 0,
-          hashRate_10m: 25,
-          sharesAccepted: 3,
-          sharesRejected: 2,
+          ...createPyasicMinerInfoFixture({
+            mac: 'b',
+            wattage: 0,
+            hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 25 },
+            shares_accepted: 3,
+            shares_rejected: 2,
+            fw_ver: 'custom',
+            api_ver: 'custom',
+            config: {
+              pools: {
+                groups: [
+                  {
+                    pools: [{ url: 'stratum+tcp://custom:1234', user: 'user', password: '' }],
+                    quota: 1,
+                    name: null,
+                  },
+                ],
+              },
+              fan_mode: { mode: 'auto', speed: 0, minimum_fans: 0 },
+              temperature: { target: null, hot: null, danger: null },
+              mining_mode: { mode: 'normal' },
+              extra_config: {},
+            },
+          }),
           tracing: false,
-          version: 'custom',
-          stratumURL: 'custom',
-          stratumPort: 1234,
-        } as unknown as ExtendedDeviceInfo,
+        },
       ];
 
       updateOverviewMetrics(devices);
@@ -192,52 +320,97 @@ describe('metrics.service', () => {
     });
 
     it('normalizes pool keys from stratum URLs', () => {
-      const devices: ExtendedDeviceInfo[] = [
+      const devices = [
         {
-          mac: 'a',
-          power: 100,
-          hashRate: 50,
-          sharesAccepted: 1,
-          sharesRejected: 0,
+          ...createPyasicMinerInfoFixture({
+            mac: 'a',
+            wattage: 100,
+            hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 50 },
+            shares_accepted: 1,
+            shares_rejected: 0,
+            fw_ver: '1.0.0',
+            config: {
+              pools: {
+                groups: [
+                  {
+                    pools: [{ url: 'stratum+tcp://192.168.78.28:2018', user: 'user', password: '' }],
+                    quota: 1,
+                    name: null,
+                  },
+                ],
+              },
+              fan_mode: { mode: 'auto', speed: 0, minimum_fans: 0 },
+              temperature: { target: null, hot: null, danger: null },
+              mining_mode: { mode: 'normal' },
+              extra_config: {},
+            },
+          }),
           tracing: true,
-          version: '1.0.0',
-          stratumURL: 'stratum+tcp://192.168.78.28:2018',
-          stratumPort: 2018,
-        } as unknown as ExtendedDeviceInfo,
+        },
         {
-          mac: 'b',
-          power: 0,
-          hashRate_10m: 25,
-          sharesAccepted: 2,
-          sharesRejected: 0,
+          ...createPyasicMinerInfoFixture({
+            mac: 'b',
+            wattage: 0,
+            hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 25 },
+            shares_accepted: 2,
+            shares_rejected: 0,
+            fw_ver: 'custom',
+            config: {
+              pools: {
+                groups: [
+                  {
+                    pools: [{ url: '', user: 'user', password: '' }],
+                    quota: 1,
+                    name: null,
+                  },
+                ],
+              },
+              fan_mode: { mode: 'auto', speed: 0, minimum_fans: 0 },
+              temperature: { target: null, hot: null, danger: null },
+              mining_mode: { mode: 'normal' },
+              extra_config: {},
+            },
+          }),
           tracing: true,
-          version: 'custom',
-          stratumURL: '',
-          stratumPort: 2018,
-        } as unknown as ExtendedDeviceInfo,
+        },
         {
-          mac: 'c',
-          power: 0,
-          hashRate_10m: 25,
-          sharesAccepted: 3,
-          sharesRejected: 0,
+          ...createPyasicMinerInfoFixture({
+            mac: 'c',
+            wattage: 0,
+            hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 25 },
+            shares_accepted: 3,
+            shares_rejected: 0,
+            fw_ver: 'custom',
+            config: {
+              pools: {
+                groups: [
+                  {
+                    pools: [{ url: 'stratum+tcp://solo.ckpool.org', user: 'user', password: '' }],
+                    quota: 1,
+                    name: null,
+                  },
+                ],
+              },
+              fan_mode: { mode: 'auto', speed: 0, minimum_fans: 0 },
+              temperature: { target: null, hot: null, danger: null },
+              mining_mode: { mode: 'normal' },
+              extra_config: {},
+            },
+          }),
           tracing: true,
-          version: 'custom',
-          stratumURL: 'solo.ckpool.org',
-          stratumPort: undefined,
-        } as unknown as ExtendedDeviceInfo,
+        },
       ];
 
       updateOverviewMetrics(devices);
 
       const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');
       expect(acceptedGauge?.labels).toHaveBeenCalledWith('192.168.78.28:2018');
-      expect(acceptedGauge?.labels).toHaveBeenCalledWith('unknown:2018');
+      expect(acceptedGauge?.labels).toHaveBeenCalledWith('unknown');
       expect(acceptedGauge?.labels).toHaveBeenCalledWith('solo.ckpool.org');
     });
 
     it('handles empty device list', () => {
-      updateOverviewMetrics([] as unknown as ExtendedDeviceInfo[]);
+      updateOverviewMetrics([]);
 
       expect(gaugeInstances.get('total_hardware')?.set).toHaveBeenCalledWith(0);
       expect(gaugeInstances.get('hardware_online')?.set).toHaveBeenCalledWith(0);
@@ -248,32 +421,102 @@ describe('metrics.service', () => {
       expect(gaugeInstances.get('total_efficiency')?.set).toHaveBeenCalledWith(0);
     });
 
-    it('counts hashrate_10m for online devices and defaults missing values', () => {
-      const devices: ExtendedDeviceInfo[] = [
+    it('attributes shares to unknown when config has empty groups or empty pools', () => {
+      const devices = [
         {
-          mac: 'a',
+          ...createPyasicMinerInfoFixture({
+            mac: 'a',
+            wattage: 100,
+            hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 50 },
+            shares_accepted: 5,
+            shares_rejected: 1,
+            config: { pools: { groups: [] }, fan_mode: { mode: 'auto', speed: 0, minimum_fans: 0 }, temperature: { target: null, hot: null, danger: null }, mining_mode: { mode: 'normal' }, extra_config: {} },
+          }),
           tracing: true,
-          power: 50,
-          hashRate: undefined,
-          hashRate_10m: 10,
-          sharesAccepted: 0,
-          sharesRejected: 0,
-          version: undefined,
-          stratumURL: 123,
-          stratumPort: undefined,
-        } as unknown as ExtendedDeviceInfo,
+        },
         {
-          mac: 'b',
+          ...createPyasicMinerInfoFixture({
+            mac: 'b',
+            wattage: 0,
+            hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 0 },
+            shares_accepted: 3,
+            shares_rejected: 2,
+            config: {
+              pools: { groups: [{ pools: [], quota: 1, name: null }] },
+              fan_mode: { mode: 'auto', speed: 0, minimum_fans: 0 },
+              temperature: { target: null, hot: null, danger: null },
+              mining_mode: { mode: 'normal' },
+              extra_config: {},
+            },
+          }),
           tracing: true,
-          power: undefined,
-          hashRate: undefined,
-          hashRate_10m: undefined,
-          sharesAccepted: 0,
-          sharesRejected: 0,
-          version: 'v',
-          stratumURL: 'example.com:abc',
-          stratumPort: 123,
-        } as unknown as ExtendedDeviceInfo,
+        },
+      ];
+
+      updateOverviewMetrics(devices);
+
+      const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');
+      expect(acceptedGauge?.labels).toHaveBeenCalledWith('unknown');
+      // Both devices have empty pools config so shares are attributed to "unknown" (one label call)
+      expect(acceptedGauge?.labels).toHaveBeenCalled();
+    });
+
+    it('handles missing values and extracts hashrate from pyasic schema', () => {
+      const devices = [
+        {
+          ...createPyasicMinerInfoFixture({
+            mac: 'a',
+            wattage: 50,
+            hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 10 },
+            shares_accepted: 0,
+            shares_rejected: 0,
+            fw_ver: undefined,
+            api_ver: undefined,
+            config: {
+              pools: {
+                groups: [
+                  {
+                    pools: [{ url: '123', user: 'user', password: '' }],
+                    quota: 1,
+                    name: null,
+                  },
+                ],
+              },
+              fan_mode: { mode: 'auto', speed: 0, minimum_fans: 0 },
+              temperature: { target: null, hot: null, danger: null },
+              mining_mode: { mode: 'normal' },
+              extra_config: {},
+            },
+          }),
+          tracing: true,
+        },
+        {
+          ...createPyasicMinerInfoFixture({
+            mac: 'b',
+            wattage: 0,
+            hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 0 },
+            shares_accepted: 0,
+            shares_rejected: 0,
+            fw_ver: 'v',
+            api_ver: 'v',
+            config: {
+              pools: {
+                groups: [
+                  {
+                    pools: [{ url: 'stratum+tcp://example.com:abc:123', user: 'user', password: '' }],
+                    quota: 1,
+                    name: null,
+                  },
+                ],
+              },
+              fan_mode: { mode: 'auto', speed: 0, minimum_fans: 0 },
+              temperature: { target: null, hot: null, danger: null },
+              mining_mode: { mode: 'normal' },
+              extra_config: {},
+            },
+          }),
+          tracing: true,
+        },
       ];
 
       updateOverviewMetrics(devices);

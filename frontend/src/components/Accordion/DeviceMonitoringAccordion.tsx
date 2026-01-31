@@ -88,7 +88,15 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
 };
 
 const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
-  const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
+  // Pyasic-bridge normalizes hashrate to Gh/s
+  const hashrateGhs = device.info.hashrate?.rate ?? 0;
+
+  // Extract temperature from pyasic schema
+  const temp = device.info.temperature_avg ?? null;
+  const vrTemp =
+    device.info.hashboards && device.info.hashboards.length > 0
+      ? Math.max(...device.info.hashboards.map((h) => h.chip_temp ?? 0).filter((t) => t > 0))
+      : null;
 
   return (
     <>
@@ -110,18 +118,18 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
 
       <div className="border-t border-border bg-card p-4">
         <div className="flex flex-col gap-2">
-          <Row label="Hash rate" value={`${(device.info.hashRate_10m || device.info.hashRate)?.toFixed(2)} GH/s`} />
+          <Row label="Hash rate" value={`${hashrateGhs.toFixed(2)} GH/s`} />
           <Row
             label="Shares"
-            value={`${device.info.sharesAccepted} | ${device.info.sharesRejected}`}
+            value={`${device.info.shares_accepted ?? 0} | ${device.info.shares_rejected ?? 0}`}
             highlightRight
           />
-          <Row label="Power" value={`${device.info.power.toFixed(2)} W`} />
-          <Row label="Temp." value={`${formatTemperature(device.info.temp)} °C`} />
-          <Row label="VR Temp." value={`${formatTemperature(device.info.vrTemp)} °C`} />
-          <Row label="Current difficulty" value={formatDifficulty(currentDiff)} />
-          <Row label="Best difficulty" value={formatDifficulty(device.info.bestDiff)} />
-          <Row label="Uptime" value={formatDetailedTime(device.info.uptimeSeconds)} />
+          <Row label="Power" value={`${(device.info.wattage ?? 0).toFixed(2)} W`} />
+          <Row label="Temp." value={`${formatTemperature(temp)} °C`} />
+          <Row label="VR Temp." value={`${formatTemperature(vrTemp)} °C`} />
+          <Row label="Current difficulty" value={formatDifficulty(device.info.best_session_difficulty ?? "0")} />
+          <Row label="Best difficulty" value={formatDifficulty(device.info.best_difficulty ?? "0")} />
+          <Row label="Uptime" value={formatDetailedTime(device.info.uptime ?? 0)} />
         </div>
       </div>
     </>

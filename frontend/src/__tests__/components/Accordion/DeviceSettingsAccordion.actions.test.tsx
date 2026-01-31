@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import axios from "axios";
 
 import { DeviceSettingsAccordion } from "@/components/Accordion";
+import { createDeviceFixture } from "../../fixtures/pyasic-miner-info.fixture";
 
 jest.mock("axios");
 
@@ -20,27 +21,57 @@ const axiosMock = axios as unknown as {
 };
 
 const makeDevice = (mac: string, hostname: string) =>
-  ({
+  createDeviceFixture({
     mac,
     ip: "10.0.0.1",
     tracing: true,
     presetUuid: null,
     info: {
+      ...createDeviceFixture().info,
       hostname,
-      stratumUser: "user.worker",
-      stratumURL: "pool.example.com",
-      stratumPort: 3333,
-      stratumPassword: "pass",
-      flipscreen: 0,
-      invertfanpolarity: 0,
-      autofanspeed: 1,
-      fanspeed: 50,
-      frequency: 100,
+      config: {
+        pools: {
+          groups: [
+            {
+              pools: [
+                {
+                  url: "stratum+tcp://pool.example.com:3333",
+                  user: "user.worker",
+                  password: "pass",
+                },
+              ],
+              quota: 1,
+              name: null,
+            },
+          ],
+        },
+        fan_mode: {
+          mode: "manual",
+          speed: 50,
+          minimum_fans: 1,
+        },
+        temperature: {
+          target: null,
+          hot: null,
+          danger: null,
+        },
+        mining_mode: {
+          mode: "normal",
+        },
+        extra_config: {
+          rotation: 0,
+          invertscreen: 0,
+          display_timeout: 0,
+          overheat_mode: 0,
+          overclock_enabled: 0,
+          stats_frequency: 0,
+          min_fan_speed: 0,
+        },
+      },
       frequencyOptions: [{ label: "100", value: 100 }],
-      coreVoltage: 900,
       coreVoltageOptions: [{ label: "900", value: 900 }],
     },
-  }) as any;
+  });
 
 describe("DeviceSettingsAccordion actions", () => {
   beforeEach(() => {
@@ -107,7 +138,7 @@ describe("DeviceSettingsAccordion actions", () => {
     await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(2));
 
     const firstPayload = axiosMock.patch.mock.calls[0][1];
-    expect(firstPayload.info.stratumURL).toBe("192.168.0.252");
+    expect(firstPayload.info.config.pools.groups[0].pools[0].url).toContain("192.168.0.252");
   });
 
   it("restarts selected devices (success)", async () => {
@@ -307,12 +338,31 @@ describe("DeviceSettingsAccordion actions", () => {
   });
 
   it("uses the selected preset values when saving device settings", async () => {
+    (global as any).fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        data: [
+          {
+            uuid: "preset-1",
+            name: "Preset 1",
+            configuration: {
+              stratumURL: "pool.example.com",
+              stratumPort: 3333,
+              stratumUser: "user",
+              stratumPassword: "preset-pass",
+            },
+            associatedDevices: [],
+          },
+        ],
+      }),
+    }));
+
     axiosMock.patch
       .mockResolvedValueOnce({ data: { data: { mac: "aa" } } })
       .mockResolvedValueOnce({ data: { data: { mac: "aa", info: { hostname: "miner-01" } } } });
 
     const device = makeDevice("aa", "miner-01");
-    device.info.stratumUser = "other.worker";
+    device.info.config.pools.groups[0].pools[0].user = "other.worker";
 
     const { container } = render(
       <DeviceSettingsAccordion
@@ -348,7 +398,7 @@ describe("DeviceSettingsAccordion actions", () => {
 
     const firstPayload = axiosMock.patch.mock.calls[0][1];
     expect(firstPayload.presetUuid).toBe("preset-1");
-    expect(firstPayload.info.stratumUser).toBe("user.worker");
+    expect(firstPayload.info.config.pools.groups[0].pools[0].user).toBe("user.worker");
   });
 
   it("restarts an individual device via RestartModal", async () => {

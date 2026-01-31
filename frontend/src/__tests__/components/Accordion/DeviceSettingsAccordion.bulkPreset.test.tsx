@@ -40,18 +40,27 @@ const makeDevice = (mac: string) =>
     presetUuid: null,
     info: {
       hostname: `miner-${mac}`,
-      stratumUser: "orig.worker",
-      stratumURL: "pool.example.com",
-      stratumPort: 3333,
-      stratumPassword: "pass",
-      flipscreen: 0,
-      invertfanpolarity: 0,
-      autofanspeed: 1,
-      fanspeed: 50,
-      frequency: 100,
-      frequencyOptions: [{ label: "100", value: 100 }],
-      coreVoltage: 900,
-      coreVoltageOptions: [{ label: "900", value: 900 }],
+      config: {
+        pools: {
+          groups: [
+            {
+              pools: [
+                {
+                  url: "stratum+tcp://pool.example.com:3333",
+                  user: "orig.worker",
+                  password: "pass",
+                },
+              ],
+              quota: 1,
+              name: null,
+            },
+          ],
+        },
+        fan_mode: { mode: "manual", speed: 50, minimum_fans: 1 },
+        temperature: { target: null, hot: null, danger: null },
+        mining_mode: { mode: "normal" },
+        extra_config: { invertscreen: 0, min_fan_speed: 25 },
+      },
     },
   }) as any;
 

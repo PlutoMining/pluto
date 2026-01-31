@@ -6,7 +6,7 @@
  * See <https://www.gnu.org/licenses/>.
  */
 
-import React, { ChangeEventHandler, useEffect, useMemo, useState } from "react";
+import React, { ChangeEventHandler, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import { cn } from "@/lib/utils";
@@ -43,18 +43,23 @@ export const Select: React.FC<SelectProps> = ({
   const [selectedValue, setSelectedValue] = useState<string>(() => toStringValue(value ?? defaultValue));
   const [customDraft, setCustomDraft] = useState<string>(() => toStringValue(value ?? defaultValue));
   const [isCustomMode, setIsCustomMode] = useState(false);
+  const valueBeforeCustomRef = useRef<string>("");
 
   useEffect(() => {
     if (!allowCustom) return;
+    if (selectedValue === CUSTOM_SENTINEL) return;
     setCustomDraft(selectedValue);
   }, [allowCustom, selectedValue]);
 
   useEffect(() => {
     if (!allowCustom) return;
     if (!isExternallyControlled) return;
-    const v = toStringValue(value);
-    setSelectedValue(v);
-    setCustomDraft(v);
+    setSelectedValue((prev) => {
+      // Keep "Custom…" selected when user explicitly chose it; don't overwrite with parent value
+      if (prev === CUSTOM_SENTINEL) return prev;
+      return toStringValue(value);
+    });
+    setCustomDraft(toStringValue(value));
   }, [allowCustom, isExternallyControlled, value]);
 
   useEffect(() => {
@@ -71,7 +76,11 @@ export const Select: React.FC<SelectProps> = ({
     const baseValues = new Set(optionValues.map((o) => String(o.value)));
     const options: Array<{ label: string; value: string | number }> = [];
 
-    if (selectedValue !== "" && !baseValues.has(selectedValue)) {
+    if (
+      selectedValue !== "" &&
+      selectedValue !== CUSTOM_SENTINEL &&
+      !baseValues.has(selectedValue)
+    ) {
       options.push({ value: selectedValue, label: `${selectedValue} ${customValueSuffix}` });
     }
 
@@ -94,6 +103,8 @@ export const Select: React.FC<SelectProps> = ({
     }
 
     if (e.target.value === CUSTOM_SENTINEL) {
+      valueBeforeCustomRef.current = selectedValue;
+      setSelectedValue(CUSTOM_SENTINEL);
       setIsCustomMode(true);
       setCustomDraft(selectedValue);
       return;
@@ -178,8 +189,10 @@ export const Select: React.FC<SelectProps> = ({
             }
             if (e.key === "Escape") {
               e.preventDefault();
+              const reverted = valueBeforeCustomRef.current;
+              setSelectedValue(reverted);
+              setCustomDraft(reverted);
               setIsCustomMode(false);
-              setCustomDraft(selectedValue);
             }
           }}
           className={cn(

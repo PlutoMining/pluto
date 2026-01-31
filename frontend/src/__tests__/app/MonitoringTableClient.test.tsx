@@ -2,6 +2,7 @@ import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import MonitoringTableClient from '@/app/(realtime)/monitoring/MonitoringTableClient';
+import { createPyasicMinerInfoFixture } from '../fixtures/pyasic-miner-info.fixture';
 
 jest.mock('axios', () => ({
   __esModule: true,
@@ -153,18 +154,17 @@ describe('MonitoringTableClient', () => {
             type: 'rig',
             tracing: false,
             info: {
+              ...createPyasicMinerInfoFixture(),
               hostname: 'rig-1',
-              hashRate_10m: 10,
-              hashRate: 5,
-              sharesAccepted: 1,
-              sharesRejected: 0,
-              power: 100,
-              temp: 50.25,
-              vrTemp: null,
-              currentDiff: '10',
-              bestDiff: '1',
-              bestSessionDiff: '2',
-              uptimeSeconds: 60,
+              hashrate: { unit: { value: 1000000000, suffix: 'Gh/s' }, rate: 10 },
+              shares_accepted: 1,
+              shares_rejected: 0,
+              wattage: 100,
+              temperature_avg: 50.25,
+              hashboards: [],
+              best_difficulty: '1',
+              best_session_difficulty: '2',
+              uptime: 60,
             },
           },
         ],

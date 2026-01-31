@@ -80,7 +80,7 @@ export default function OverviewClient() {
   const fleetBestDiff = useMemo(() => {
     let best = 0;
     for (const device of devices) {
-      const parsed = parseDifficulty(device.info.bestDiff);
+      const parsed = parseDifficulty(device.info.best_difficulty ?? "0");
       if (parsed !== null && Number.isFinite(parsed)) best = Math.max(best, parsed);
     }
     return best;

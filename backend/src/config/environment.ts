@@ -17,6 +17,7 @@ interface EnvConfig {
   prometheusHost: string;
   deleteDataOnDeviceRemove: boolean;
   systemInfoTimeoutMs: number;
+  pyasicBridgeHost: string;
 }
 
 const requireEnv = (name: string): string => {
@@ -54,4 +55,5 @@ export const config: EnvConfig = {
   prometheusHost: process.env.PROMETHEUS_HOST || "http://prometheus:9090",
   deleteDataOnDeviceRemove: parseBoolean("DELETE_DATA_ON_DEVICE_REMOVE"),
   systemInfoTimeoutMs: parseNumber("SYSTEM_INFO_TIMEOUT_MS", 1500),
+  pyasicBridgeHost: process.env.PYASIC_BRIDGE_HOST || "http://localhost:8000",
 };

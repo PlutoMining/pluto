@@ -7,14 +7,14 @@
 */
 
 import { deleteOne, findMany, findOne, insertOne, updateOne } from "@pluto/db";
-import { Device, DeviceInfo } from "@pluto/interfaces";
+import { Device } from "@pluto/interfaces";
 import { logger } from "@pluto/logger";
 import axios from "axios";
 import { config } from "../config/environment";
 import { updateOriginalIpsListeners } from "./tracing.service";
 
-const cleanDeviceInfo = (deviceInfo: DeviceInfo) => {
-  const deviceInfoCopy = { ...deviceInfo };
+const cleanDeviceInfo = <T>(deviceInfo: T): T => {
+  const deviceInfoCopy: Record<string, unknown> = { ...(deviceInfo as any) };
   if (deviceInfoCopy.stratumPassword) {
     delete deviceInfoCopy.stratumPassword;
   }
@@ -23,7 +23,7 @@ const cleanDeviceInfo = (deviceInfo: DeviceInfo) => {
     delete deviceInfoCopy.wifiPassword;
   }
 
-  return deviceInfoCopy;
+  return deviceInfoCopy as T;
 };
 
 // Funzione per cercare dispositivi scoperti da una lista di MAC address

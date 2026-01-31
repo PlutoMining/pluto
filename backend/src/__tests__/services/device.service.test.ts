@@ -352,7 +352,7 @@ describe('device.service', () => {
           stratumPassword: 'secret',
           wifiPassword: 'wifi',
         },
-      } as Device;
+      } as unknown as Device;
       db.updateOne.mockResolvedValue(payload);
 
       await deviceService.patchImprintedDevice('mac-4', payload);

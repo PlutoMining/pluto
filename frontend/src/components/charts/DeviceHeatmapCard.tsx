@@ -57,10 +57,15 @@ export function DeviceHeatmapCard({
       .filter((d) => d?.info?.hostname)
       .sort((a, b) => String(a.info.hostname).localeCompare(String(b.info.hostname)))
       .map((device) => {
-        const hashrate = device.info.hashRate_10m ?? device.info.hashRate ?? 0;
-        const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
-        const temp = device.info.temp;
-        const vrTemp = device.info.vrTemp;
+        // Pyasic-bridge normalizes hashrate to Gh/s
+        const hashrateGhs = device.info.hashrate?.rate ?? 0;
+
+        // Extract temperature from pyasic schema
+        const temp = device.info.temperature_avg ?? null;
+        const vrTemp =
+          device.info.hashboards && device.info.hashboards.length > 0
+            ? Math.max(...device.info.hashboards.map((h) => h.chip_temp ?? 0).filter((t) => t > 0))
+            : null;
         const effectiveTemp =
           typeof temp === "number" && Number.isFinite(temp)
             ? typeof vrTemp === "number" && Number.isFinite(vrTemp)
@@ -69,19 +74,19 @@ export function DeviceHeatmapCard({
             : typeof vrTemp === "number" && Number.isFinite(vrTemp)
             ? vrTemp
             : undefined;
-        const power = device.info.power;
+        const power = device.info.wattage ?? 0;
 
         return {
           hostname: device.info.hostname,
           online: Boolean(device.tracing),
-          hashrate,
+          hashrate: hashrateGhs,
           temp,
           vrTemp,
           effectiveTemp,
           power,
-          uptimeSeconds: device.info.uptimeSeconds,
-          bestDiff: device.info.bestDiff,
-          currentDiff,
+          uptimeSeconds: device.info.uptime ?? 0,
+          bestDiff: device.info.best_difficulty ?? "0",
+          currentDiff: device.info.best_session_difficulty ?? "0",
         };
       });
   }, [devices]);

@@ -1,92 +1,97 @@
 import { render, screen } from "@testing-library/react";
 
 import { DeviceHeatmapCard } from "@/components/charts/DeviceHeatmapCard";
+import { createDeviceFixture } from "../../fixtures/pyasic-miner-info.fixture";
 
 describe("DeviceHeatmapCard", () => {
   it("renders devices and covers temperature/number edge cases", () => {
     const devices = [
-      {
+      createDeviceFixture({
         mac: "aa",
         tracing: true,
         info: {
+          ...createDeviceFixture().info,
           hostname: "cold",
-          hashRate_10m: 10,
-          sharesAccepted: 0,
-          sharesRejected: 0,
-          power: 100,
-          temp: 25,
-          vrTemp: null,
-          bestSessionDiff: 1,
-          bestDiff: 2,
-          uptimeSeconds: 60,
+          hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 10 },
+          shares_accepted: 0,
+          shares_rejected: 0,
+          wattage: 100,
+          temperature_avg: 25,
+          hashboards: [{ slot: 0, hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 0 }, temp: null, chip_temp: null, chips: 1, expected_chips: 1, serial_number: null, missing: false, tuned: null, active: true, voltage: null, inlet_temp: null, outlet_temp: null }],
+          best_session_difficulty: "1",
+          best_difficulty: "2",
+          uptime: 60,
         },
-      },
-      {
+      }),
+      createDeviceFixture({
         mac: "bb",
         tracing: true,
         info: {
+          ...createDeviceFixture().info,
           hostname: "hot",
-          // hashRate_10m undefined -> fallback to hashRate
-          hashRate: "123",
-          sharesAccepted: 0,
-          sharesRejected: 0,
-          power: "bad",
-          temp: 90,
-          vrTemp: 50,
-          bestSessionDiff: 1,
-          bestDiff: 2,
-          uptimeSeconds: 60,
+          hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 123 },
+          shares_accepted: 0,
+          shares_rejected: 0,
+          wattage: 100,
+          temperature_avg: 90,
+          hashboards: [{ slot: 0, hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 0 }, temp: 50, chip_temp: null, chips: 1, expected_chips: 1, serial_number: null, missing: false, tuned: null, active: true, voltage: null, inlet_temp: null, outlet_temp: null }],
+          best_session_difficulty: "1",
+          best_difficulty: "2",
+          uptime: 60,
         },
-      },
-      {
+      }),
+      createDeviceFixture({
         mac: "cc",
         tracing: true,
         info: {
+          ...createDeviceFixture().info,
           hostname: "vr-only",
-          // hashRate_10m + hashRate undefined -> fallback to 0
-          sharesAccepted: 0,
-          sharesRejected: 0,
-          power: 200,
-          temp: undefined,
-          vrTemp: 70,
-          bestSessionDiff: 1,
-          bestDiff: 2,
-          uptimeSeconds: 60,
+          hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 0 },
+          shares_accepted: 0,
+          shares_rejected: 0,
+          wattage: 200,
+          temperature_avg: null,
+          hashboards: [{ slot: 0, hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 0 }, temp: 70, chip_temp: null, chips: 1, expected_chips: 1, serial_number: null, missing: false, tuned: null, active: true, voltage: null, inlet_temp: null, outlet_temp: null }],
+          best_session_difficulty: "1",
+          best_difficulty: "2",
+          uptime: 60,
         },
-      },
-      {
+      }),
+      createDeviceFixture({
         mac: "dd",
         tracing: false,
         info: {
+          ...createDeviceFixture().info,
           hostname: "offline",
-          hashRate: 1,
-          sharesAccepted: 0,
-          sharesRejected: 0,
-          power: 100,
-          temp: undefined,
-          vrTemp: undefined,
-          bestSessionDiff: 1,
-          bestDiff: 2,
-          uptimeSeconds: 60,
+          hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 1 },
+          shares_accepted: 0,
+          shares_rejected: 0,
+          wattage: 100,
+          temperature_avg: null,
+          hashboards: [],
+          best_session_difficulty: "1",
+          best_difficulty: "2",
+          uptime: 60,
         },
-      },
-      {
+      }),
+      createDeviceFixture({
         mac: "ee",
         tracing: true,
         info: {
+          ...createDeviceFixture().info,
           hostname: "unknown-temp",
-          hashRate: 1,
-          sharesAccepted: 0,
-          sharesRejected: 0,
-          power: 100,
-          temp: undefined,
-          vrTemp: undefined,
-          bestSessionDiff: 1,
-          bestDiff: 2,
-          uptimeSeconds: 60,
+          hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 1 },
+          shares_accepted: 0,
+          shares_rejected: 0,
+          wattage: 100,
+          temperature_avg: null,
+          hashboards: [],
+          best_session_difficulty: "1",
+          best_difficulty: "2",
+          uptime: 60,
         },
-      },
-    ] as any;
+      }),
+    ];
 
     const { container } = render(<DeviceHeatmapCard title="Heat" devices={devices} />);
 

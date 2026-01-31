@@ -1,4 +1,4 @@
-import { DeviceApiVersion } from "@pluto/interfaces";
+import { DeviceApiVersion } from "@/types/axeos.types";
 
 const flushMicrotasks = async () => {
   await Promise.resolve();

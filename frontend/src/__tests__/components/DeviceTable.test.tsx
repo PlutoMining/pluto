@@ -3,10 +3,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { DeviceTable } from "@/components/Table/DeviceTable";
 
-jest.mock("@/utils/minerMap", () => ({
-  getMinerName: jest.fn(),
-}));
-
 jest.mock("@/utils/formatTime", () => ({
   convertIsoTomMdDYy: jest.fn(() => "01/20/26"),
   formatTime: jest
@@ -19,14 +15,8 @@ jest.mock("@/utils/formatTime", () => ({
     .mockImplementationOnce(() => "20 minutes"),
 }));
 
-const minerMap = jest.requireMock("@/utils/minerMap") as { getMinerName: jest.Mock };
-
 describe("DeviceTable", () => {
   it("renders device rows and calls remove callback", () => {
-    minerMap.getMinerName
-      .mockImplementationOnce(() => "Antminer")
-      .mockImplementationOnce(() => undefined);
-
     const removeDeviceFunction = jest.fn();
     const devices = [
       {
@@ -36,11 +26,16 @@ describe("DeviceTable", () => {
         tracing: true,
         info: {
           hostname: "miner-01",
-          boardVersion: "x",
-          deviceModel: "FallbackModel",
-          ASICModel: "S19",
-          uptimeSeconds: 600,
-          version: "v1",
+          device_info: {
+            make: "Bitaxe",
+            model: "Gamma",
+            firmware: "v1",
+            algo: "SHA256",
+          },
+          model: "Gamma",
+          uptime: 600,
+          fw_ver: "v1",
+          api_ver: "v1",
         },
       },
       {
@@ -50,11 +45,16 @@ describe("DeviceTable", () => {
         tracing: false,
         info: {
           hostname: "miner-02",
-          boardVersion: "y",
-          deviceModel: "FallbackModel",
-          ASICModel: "S21",
-          uptimeSeconds: 1200,
-          version: "v2",
+          device_info: {
+            make: "Bitaxe",
+            model: "Delta",
+            firmware: "v2",
+            algo: "SHA256",
+          },
+          model: "Delta",
+          uptime: 1200,
+          fw_ver: "v2",
+          api_ver: "v2",
         },
       },
     ] as any;
@@ -68,9 +68,9 @@ describe("DeviceTable", () => {
     // date formatter mocked
     expect(screen.getAllByText("01/20/26")).toHaveLength(2);
 
-    // miner cell falls back when getMinerName returns undefined
-    expect(screen.getByText("Antminer")).toBeInTheDocument();
-    expect(screen.getAllByText("FallbackModel").length).toBeGreaterThanOrEqual(1);
+    // Miner / ASIC columns use pyasic device_info/model fields
+    expect(screen.getAllByText("Gamma").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Delta").length).toBeGreaterThanOrEqual(1);
 
     const uptimeCell = screen.getByText("10m").closest("td") as HTMLTableCellElement;
     expect(uptimeCell).toHaveAttribute("title", "10 minutes");

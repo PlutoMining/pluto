@@ -7,12 +7,23 @@
 */
 
 // Importa config
-import { DeviceInfo, DeviceInfoLegacy, DeviceInfoNew } from "@pluto/interfaces";
 import { config } from "../config/environment";
+import { DeviceInfoLegacy, DeviceInfoNew } from "../types/axeos.types";
 // Funzione per estrarre la parte numerica dall'hostname
 const extractNumericFromHostname = (hostname: string): number => {
   const match = hostname.match(/\d+$/); // Trova i numeri alla fine dell'hostname
   return match ? parseInt(match[0], 10) : 0; // Restituisci il numero o 0 se non c'è una parte numerica
+};
+
+// Funzione per generare un MAC address deterministico basato sull'hostname
+// Mock devices use the prefix ff:ff:ff:ff:* to identify them as mocks
+const generateMacAddress = (hostname: string): string => {
+  const numericPart = extractNumericFromHostname(hostname);
+  // Generate a deterministic MAC address: ff:ff:ff:ff:XX:YY
+  // Where XX and YY are derived from the hostname number
+  const byte1 = (numericPart & 0xff00) >> 8;
+  const byte2 = numericPart & 0xff;
+  return `ff:ff:ff:ff:${byte1.toString(16).padStart(2, "0")}:${byte2.toString(16).padStart(2, "0")}`;
 };
 
 // Mappa delle versioni di firmware con percentuali
@@ -69,8 +80,6 @@ const firmwareVersionsWithPercentages = [
 
 // Funzione per distribuire i firmware in modo proporzionale con una logica probabilistica
 const distributeFirmwareProportionally = (ports: number[]): { [port: number]: string[] } => {
-  const totalPorts = ports.length;
-
   // Genera una lista di firmware basata sulle percentuali
   const firmwareList: { version: string; cumulativeProbability: number }[] = [];
   let cumulativeProbability = 0;
@@ -144,6 +153,8 @@ export const generateSystemInfo = (
     sharesAccepted: getRandomInt(0, 10),
     sharesRejected: getRandomInt(0, 10),
     uptimeSeconds,
+    mac: generateMacAddress(hostname),
+    macAddr: generateMacAddress(hostname), // pyasic expects macAddr (capital A)
     ASICModel: "BM1368",
     stratumURL: "solo.ckpool.org",
     stratumPort: 3333,
@@ -208,6 +219,8 @@ export const generateSystemInfoAlt = (
     sharesAccepted: getRandomInt(10000, 20000),
     sharesRejected: getRandomInt(0, 50),
     uptimeSeconds,
+    mac: generateMacAddress(hostname),
+    macAddr: generateMacAddress(hostname), // pyasic expects macAddr (capital A)
     asicCount: getRandomInt(2, 6),
     smallCoreCount: getRandomInt(1200, 1300),
     ASICModel: "BM1368",

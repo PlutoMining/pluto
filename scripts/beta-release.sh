@@ -20,7 +20,7 @@ source "${SCRIPT_ROOT}/scripts/lib/semver.sh"
 
 # NOTE: mock is included so we can publish mock device images for beta testing.
 # It is not part of the Umbrel pluto-next manifest bundle by default.
-AVAILABLE_SERVICES=(backend discovery frontend prometheus mock)
+AVAILABLE_SERVICES=(backend discovery frontend prometheus mock pyasic-bridge)
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-ghcr.io/plutomining}"
 DIFF_BASE="${BETA_DIFF_BASE:-origin/main}"
 TAG_SUFFIX="${BETA_TAG_SUFFIX:-beta}"
@@ -142,7 +142,7 @@ detect_changed_services() {
 
   git diff --name-only "${DIFF_BASE}...HEAD" \
     | awk -F/ '
-      /^(backend|discovery|frontend|prometheus|mock)\// {print $1}
+      /^(backend|discovery|frontend|prometheus|mock|pyasic-bridge)\// {print $1}
     ' \
     | sort -u
 }
@@ -158,14 +158,26 @@ ensure_service_valid() {
   done
   $found || err "Unsupported service '$service'. Allowed: ${AVAILABLE_SERVICES[*]}"
   [[ -d "$service" ]] || err "Directory '$service' not found"
-  [[ -f "$service/package.json" ]] || err "Missing $service/package.json"
   [[ -f "$service/Dockerfile" ]] || err "Missing $service/Dockerfile"
+  if [[ -f "$service/package.json" ]]; then
+    : # Node service
+  elif [[ -f "$service/app/__init__.py" ]]; then
+    : # Python service
+  else
+    err "Missing version source: need $service/package.json or $service/app/__init__.py"
+  fi
 }
 
-get_package_version() {
+# Get current version for a service (package.json for Node, app/__init__.py __version__ for Python)
+get_service_version() {
   local service=$1
-  # Avoid PCRE-only escapes (e.g. \s) for portability across BSD/GNU sed.
-  grep -m 1 '"version":' "$service/package.json" | sed -E 's/.*"version":[[:space:]]*"([^"]+)".*/\1/'
+  if [[ -f "$service/package.json" ]]; then
+    grep -m 1 '"version":' "$service/package.json" | sed -E 's/.*"version":[[:space:]]*"([^"]+)".*/\1/'
+  elif [[ -f "$service/app/__init__.py" ]]; then
+    sed -n "s/.*__version__[[:space:]]*=[[:space:]]*[\"']\\([^\"']*\\)[\"'].*/\1/p" "$service/app/__init__.py" | head -1
+  else
+    err "No version source for $service (need package.json or app/__init__.py)"
+  fi
 }
 
 # Function to check the current Git branch
@@ -373,24 +385,56 @@ ensure_prerelease() {
 
 bump_package_version() {
   local service=$1
-  local bump_level=$2  # major|minor|patch
-  local package_file="$service/package.json"
+  local bump_level=$2  # major|minor|patch|none
   local current_version
-  current_version=$(get_package_version "$service")
+  current_version=$(get_service_version "$service")
 
   local new_version=""
+  local effective_level="$bump_level"
 
   if [[ "$current_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-beta\.([0-9]+)$ ]]; then
-    # Already a beta version - increment beta number only (keep base the same)
+    # Already a beta version: apply bump_level to base and use -beta.0, or (if none) increment beta only
     local base="${BASH_REMATCH[1]}"
     local beta_num="${BASH_REMATCH[2]}"
-    beta_num=$((beta_num + 1))
-    new_version="${base}-beta.${beta_num}"
+
+    if [[ "$bump_level" == "none" ]]; then
+      effective_level="prerelease"
+      beta_num=$((beta_num + 1))
+      new_version="${base}-beta.${beta_num}"
+    else
+      # major|minor|patch: bump the base version and set -beta.0
+      [[ "$base" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]] || err "Cannot parse base version '$base'"
+      local major="${BASH_REMATCH[1]}"
+      local minor="${BASH_REMATCH[2]}"
+      local patch="${BASH_REMATCH[3]}"
+      case "$bump_level" in
+        major)
+          major=$((major + 1))
+          minor=0
+          patch=0
+          ;;
+        minor)
+          minor=$((minor + 1))
+          patch=0
+          ;;
+        patch)
+          patch=$((patch + 1))
+          ;;
+        *)
+          err "Unsupported bump level '$bump_level' for service '$service'"
+          ;;
+      esac
+      new_version="${major}.${minor}.${patch}-beta.0"
+    fi
   elif [[ "$current_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-    # Stable version - bump according to bump_level, then add beta.0
+    # Stable version - bump according to bump_level, then add beta.0 (none -> patch)
     local major="${BASH_REMATCH[1]}"
     local minor="${BASH_REMATCH[2]}"
     local patch="${BASH_REMATCH[3]}"
+    if [[ "$bump_level" == "none" ]]; then
+      bump_level="patch"
+      effective_level="patch"
+    fi
 
     case "$bump_level" in
       major)
@@ -421,21 +465,31 @@ bump_package_version() {
   fi
 
   if $DRY_RUN; then
-    log "[dry-run] Would bump $service version: $current_version -> $new_version (level: $bump_level)"
+    log "[dry-run] Would bump $service version: $current_version -> $new_version (level: $effective_level)"
     echo "$new_version"
     return
   fi
 
-  # Update package.json
-  if [[ "$(uname)" == "Darwin" ]]; then
-    # macOS uses BSD sed
-    sed -i '' "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
+  # Update version in package.json (Node) or app/__init__.py (Python)
+  if [[ -f "$service/app/__init__.py" ]]; then
+    local version_file="$service/app/__init__.py"
+    if [[ "$(uname)" == "Darwin" ]]; then
+      sed -i '' "s/__version__ = \"${current_version}\"/__version__ = \"${new_version}\"/" "$version_file"
+    else
+      sed -i "s/__version__ = \"${current_version}\"/__version__ = \"${new_version}\"/" "$version_file"
+    fi
+  elif [[ -f "$service/package.json" ]]; then
+    local package_file="$service/package.json"
+    if [[ "$(uname)" == "Darwin" ]]; then
+      sed -i '' "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
+    else
+      sed -i "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
+    fi
   else
-    # Linux uses GNU sed
-    sed -i "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
+    err "No version source for $service (need package.json or app/__init__.py)"
   fi
 
-  log "Bumped $service version: $current_version -> $new_version (level: $bump_level)"
+  log "Bumped $service version: $current_version -> $new_version (level: $effective_level)"
   echo "$new_version"
 }
 
@@ -620,7 +674,7 @@ main() {
     local service="${target_services[$i]}"
     ensure_service_valid "$service"
     local current_version
-    current_version=$(get_package_version "$service")
+    current_version=$(get_service_version "$service")
     service_current_versions[$i]="$current_version"
 
     local version
@@ -629,11 +683,7 @@ main() {
       # inferred from git log for this service between DIFF_BASE and HEAD.
       local bump_level
       bump_level=$(determine_bump_level_for_service "$service" "$DIFF_BASE")
-      if [[ "$bump_level" == "none" ]]; then
-        # No commits touching this service – in practice this should not happen
-        # for services in target_services, but fall back to patch if it does.
-        bump_level="patch"
-      fi
+      # Pass "none" through: for existing beta we increment beta only; for stable we treat as patch in bump_package_version
       version=$(bump_package_version "$service" "$bump_level")
     else
       # Use existing version (must already be a prerelease)

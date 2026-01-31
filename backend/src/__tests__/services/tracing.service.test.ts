@@ -1,4 +1,5 @@
 import type { Device } from "@pluto/interfaces";
+import { createPyasicMinerInfoFixture } from "../fixtures/pyasic-miner-info.fixture";
 
 class MockWebSocket {
   static instances: MockWebSocket[] = [];
@@ -47,10 +48,18 @@ const makeDevice = (overrides?: Partial<Device>): Device =>
     mac: "aa:bb:cc:dd:ee:ff",
     type: "mock",
     presetUuid: "preset-1",
-    info: {
+    info: createPyasicMinerInfoFixture({
+      ip: "10.0.0.1",
+      mac: "aa:bb:cc:dd:ee:ff",
       hostname: "miner-1",
-      ASICModel: "BM1368",
-    } as any,
+      device_info: {
+        make: "BitAxe",
+        model: "BM1368",
+        firmware: "Stock",
+        algo: "SHA256",
+      },
+      model: "BM1368",
+    }),
     ...(overrides ?? {}),
   }) as unknown as Device;
 
@@ -97,6 +106,7 @@ const loadTracingService = async (opts?: { deleteDataOnDeviceRemove?: boolean })
       prometheusHost: "http://prom.test",
       deleteDataOnDeviceRemove: opts?.deleteDataOnDeviceRemove ?? false,
       systemInfoTimeoutMs: 1500,
+      pyasicBridgeHost: "http://pyasic-bridge.test",
     },
   }));
 
@@ -184,32 +194,43 @@ describe("tracing.service", () => {
     tracingService.startIoHandler({} as any);
 
     axios.get.mockResolvedValue({
-      data: {
-        ASICModel: "BM1368",
+      data: createPyasicMinerInfoFixture({
         hostname: "miner-1",
-        uptime_s: "10",
-        // Ensure we cover the best_diff normalization.
-        best_diff: "1M",
-      },
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
+        uptime: 10,
+        best_difficulty: "1000000",
+      }),
     });
 
     db.updateOne.mockResolvedValue({ ok: true });
 
     const device = makeDevice({
       presetUuid: "preset-1",
-      info: {
+      info: createPyasicMinerInfoFixture({
         hostname: "miner-1",
-        ASICModel: "BM1368",
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
         frequencyOptions: [{ label: "x", value: 1 }],
         coreVoltageOptions: [{ label: "y", value: 2 }],
-      } as any,
+      }),
     });
 
     await tracingService.updateOriginalIpsListeners([device], false);
     await flushMicrotasks();
 
     expect(axios.get).toHaveBeenCalledWith(
-      "http://10.0.0.1/api/system/info",
+      "http://pyasic-bridge.test/miner/10.0.0.1/data",
       expect.objectContaining({ timeout: 1500 })
     );
     expect(metricsService.createMetricsForDevice).toHaveBeenCalled();
@@ -220,31 +241,124 @@ describe("tracing.service", () => {
     expect(updatePayload.presetUuid).toBeUndefined();
   });
 
-  it("supports unknown ASICModel by falling back to existing tuning options", async () => {
+  it("uses miner-type factory for unknown miner (empty options)", async () => {
     const { tracingService, axios, db } = await loadTracingService();
     tracingService.startIoHandler({} as any);
 
     axios.get.mockResolvedValue({
-      data: {
-        ASICModel: "UNKNOWN",
+      data: createPyasicMinerInfoFixture({
         hostname: "miner-1",
-        frequencyOptions: [{ label: "fallback", value: 1 }],
-        coreVoltageOptions: [{ label: "fallback", value: 2 }],
-      },
+        device_info: {
+          make: "Unknown",
+          model: "UNKNOWN",
+          firmware: "Unknown",
+          algo: "SHA256",
+        },
+        model: "UNKNOWN",
+      }),
     });
 
     db.updateOne.mockResolvedValue({ ok: true });
 
     const device = makeDevice({
-      info: { hostname: "miner-1", ASICModel: "UNKNOWN" } as any,
+      info: createPyasicMinerInfoFixture({
+        hostname: "miner-1",
+        device_info: {
+          make: "Unknown",
+          model: "UNKNOWN",
+          firmware: "Unknown",
+          algo: "SHA256",
+        },
+        model: "UNKNOWN",
+      }),
     });
 
     await tracingService.updateOriginalIpsListeners([device], false);
     await flushMicrotasks();
 
     const updatePayload = db.updateOne.mock.calls[0][3];
-    expect(updatePayload.info.frequencyOptions).toEqual([{ label: "fallback", value: 1 }]);
-    expect(updatePayload.info.coreVoltageOptions).toEqual([{ label: "fallback", value: 2 }]);
+    expect(updatePayload.info.frequencyOptions).toEqual([]);
+    expect(updatePayload.info.coreVoltageOptions).toEqual([]);
+  });
+
+  it("calls createMetricsForDevice with sanitized IP when hostname is missing", async () => {
+    const { tracingService, axios, metricsService, db } = await loadTracingService();
+    tracingService.startIoHandler({} as any);
+
+    axios.get.mockResolvedValue({
+      data: createPyasicMinerInfoFixture({
+        hostname: "miner-1",
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
+      }),
+    });
+
+    db.updateOne.mockResolvedValue({ ok: true });
+
+    const device = makeDevice({
+      info: createPyasicMinerInfoFixture({
+        hostname: undefined,
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
+      }),
+    });
+
+    await tracingService.updateOriginalIpsListeners([device], false);
+    await flushMicrotasks();
+
+    expect(metricsService.createMetricsForDevice).toHaveBeenCalledWith("10__0__0__1");
+  });
+
+  it("moves top-level device fields into config.extra_config when pyasic returns flat format", async () => {
+    const { tracingService, axios, db } = await loadTracingService();
+    tracingService.startIoHandler({} as any);
+
+    const baseData = createPyasicMinerInfoFixture({
+      hostname: "miner-1",
+      device_info: {
+        make: "BitAxe",
+        model: "BM1368",
+        firmware: "Stock",
+        algo: "SHA256",
+      },
+      model: "BM1368",
+    });
+    const rawResponse = {
+      ...baseData,
+      frequency: 525,
+      coreVoltage: 1150,
+      coreVoltageActual: 1148,
+      freeHeap: 120000,
+      isPSRAMAvailable: true,
+    };
+    axios.get.mockResolvedValue({ data: rawResponse });
+
+    db.updateOne.mockResolvedValue({ ok: true });
+
+    const device = makeDevice();
+    await tracingService.updateOriginalIpsListeners([device], false);
+    await flushMicrotasks();
+
+    const updatePayload = db.updateOne.mock.calls[0][3];
+    expect(updatePayload.info.config?.extra_config).toEqual(
+      expect.objectContaining({
+        frequency: 525,
+        core_voltage: 1150,
+        core_voltage_actual: 1148,
+        free_heap: 120000,
+        is_psram_available: true,
+      })
+    );
   });
 
   it("handles polling errors and emits an error event", async () => {
@@ -262,7 +376,7 @@ describe("tracing.service", () => {
 
     const { updatePrometheusMetrics } = metricsService.createMetricsForDevice.mock.results[0].value;
     expect(updatePrometheusMetrics).toHaveBeenCalledWith(
-      expect.objectContaining({ power: 0, voltage: 0, current: 0 })
+      expect.objectContaining({ wattage: 0 })
     );
     expect(metricsService.updateOverviewMetrics).toHaveBeenCalled();
   });
@@ -314,7 +428,18 @@ describe("tracing.service", () => {
     });
     tracingService.startIoHandler({} as any);
 
-    axios.get.mockResolvedValue({ data: { ASICModel: "BM1368", hostname: "miner-1" } });
+    axios.get.mockResolvedValue({
+      data: createPyasicMinerInfoFixture({
+        hostname: "miner-1",
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
+      }),
+    });
 
     const device = makeDevice();
     await tracingService.updateOriginalIpsListeners([device], false);
@@ -333,7 +458,18 @@ describe("tracing.service", () => {
     });
     tracingService.startIoHandler({} as any);
 
-    axios.get.mockResolvedValue({ data: { ASICModel: "BM1368", hostname: "miner-1" } });
+    axios.get.mockResolvedValue({
+      data: createPyasicMinerInfoFixture({
+        hostname: "miner-1",
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
+      }),
+    });
 
     const device = makeDevice();
     await tracingService.updateOriginalIpsListeners([device], false);
@@ -357,7 +493,18 @@ describe("tracing.service", () => {
     });
     tracingService.startIoHandler({} as any);
 
-    axios.get.mockResolvedValue({ data: { ASICModel: "BM1368", hostname: "miner-1" } });
+    axios.get.mockResolvedValue({
+      data: createPyasicMinerInfoFixture({
+        hostname: "miner-1",
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
+      }),
+    });
 
     const device = makeDevice();
     await tracingService.updateOriginalIpsListeners([device], false);
@@ -390,7 +537,18 @@ describe("tracing.service", () => {
     io.handlers.connection(socket);
     socketHandlers.enableLogsListening();
 
-    axios.get.mockResolvedValue({ data: { ASICModel: "BM1368", hostname: "miner-1" } });
+    axios.get.mockResolvedValue({
+      data: createPyasicMinerInfoFixture({
+        hostname: "miner-1",
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
+      }),
+    });
 
     const device = makeDevice();
     await tracingService.updateOriginalIpsListeners([device], true);
@@ -408,7 +566,18 @@ describe("tracing.service", () => {
     const { tracingService, axios } = await loadTracingService();
     tracingService.startIoHandler({} as any);
 
-    axios.get.mockResolvedValue({ data: { ASICModel: "BM1368", hostname: "miner-1" } });
+    axios.get.mockResolvedValue({
+      data: createPyasicMinerInfoFixture({
+        hostname: "miner-1",
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
+      }),
+    });
 
     const device = makeDevice();
     await tracingService.updateOriginalIpsListeners([device], true);
@@ -425,7 +594,18 @@ describe("tracing.service", () => {
     const { tracingService, axios, logger } = await loadTracingService();
     tracingService.startIoHandler({} as any);
 
-    axios.get.mockResolvedValue({ data: { ASICModel: "BM1368", hostname: "miner-1" } });
+    axios.get.mockResolvedValue({
+      data: createPyasicMinerInfoFixture({
+        hostname: "miner-1",
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
+      }),
+    });
 
     const device = makeDevice();
     await tracingService.updateOriginalIpsListeners([device], true);
@@ -447,7 +627,18 @@ describe("tracing.service", () => {
     const { tracingService, axios, logger } = await loadTracingService();
     tracingService.startIoHandler({} as any);
 
-    axios.get.mockResolvedValue({ data: { ASICModel: "BM1368", hostname: "miner-1" } });
+    axios.get.mockResolvedValue({
+      data: createPyasicMinerInfoFixture({
+        hostname: "miner-1",
+        device_info: {
+          make: "BitAxe",
+          model: "BM1368",
+          firmware: "Stock",
+          algo: "SHA256",
+        },
+        model: "BM1368",
+      }),
+    });
 
     const device = makeDevice();
     await tracingService.updateOriginalIpsListeners([device], false);

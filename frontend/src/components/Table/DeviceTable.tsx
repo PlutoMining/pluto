@@ -8,7 +8,6 @@
 
 import { Device } from "@pluto/interfaces";
 import { DeviceStatusBadge } from "../Badge";
-import { getMinerName } from "@/utils/minerMap";
 import { DeleteIcon } from "../icons/DeleteIcon";
 import { convertIsoTomMdDYy, formatDetailedTime, formatTime } from "@/utils/formatTime";
 
@@ -71,19 +70,19 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
                 {device.mac}
               </td>
               <td className="w-[125px] max-w-[125px] border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
-                {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
+                {device.info.device_info?.model || device.info.model || "unknown"}
               </td>
               <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
-                {device.info.ASICModel}
+                {device.info.device_info?.model || device.info.model || "unknown"}
               </td>
               <td
                 className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal"
-                title={formatDetailedTime(device.info.uptimeSeconds)}
+                title={formatDetailedTime(device.info.uptime ?? 0)}
               >
-                {formatTime(device.info.uptimeSeconds)}
+                {formatTime(device.info.uptime ?? 0)}
               </td>
               <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
-                {device.info.version}
+                {device.info.fw_ver || device.info.api_ver || "unknown"}
               </td>
               <td className="border-t border-border px-4 py-3 text-center">
                 <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />

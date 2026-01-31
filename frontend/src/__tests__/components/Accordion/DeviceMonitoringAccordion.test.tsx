@@ -2,6 +2,7 @@ import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import { DeviceMonitoringAccordion } from "@/components/Accordion/DeviceMonitoringAccordion";
+import { createDeviceFixture } from "../../fixtures/pyasic-miner-info.fixture";
 
 let isConnected = false;
 const socket = {
@@ -38,40 +39,41 @@ describe("DeviceMonitoringAccordion", () => {
 
   it("renders rows, formats temperatures, and links to device page", () => {
     const devices = [
-      {
+      createDeviceFixture({
         mac: "aa",
         tracing: true,
         info: {
+          ...createDeviceFixture().info,
           hostname: "miner-01",
-          hashRate_10m: 100.1234,
-          sharesAccepted: 10,
-          sharesRejected: 2,
-          power: 1200,
-          temp: null,
-          vrTemp: 42.5,
-          bestSessionDiff: 111,
-          bestDiff: 999,
-          uptimeSeconds: 600,
-          currentDiff: 123,
+          hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 100.1234 },
+          shares_accepted: 10,
+          shares_rejected: 2,
+          wattage: 1200,
+          temperature_avg: null,
+          hashboards: [{ slot: 0, hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 0 }, temp: 42.5, chip_temp: 42.5, chips: 1, expected_chips: 1, serial_number: null, missing: false, tuned: null, active: true, voltage: null, inlet_temp: null, outlet_temp: null }],
+          best_session_difficulty: "111",
+          best_difficulty: "999",
+          uptime: 600,
         },
-      },
-      {
+      }),
+      createDeviceFixture({
         mac: "bb",
         tracing: false,
         info: {
+          ...createDeviceFixture().info,
           hostname: "miner-02",
-          hashRate: 50,
-          sharesAccepted: 1,
-          sharesRejected: 5,
-          power: 500,
-          temp: Number.NaN,
-          vrTemp: 42,
-          bestSessionDiff: 222,
-          bestDiff: 333,
-          uptimeSeconds: 1200,
+          hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 50 },
+          shares_accepted: 1,
+          shares_rejected: 5,
+          wattage: 500,
+          temperature_avg: NaN,
+          hashboards: [{ slot: 0, hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 0 }, temp: 42, chip_temp: 42, chips: 1, expected_chips: 1, serial_number: null, missing: false, tuned: null, active: true, voltage: null, inlet_temp: null, outlet_temp: null }],
+          best_session_difficulty: "222",
+          best_difficulty: "333",
+          uptime: 1200,
         },
-      },
-    ] as any;
+      }),
+    ];
 
     const { container } = render(<DeviceMonitoringAccordion devices={devices} />);
 
@@ -87,8 +89,8 @@ describe("DeviceMonitoringAccordion", () => {
     expect(screen.getByText("10")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
 
-    // currentDiff uses nullish coalescing fallback.
-    expect(screen.getByText("diff:123")).toBeInTheDocument();
+    // currentDiff uses nullish coalescing fallback on best_session_difficulty.
+    expect(screen.getByText("diff:111")).toBeInTheDocument();
     expect(screen.getByText("diff:222")).toBeInTheDocument();
 
     const links = Array.from(container.querySelectorAll("a[href]"));
@@ -105,23 +107,24 @@ describe("DeviceMonitoringAccordion", () => {
     isConnected = true;
 
     const devices = [
-      {
+      createDeviceFixture({
         mac: "aa",
         tracing: true,
         info: {
+          ...createDeviceFixture().info,
           hostname: "miner-01",
-          hashRate: 1,
-          sharesAccepted: 1,
-          sharesRejected: 0,
-          power: 100,
-          temp: 40,
-          vrTemp: 41,
-          bestSessionDiff: 111,
-          bestDiff: 222,
-          uptimeSeconds: 600,
+          hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 1 },
+          shares_accepted: 1,
+          shares_rejected: 0,
+          wattage: 100,
+          temperature_avg: 40,
+          hashboards: [{ slot: 0, hashrate: { unit: { value: 1000000000, suffix: "Gh/s" }, rate: 0 }, temp: 41, chip_temp: 41, chips: 1, expected_chips: 1, serial_number: null, missing: false, tuned: null, active: true, voltage: null, inlet_temp: null, outlet_temp: null }],
+          best_session_difficulty: "111",
+          best_difficulty: "222",
+          uptime: 600,
         },
-      },
-    ] as any;
+      }),
+    ];
 
     type StatListener = (payload: any) => void;
 
@@ -146,7 +149,7 @@ describe("DeviceMonitoringAccordion", () => {
         tracing: false,
         info: {
           ...devices[0].info,
-          power: 999,
+          wattage: 999,
         },
       });
     });

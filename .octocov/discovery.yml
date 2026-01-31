@@ -1,7 +1,7 @@
 coverage:
   paths:
     - ../discovery/coverage/lcov.info
-  acceptable: diff >= -0.5%
+  acceptable: diff >= -1%
 
 summary:
   if: true

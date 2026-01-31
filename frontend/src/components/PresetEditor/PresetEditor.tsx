@@ -75,14 +75,7 @@ export const PresetEditor = ({
 
   const [presets, setPresets] = useState<Preset[]>();
 
-  // Carica il preset se un presetId è fornito
-  useEffect(() => {
-    if (preset.uuid) {
-      fetchPreset();
-    }
-  }, [preset.uuid]);
-
-  const fetchPreset = async () => {
+  const fetchPreset = useCallback(async () => {
     try {
       const response = await fetch("/api/presets");
       if (response.ok) {
@@ -106,7 +99,14 @@ export const PresetEditor = ({
     } catch (error) {
       console.error("Error fetching presets", error);
     }
-  };
+  }, [preset.uuid]);
+
+  // Carica il preset se un presetId è fornito
+  useEffect(() => {
+    if (preset.uuid) {
+      fetchPreset();
+    }
+  }, [preset.uuid, fetchPreset]);
 
   const validateField = useCallback((name: string, value: string) => {
     let label =
@@ -192,7 +192,7 @@ export const PresetEditor = ({
     onCloseAlert();
   }, [onCloseAlert]);
 
-  const hasEmptyFields = (obj: any, excludeKeys: string[]): boolean => {
+  const hasEmptyFields = useCallback((obj: any, excludeKeys: string[]): boolean => {
     for (const key in obj) {
       if (excludeKeys.includes(key)) {
         continue;
@@ -205,9 +205,9 @@ export const PresetEditor = ({
       }
     }
     return false;
-  };
+  }, []);
 
-  const hasErrorFields = (obj: any): boolean => {
+  const hasErrorFields = useCallback((obj: any): boolean => {
     for (const key in obj) {
       if (typeof obj[key] === "object" && obj[key] !== null) {
         if (hasErrorFields(obj[key])) return true; // Ricorsione per oggetti annidati
@@ -216,11 +216,11 @@ export const PresetEditor = ({
       }
     }
     return false;
-  };
+  }, []);
 
   const isPresetValid = useCallback(() => {
     return hasEmptyFields(preset, ["uuid"]) || hasErrorFields(presetErrors);
-  }, [preset, presetErrors]);
+  }, [preset, presetErrors, hasEmptyFields, hasErrorFields]);
 
   return (
     <>
