@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import { DeviceApiVersion } from "@/types/axeos.types";
 
 import {
+  getRoot,
   getSystemInfo,
   patchSystemInfo,
   restartSystem,
@@ -334,6 +335,46 @@ describe("system.controller", () => {
 
       expect((res.status as jest.Mock).mock.calls[0][0]).toBe(500);
       expect(res.json).toHaveBeenCalledWith({ error: "boom" });
+    });
+  });
+
+  describe("getRoot", () => {
+    it("sends strategy HTML when mockContext is present", async () => {
+      const rootHtml = "<html><body>AxeOS</body></html>";
+      const mockStrategy: jest.Mocked<MockMinerStrategy<any>> = {
+        generateSystemInfo: jest.fn().mockReturnValue({}),
+        getApiVersion: jest.fn().mockReturnValue("v1"),
+        getMinerType: jest.fn().mockReturnValue("axeos"),
+        getRootHtml: jest.fn().mockReturnValue(rootHtml),
+      };
+      const context = new MockMinerContext({
+        strategy: mockStrategy,
+        hostname: "mockaxe1",
+      });
+      const req = {
+        app: { locals: { mockContext: context } },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await getRoot(req, res);
+
+      expect(mockStrategy.getRootHtml).toHaveBeenCalled();
+      expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "text/html");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith(rootHtml);
+    });
+
+    it("sends empty string when mockContext is undefined", async () => {
+      const req = {
+        app: { locals: {} },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await getRoot(req, res);
+
+      expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "text/html");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith("");
     });
   });
 });

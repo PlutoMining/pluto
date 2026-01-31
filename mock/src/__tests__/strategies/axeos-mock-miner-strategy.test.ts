@@ -46,5 +46,14 @@ describe("AxeosMockMinerStrategy", () => {
     expect(strategy.getApiVersion()).toBe(DeviceApiVersion.Legacy);
     expect(strategy.getMinerType()).toBe("axeos");
   });
+
+  it("returns AxeOS HTML from getRootHtml for pyasic detection", () => {
+    const strategy = new AxeosMockMinerStrategy(DeviceApiVersion.Legacy);
+    const html = strategy.getRootHtml();
+
+    expect(html).toContain("AxeOS");
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("<title>AxeOS</title>");
+  });
 });
 

@@ -87,5 +87,19 @@ describe("MockMinerContext", () => {
     expect(context.getMinerType()).toBe("test-miner");
     expect(context.getApiVersion()).toBe("v1");
   });
+
+  it("delegates getRootHtml to strategy", () => {
+    const strategy = createStrategyMock();
+    strategy.getRootHtml.mockReturnValue("<html>AxeOS</html>");
+    const context = new MockMinerContext<TestInfo>({
+      strategy,
+      hostname: "mockaxe1",
+    });
+
+    const html = context.getRootHtml();
+
+    expect(strategy.getRootHtml).toHaveBeenCalled();
+    expect(html).toBe("<html>AxeOS</html>");
+  });
 });
 
