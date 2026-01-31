@@ -110,7 +110,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: ghcr.io/plutomining/pluto-frontend:2.0.0-beta.5@sha256:7565b9b12b3d095cc919352c844ab38bde248fe50e54a7b88472a42cef29e259
+    image: ghcr.io/plutomining/pluto-frontend:2.0.0-beta.6@sha256:7f38249ab4e392fe52c1aa0907f79703217bec766fc99729fa2cc185787e9b74
     container_name: pluto-next_frontend_1
     ports:
       - "7677:7677" # Map port 7777 on the host to port 7777 on the container
