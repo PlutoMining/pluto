@@ -92,7 +92,7 @@ class MinerService:
                         model=getattr(data, "model", None),
                         hostname=getattr(data, "hostname", None),
                         hashrate=normalized_hashrate_rate,
-                        data=normalized_data,
+                        data={**normalized_data, "ip": ip},
                     )
                 )
         elif subnet:
@@ -122,7 +122,7 @@ class MinerService:
                         model=getattr(data, "model", None),
                         hostname=getattr(data, "hostname", None),
                         hashrate=normalized_hashrate_rate,
-                        data=normalized_data,
+                        data={**normalized_data, "ip": miner.ip},
                     )
                 )
 
@@ -329,7 +329,13 @@ class MinerService:
             raise ValueError(f"Miner not found at {ip}")
 
         errors = await miner.get_errors()
-        return errors if errors else []
+        if not errors:
+            return []
+        # Serialize to MinerErrorEntry-shaped dicts (pyasic BaseMinerError has at least error_code)
+        return [
+            e.model_dump() if hasattr(e, "model_dump") else (e if isinstance(e, dict) else {"error_code": 0, "message": str(e)})
+            for e in errors
+        ]
 
     async def validate_miners(self, ips: list[str]) -> list[MinerValidationResult]:
         """
