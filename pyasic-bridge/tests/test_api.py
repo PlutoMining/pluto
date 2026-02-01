@@ -37,6 +37,17 @@ class TestAPIRoutes:
             yield ac
 
     @pytest.mark.asyncio
+    async def test_root(self, client):
+        """Test root endpoint returns service info."""
+        response = await client.get("/")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["service"] == "Pyasic Bridge"
+        assert data["version"] == "1.0.0"
+        assert data["docs"] == "/docs"
+        assert data["health"] == "/health"
+
+    @pytest.mark.asyncio
     async def test_health_check(self, client):
         """Test health check endpoint."""
         response = await client.get("/health")
@@ -53,7 +64,7 @@ class TestAPIRoutes:
             model="TestMiner",
             hostname="test-miner",
             hashrate=1.0,
-            data={"hashrate": {"rate": 1.0, "unit": {"value": 1000000000, "suffix": "Gh/s"}}}
+            data={"ip": "192.168.1.100", "hashrate": {"rate": 1.0, "unit": {"value": 1000000000, "suffix": "Gh/s"}}},
         )
         mock_service.scan_miners = AsyncMock(return_value=[mock_miner_info])
 
@@ -73,7 +84,7 @@ class TestAPIRoutes:
             model="TestMiner",
             hostname="test-miner",
             hashrate=1.0,
-            data={"hashrate": {"rate": 1.0, "unit": {"value": 1000000000, "suffix": "Gh/s"}}}
+            data={"ip": "192.168.1.100", "hashrate": {"rate": 1.0, "unit": {"value": 1000000000, "suffix": "Gh/s"}}},
         )
         mock_service.scan_miners = AsyncMock(return_value=[mock_miner_info])
 
@@ -102,6 +113,7 @@ class TestAPIRoutes:
     async def test_get_miner_data_success(self, client, mock_service):
         """Test getting miner data successfully."""
         mock_data = {
+            "ip": "192.168.1.100",
             "hashrate": {"rate": 1.0, "unit": {"value": 1000000000, "suffix": "Gh/s"}},
             "wattage": 50.0
         }
@@ -110,6 +122,7 @@ class TestAPIRoutes:
         response = await client.get("/miner/192.168.1.100/data")
         assert response.status_code == 200
         data = response.json()
+        assert data["ip"] == "192.168.1.100"
         assert "hashrate" in data
 
     @pytest.mark.asyncio
@@ -121,15 +134,50 @@ class TestAPIRoutes:
         assert response.status_code == 404
 
     @pytest.mark.asyncio
+    async def test_get_miner_data_connection_error_returns_404(self, client, mock_service):
+        """Test ConnectionError from get_miner_data returns 404."""
+        mock_service.get_miner_data = AsyncMock(side_effect=ConnectionError("Connection refused"))
+        response = await client.get("/miner/192.168.1.100/data")
+        assert response.status_code == 404
+        assert "Could not connect" in response.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_get_miner_data_timeout_error_returns_404(self, client, mock_service):
+        """Test TimeoutError from get_miner_data returns 404."""
+        mock_service.get_miner_data = AsyncMock(side_effect=TimeoutError("Timed out"))
+        response = await client.get("/miner/192.168.1.100/data")
+        assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_get_miner_data_os_error_returns_404(self, client, mock_service):
+        """Test OSError from get_miner_data returns 404."""
+        mock_service.get_miner_data = AsyncMock(side_effect=OSError(111, "Connection refused"))
+        response = await client.get("/miner/192.168.1.100/data")
+        assert response.status_code == 404
+
+    @pytest.mark.asyncio
     async def test_get_miner_config_success(self, client, mock_service):
         """Test getting miner config successfully."""
-        mock_config = {"pool": "stratum+tcp://pool.example.com:3333"}
+        mock_config = {
+            "pools": {
+                "groups": [
+                    {
+                        "pools": [{"url": "stratum+tcp://pool.example.com:3333", "user": None, "password": None}],
+                        "quota": 1,
+                        "name": None,
+                    }
+                ]
+            },
+            "fan_mode": {"mode": "manual", "speed": 60, "minimum_fans": 1},
+        }
         mock_service.get_miner_config = AsyncMock(return_value=mock_config)
 
         response = await client.get("/miner/192.168.1.100/config")
         assert response.status_code == 200
         data = response.json()
-        assert "pool" in data
+        assert "pools" in data
+        assert data["pools"]["groups"][0]["pools"][0]["url"] == "stratum+tcp://pool.example.com:3333"
+        assert data["fan_mode"]["mode"] == "manual"
 
     @pytest.mark.asyncio
     async def test_get_miner_config_not_found(self, client, mock_service):
@@ -146,7 +194,17 @@ class TestAPIRoutes:
 
         response = await client.patch(
             "/miner/192.168.1.100/config",
-            json={"pool": "stratum+tcp://pool.example.com:3333"}
+            json={
+                "pools": {
+                    "groups": [
+                        {
+                            "pools": [{"url": "stratum+tcp://pool.example.com:3333", "user": None, "password": None}],
+                            "quota": 1,
+                            "name": None,
+                        }
+                    ]
+                }
+            },
         )
         assert response.status_code == 200
         data = response.json()
@@ -216,14 +274,17 @@ class TestAPIRoutes:
 
     @pytest.mark.asyncio
     async def test_get_miner_errors_success(self, client, mock_service):
-        """Test getting miner errors successfully."""
-        mock_service.get_miner_errors = AsyncMock(return_value=["Error 1", "Error 2"])
+        """Test getting miner errors successfully (pyasic BaseMinerError: error_code + optional fields)."""
+        mock_service.get_miner_errors = AsyncMock(
+            return_value=[{"error_code": 1, "message": "Error 1"}, {"error_code": 2, "message": "Error 2"}]
+        )
 
         response = await client.get("/miner/192.168.1.100/errors")
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, list)
         assert len(data) == 2
+        assert data[0]["error_code"] == 1 and data[0]["message"] == "Error 1"
+        assert data[1]["error_code"] == 2 and data[1]["message"] == "Error 2"
 
     @pytest.mark.asyncio
     async def test_get_miner_errors_not_found(self, client, mock_service):
@@ -232,6 +293,32 @@ class TestAPIRoutes:
 
         response = await client.get("/miner/192.168.1.100/errors")
         assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_validate_miners_success(self, client, mock_service):
+        """Test validating miners successfully."""
+        mock_service.validate_miners = AsyncMock(return_value=[
+            {"ip": "192.168.1.100", "is_miner": True, "model": "BitAxe", "error": None},
+        ])
+        response = await client.post("/miners/validate", json={"ips": ["192.168.1.100"]})
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["ip"] == "192.168.1.100"
+        assert data[0]["is_miner"] is True
+
+    @pytest.mark.asyncio
+    async def test_validate_miners_empty_ips_validation_error(self, client, mock_service):
+        """Test validating with empty ips returns 422 (Pydantic validation)."""
+        response = await client.post("/miners/validate", json={"ips": []})
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_validate_miners_service_exception_returns_500(self, client, mock_service):
+        """Test validate_miners service exception returns 500."""
+        mock_service.validate_miners = AsyncMock(side_effect=Exception("Service error"))
+        response = await client.post("/miners/validate", json={"ips": ["192.168.1.100"]})
+        assert response.status_code == 500
 
     @pytest.mark.asyncio
     async def test_get_miner_data_raw_success(self, client, mock_service):
@@ -325,3 +412,49 @@ class TestAPIRoutes:
         """Test get_miner_service raises RuntimeError when not configured."""
         with pytest.raises(RuntimeError, match="MinerService not configured"):
             get_miner_service()
+
+    @pytest.mark.asyncio
+    async def test_miner_logs_websocket_accepts_and_streams(self, app, mock_service):
+        """Test WebSocket miner logs endpoint accepts connection and streams (mocked)."""
+        import asyncio
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        mock_service.get_miner_data = AsyncMock(return_value={"model": "BitAxe", "device_info": {"model": "Gamma"}})
+        mock_ws_client = MagicMock()
+        mock_ws_client.connect_and_stream = AsyncMock(return_value=None)
+
+        # Drive ASGI app with a fake WebSocket scope (avoids Starlette TestClient/httpx app= incompatibility)
+        scope = {
+            "type": "websocket",
+            "path": "/ws/miner/192.168.1.100",
+            "raw_path": b"/ws/miner/192.168.1.100",
+            "root_path": "",
+            "scheme": "ws",
+            "query_string": b"",
+            "headers": [(b"host", b"testserver")],
+            "client": ("testclient", 50000),
+            "server": ("testserver", 80),
+            "subprotocols": [],
+            "state": {},
+            "extensions": {"websocket.http.response": {}},
+        }
+        received_messages = []
+
+        async def receive():
+            if not received_messages:
+                return {"type": "websocket.connect"}
+            await asyncio.sleep(0.01)
+            return {"type": "websocket.disconnect", "code": 1000}
+
+        async def send(message):
+            received_messages.append(message)
+            if message.get("type") == "websocket.accept":
+                # After accept, route will call connect_and_stream; wake receive to eventually disconnect
+                pass
+
+        with patch("app.api.get_miner_ws_client", return_value=mock_ws_client):
+            await app(scope, receive, send)
+
+        assert any(m.get("type") == "websocket.accept" for m in received_messages)
+        mock_ws_client.connect_and_stream.assert_called_once()
+        assert mock_ws_client.connect_and_stream.call_args[0][0] == "192.168.1.100"

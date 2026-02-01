@@ -220,3 +220,27 @@ class TestDefaultMinerDataNormalizer:
         assert result["best_difficulty"] == "0"
         assert result["best_session_difficulty"] == "0"
         assert "efficiency" in result
+
+    def test_normalize_best_session_difficulty_missing_key(self):
+        """Test normalizing when best_session_difficulty key is missing (else branch)."""
+        normalizer = DefaultMinerDataNormalizer()
+        data = {
+            "hashrate": {"rate": 1.0, "unit": 1000000000},
+            "best_difficulty": 100,
+        }
+        result = normalizer.normalize(data)
+        assert result["best_session_difficulty"] == "0"
+
+    def test_normalize_extra_fields_hashrate_like_exception_keeps_original(self):
+        """Test extra_fields hashrate-like value that raises keeps original."""
+        normalizer = DefaultMinerDataNormalizer()
+        data = {
+            "hashrate": {"rate": 1.0, "unit": 1000000000},
+            "extra_fields": {
+                "bad_hashrate": {"rate": "not_a_number", "unit": {"value": 1e9}},
+            },
+        }
+        result = normalizer.normalize(data)
+        assert "extra_fields" in result
+        # When normalize_hashrate_structure raises, original value is kept
+        assert "bad_hashrate" in result["extra_fields"]
