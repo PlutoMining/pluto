@@ -78,14 +78,44 @@ class TestConvertHashrateToGhs:
         # Should default to H/s
         assert result > 0
 
+    def test_dict_with_rate_but_no_unit(self):
+        """Test dict with rate but unit missing (defaults to H/s)."""
+        hashrate = {"rate": 1e9}
+        result = convert_hashrate_to_ghs(hashrate)
+        assert abs(result - 1.0) < 0.01
+
+    def test_dict_with_rate_and_unit_none(self):
+        """Test dict with rate and unit None (defaults to H/s)."""
+        hashrate = {"rate": 1e9, "unit": None}
+        result = convert_hashrate_to_ghs(hashrate)
+        assert abs(result - 1.0) < 0.01
+
+    def test_direct_number_1e8_range(self):
+        """Test direct number >= 1e8 (treated as H/s)."""
+        result = convert_hashrate_to_ghs(200000000.0)
+        assert abs(result - 0.2) < 0.01
+
+    def test_direct_number_1e3_range(self):
+        """Test direct number >= 1e3 (treated as Gh/s)."""
+        result = convert_hashrate_to_ghs(5000.0)
+        assert result == 5000.0
+
+    def test_direct_number_below_1e3(self):
+        """Test direct number < 1e3 (treated as Th/s)."""
+        result = convert_hashrate_to_ghs(500.0)
+        assert result == 500000.0
+
+    def test_convert_hashrate_exception_returns_zero(self):
+        """Test that exception in conversion returns 0.0."""
+        class BadHashRate:
+            def __float__(self):
+                raise ValueError("cannot convert")
+        result = convert_hashrate_to_ghs(BadHashRate())
+        assert result == 0.0
+
     def test_direct_number_1e6_range(self):
         """Test direct number in 1e6 range."""
         result = convert_hashrate_to_ghs(5000000.0)  # 5M
-        assert result > 0
-
-    def test_direct_number_1e3_range(self):
-        """Test direct number in 1e3 range."""
-        result = convert_hashrate_to_ghs(5000.0)  # 5K
         assert result > 0
 
     def test_else_branch_unit_detection(self):
@@ -243,6 +273,38 @@ class TestNormalizeEfficiencyStructure:
             efficiency_value=None,
             wattage=50.0,
             hashrate_ghs=0.0
+        )
+        assert result["unit"]["suffix"] == "J/Th"
+        assert result["rate"] == 0.0
+
+    def test_efficiency_high_rate_treats_hashrate_as_ths(self):
+        """Test efficiency when calculated rate > 1000 (treat hashrate as Th/s)."""
+        # wattage=50, hashrate_ghs=0.001 -> hashrate_ths=0.000001 -> rate_jth very high
+        result = normalize_efficiency_structure(
+            efficiency_value=None,
+            wattage=50.0,
+            hashrate_ghs=0.001
+        )
+        assert result["unit"]["suffix"] == "J/Th"
+        # Code recalculates with hashrate as Th/s: 50/0.001 = 50000, then > 1000 so uses 50/0.001
+        assert result["rate"] >= 0
+
+    def test_efficiency_fallback_with_string_scientific(self):
+        """Test fallback efficiency with string scientific notation."""
+        result = normalize_efficiency_structure(
+            efficiency_value="2.5e-11",
+            wattage=None,
+            hashrate_ghs=None
+        )
+        assert result["unit"]["suffix"] == "J/Th"
+        assert abs(result["rate"] - 25.0) < 0.1
+
+    def test_efficiency_invalid_value_error(self):
+        """Test efficiency with invalid value triggers exception path."""
+        result = normalize_efficiency_structure(
+            efficiency_value="not_a_number",
+            wattage=None,
+            hashrate_ghs=None
         )
         assert result["unit"]["suffix"] == "J/Th"
         assert result["rate"] == 0.0

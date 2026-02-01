@@ -199,6 +199,18 @@ class TestMinerService:
             await service.get_miner_data("192.168.1.100")
 
     @pytest.mark.asyncio
+    async def test_get_miner_data_get_data_raises_value_error(self):
+        """Test get_miner_data when miner.get_data() raises -> ValueError with message."""
+        client = MockMinerClient()
+        miner = MagicMock()
+        miner.get_data = AsyncMock(side_effect=RuntimeError("get_data failed"))
+        client.miners["192.168.1.100"] = miner
+
+        service = MinerService(client=client)
+        with pytest.raises(ValueError, match="Could not retrieve data from miner"):
+            await service.get_miner_data("192.168.1.100")
+
+    @pytest.mark.asyncio
     async def test_get_miner_config_success(self):
         """Test getting miner config successfully."""
         client = MockMinerClient()
@@ -366,14 +378,17 @@ class TestMinerService:
         client = MockMinerClient()
         data_dict = {}
         miner = MockMiner("192.168.1.100", data_dict)
-        miner.get_errors = AsyncMock(return_value=["Error 1", "Error 2"])
+        miner.get_errors = AsyncMock(
+            return_value=[{"error_code": 1, "message": "Error 1"}, {"error_code": 2, "message": "Error 2"}]
+        )
         client.miners["192.168.1.100"] = miner
 
         service = MinerService(client=client)
         result = await service.get_miner_errors("192.168.1.100")
 
-        assert isinstance(result, list)
         assert len(result) == 2
+        assert result[0]["error_code"] == 1 and result[0]["message"] == "Error 1"
+        assert result[1]["error_code"] == 2 and result[1]["message"] == "Error 2"
 
     @pytest.mark.asyncio
     async def test_get_miner_errors_empty(self):
@@ -416,9 +431,9 @@ class TestMinerService:
         result = await service.scan_miners(ip="192.168.1.100")
 
         assert len(result) == 1
-        # Normalizer is now selected automatically, so we just verify normalization occurred
-        assert "hashrate" in result[0].data
-        assert isinstance(result[0].data["hashrate"], dict)
+        # Normalizer is now selected automatically; result[0].data is MinerData
+        assert result[0].data.hashrate is not None
+        assert result[0].data.hashrate.rate is not None
 
     @pytest.mark.asyncio
     async def test_get_miner_data_raw_success(self):
@@ -514,12 +529,10 @@ class TestMinerService:
         result = await service.scan_miners(ip="192.168.1.100")
 
         assert len(result) == 1
-        # Normalizer converts hashrate to dict structure, so hashrate should be the rate value
-        # The normalizer will convert 1.0 (assuming Gh/s) to a dict with rate in Gh/s
-        assert isinstance(result[0].data.get('hashrate'), dict)
-        assert 'rate' in result[0].data.get('hashrate', {})
-        # The top-level hashrate field should be the rate value from the normalized dict
-        assert result[0].hashrate >= 0.0  # Should be a valid number (normalized rate)
+        # Normalizer converts hashrate to HashrateStruct; result[0].data is MinerData
+        assert result[0].data.hashrate is not None
+        assert hasattr(result[0].data.hashrate, "rate") and result[0].data.hashrate.rate is not None
+        assert result[0].hashrate >= 0.0  # Top-level hashrate from normalized rate
 
     @pytest.mark.asyncio
     async def test_scan_miners_no_hashrate(self):
@@ -541,3 +554,62 @@ class TestMinerService:
         assert len(result) == 1
         # When no hashrate, should default to 0.0
         assert result[0].hashrate == 0.0
+
+    @pytest.mark.asyncio
+    async def test_validate_miners_success_with_model(self):
+        """Test validate_miners when miner is found with model."""
+        client = MockMinerClient()
+        miner = MagicMock()
+        miner.model = "BitAxe Gamma"
+        client.get_miner = AsyncMock(return_value=miner)
+
+        service = MinerService(client=client)
+        result = await service.validate_miners(["192.168.1.100"])
+
+        assert len(result) == 1
+        assert result[0].ip == "192.168.1.100"
+        assert result[0].is_miner is True
+        assert result[0].model == "BitAxe Gamma"
+        assert result[0].error is None
+
+    @pytest.mark.asyncio
+    async def test_validate_miners_miner_not_detected(self):
+        """Test validate_miners when get_miner returns None."""
+        client = MockMinerClient()
+        client.get_miner = AsyncMock(return_value=None)
+
+        service = MinerService(client=client)
+        result = await service.validate_miners(["192.168.1.100"])
+
+        assert len(result) == 1
+        assert result[0].ip == "192.168.1.100"
+        assert result[0].is_miner is False
+        assert result[0].error == "Miner not detected"
+
+    @pytest.mark.asyncio
+    async def test_validate_miners_timeout(self):
+        """Test validate_miners when get_miner times out."""
+        client = MockMinerClient()
+        client.get_miner = AsyncMock(side_effect=TimeoutError())
+
+        service = MinerService(client=client)
+        result = await service.validate_miners(["192.168.1.100"])
+
+        assert len(result) == 1
+        assert result[0].ip == "192.168.1.100"
+        assert result[0].is_miner is False
+        assert result[0].error == "Timeout"
+
+    @pytest.mark.asyncio
+    async def test_validate_miners_exception(self):
+        """Test validate_miners when get_miner raises."""
+        client = MockMinerClient()
+        client.get_miner = AsyncMock(side_effect=ConnectionError("Connection refused"))
+
+        service = MinerService(client=client)
+        result = await service.validate_miners(["192.168.1.100"])
+
+        assert len(result) == 1
+        assert result[0].ip == "192.168.1.100"
+        assert result[0].is_miner is False
+        assert "Connection refused" in str(result[0].error)
