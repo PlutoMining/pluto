@@ -373,24 +373,57 @@ ensure_prerelease() {
 
 bump_package_version() {
   local service=$1
-  local bump_level=$2  # major|minor|patch
+  local bump_level=$2  # major|minor|patch|none
   local package_file="$service/package.json"
   local current_version
   current_version=$(get_package_version "$service")
 
   local new_version=""
+  local effective_level="$bump_level"
 
   if [[ "$current_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-beta\.([0-9]+)$ ]]; then
-    # Already a beta version - increment beta number only (keep base the same)
+    # Already a beta version: apply bump_level to base and use -beta.0, or (if none) increment beta only
     local base="${BASH_REMATCH[1]}"
     local beta_num="${BASH_REMATCH[2]}"
-    beta_num=$((beta_num + 1))
-    new_version="${base}-beta.${beta_num}"
+
+    if [[ "$bump_level" == "none" ]]; then
+      effective_level="prerelease"
+      beta_num=$((beta_num + 1))
+      new_version="${base}-beta.${beta_num}"
+    else
+      # major|minor|patch: bump the base version and set -beta.0
+      [[ "$base" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]] || err "Cannot parse base version '$base'"
+      local major="${BASH_REMATCH[1]}"
+      local minor="${BASH_REMATCH[2]}"
+      local patch="${BASH_REMATCH[3]}"
+      case "$bump_level" in
+        major)
+          major=$((major + 1))
+          minor=0
+          patch=0
+          ;;
+        minor)
+          minor=$((minor + 1))
+          patch=0
+          ;;
+        patch)
+          patch=$((patch + 1))
+          ;;
+        *)
+          err "Unsupported bump level '$bump_level' for service '$service'"
+          ;;
+      esac
+      new_version="${major}.${minor}.${patch}-beta.0"
+    fi
   elif [[ "$current_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-    # Stable version - bump according to bump_level, then add beta.0
+    # Stable version - bump according to bump_level, then add beta.0 (none -> patch)
     local major="${BASH_REMATCH[1]}"
     local minor="${BASH_REMATCH[2]}"
     local patch="${BASH_REMATCH[3]}"
+    if [[ "$bump_level" == "none" ]]; then
+      bump_level="patch"
+      effective_level="patch"
+    fi
 
     case "$bump_level" in
       major)
@@ -421,7 +454,7 @@ bump_package_version() {
   fi
 
   if $DRY_RUN; then
-    log "[dry-run] Would bump $service version: $current_version -> $new_version (level: $bump_level)"
+    log "[dry-run] Would bump $service version: $current_version -> $new_version (level: $effective_level)"
     echo "$new_version"
     return
   fi
@@ -435,7 +468,7 @@ bump_package_version() {
     sed -i "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
   fi
 
-  log "Bumped $service version: $current_version -> $new_version (level: $bump_level)"
+  log "Bumped $service version: $current_version -> $new_version (level: $effective_level)"
   echo "$new_version"
 }
 
@@ -629,11 +662,7 @@ main() {
       # inferred from git log for this service between DIFF_BASE and HEAD.
       local bump_level
       bump_level=$(determine_bump_level_for_service "$service" "$DIFF_BASE")
-      if [[ "$bump_level" == "none" ]]; then
-        # No commits touching this service – in practice this should not happen
-        # for services in target_services, but fall back to patch if it does.
-        bump_level="patch"
-      fi
+      # Pass "none" through: for existing beta we increment beta only; for stable we treat as patch in bump_package_version
       version=$(bump_package_version "$service" "$bump_level")
     else
       # Use existing version (must already be a prerelease)
