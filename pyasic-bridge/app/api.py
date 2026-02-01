@@ -3,15 +3,26 @@ FastAPI routes for pyasic-bridge.
 
 Defines all HTTP endpoints as thin wrappers around MinerService and
 exposes WebSocket endpoints for miner log streaming.
+Response models and contracts are defined in api_contracts.py.
 """
 
-from typing import Any
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket
 
-from .models import MinerInfo, MinerValidationResult, ScanRequest, ValidateRequest
+from .api_contracts import API_CONTRACTS
+from .models import (
+    HealthResponse,
+    MinerConfigPatch,
+    RootResponse,
+    ScanRequest,
+    ValidateRequest,
+)
 from .services import MinerService
 from .websockets import get_miner_ws_client
+from .ws_contracts import WS_CONTRACTS
+
+logger = logging.getLogger(__name__)
 
 
 def get_miner_service() -> MinerService:
@@ -27,13 +38,27 @@ def get_miner_service() -> MinerService:
 router = APIRouter()
 
 
-@router.get("/health")
+@router.get("/", response_model=RootResponse)
+async def root():
+    """Root endpoint: service info and links."""
+    return RootResponse(
+        service="Pyasic Bridge",
+        version="1.0.0",
+        docs="/docs",
+        health="/health",
+    )
+
+
+@router.get("/health", response_model=HealthResponse)
 async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"}
+    """Health check endpoint."""
+    return HealthResponse(status="healthy")
 
 
-@router.post("/scan", response_model=list[MinerInfo])
+@router.post(
+    "/scan",
+    response_model=API_CONTRACTS["scan"].response_body,
+)
 async def scan_miners(
     request: ScanRequest,
     service: MinerService = Depends(get_miner_service)
@@ -47,15 +72,15 @@ async def scan_miners(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/miner/{ip}/data")
+@router.get(
+    "/miner/{ip}/data",
+    response_model=API_CONTRACTS["get_miner_data"].response_body,
+)
 async def get_miner_data(
     ip: str,
-    service: MinerService = Depends(get_miner_service)
+    service: MinerService = Depends(get_miner_service),
 ):
-    """Get normalized data from a specific miner using get_data()"""
-    import logging
-    logger = logging.getLogger(__name__)
-
+    """Get normalized data from a specific miner using get_data()."""
     try:
         logger.debug(f"Fetching miner data for {ip}")
         result = await service.get_miner_data(ip)
@@ -76,12 +101,15 @@ async def get_miner_data(
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
 
 
-@router.get("/miner/{ip}/data/raw")
+@router.get(
+    "/miner/{ip}/data/raw",
+    response_model=API_CONTRACTS["get_miner_data_raw"].response_body,
+)
 async def get_miner_data_raw(
     ip: str,
-    service: MinerService = Depends(get_miner_service)
+    service: MinerService = Depends(get_miner_service),
 ):
-    """Get raw data from a specific miner without normalization"""
+    """Get raw data from a specific miner without normalization."""
     try:
         return await service.get_miner_data_raw(ip)
     except ValueError as e:
@@ -90,12 +118,15 @@ async def get_miner_data_raw(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/miner/{ip}/config")
+@router.get(
+    "/miner/{ip}/config",
+    response_model=API_CONTRACTS["get_miner_config"].response_body,
+)
 async def get_miner_config(
     ip: str,
-    service: MinerService = Depends(get_miner_service)
+    service: MinerService = Depends(get_miner_service),
 ):
-    """Get config from a specific miner"""
+    """Get config from a specific miner."""
     try:
         return await service.get_miner_config(ip)
     except ValueError as e:
@@ -104,27 +135,33 @@ async def get_miner_config(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.patch("/miner/{ip}/config")
+@router.patch(
+    "/miner/{ip}/config",
+    response_model=API_CONTRACTS["update_miner_config"].response_body,
+)
 async def update_miner_config(
     ip: str,
-    config: dict[str, Any],
-    service: MinerService = Depends(get_miner_service)
+    config: MinerConfigPatch,
+    service: MinerService = Depends(get_miner_service),
 ):
-    """Update miner config"""
+    """Update miner config."""
     try:
-        return await service.update_miner_config(ip, config)
+        return await service.update_miner_config(ip, config.model_dump(exclude_none=False))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.post("/miner/{ip}/restart")
+@router.post(
+    "/miner/{ip}/restart",
+    response_model=API_CONTRACTS["restart_miner"].response_body,
+)
 async def restart_miner(
     ip: str,
-    service: MinerService = Depends(get_miner_service)
+    service: MinerService = Depends(get_miner_service),
 ):
-    """Restart a miner"""
+    """Restart a miner."""
     try:
         return await service.restart_miner(ip)
     except ValueError as e:
@@ -133,12 +170,15 @@ async def restart_miner(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.post("/miner/{ip}/fault-light/on")
+@router.post(
+    "/miner/{ip}/fault-light/on",
+    response_model=API_CONTRACTS["fault_light_on"].response_body,
+)
 async def fault_light_on(
     ip: str,
-    service: MinerService = Depends(get_miner_service)
+    service: MinerService = Depends(get_miner_service),
 ):
-    """Turn on fault light"""
+    """Turn on fault light."""
     try:
         return await service.fault_light_on(ip)
     except ValueError as e:
@@ -147,12 +187,15 @@ async def fault_light_on(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.post("/miner/{ip}/fault-light/off")
+@router.post(
+    "/miner/{ip}/fault-light/off",
+    response_model=API_CONTRACTS["fault_light_off"].response_body,
+)
 async def fault_light_off(
     ip: str,
-    service: MinerService = Depends(get_miner_service)
+    service: MinerService = Depends(get_miner_service),
 ):
-    """Turn off fault light"""
+    """Turn off fault light."""
     try:
         return await service.fault_light_off(ip)
     except ValueError as e:
@@ -161,12 +204,15 @@ async def fault_light_off(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/miner/{ip}/errors")
+@router.get(
+    "/miner/{ip}/errors",
+    response_model=API_CONTRACTS["get_miner_errors"].response_body,
+)
 async def get_miner_errors(
     ip: str,
-    service: MinerService = Depends(get_miner_service)
+    service: MinerService = Depends(get_miner_service),
 ):
-    """Get miner errors if available"""
+    """Get miner errors if available."""
     try:
         return await service.get_miner_errors(ip)
     except ValueError as e:
@@ -175,12 +221,15 @@ async def get_miner_errors(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.post("/miners/validate", response_model=list[MinerValidationResult])
+@router.post(
+    "/miners/validate",
+    response_model=API_CONTRACTS["validate_miners"].response_body,
+)
 async def validate_miners(
     request: ValidateRequest,
-    service: MinerService = Depends(get_miner_service)
+    service: MinerService = Depends(get_miner_service),
 ):
-    """Validate multiple IPs to check if they are supported miners"""
+    """Validate multiple IPs to check if they are supported miners."""
     try:
         if not request.ips:
             raise ValueError("IPs list cannot be empty")
@@ -191,19 +240,13 @@ async def validate_miners(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.websocket("/ws/miner/{ip}")
+@router.websocket(WS_CONTRACTS["miner_logs"].path)
 async def miner_logs_ws(
     websocket: WebSocket,
     ip: str,
     service: MinerService = Depends(get_miner_service),
 ) -> None:
-    """
-    WebSocket endpoint for streaming logs from a miner.
-
-    The backend connects here once per device; pyasic-bridge then chooses the
-    appropriate miner WebSocket client implementation and streams logs from
-    the miner firmware to the connected WebSocket.
-    """
+    """Stream logs from a miner. Contract: ws_contracts.WS_CONTRACTS['miner_logs']."""
     await websocket.accept()
 
     miner_model: str | None = None
