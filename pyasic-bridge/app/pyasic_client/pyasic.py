@@ -47,7 +47,9 @@ class PyasicMinerClient:
             # which should be the port separator
             parts = ip.rsplit(':', 1)
             if len(parts) == 2:
-                # Check if the second part is a valid port number
+                # If the part before the last colon ends with ':', it's IPv6 (e.g. 2001:db8::1 -> parts[0]='2001:db8:')
+                if parts[0].endswith(':'):
+                    return ip
                 try:
                     port = int(parts[1])
                     if 0 < port <= 65535:
