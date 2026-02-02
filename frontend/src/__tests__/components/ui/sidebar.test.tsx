@@ -11,10 +11,16 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
+  SidebarInput,
   SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSkeleton,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarProvider,
   SidebarRail,
   SidebarSeparator,
@@ -156,5 +162,75 @@ describe("ui/sidebar", () => {
 
     rerender(<SidebarMenuSkeleton showIcon />);
     expect(container.querySelector('[data-sidebar="menu-skeleton-icon"]')).not.toBeNull();
+  });
+
+  it("covers remaining sidebar exports/branches", () => {
+    useIsMobileMock.mockReturnValue(false);
+
+    render(
+      <SidebarProvider defaultOpen={false}>
+        <SidebarTrigger />
+        <Sidebar side="right" variant="inset" collapsible="offcanvas">
+          <SidebarRail />
+          <SidebarHeader>
+            <SidebarInput placeholder="Search" />
+          </SidebarHeader>
+          <SidebarSeparator />
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <span>Group</span>
+              </SidebarGroupLabel>
+              <SidebarGroupAction asChild>
+                <button type="button">Action</button>
+              </SidebarGroupAction>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      variant="outline"
+                      size="lg"
+                      tooltip={{ children: "Tooltip", side: "right" }}
+                    >
+                      With tooltip
+                    </SidebarMenuButton>
+                    <SidebarMenuBadge>9</SidebarMenuBadge>
+                    <SidebarMenuAction showOnHover>
+                      <span>...</span>
+                    </SidebarMenuAction>
+
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/sub" isActive>
+                          <span>Sub</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild href="/sub2">
+                          <a href="/sub2">Sub2</a>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <a href="/x">AsChild link</a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarMenuSkeleton showIcon />
+          </SidebarContent>
+          <SidebarFooter>Footer</SidebarFooter>
+        </Sidebar>
+        <SidebarInset>Inset</SidebarInset>
+      </SidebarProvider>
+    );
+
+    expect(screen.getByRole("link", { name: "AsChild link" })).toHaveAttribute("href", "/x");
+    expect(screen.getByText("Footer")).toBeInTheDocument();
+    expect(screen.getByText("Inset")).toBeInTheDocument();
   });
 });
