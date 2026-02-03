@@ -198,7 +198,7 @@ function ModalBodyContent({
   }, [errors, ipAndMacAddress]);
 
   return (
-    <div className="mt-6 flex h-full flex-col gap-4">
+    <div className="mt-6 flex flex-col gap-4">
       <div className="flex gap-6 border-b border-border pb-2">
         <button
           type="button"
@@ -228,7 +228,7 @@ function ModalBodyContent({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         {tabIndex === 0 ? (
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -300,7 +300,7 @@ function ModalBodyContent({
             <p className="font-heading text-2xl font-normal">Looking for Devices...</p>
           </div>
         ) : (
-          <div className="flex h-full flex-col gap-4">
+          <div className="flex flex-col gap-4">
             {discoveredDevices && discoveredDevices.length > 0 ? (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
