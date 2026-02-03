@@ -26,7 +26,7 @@ export const AddNewPresetModal: React.FC<AddNewPresetModalProps> = ({
   return (
     <Modal open={isOpen} onClose={onClose} variant="sheet">
       <div className="w-full max-w-[1440px] border border-border bg-card text-card-foreground">
-        <div className="relative mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto p-6 tablet:p-8">
+        <div className="relative mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto p-6 md:p-8">
           <div className="flex items-start justify-between gap-6">
             <h2 className="font-heading text-4xl font-bold uppercase">Add a new preset</h2>
             <button

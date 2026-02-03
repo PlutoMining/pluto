@@ -6,8 +6,7 @@
  * See <https://www.gnu.org/licenses/>.
  */
 
-import { Footer } from "@/components/Footer";
-import { NavBar } from "@/components/NavBar";
+import { AppShell } from "@/components/AppShell";
 import { Providers } from "@/providers";
 import type { Metadata } from "next";
 import "./globals.css";
@@ -26,11 +25,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <Providers>
-          <div className="flex min-h-screen flex-col">
-            <NavBar />
+          <AppShell>
             <main className="flex-1 bg-background">{children}</main>
-            <Footer />
-          </div>
+          </AppShell>
         </Providers>
       </body>
     </html>

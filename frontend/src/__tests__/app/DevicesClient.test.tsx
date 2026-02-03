@@ -203,7 +203,7 @@ describe('DevicesClient', () => {
 
     render(<DevicesClient />);
 
-    expect(await screen.findByText('Your devices')).toBeInTheDocument();
+    expect(await screen.findByText('Add device')).toBeInTheDocument();
     expect(await screen.findByText('rig-1')).toBeInTheDocument();
 
     act(() => {

@@ -1,6 +1,6 @@
 {
   "name": "@pluto/frontend",
-  "version": "2.0.0-beta.4",
+  "version": "2.0.0-beta.7",
   "private": true,
   "license": "AGPL-3.0",
   "scripts": {
@@ -17,7 +17,13 @@
     "@network-utils/arp-lookup": "^2.1.0",
     "@pluto/interfaces": "file:../common/interfaces",
     "@pluto/utils": "file:../common/utils",
+    "@radix-ui/react-avatar": "^1.1.11",
+    "@radix-ui/react-collapsible": "^1.1.12",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "axios": "^1.7.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

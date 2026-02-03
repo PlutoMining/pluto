@@ -11,7 +11,7 @@ import { DeviceSettingsAccordion } from "@/components/Accordion";
 import Alert from "@/components/Alert/Alert";
 import { AlertInterface, AlertStatus } from "@/components/Alert/interfaces";
 import Button from "@/components/Button/Button";
-import { RestartAllIcon } from "@/components/icons/RestartIcon";
+import { IconRestartAll } from "@/components/icons/FigmaIcons";
 import { SearchInput } from "@/components/Input";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import { Modal } from "@/components/ui/modal";
@@ -143,74 +143,78 @@ export default function DeviceSettingsClient() {
   }, [onCloseAlert]);
 
   return (
-    <div className="container flex-1 py-6">
-      {alert ? (
-        <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
-      ) : null}
+    <div className="flex-1 py-6">
+      <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+        {alert ? (
+          <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
+        ) : null}
 
-      <form className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4 border-b border-border pb-4 tablet:flex-row tablet:items-center tablet:justify-between">
-          <h1 className="font-heading text-3xl font-bold uppercase">Device settings</h1>
-          <div className="flex w-full flex-col gap-4 tablet:w-auto tablet:flex-row tablet:items-center">
-            <SearchInput label="Search device" onChange={handleSearch} placeholder="Search device" />
+        <form className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-end">
+            <div className="flex w-full flex-col gap-4 md:flex-row md:items-center md:gap-6">
+              <div className="flex-1">
+                <SearchInput label="Search device" onChange={handleSearch} placeholder="Search device" />
+              </div>
             <Button
               variant="primary"
-              icon={<RestartAllIcon color="currentColor" />}
+              icon={<IconRestartAll className="h-5 w-5 text-primary-foreground" />}
               onClick={onOpenModal}
               label="Restart all"
               disabled={!imprintedDevices || imprintedDevices.length === 0}
-              className="w-full tablet:w-auto"
+              className="w-full md:w-[165px]"
             />
+            </div>
           </div>
-        </div>
 
-        {imprintedDevices ? (
-          imprintedDevices.length > 0 ? (
-            <DeviceSettingsAccordion
-              fetchedDevices={imprintedDevices}
-              setAlert={setAlert}
-              alert={alert}
-              onOpenAlert={onOpenAlert}
-            />
+          {imprintedDevices ? (
+            imprintedDevices.length > 0 ? (
+              <DeviceSettingsAccordion
+                fetchedDevices={imprintedDevices}
+                setAlert={setAlert}
+                alert={alert}
+                onOpenAlert={onOpenAlert}
+              />
+            ) : (
+              <p className="text-center text-sm text-muted-foreground">
+                To start using Pluto, go to{" "}
+                <NextLink href={"/devices"} className="underline">
+                  Your Devices
+                </NextLink>{" "}
+                and add one or more devices.
+              </p>
+            )
           ) : (
-            <p className="text-center text-sm text-muted-foreground">
-              To start using Pluto, go to{" "}
-              <NextLink href={"/devices"} className="underline">
-                Your Devices
-              </NextLink>{" "}
-              and add one or more devices.
-            </p>
-          )
-        ) : (
-          <div className="mx-auto my-8 flex w-full flex-col items-center">
-            <CircularProgressWithDots />
-          </div>
-        )}
-      </form>
+            <div className="mx-auto my-8 flex w-full flex-col items-center">
+              <CircularProgressWithDots />
+            </div>
+          )}
+        </form>
 
-      <Modal open={isOpenModal} onClose={onCloseModal}>
-        <div className="w-full max-w-xl border border-border bg-card p-4 text-card-foreground">
-          <div className="flex items-start justify-between gap-6">
-            <h2 className="font-heading text-lg font-medium">Restart all devices?</h2>
-            <button
-              type="button"
-              onClick={onCloseModal}
-              className="text-muted-foreground hover:text-foreground"
-              aria-label="Close"
-            >
-              ✕
-            </button>
+        <Modal open={isOpenModal} onClose={onCloseModal}>
+          <div className="w-full max-w-xl border border-border bg-card p-4 text-card-foreground">
+            <div className="flex items-start justify-between gap-6">
+              <h2 className="font-heading text-lg font-medium">Restart all devices?</h2>
+              <button
+                type="button"
+                onClick={onCloseModal}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Keep in mind that restarting the device may result in the loss of an entire block of
+              transactions.
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-4">
+              <Button variant="outlined" onClick={onCloseModal} label="Cancel" />
+              <Button type="submit" variant="primary" onClick={handleRestartAll} label="Restart" />
+            </div>
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Keep in mind that restarting the device may result in the loss of an entire block of
-            transactions.
-          </p>
-          <div className="mt-6 flex items-center justify-end gap-4">
-            <Button variant="outlined" onClick={onCloseModal} label="Cancel" />
-            <Button type="submit" variant="primary" onClick={handleRestartAll} label="Restart" />
-          </div>
-        </div>
-      </Modal>
+        </Modal>
+      </div>
+
     </div>
   );
 }

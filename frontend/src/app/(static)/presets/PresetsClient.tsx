@@ -42,7 +42,7 @@ export default function PresetsClient() {
 
   const [selectedPresetUuid, setSelectedPresetUuid] = useState<string | undefined>(undefined);
 
-  const fetchPresets = async () => {
+  const fetchPresets = useCallback(async () => {
     try {
       const response = await fetch("/api/presets");
       if (response.ok) {
@@ -54,9 +54,9 @@ export default function PresetsClient() {
     } catch (error) {
       console.error("Error fetching presets", error);
     }
-  };
+  }, []);
 
-  const fetchAssociatedDevices = async (presetId: string) => {
+  const fetchAssociatedDevices = useCallback(async (presetId: string) => {
     try {
       const response = await axios.get(`/api/devices/presets/${presetId}`);
       const discoveredDevices: Device[] = response.data.data;
@@ -65,9 +65,9 @@ export default function PresetsClient() {
       console.error("Error discovering preset devices:", error);
       return [];
     }
-  };
+  }, []);
 
-  const fetchPresetsWithAssociatedDevices = async () => {
+  const fetchPresetsWithAssociatedDevices = useCallback(async () => {
     try {
       const presets = await fetchPresets();
 
@@ -83,11 +83,11 @@ export default function PresetsClient() {
       console.error("Error during presets' update:", error);
       setPresets([]);
     }
-  };
+  }, [fetchAssociatedDevices, fetchPresets]);
 
   useEffect(() => {
     fetchPresetsWithAssociatedDevices();
-  }, [alert]);
+  }, [alert, fetchPresetsWithAssociatedDevices]);
 
   const closeAlert = useCallback(() => {
     setAlert(undefined);
@@ -159,24 +159,24 @@ export default function PresetsClient() {
   };
 
   return (
-    <div className="container flex-1 py-6">
-      {alert ? (
-        <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
-      ) : null}
-
-      <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
-        <h1 className="font-heading text-3xl font-bold uppercase">Pool Presets</h1>
-        {presets && presets.length > 0 ? (
-          <Button
-            variant="primary"
-            onClick={handleNewPreset()}
-            label="Add a New Preset"
-            className="w-full tablet:w-auto"
-          />
+    <div className="flex-1 py-6">
+      <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+        {alert ? (
+          <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
         ) : null}
-      </div>
 
-      <div className="mt-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
+          {presets && presets.length > 0 ? (
+            <Button
+              variant="primary"
+              onClick={handleNewPreset()}
+              label="Add a New Preset"
+              className="w-full md:w-auto"
+            />
+          ) : null}
+        </div>
+
+        <div className="mt-8">
         {presets ? (
           presets.length > 0 ? (
             <div className="flex flex-col gap-4">
@@ -204,24 +204,25 @@ export default function PresetsClient() {
             <CircularProgressWithDots />
           </div>
         )}
+        </div>
+
+        <AddNewPresetModal
+          isOpen={isNewPresetModalOpen}
+          onClose={onNewPresetModalClose}
+          onCloseSuccessfully={onNewPresetModalCloseSuccessfully}
+          presetId={selectedPresetUuid}
+        />
+
+        <BasicModal
+          isOpen={isDeletePresetModalOpen}
+          onClose={onDeletePresetModalClose}
+          primaryActionLabel="Proceed and Delete"
+          primaryAction={handleDeletePreset}
+          title="Are you sure?"
+          body="If you proceed, the Preset Pool will be permanently deleted."
+          secondaryActionLabel="Cancel"
+        />
       </div>
-
-      <AddNewPresetModal
-        isOpen={isNewPresetModalOpen}
-        onClose={onNewPresetModalClose}
-        onCloseSuccessfully={onNewPresetModalCloseSuccessfully}
-        presetId={selectedPresetUuid}
-      />
-
-      <BasicModal
-        isOpen={isDeletePresetModalOpen}
-        onClose={onDeletePresetModalClose}
-        primaryActionLabel="Proceed and Delete"
-        primaryAction={handleDeletePreset}
-        title="Are you sure?"
-        body="If you proceed, the Preset Pool will be permanently deleted."
-        secondaryActionLabel="Cancel"
-      />
     </div>
   );
 }
