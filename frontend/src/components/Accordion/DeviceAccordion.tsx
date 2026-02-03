@@ -82,8 +82,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="font-body text-sm font-medium capitalize">{label}</span>
-      <span className="font-accent text-sm text-muted-foreground">{value}</span>
+      <span className="shrink-0 font-body text-sm font-medium capitalize">{label}</span>
+      <span className="max-w-[65%] break-all text-right font-accent text-sm text-muted-foreground">{value}</span>
     </div>
   );
 }

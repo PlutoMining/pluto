@@ -62,8 +62,8 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
   }, []);
 
   return (
-    <div style={{ maxHeight: "calc(100% - 5.5rem)" }} className="relative">
-      <div ref={boxRef} className="h-full overflow-auto">
+    <div className="relative">
+      <div ref={boxRef} className="overflow-visible md:overflow-auto">
         {devices && devices.length > 0 ? (
           <>
             <div className="hidden md:block">
@@ -138,7 +138,7 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                   className="border-t border-border first:border-t-0"
                 >
                   <summary className="flex cursor-pointer items-center justify-between gap-3 bg-muted px-4 py-3">
-                    <span className="font-body text-sm font-semibold capitalize">
+                    <span className="min-w-0 flex-1 truncate font-body text-sm font-semibold capitalize">
                       {device.info.hostname}
                     </span>
                     <input
@@ -153,27 +153,31 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">IP</span>
-                        <span className="font-accent text-sm text-muted-foreground">{device.ip}</span>
+                        <span className="max-w-[65%] break-all text-right font-accent text-sm text-muted-foreground">
+                          {device.ip}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">Mac Address</span>
-                        <span className="font-accent text-sm text-muted-foreground">{device.mac}</span>
+                        <span className="max-w-[65%] break-all text-right font-accent text-sm text-muted-foreground">
+                          {device.mac}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">Miner</span>
-                        <span className="font-accent text-sm text-muted-foreground">
+                        <span className="max-w-[65%] break-all text-right font-accent text-sm text-muted-foreground">
                           {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">ASIC</span>
-                        <span className="font-accent text-sm text-muted-foreground">
+                        <span className="max-w-[65%] break-all text-right font-accent text-sm text-muted-foreground">
                           {device.info.ASICModel}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">FW v.</span>
-                        <span className="font-accent text-sm text-muted-foreground">
+                        <span className="max-w-[65%] break-all text-right font-accent text-sm text-muted-foreground">
                           {device.info.version}
                         </span>
                       </div>
