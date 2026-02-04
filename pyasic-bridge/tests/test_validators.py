@@ -143,10 +143,100 @@ class TestConfigValidatorFactory:
         # Should not raise if core_voltage is None
         validator.validate({"extra_config": {"core_voltage": None}}, mock_miner)
 
+    def test_bitaxe_validator_valid_rotation(self):
+        """Test Bitaxe validator accepts valid rotation values."""
+        validator = BitaxeConfigValidator()
+        mock_miner = None
+
+        # All valid rotations should pass
+        for rotation in [0, 90, 180, 270]:
+            validator.validate({"extra_config": {"rotation": rotation}}, mock_miner)
+
+    def test_bitaxe_validator_invalid_rotation(self):
+        """Test Bitaxe validator rejects invalid rotation values."""
+        validator = BitaxeConfigValidator()
+        mock_miner = None
+
+        # Invalid rotations should raise ConfigValidationError
+        with pytest.raises(ConfigValidationError, match="Invalid rotation.*Accepted values are"):
+            validator.validate({"extra_config": {"rotation": 45}}, mock_miner)
+
+        with pytest.raises(ConfigValidationError, match="Invalid rotation.*Accepted values are"):
+            validator.validate({"extra_config": {"rotation": 360}}, mock_miner)
+
+    def test_bitaxe_validator_none_rotation(self):
+        """Test Bitaxe validator handles None rotation."""
+        validator = BitaxeConfigValidator()
+        mock_miner = None
+
+        # Should not raise if rotation is None
+        validator.validate({"extra_config": {"rotation": None}}, mock_miner)
+
+    def test_bitaxe_validator_valid_invertscreen(self):
+        """Test Bitaxe validator accepts valid invertscreen values."""
+        validator = BitaxeConfigValidator()
+        mock_miner = None
+
+        # All valid invertscreen values should pass
+        for invertscreen in [0, 1]:
+            validator.validate({"extra_config": {"invertscreen": invertscreen}}, mock_miner)
+
+    def test_bitaxe_validator_invalid_invertscreen(self):
+        """Test Bitaxe validator rejects invalid invertscreen values."""
+        validator = BitaxeConfigValidator()
+        mock_miner = None
+
+        # Invalid invertscreen values should raise ConfigValidationError
+        with pytest.raises(ConfigValidationError, match="Invalid invertscreen.*Accepted values are"):
+            validator.validate({"extra_config": {"invertscreen": 2}}, mock_miner)
+
+        with pytest.raises(ConfigValidationError, match="Invalid invertscreen.*Accepted values are"):
+            validator.validate({"extra_config": {"invertscreen": -1}}, mock_miner)
+
+    def test_bitaxe_validator_none_invertscreen(self):
+        """Test Bitaxe validator handles None invertscreen."""
+        validator = BitaxeConfigValidator()
+        mock_miner = None
+
+        # Should not raise if invertscreen is None
+        validator.validate({"extra_config": {"invertscreen": None}}, mock_miner)
+
+    def test_bitaxe_validator_valid_display_timeout(self):
+        """Test Bitaxe validator accepts valid display_timeout values."""
+        validator = BitaxeConfigValidator()
+        mock_miner = None
+
+        # All valid display_timeout values should pass
+        for timeout in [-1, 1, 2, 5, 15, 30, 60, 120, 240, 480]:
+            validator.validate({"extra_config": {"display_timeout": timeout}}, mock_miner)
+
+    def test_bitaxe_validator_invalid_display_timeout(self):
+        """Test Bitaxe validator rejects invalid display_timeout values."""
+        validator = BitaxeConfigValidator()
+        mock_miner = None
+
+        # Invalid display_timeout values should raise ConfigValidationError
+        with pytest.raises(ConfigValidationError, match="Invalid display_timeout.*Accepted values are"):
+            validator.validate({"extra_config": {"display_timeout": 0}}, mock_miner)
+
+        with pytest.raises(ConfigValidationError, match="Invalid display_timeout.*Accepted values are"):
+            validator.validate({"extra_config": {"display_timeout": 3}}, mock_miner)
+
+        with pytest.raises(ConfigValidationError, match="Invalid display_timeout.*Accepted values are"):
+            validator.validate({"extra_config": {"display_timeout": 500}}, mock_miner)
+
+    def test_bitaxe_validator_none_display_timeout(self):
+        """Test Bitaxe validator handles None display_timeout."""
+        validator = BitaxeConfigValidator()
+        mock_miner = None
+
+        # Should not raise if display_timeout is None
+        validator.validate({"extra_config": {"display_timeout": None}}, mock_miner)
+
     def test_bitaxe_field_names_fallback(self):
         """Test _bitaxe_extra_config_field_names fallback when ESPMinerExtraConfig not available."""
-        from app.validators.bitaxe import _bitaxe_extra_config_field_names, BitaxeExtraConfig
-        
+        from app.validators.bitaxe import _bitaxe_extra_config_field_names
+
         # This tests the fallback path when ESPMinerExtraConfig is None or doesn't have model_fields/__annotations__
         # The function should fall back to BitaxeExtraConfig.model_fields
         field_names = _bitaxe_extra_config_field_names()

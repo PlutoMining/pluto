@@ -1162,7 +1162,7 @@ class TestMinerService:
         client = MockMinerClient()
         miner = MockMiner("192.168.1.100", {})
         client.miners["192.168.1.100"] = miner
-        
+
         # Mock get_miner_config_dict to return something that will cause mapper to fail
         async def get_config(ip):
             # Return an object that will cause miner_config_from_pyasic to raise
