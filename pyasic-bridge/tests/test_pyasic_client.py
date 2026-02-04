@@ -172,3 +172,337 @@ class TestPyasicMinerClient:
 
         assert result is mock_miner
         mock_get_miner.assert_called_once_with("host.docker.internal")
+
+    def test_normalize_ip_value_error_handling(self):
+        """Test _normalize_ip handles ValueError when port is not numeric."""
+        client = PyasicMinerClient()
+        # IPv6 address that ends with colon but port is not numeric
+        result = client._normalize_ip("2001:db8::1:invalid")
+        # Should return as-is when ValueError is raised
+        assert result == "2001:db8::1:invalid"
+
+    def test_normalize_ip_ipv6_ends_with_colon(self):
+        """Test _normalize_ip with IPv6 address ending with colon."""
+        client = PyasicMinerClient()
+        # IPv6 address ending with colon (not a port)
+        result = client._normalize_ip("2001:db8::1:")
+        assert result == "2001:db8::1:"
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_get_miner_data_dict_success(self, mock_get_miner):
+        """Test get_miner_data_dict successfully retrieves data."""
+        mock_miner = AsyncMock()
+        mock_data = MagicMock()
+        mock_data.as_dict = MagicMock(return_value={"hashrate": 1.0})
+        mock_miner.get_data = AsyncMock(return_value=mock_data)
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        result = await client.get_miner_data_dict("192.168.1.100")
+
+        assert result == {"hashrate": 1.0}
+        mock_miner.get_data.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_get_miner_data_dict_not_found(self, mock_get_miner):
+        """Test get_miner_data_dict raises ValueError when miner not found."""
+        mock_get_miner.return_value = None
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Miner not found"):
+            await client.get_miner_data_dict("192.168.1.100")
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_get_miner_data_dict_exception(self, mock_get_miner):
+        """Test get_miner_data_dict raises ValueError when get_data raises."""
+        mock_miner = AsyncMock()
+        mock_miner.get_data = AsyncMock(side_effect=RuntimeError("Connection failed"))
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Could not retrieve data"):
+            await client.get_miner_data_dict("192.168.1.100")
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_get_miner_data_dict_no_as_dict(self, mock_get_miner):
+        """Test get_miner_data_dict returns empty dict when data has no as_dict."""
+        mock_miner = AsyncMock()
+        mock_data = MagicMock()
+        del mock_data.as_dict  # Remove as_dict attribute
+        mock_miner.get_data = AsyncMock(return_value=mock_data)
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        result = await client.get_miner_data_dict("192.168.1.100")
+
+        assert result == {}
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_get_miner_config_dict_success(self, mock_get_miner):
+        """Test get_miner_config_dict successfully retrieves config."""
+        mock_miner = AsyncMock()
+        mock_config = MagicMock()
+        mock_miner.get_config = AsyncMock(return_value=mock_config)
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        result = await client.get_miner_config_dict("192.168.1.100")
+
+        assert result is mock_config
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_get_miner_config_dict_not_found(self, mock_get_miner):
+        """Test get_miner_config_dict raises ValueError when miner not found."""
+        mock_get_miner.return_value = None
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Miner not found"):
+            await client.get_miner_config_dict("192.168.1.100")
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_get_miner_config_dict_exception(self, mock_get_miner):
+        """Test get_miner_config_dict raises ValueError when get_config raises."""
+        mock_miner = AsyncMock()
+        mock_miner.get_config = AsyncMock(side_effect=RuntimeError("Config failed"))
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Could not retrieve config"):
+            await client.get_miner_config_dict("192.168.1.100")
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_send_miner_config_success(self, mock_get_miner):
+        """Test send_miner_config successfully sends config."""
+        mock_miner = AsyncMock()
+        mock_miner.send_config = AsyncMock()
+        mock_get_miner.return_value = mock_miner
+        mock_config = MagicMock()
+
+        client = PyasicMinerClient()
+        await client.send_miner_config("192.168.1.100", mock_config)
+
+        mock_miner.send_config.assert_called_once_with(mock_config)
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_send_miner_config_not_found(self, mock_get_miner):
+        """Test send_miner_config raises ValueError when miner not found."""
+        mock_get_miner.return_value = None
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Miner not found"):
+            await client.send_miner_config("192.168.1.100", MagicMock())
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_send_miner_config_exception(self, mock_get_miner):
+        """Test send_miner_config raises ValueError when send_config raises."""
+        mock_miner = AsyncMock()
+        mock_miner.send_config = AsyncMock(side_effect=RuntimeError("Send failed"))
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Could not send config"):
+            await client.send_miner_config("192.168.1.100", MagicMock())
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_restart_miner_success(self, mock_get_miner):
+        """Test restart_miner successfully restarts miner."""
+        mock_miner = AsyncMock()
+        mock_miner.reboot = AsyncMock()
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        await client.restart_miner("192.168.1.100")
+
+        mock_miner.reboot.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_restart_miner_not_found(self, mock_get_miner):
+        """Test restart_miner raises ValueError when miner not found."""
+        mock_get_miner.return_value = None
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Miner not found"):
+            await client.restart_miner("192.168.1.100")
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_restart_miner_exception(self, mock_get_miner):
+        """Test restart_miner raises ValueError when reboot raises."""
+        mock_miner = AsyncMock()
+        mock_miner.reboot = AsyncMock(side_effect=RuntimeError("Reboot failed"))
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Could not restart miner"):
+            await client.restart_miner("192.168.1.100")
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_fault_light_on_success(self, mock_get_miner):
+        """Test fault_light_on successfully turns on fault light."""
+        mock_miner = AsyncMock()
+        mock_miner.fault_light_on = AsyncMock()
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        await client.fault_light_on("192.168.1.100")
+
+        mock_miner.fault_light_on.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_fault_light_on_not_found(self, mock_get_miner):
+        """Test fault_light_on raises ValueError when miner not found."""
+        mock_get_miner.return_value = None
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Miner not found"):
+            await client.fault_light_on("192.168.1.100")
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_fault_light_on_exception(self, mock_get_miner):
+        """Test fault_light_on raises ValueError when operation raises."""
+        mock_miner = AsyncMock()
+        mock_miner.fault_light_on = AsyncMock(side_effect=RuntimeError("Fault light failed"))
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Could not turn on fault light"):
+            await client.fault_light_on("192.168.1.100")
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_fault_light_off_success(self, mock_get_miner):
+        """Test fault_light_off successfully turns off fault light."""
+        mock_miner = AsyncMock()
+        mock_miner.fault_light_off = AsyncMock()
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        await client.fault_light_off("192.168.1.100")
+
+        mock_miner.fault_light_off.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_fault_light_off_not_found(self, mock_get_miner):
+        """Test fault_light_off raises ValueError when miner not found."""
+        mock_get_miner.return_value = None
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Miner not found"):
+            await client.fault_light_off("192.168.1.100")
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_fault_light_off_exception(self, mock_get_miner):
+        """Test fault_light_off raises ValueError when operation raises."""
+        mock_miner = AsyncMock()
+        mock_miner.fault_light_off = AsyncMock(side_effect=RuntimeError("Fault light failed"))
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Could not turn off fault light"):
+            await client.fault_light_off("192.168.1.100")
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_get_miner_errors_success(self, mock_get_miner):
+        """Test get_miner_errors successfully retrieves errors."""
+        mock_miner = AsyncMock()
+        mock_errors = [MagicMock(), MagicMock()]
+        mock_miner.get_errors = AsyncMock(return_value=mock_errors)
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        result = await client.get_miner_errors("192.168.1.100")
+
+        assert result == mock_errors
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_get_miner_errors_empty(self, mock_get_miner):
+        """Test get_miner_errors returns empty list when errors is None."""
+        mock_miner = AsyncMock()
+        mock_miner.get_errors = AsyncMock(return_value=None)
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        result = await client.get_miner_errors("192.168.1.100")
+
+        assert result == []
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_get_miner_errors_not_found(self, mock_get_miner):
+        """Test get_miner_errors raises ValueError when miner not found."""
+        mock_get_miner.return_value = None
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Miner not found"):
+            await client.get_miner_errors("192.168.1.100")
+
+    @pytest.mark.asyncio
+    @patch('app.pyasic_client.pyasic.get_miner')
+    async def test_get_miner_errors_exception(self, mock_get_miner):
+        """Test get_miner_errors raises ValueError when get_errors raises."""
+        mock_miner = AsyncMock()
+        mock_miner.get_errors = AsyncMock(side_effect=RuntimeError("Get errors failed"))
+        mock_get_miner.return_value = mock_miner
+
+        client = PyasicMinerClient()
+        with pytest.raises(ValueError, match="Could not retrieve errors"):
+            await client.get_miner_errors("192.168.1.100")
+
+    def test_get_miner_model_with_model(self):
+        """Test get_miner_model returns model when present."""
+        mock_miner = MagicMock()
+        mock_miner.model = "BitAxe Gamma"
+
+        client = PyasicMinerClient()
+        result = client.get_miner_model(mock_miner)
+
+        assert result == "BitAxe Gamma"
+
+    def test_get_miner_model_without_model(self):
+        """Test get_miner_model returns None when model not present."""
+        mock_miner = MagicMock()
+        del mock_miner.model  # Remove model attribute
+
+        client = PyasicMinerClient()
+        result = client.get_miner_model(mock_miner)
+
+        assert result is None
+
+    def test_get_miner_ip_with_ip(self):
+        """Test get_miner_ip returns IP when present."""
+        mock_miner = MagicMock()
+        mock_miner.ip = "192.168.1.100"
+
+        client = PyasicMinerClient()
+        result = client.get_miner_ip(mock_miner)
+
+        assert result == "192.168.1.100"
+
+    def test_get_miner_ip_without_ip(self):
+        """Test get_miner_ip returns empty string when IP not present."""
+        mock_miner = MagicMock()
+        del mock_miner.ip  # Remove ip attribute
+
+        client = PyasicMinerClient()
+        result = client.get_miner_ip(mock_miner)
+
+        assert result == ""
