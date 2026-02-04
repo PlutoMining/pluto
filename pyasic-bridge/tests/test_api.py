@@ -11,6 +11,7 @@ from app.api import get_miner_service
 from app.app import create_app
 from app.models import MinerInfo
 from app.services import MinerService
+from app.validators import ConfigValidationError
 
 
 class TestAPIRoutes:
@@ -217,6 +218,21 @@ class TestAPIRoutes:
 
         response = await client.patch("/miner/192.168.1.100/config", json={})
         assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_update_miner_config_validation_error_returns_400(self, client, mock_service):
+        """Test that config validation errors return 400 Bad Request, not 404."""
+        mock_service.update_miner_config = AsyncMock(
+            side_effect=ConfigValidationError("Invalid frequency 500 for Bitaxe miner. Accepted values are: [400, 490, 525, 550, 600, 625]")
+        )
+
+        response = await client.patch(
+            "/miner/192.168.1.100/config",
+            json={"extra_config": {"frequency": 500}},
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert "Invalid frequency" in data["detail"]
 
     @pytest.mark.asyncio
     async def test_restart_miner_success(self, client, mock_service):
