@@ -156,3 +156,19 @@ services:
       timeout: 5s
       retries: 5
     user: "65534:65534"
+
+  pyasic-bridge:
+    build:
+      context: pyasic-bridge
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\" || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
