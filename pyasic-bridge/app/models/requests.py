@@ -20,5 +20,6 @@ class ValidateRequest(BaseModel):
     ips: list[str] = Field(..., description="List of IP addresses to validate", min_length=1)
 
 
-# Same shape pyasic's MinerConfig expects; all fields optional for partial PATCH
+# Internal config shape for PATCH body; all fields optional for partial PATCH.
+# Mapped to/from pyasic MinerConfig only at the boundary (see app.mappers.config_mapper).
 MinerConfigPatch = MinerConfigModel
