@@ -34,12 +34,21 @@ class BitaxeExtraConfig(BaseModel):
     """
     Pydantic model for Bitaxe extra_config validation.
 
-    All fields optional. Validates types (int, no coercion) and allowed values for frequency and core_voltage.
+    All fields optional. Validates types (int, no coercion) and allowed values for rotation, invertscreen, display_timeout, frequency and core_voltage.
     """
 
-    rotation: int | None = Field(default=None, description="Display rotation (e.g. 0).")
-    invertscreen: int | None = Field(default=None, description="Invert screen (e.g. 0).")
-    display_timeout: int | None = Field(default=None, description="Display timeout (e.g. 1).")
+    rotation: int | None = Field(
+        default=None,
+        description="Display rotation in degrees. Valid values: 0, 90, 180, 270",
+    )
+    invertscreen: int | None = Field(
+        default=None,
+        description="Invert screen. Valid values: 0 (normal), 1 (inverted)",
+    )
+    display_timeout: int | None = Field(
+        default=None,
+        description="Display timeout in seconds. Valid values: -1, 1, 2, 5, 15, 30, 60, 120, 240, 480",
+    )
     overheat_mode: int | None = Field(default=None, description="Overheat mode (e.g. 0).")
     overclock_enabled: int | None = Field(default=None, description="Overclock enabled (e.g. 0).")
     stats_frequency: int | None = Field(default=None, description="Stats frequency (e.g. 0).")
@@ -52,6 +61,51 @@ class BitaxeExtraConfig(BaseModel):
         description="Core voltage in mV. Valid values: 1000, 1060, 1100, 1150, 1200, 1250",
     )
     min_fan_speed: int | None = Field(default=None, description="Minimum fan speed (e.g. 25).")
+
+    @field_validator("rotation")
+    @classmethod
+    def validate_rotation(cls, v: int | None) -> int | None:
+        """Validate rotation is one of the allowed Bitaxe values."""
+        if v is None:
+            return v
+
+        valid_rotations = {0, 90, 180, 270}
+        if v not in valid_rotations:
+            raise ValueError(
+                f"Invalid rotation {v} for Bitaxe miner. "
+                f"Accepted values are: {sorted(valid_rotations)}"
+            )
+        return v
+
+    @field_validator("invertscreen")
+    @classmethod
+    def validate_invertscreen(cls, v: int | None) -> int | None:
+        """Validate invertscreen is one of the allowed Bitaxe values."""
+        if v is None:
+            return v
+
+        valid_invertscreen = {0, 1}
+        if v not in valid_invertscreen:
+            raise ValueError(
+                f"Invalid invertscreen {v} for Bitaxe miner. "
+                f"Accepted values are: {sorted(valid_invertscreen)}"
+            )
+        return v
+
+    @field_validator("display_timeout")
+    @classmethod
+    def validate_display_timeout(cls, v: int | None) -> int | None:
+        """Validate display_timeout is one of the allowed Bitaxe values."""
+        if v is None:
+            return v
+
+        valid_display_timeouts = {-1, 1, 2, 5, 15, 30, 60, 120, 240, 480}
+        if v not in valid_display_timeouts:
+            raise ValueError(
+                f"Invalid display_timeout {v} for Bitaxe miner. "
+                f"Accepted values are: {sorted(valid_display_timeouts)}"
+            )
+        return v
 
     @field_validator("frequency")
     @classmethod
@@ -106,7 +160,7 @@ class BitaxeConfigValidator(ConfigValidator):
 
         Validates known extra_config fields (all optional int): rotation, invertscreen,
         display_timeout, overheat_mode, overclock_enabled, stats_frequency, frequency,
-        core_voltage, min_fan_speed. frequency and core_voltage must be in allowed sets.
+        core_voltage, min_fan_speed. rotation, invertscreen, display_timeout, frequency and core_voltage must be in allowed sets.
 
         Args:
             config: Config dictionary to validate
