@@ -8,6 +8,8 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
+from app.miner_detection import is_bitaxe_from_data
+
 from .base import normalize_efficiency_structure
 from .default import DefaultMinerDataNormalizer
 
@@ -19,36 +21,12 @@ class BitaxeMinerDataNormalizer(DefaultMinerDataNormalizer):
     Bitaxe-specific implementation of MinerDataNormalizer.
 
     Extends DefaultMinerDataNormalizer with Bitaxe-specific extra_fields normalization.
-    Handles Bitaxe-specific fields in extra_fields that may require special processing.
-
-    Normalizes:
-    - All standard fields (hashrate, efficiency, difficulty) via parent class
-    - Bitaxe-specific extra_fields with vendor-specific normalization logic
+    Normalizes standard fields via parent and Bitaxe extra_fields via vendor logic.
     """
 
     def _is_bitaxe_miner(self, context: Mapping[str, Any]) -> bool:
-        """
-        Check if the miner is a Bitaxe based on device_info.make and device_info.model.
-
-        Args:
-            context: The full normalized data context
-
-        Returns:
-            True if the miner appears to be a Bitaxe, False otherwise
-        """
-        # Get device_info dictionary, defaulting to empty dict if not present
-        device_info = context.get('device_info') or {}
-
-        # Get values from device_info and convert to lowercase for case-insensitive comparison
-        # Handle None, empty strings, and non-string types gracefully
-        make = str(device_info.get('make', '')).lower() if device_info.get('make') else ''
-        model = str(device_info.get('model', '')).lower() if device_info.get('model') else ''
-
-        # Check for Bitaxe indicators (case-insensitive)
-        return (
-            'bitaxe' in make or
-            'bitaxe' in model
-        )
+        """Use shared miner detection from context (device_info / make / model)."""
+        return is_bitaxe_from_data(context)
 
     def _normalize_extra_fields(
         self,
