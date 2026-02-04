@@ -167,3 +167,192 @@ class PyasicMinerClient:
         network = MinerNetwork.from_subnet(subnet)
         return await network.scan()
 
+    async def get_miner_data_dict(self, ip: str) -> dict[str, Any]:
+        """
+        Get raw miner data as a dictionary.
+
+        Args:
+            ip: IP address of the miner
+
+        Returns:
+            Raw miner data dictionary (from pyasic's get_data().as_dict())
+
+        Raises:
+            ValueError: If miner is not found or data cannot be retrieved
+        """
+        miner = await self.get_miner(ip)
+        if not miner:
+            raise ValueError(f"Miner not found at {ip}")
+
+        try:
+            data = await miner.get_data()
+            return data.as_dict() if hasattr(data, "as_dict") else {}
+        except Exception as e:
+            raise ValueError(
+                f"Could not retrieve data from miner at {ip}: "
+                f"{type(e).__name__}: {str(e)}"
+            ) from e
+
+    async def get_miner_config_dict(self, ip: str) -> Any:
+        """
+        Get miner configuration object.
+
+        Args:
+            ip: IP address of the miner
+
+        Returns:
+            Miner config object (pyasic MinerConfig or similar)
+
+        Raises:
+            ValueError: If miner is not found or config cannot be retrieved
+        """
+        miner = await self.get_miner(ip)
+        if not miner:
+            raise ValueError(f"Miner not found at {ip}")
+
+        try:
+            return await miner.get_config()
+        except Exception as e:
+            raise ValueError(
+                f"Could not retrieve config from miner at {ip}: "
+                f"{type(e).__name__}: {str(e)}"
+            ) from e
+
+    async def send_miner_config(self, ip: str, config: Any) -> None:
+        """
+        Send configuration to a miner.
+
+        Args:
+            ip: IP address of the miner
+            config: Miner config object (pyasic MinerConfig or similar)
+
+        Raises:
+            ValueError: If miner is not found or config cannot be sent
+        """
+        miner = await self.get_miner(ip)
+        if not miner:
+            raise ValueError(f"Miner not found at {ip}")
+
+        try:
+            await miner.send_config(config)
+        except Exception as e:
+            raise ValueError(
+                f"Could not send config to miner at {ip}: "
+                f"{type(e).__name__}: {str(e)}"
+            ) from e
+
+    async def restart_miner(self, ip: str) -> None:
+        """
+        Restart a miner.
+
+        Args:
+            ip: IP address of the miner
+
+        Raises:
+            ValueError: If miner is not found or restart fails
+        """
+        miner = await self.get_miner(ip)
+        if not miner:
+            raise ValueError(f"Miner not found at {ip}")
+
+        try:
+            await miner.reboot()
+        except Exception as e:
+            raise ValueError(
+                f"Could not restart miner at {ip}: "
+                f"{type(e).__name__}: {str(e)}"
+            ) from e
+
+    async def fault_light_on(self, ip: str) -> None:
+        """
+        Turn on fault light.
+
+        Args:
+            ip: IP address of the miner
+
+        Raises:
+            ValueError: If miner is not found or operation fails
+        """
+        miner = await self.get_miner(ip)
+        if not miner:
+            raise ValueError(f"Miner not found at {ip}")
+
+        try:
+            await miner.fault_light_on()
+        except Exception as e:
+            raise ValueError(
+                f"Could not turn on fault light for miner at {ip}: "
+                f"{type(e).__name__}: {str(e)}"
+            ) from e
+
+    async def fault_light_off(self, ip: str) -> None:
+        """
+        Turn off fault light.
+
+        Args:
+            ip: IP address of the miner
+
+        Raises:
+            ValueError: If miner is not found or operation fails
+        """
+        miner = await self.get_miner(ip)
+        if not miner:
+            raise ValueError(f"Miner not found at {ip}")
+
+        try:
+            await miner.fault_light_off()
+        except Exception as e:
+            raise ValueError(
+                f"Could not turn off fault light for miner at {ip}: "
+                f"{type(e).__name__}: {str(e)}"
+            ) from e
+
+    async def get_miner_errors(self, ip: str) -> list[Any]:
+        """
+        Get miner errors.
+
+        Args:
+            ip: IP address of the miner
+
+        Returns:
+            List of error objects (pyasic BaseMinerError or similar)
+
+        Raises:
+            ValueError: If miner is not found
+        """
+        miner = await self.get_miner(ip)
+        if not miner:
+            raise ValueError(f"Miner not found at {ip}")
+
+        try:
+            errors = await miner.get_errors()
+            return errors if errors else []
+        except Exception as e:
+            raise ValueError(
+                f"Could not retrieve errors from miner at {ip}: "
+                f"{type(e).__name__}: {str(e)}"
+            ) from e
+
+    def get_miner_model(self, miner: Any) -> str | None:
+        """
+        Extract model name from a miner instance.
+
+        Args:
+            miner: Miner instance
+
+        Returns:
+            Model name or None if not available
+        """
+        return getattr(miner, "model", None)
+
+    def get_miner_ip(self, miner: Any) -> str:
+        """
+        Extract IP address from a miner instance.
+
+        Args:
+            miner: Miner instance
+
+        Returns:
+            IP address
+        """
+        return getattr(miner, "ip", "")
