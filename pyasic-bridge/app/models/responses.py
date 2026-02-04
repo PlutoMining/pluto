@@ -43,7 +43,8 @@ class ValidateResponse(RootModel[list[MinerValidationResult]]):
     """Response of POST /miners/validate: list of MinerValidationResult."""
 
 
-# Alias: GET /miner/{ip}/config returns the same shape pyasic's get_config().as_dict() produces
+# Internal config shape for GET /miner/{ip}/config response.
+# Populated from pyasic via miner_config_from_pyasic (app.mappers.miner_config_mapper).
 MinerConfigResponse = MinerConfigModel
 
 # PATCH config, POST restart, POST fault-light: same status shape (aligned with bridge return)

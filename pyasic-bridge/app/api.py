@@ -19,6 +19,7 @@ from .models import (
     ValidateRequest,
 )
 from .services import MinerService
+from .validators import ConfigValidationError, ExtraConfigNotAvailableError
 from .websockets import get_miner_ws_client
 from .ws_contracts import WS_CONTRACTS
 
@@ -84,7 +85,7 @@ async def get_miner_data(
     try:
         logger.debug(f"Fetching miner data for {ip}")
         result = await service.get_miner_data(ip)
-        logger.debug(f"Successfully fetched miner data for {ip}, keys: {list(result.keys())}")
+        logger.debug(f"Successfully fetched miner data for {ip}, model: {type(result).__name__}")
         return result
     except ValueError as e:
         # Miner not found or not a valid miner - return 404
@@ -146,8 +147,13 @@ async def update_miner_config(
 ):
     """Update miner config."""
     try:
-        return await service.update_miner_config(ip, config.model_dump(exclude_none=False))
+        return await service.update_miner_config(ip, config.model_dump(exclude_none=True))
+    except ConfigValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except ExtraConfigNotAvailableError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except ValueError as e:
+        # e.g. miner not found
         raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -253,9 +259,10 @@ async def miner_logs_ws(
     try:
         # Best-effort: reuse existing service to infer miner model.
         data = await service.get_miner_data(ip)
-        model_from_root = data.get("model")
-        device_info = data.get("device_info") or {}
-        model_from_info = device_info.get("model")
+        # Use attribute access since data is now a MinerData Pydantic model
+        model_from_root = data.model
+        device_info = data.device_info
+        model_from_info = device_info.model if device_info else None
         miner_model = (model_from_root or model_from_info) or None
     except Exception:
         # If we cannot determine the model, fall back to factory defaults.
