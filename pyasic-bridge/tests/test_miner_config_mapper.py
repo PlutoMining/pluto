@@ -4,7 +4,11 @@ Unit tests for miner_config_mapper (internal <-> pyasic MinerConfig).
 
 import pytest
 
-from app.mappers import miner_config_from_pyasic, miner_config_to_pyasic
+from app.mappers.miner_config_mapper import (
+    _extra_config_from_pyasic,
+    miner_config_from_pyasic,
+    miner_config_to_pyasic,
+)
 from app.models import (
     FanModeConfig,
     MinerConfigModel,
@@ -105,6 +109,14 @@ class TestMinerConfigToPyasic:
         assert result.mining_mode.mode == "high"
 
     def test_preserves_and_merges_extra_config(self) -> None:
+        """
+        Test that extra_config merge works correctly.
+        
+        Note: pyasic's MinerExtraConfig doesn't preserve arbitrary fields when created
+        from a dict (it has no model_fields and no extra="allow"). So fields passed to
+        MinerConfig(extra_config={...}) are lost and cannot be recovered. We can only
+        preserve fields that were actually stored in the MinerExtraConfig instance.
+        """
         try:
             from pyasic.config import MinerConfig as PyasicMinerConfig
             from pyasic.config.fans import FanModeConfig as PyasicFanModeConfig
@@ -114,28 +126,22 @@ class TestMinerConfigToPyasic:
         except ImportError:
             pytest.skip("pyasic not installed")
 
-        # Some pyasic versions no longer expose an 'extra_config' attribute on
-        # MinerConfig. In that case this behavior is not supported and the test
-        # should be skipped.
         dummy = PyasicMinerConfig()
         if not hasattr(dummy, "extra_config"):
             pytest.skip("pyasic MinerConfig has no extra_config attribute in this version")
 
-        class ExtraCfg:
-            __annotations__ = {"field_a": int, "field_b": int}
-
-            def __init__(self, field_a: int, field_b: int) -> None:
-                self.field_a = field_a
-                self.field_b = field_b
-
+        # Create existing config with extra_config dict. pyasic will convert this to
+        # MinerExtraConfig, which doesn't preserve arbitrary fields (no model_fields,
+        # no extra="allow"). So field_a and field_b will be lost.
         existing = PyasicMinerConfig(
             pools=PyasicPoolConfig.default(),
             fan_mode=PyasicFanModeConfig.default(),
             temperature=PyasicTemperatureConfig.default(),
             mining_mode=PyasicMiningModeConfig.default(),
-            extra_config=ExtraCfg(field_a=1, field_b=2),
+            extra_config={"field_a": 1, "field_b": 2},
         )
 
+        # Internal config wants to merge in field_b=42
         internal = MinerConfigModel(
             pools=None,
             fan_mode=None,
@@ -145,60 +151,96 @@ class TestMinerConfigToPyasic:
         )
 
         result = miner_config_to_pyasic(internal, existing)
-        # On versions with extra_config support, merged object should be kept.
-        assert isinstance(result.extra_config, ExtraCfg)
-        assert result.extra_config.field_a == 1
-        assert result.extra_config.field_b == 42
+        # Mapper always assigns merged extra_config as a dict
+        assert result.extra_config is not None
+        extra = result.extra_config
+        assert isinstance(extra, dict), "extra_config should be a dict after merge"
+        
+        # field_b from internal should be present (we're merging it in)
+        assert extra.get("field_b") == 42
+        
+        # field_a cannot be preserved because MinerExtraConfig doesn't store it.
+        # The mapper extracts what it can from existing_extra (which is empty {}),
+        # then merges with internal.extra_config, resulting in only field_b.
+        # This is the expected behavior given MinerExtraConfig's limitations.
+        assert "field_a" not in extra or extra.get("field_a") is None
 
-    def test_extra_config_with_annotations_only(self) -> None:
-        """Test extra_config extraction when only __annotations__ is available (Pydantic v1)."""
+    def test_preserves_and_merges_extra_config_dict(self) -> None:
+        """
+        Test that extra_config merge works when existing.extra_config is a dict.
+        
+        When extra_config is already a dict (not converted to MinerExtraConfig),
+        all fields are preserved and merged correctly.
+        """
         try:
             from pyasic.config import MinerConfig as PyasicMinerConfig
+            from pyasic.config.fans import FanModeConfig as PyasicFanModeConfig
+            from pyasic.config.mining import MiningModeConfig as PyasicMiningModeConfig
+            from pyasic.config.pools import PoolConfig as PyasicPoolConfig
+            from pyasic.config.temperature import TemperatureConfig as PyasicTemperatureConfig
         except ImportError:
             pytest.skip("pyasic not installed")
 
+        dummy = PyasicMinerConfig()
+        if not hasattr(dummy, "extra_config"):
+            pytest.skip("pyasic MinerConfig has no extra_config attribute in this version")
+
+        # Create existing config and manually set extra_config as a dict
+        # (simulating a case where it wasn't converted to MinerExtraConfig)
+        existing = PyasicMinerConfig(
+            pools=PyasicPoolConfig.default(),
+            fan_mode=PyasicFanModeConfig.default(),
+            temperature=PyasicTemperatureConfig.default(),
+            mining_mode=PyasicMiningModeConfig.default(),
+            extra_config=None,
+        )
+        # Manually set as dict to test dict merge path
+        existing.extra_config = {"field_a": 1, "field_b": 2}
+
+        internal = MinerConfigModel(
+            pools=None,
+            fan_mode=None,
+            temperature=None,
+            mining_mode=None,
+            extra_config={"field_b": 42, "field_c": 3},
+        )
+
+        result = miner_config_to_pyasic(internal, existing)
+        assert result.extra_config is not None
+        extra = result.extra_config
+        assert isinstance(extra, dict), "extra_config should be a dict after merge"
+        
+        # All fields from existing should be preserved
+        assert extra.get("field_a") == 1
+        # field_b from internal should override existing
+        assert extra.get("field_b") == 42
+        # field_c from internal should be added
+        assert extra.get("field_c") == 3
+
+    def test_extra_config_with_annotations_only(self) -> None:
+        """_extra_config_from_pyasic uses __annotations__ when model_fields is not present (e.g. Pydantic v1 style)."""
         class ExtraCfgV1:
             __annotations__ = {"field_a": int, "field_b": str}
-            # No model_fields (Pydantic v1 style)
 
             def __init__(self, field_a: int = 1, field_b: str = "test") -> None:
                 self.field_a = field_a
                 self.field_b = field_b
 
-        # Some pyasic versions may not support extra_config
-        dummy = PyasicMinerConfig()
-        if not hasattr(dummy, "extra_config"):
-            pytest.skip("pyasic MinerConfig has no extra_config attribute in this version")
-
-        try:
-            existing = PyasicMinerConfig(extra_config=ExtraCfgV1(field_a=10, field_b="hello"))
-            result = miner_config_from_pyasic(existing)
-            # Should extract extra_config using __annotations__
-            # Note: The function uses getattr to get values, so we need to ensure the object has those attributes
-            if result.extra_config is not None:
-                assert result.extra_config.get("field_a") == 10
-                assert result.extra_config.get("field_b") == "hello"
-            else:
-                # If extra_config is None, it means the extraction didn't work (maybe pyasic version issue)
-                pytest.skip("extra_config extraction not working with this pyasic version")
-        except Exception as e:
-            pytest.skip(f"Could not create config with extra_config: {e}")
+        result = _extra_config_from_pyasic(ExtraCfgV1(field_a=10, field_b="hello"))
+        assert result is not None
+        assert result.get("field_a") == 10
+        assert result.get("field_b") == "hello"
 
     def test_extra_config_without_fields_or_annotations(self) -> None:
-        """Test extra_config extraction when neither model_fields nor __annotations__ exist."""
-        try:
-            from pyasic.config import MinerConfig as PyasicMinerConfig
-        except ImportError:
-            pytest.skip("pyasic not installed")
-
+        """_extra_config_from_pyasic returns None when object has no model_fields nor __annotations__."""
         class ExtraCfgNoFields:
+            """Plain object: no model_fields, no __annotations__."""
+
             def __init__(self, field_a: int = 1) -> None:
                 self.field_a = field_a
 
-        existing = PyasicMinerConfig(extra_config=ExtraCfgNoFields(field_a=5))
-        result = miner_config_from_pyasic(existing)
-        # Should return None when no fields/annotations available
-        assert result.extra_config is None
+        result = _extra_config_from_pyasic(ExtraCfgNoFields(field_a=5))
+        assert result is None
 
     def test_miner_config_to_pyasic_raises_when_pyasic_not_installed(self) -> None:
         """Test miner_config_to_pyasic raises RuntimeError when pyasic not installed."""
