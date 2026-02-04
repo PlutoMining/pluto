@@ -158,14 +158,26 @@ ensure_service_valid() {
   done
   $found || err "Unsupported service '$service'. Allowed: ${AVAILABLE_SERVICES[*]}"
   [[ -d "$service" ]] || err "Directory '$service' not found"
-  [[ -f "$service/package.json" ]] || err "Missing $service/package.json"
   [[ -f "$service/Dockerfile" ]] || err "Missing $service/Dockerfile"
+  if [[ -f "$service/package.json" ]]; then
+    : # Node service
+  elif [[ -f "$service/app/__init__.py" ]]; then
+    : # Python service
+  else
+    err "Missing version source: need $service/package.json or $service/app/__init__.py"
+  fi
 }
 
-get_package_version() {
+# Get current version for a service (package.json for Node, app/__init__.py __version__ for Python)
+get_service_version() {
   local service=$1
-  # Avoid PCRE-only escapes (e.g. \s) for portability across BSD/GNU sed.
-  grep -m 1 '"version":' "$service/package.json" | sed -E 's/.*"version":[[:space:]]*"([^"]+)".*/\1/'
+  if [[ -f "$service/package.json" ]]; then
+    grep -m 1 '"version":' "$service/package.json" | sed -E 's/.*"version":[[:space:]]*"([^"]+)".*/\1/'
+  elif [[ -f "$service/app/__init__.py" ]]; then
+    sed -n "s/.*__version__[[:space:]]*=[[:space:]]*[\"']\\([^\"']*\\)[\"'].*/\1/p" "$service/app/__init__.py" | head -1
+  else
+    err "No version source for $service (need package.json or app/__init__.py)"
+  fi
 }
 
 # Function to check the current Git branch
@@ -374,9 +386,8 @@ ensure_prerelease() {
 bump_package_version() {
   local service=$1
   local bump_level=$2  # major|minor|patch|none
-  local package_file="$service/package.json"
   local current_version
-  current_version=$(get_package_version "$service")
+  current_version=$(get_service_version "$service")
 
   local new_version=""
   local effective_level="$bump_level"
@@ -459,13 +470,23 @@ bump_package_version() {
     return
   fi
 
-  # Update package.json
-  if [[ "$(uname)" == "Darwin" ]]; then
-    # macOS uses BSD sed
-    sed -i '' "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
+  # Update version in package.json (Node) or app/__init__.py (Python)
+  if [[ -f "$service/app/__init__.py" ]]; then
+    local version_file="$service/app/__init__.py"
+    if [[ "$(uname)" == "Darwin" ]]; then
+      sed -i '' "s/__version__ = \"${current_version}\"/__version__ = \"${new_version}\"/" "$version_file"
+    else
+      sed -i "s/__version__ = \"${current_version}\"/__version__ = \"${new_version}\"/" "$version_file"
+    fi
+  elif [[ -f "$service/package.json" ]]; then
+    local package_file="$service/package.json"
+    if [[ "$(uname)" == "Darwin" ]]; then
+      sed -i '' "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
+    else
+      sed -i "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
+    fi
   else
-    # Linux uses GNU sed
-    sed -i "s/\"version\": \"${current_version}\"/\"version\": \"${new_version}\"/" "$package_file"
+    err "No version source for $service (need package.json or app/__init__.py)"
   fi
 
   log "Bumped $service version: $current_version -> $new_version (level: $effective_level)"
@@ -653,7 +674,7 @@ main() {
     local service="${target_services[$i]}"
     ensure_service_valid "$service"
     local current_version
-    current_version=$(get_package_version "$service")
+    current_version=$(get_service_version "$service")
     service_current_versions[$i]="$current_version"
 
     local version
