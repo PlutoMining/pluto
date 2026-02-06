@@ -8,6 +8,7 @@
 
 // index.ts
 export * from "./device-info.interface";
+export * from "./discovered-miner.interface";
 export * from "./preset.interface";
 export * from "./dashboard.interface";
 export * from "./entity.interface";
