@@ -223,7 +223,8 @@ def create_index_file(client_output_dir: Path) -> None:
  */
 
 // Re-export everything from the generated client
-export * from './src';
+export * from './src/sdk.gen';
+export * from './src/types.gen';
 '''
     
     index_file = client_output_dir / "index.ts"
