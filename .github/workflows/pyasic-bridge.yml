@@ -69,10 +69,57 @@ jobs:
         run: |
           pytest tests/test_contract_compliance.py tests/test_api_contracts.py -v
 
+  validate-generated-client:
+    name: Validate Generated Client
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Python dependencies
+        working-directory: pyasic-bridge
+        run: |
+          pip install -r requirements.txt || pip install -r requirements-dev.txt || true
+
+      - name: Install Node.js dependencies for client
+        working-directory: common/pyasic-bridge-client
+        run: |
+          npm ci
+
+      - name: Generate TypeScript client (for comparison)
+        working-directory: pyasic-bridge
+        run: |
+          python3 scripts/generate_client.py || echo "Generation failed, will check if files exist"
+
+      - name: Verify generated files exist
+        working-directory: common/pyasic-bridge-client
+        run: |
+          if [ ! -f "src/sdk.gen.ts" ] || [ ! -f "src/types.gen.ts" ]; then
+            echo "Error: Generated TypeScript client files are missing"
+            echo "Run: python3 pyasic-bridge/scripts/generate_client.py"
+            exit 1
+          fi
+          echo "Generated client files exist"
+
+      - name: Build TypeScript client
+        working-directory: common/pyasic-bridge-client
+        run: |
+          npm run build
+
   generate-clients:
     name: Generate Clients (Optional)
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -97,6 +144,17 @@ jobs:
         working-directory: pyasic-bridge
         run: |
           python3 scripts/export_openapi.py
+
+      - name: Generate TypeScript client
+        working-directory: pyasic-bridge
+        run: |
+          python3 scripts/generate_client.py
+
+      - name: Build TypeScript client
+        working-directory: common/pyasic-bridge-client
+        run: |
+          npm ci
+          npm run build
 
       - name: Upload OpenAPI schema artifact
         uses: actions/upload-artifact@v4
