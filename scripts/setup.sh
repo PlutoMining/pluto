@@ -200,6 +200,33 @@ done
 
 echo ""
 
+# Generate pyasic-bridge TypeScript client if needed
+echo -e "${BLUE}Checking pyasic-bridge TypeScript client...${NC}"
+
+if [ ! -f "$PROJECT_ROOT/common/pyasic-bridge-client/src/sdk.gen.ts" ] || [ ! -f "$PROJECT_ROOT/common/pyasic-bridge-client/src/types.gen.ts" ]; then
+    if command -v python3 &> /dev/null; then
+        print_warning "Generated TypeScript client files are missing"
+        echo "Generating TypeScript client from OpenAPI schema..."
+        if [ -f "$PROJECT_ROOT/pyasic-bridge/scripts/generate_client.py" ]; then
+            if python3 "$PROJECT_ROOT/pyasic-bridge/scripts/generate_client.py"; then
+                print_status "TypeScript client generated successfully"
+            else
+                print_error "Failed to generate TypeScript client"
+                print_warning "You may need to install Python dependencies: cd pyasic-bridge && pip install -r requirements.txt"
+            fi
+        else
+            print_warning "generate_client.py not found, skipping client generation"
+        fi
+    else
+        print_warning "Python3 not found, skipping TypeScript client generation"
+        print_warning "Install Python3 and run: python3 pyasic-bridge/scripts/generate_client.py"
+    fi
+else
+    print_status "TypeScript client files already exist"
+fi
+
+echo ""
+
 # Summary
 echo -e "${BLUE}========================================${NC}"
 echo -e "${GREEN}Setup completed successfully!${NC}"
