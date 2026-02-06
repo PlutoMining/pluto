@@ -88,8 +88,16 @@ describe('discovery.service helpers', () => {
   describe('lookupMultipleDiscoveredDevices', () => {
     it('filters devices using partial match options', async () => {
       const devices = [
-        { mac: 'aa:bb:cc', ip: '192.168.1.10', info: { hostname: 'rig-alpha' } },
-        { mac: 'dd:ee:ff', ip: '10.0.0.5', info: { hostname: 'rig-beta' } },
+        {
+          mac: 'aa:bb:cc',
+          ip: '192.168.1.10',
+          minerData: { ip: '192.168.1.10', hostname: 'rig-alpha' },
+        },
+        {
+          mac: 'dd:ee:ff',
+          ip: '10.0.0.5',
+          minerData: { ip: '10.0.0.5', hostname: 'rig-beta' },
+        },
       ];
 
       findMany.mockImplementation(async (_db: string, _collection: string, predicate: (device: any) => boolean) => {
@@ -109,8 +117,16 @@ describe('discovery.service helpers', () => {
 
     it('defaults to both-sided partial matching when partialMatch keys are missing', async () => {
       const devices = [
-        { mac: 'aa:bb:cc', ip: '192.168.1.10', info: { hostname: 'rig-alpha' } },
-        { mac: 'dd:ee:ff', ip: '10.0.0.5', info: { hostname: 'rig-beta' } },
+        {
+          mac: 'aa:bb:cc',
+          ip: '192.168.1.10',
+          minerData: { ip: '192.168.1.10', hostname: 'rig-alpha' },
+        },
+        {
+          mac: 'dd:ee:ff',
+          ip: '10.0.0.5',
+          minerData: { ip: '10.0.0.5', hostname: 'rig-beta' },
+        },
       ];
 
       findMany.mockImplementation(async (_db: string, _collection: string, predicate: (device: any) => boolean) => {
@@ -130,8 +146,16 @@ describe('discovery.service helpers', () => {
 
     it('supports exact (none) and left partial match types', async () => {
       const devices = [
-        { mac: 'aa:bb:cc', ip: '10.0.0.1', info: { hostname: 'rig-alpha' } },
-        { mac: 'dd:ee:ff', ip: '10.0.0.2', info: { hostname: 'rig-beta' } },
+        {
+          mac: 'aa:bb:cc',
+          ip: '10.0.0.1',
+          minerData: { ip: '10.0.0.1', hostname: 'rig-alpha' },
+        },
+        {
+          mac: 'dd:ee:ff',
+          ip: '10.0.0.2',
+          minerData: { ip: '10.0.0.2', hostname: 'rig-beta' },
+        },
       ];
 
       findMany.mockImplementation(async (_db: string, _collection: string, predicate: (device: any) => boolean) => {
@@ -149,7 +173,13 @@ describe('discovery.service helpers', () => {
     });
 
     it('returns empty list when IP filter mismatches', async () => {
-      const devices = [{ mac: 'aa:bb:cc', ip: '10.0.0.1', info: { hostname: 'rig-alpha' } }];
+      const devices = [
+        {
+          mac: 'aa:bb:cc',
+          ip: '10.0.0.1',
+          minerData: { ip: '10.0.0.1', hostname: 'rig-alpha' },
+        },
+      ];
 
       findMany.mockImplementation(async (_db: string, _collection: string, predicate: (device: any) => boolean) => {
         return devices.filter((device) => predicate(device));
@@ -165,7 +195,13 @@ describe('discovery.service helpers', () => {
     });
 
     it('returns empty list when hostname filter mismatches', async () => {
-      const devices = [{ mac: 'aa:bb:cc', ip: '10.0.0.1', info: { hostname: 'rig-alpha' } }];
+      const devices = [
+        {
+          mac: 'aa:bb:cc',
+          ip: '10.0.0.1',
+          minerData: { ip: '10.0.0.1', hostname: 'rig-alpha' },
+        },
+      ];
 
       findMany.mockImplementation(async (_db: string, _collection: string, predicate: (device: any) => boolean) => {
         return devices.filter((device) => predicate(device));
@@ -219,8 +255,13 @@ describe('discovery.service helpers', () => {
         'aa:bb',
         expect.objectContaining({
           ip: '1.2.3.4',
+          mac: 'aa:bb',
           type: 'TestModel',
-          info: expect.objectContaining({ ASICModel: 'TestModel' }),
+          minerData: expect.objectContaining({
+            ip: '1.2.3.4',
+            mac: 'aa:bb',
+            hostname: 'test-miner',
+          }),
         }),
       );
       expect(result).toHaveLength(1);
