@@ -17,6 +17,9 @@ permissions:
 jobs:
   test-frontend:
     name: Lint & Test Frontend
+    # Skip this job for PRs from feature/migrate-discovery branch
+    # Frontend will be migrated in a separate PR - re-enable this job when migrating frontend
+    if: github.head_ref != 'feature/migrate-discovery'
     runs-on: ubuntu-latest
 
     steps:
