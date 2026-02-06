@@ -52,6 +52,11 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: ${{ matrix.pkg }}/package-lock.json
+      - name: Generate pyasic-bridge TypeScript client
+        working-directory: pyasic-bridge
+        run: |
+          pip install -r requirements.txt || pip install -r requirements-dev.txt || true
+          python3 scripts/generate_client.py
 
       - name: Install dependencies
         working-directory: ${{ matrix.pkg }}
