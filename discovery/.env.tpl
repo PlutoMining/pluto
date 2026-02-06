@@ -18,6 +18,18 @@ MOCK_DISCOVERY_HOST=http://localhost:7770
 # Leave empty to auto-detect from MOCK_DISCOVERY_HOST
 MOCK_DEVICE_HOST=host.docker.internal
 
+# Pyasic Bridge host URL
+# Used to validate discovered devices as miners
+PYASIC_BRIDGE_HOST=http://localhost:8000
+
+# Pyasic validation tuning
+# - PYASIC_VALIDATION_TIMEOUT: timeout per IP validation in milliseconds (default: 3000)
+# - PYASIC_VALIDATION_BATCH_SIZE: number of IPs to validate per batch (default: 10)
+# - PYASIC_VALIDATION_CONCURRENCY: max concurrent batch validations (default: 3)
+PYASIC_VALIDATION_TIMEOUT=3000
+PYASIC_VALIDATION_BATCH_SIZE=10
+PYASIC_VALIDATION_CONCURRENCY=3
+
 # ARP scan tuning
 # Defaults are chosen to be robust on LANs where some devices respond slowly.
 # - ARP_SCAN_RETRY: how many times to retry unanswered hosts
