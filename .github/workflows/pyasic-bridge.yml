@@ -91,25 +91,15 @@ jobs:
         run: |
           pip install -r requirements.txt || pip install -r requirements-dev.txt || true
 
+      - name: Generate TypeScript client
+        working-directory: pyasic-bridge
+        run: |
+          python3 scripts/generate_client.py
+
       - name: Install Node.js dependencies for client
         working-directory: common/pyasic-bridge-client
         run: |
           npm ci
-
-      - name: Generate TypeScript client (for comparison)
-        working-directory: pyasic-bridge
-        run: |
-          python3 scripts/generate_client.py || echo "Generation failed, will check if files exist"
-
-      - name: Verify generated files exist
-        working-directory: common/pyasic-bridge-client
-        run: |
-          if [ ! -f "src/sdk.gen.ts" ] || [ ! -f "src/types.gen.ts" ]; then
-            echo "Error: Generated TypeScript client files are missing"
-            echo "Run: python3 pyasic-bridge/scripts/generate_client.py"
-            exit 1
-          fi
-          echo "Generated client files exist"
 
       - name: Build TypeScript client
         working-directory: common/pyasic-bridge-client
