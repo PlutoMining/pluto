@@ -1,3 +1,7 @@
+// Set required environment variables before importing modules that depend on config
+process.env.MOCK_DISCOVERY_HOST = "http://mock-discovery";
+process.env.PYASIC_BRIDGE_HOST = "http://pyasic-bridge:8000";
+
 import routes from "@/routes/discover.routes";
 
 describe("discover.routes", () => {

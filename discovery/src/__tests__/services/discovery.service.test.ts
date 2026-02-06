@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { discoverDevices, lookupDiscoveredDevice, lookupMultipleDiscoveredDevices } from '@/services/discovery.service';
+import type { MinerData, MinerValidationResult } from '@pluto/pyasic-bridge-client';
 
 jest.mock('@pluto/db', () => ({
   findOne: jest.fn(),
@@ -15,11 +16,23 @@ jest.mock('@/services/arpScanWrapper', () => ({
   arpScan: jest.fn(),
 }));
 
+jest.mock('@/services/miner-validation.service', () => ({
+  MinerValidationService: {
+    validateSingleIp: jest.fn(),
+    validateBatch: jest.fn(),
+    fetchMinerData: jest.fn(),
+  },
+}));
+
 jest.mock('@/config/environment', () => ({
   config: {
     detectMockDevices: false,
     mockDiscoveryHost: 'http://mock-discovery',
     mockDeviceHost: undefined,
+    pyasicBridgeHost: 'http://pyasic-bridge:8000',
+    pyasicValidationBatchSize: 10,
+    pyasicValidationConcurrency: 3,
+    pyasicValidationTimeout: 3000,
   },
 }));
 
@@ -36,6 +49,7 @@ axiosModule.AxiosError = MockAxiosError;
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const { getActiveNetworkInterfaces, arpScan } = jest.requireMock('@/services/arpScanWrapper');
+const { MinerValidationService } = jest.requireMock('@/services/miner-validation.service');
 const { config } = jest.requireMock('@/config/environment');
 
 describe('discovery.service helpers', () => {
@@ -63,7 +77,6 @@ describe('discovery.service helpers', () => {
 
       await expect(lookupDiscoveredDevice('cc:dd')).resolves.toBeUndefined();
     });
-
 
     it('throws when lookup fails', async () => {
       findOne.mockRejectedValue(new Error('db error'));
@@ -114,7 +127,6 @@ describe('discovery.service helpers', () => {
       expect(result).toHaveLength(1);
       expect(result[0].mac).toBe('aa:bb:cc');
     });
-
 
     it('supports exact (none) and left partial match types', async () => {
       const devices = [
@@ -180,30 +192,55 @@ describe('discovery.service helpers', () => {
 
   describe('discoverDevices', () => {
     it('short-circuits to direct ip lookup and stores device', async () => {
-      mockedAxios.get.mockResolvedValue({
-        data: { ASICModel: 'TestModel', mac: 'aa:bb', extra: true },
-      });
+      const validationResult: MinerValidationResult = {
+        ip: '1.2.3.4',
+        is_miner: true,
+        model: 'TestModel',
+      };
+      const minerData: MinerData = {
+        ip: '1.2.3.4',
+        mac: 'aa:bb',
+        model: 'TestModel',
+        hostname: 'test-miner',
+        device_info: { model: 'TestModel' },
+      };
+
+      MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
+      MinerValidationService.fetchMinerData.mockResolvedValue(minerData);
       insertOne.mockResolvedValue(undefined);
 
       const result = await discoverDevices({ ip: '1.2.3.4' });
 
-      expect(mockedAxios.get).toHaveBeenCalledWith('http://1.2.3.4/api/system/info', { timeout: 1000 });
+      expect(MinerValidationService.validateSingleIp).toHaveBeenCalledWith('1.2.3.4');
+      expect(MinerValidationService.fetchMinerData).toHaveBeenCalledWith('1.2.3.4');
       expect(insertOne).toHaveBeenCalledWith(
         'pluto_discovery',
         'devices:discovered',
         'aa:bb',
         expect.objectContaining({
           ip: '1.2.3.4',
+          type: 'TestModel',
           info: expect.objectContaining({ ASICModel: 'TestModel' }),
         }),
       );
       expect(result).toHaveLength(1);
     });
 
-    it('uses provided mac when direct lookup response lacks mac', async () => {
-      mockedAxios.get.mockResolvedValue({
-        data: { ASICModel: 'TestModel' },
-      });
+    it('uses provided mac when miner data lacks mac', async () => {
+      const validationResult: MinerValidationResult = {
+        ip: '1.2.3.4',
+        is_miner: true,
+        model: 'TestModel',
+      };
+      const minerData: MinerData = {
+        ip: '1.2.3.4',
+        model: 'TestModel',
+        hostname: 'test-miner',
+        device_info: { model: 'TestModel' },
+      };
+
+      MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
+      MinerValidationService.fetchMinerData.mockResolvedValue(minerData);
       insertOne.mockResolvedValue(undefined);
 
       const result = await discoverDevices({ ip: '1.2.3.4', mac: 'ff:ee' });
@@ -220,10 +257,21 @@ describe('discovery.service helpers', () => {
       );
     });
 
-    it('falls back to unknown mac when direct lookup and options provide none', async () => {
-      mockedAxios.get.mockResolvedValue({
-        data: { ASICModel: 'TestModel' },
-      });
+    it('falls back to unknown mac when validation and options provide none', async () => {
+      const validationResult: MinerValidationResult = {
+        ip: '1.2.3.4',
+        is_miner: true,
+        model: 'TestModel',
+      };
+      const minerData: MinerData = {
+        ip: '1.2.3.4',
+        model: 'TestModel',
+        hostname: 'test-miner',
+        device_info: { model: 'TestModel' },
+      };
+
+      MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
+      MinerValidationService.fetchMinerData.mockResolvedValue(minerData);
       insertOne.mockResolvedValue(undefined);
 
       const result = await discoverDevices({ ip: '1.2.3.4' });
@@ -240,12 +288,22 @@ describe('discovery.service helpers', () => {
       );
     });
 
-
     it('updates device when it already exists during direct ip lookup', async () => {
-      mockedAxios.get.mockResolvedValue({
-        data: { ASICModel: 'TestModel', mac: 'aa:bb', extra: true },
-      });
+      const validationResult: MinerValidationResult = {
+        ip: '1.2.3.4',
+        is_miner: true,
+        model: 'TestModel',
+      };
+      const minerData: MinerData = {
+        ip: '1.2.3.4',
+        mac: 'aa:bb',
+        model: 'TestModel',
+        hostname: 'test-miner',
+        device_info: { model: 'TestModel' },
+      };
 
+      MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
+      MinerValidationService.fetchMinerData.mockResolvedValue(minerData);
       insertOne.mockRejectedValue(new Error('already exists'));
       updateOne.mockResolvedValue(undefined);
 
@@ -263,16 +321,33 @@ describe('discovery.service helpers', () => {
       );
     });
 
-    it('handles non-timeout axios errors during direct ip lookup', async () => {
-      mockedAxios.get.mockRejectedValue(new MockAxiosError('connection refused', 'ECONNREFUSED'));
+    it('handles validation failure during direct ip lookup', async () => {
+      MinerValidationService.validateSingleIp.mockResolvedValue(null);
 
       const result = await discoverDevices({ ip: '9.9.9.9' });
 
       expect(result).toEqual([]);
+      expect(MinerValidationService.fetchMinerData).not.toHaveBeenCalled();
+      expect(insertOne).not.toHaveBeenCalled();
     });
 
-    it('handles non-Axios errors during direct ip lookup by stringifying them', async () => {
-      mockedAxios.get.mockRejectedValueOnce('boom');
+    it('handles non-miner validation result', async () => {
+      const validationResult: MinerValidationResult = {
+        ip: '9.9.9.9',
+        is_miner: false,
+        error: 'Not a miner',
+      };
+
+      MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
+
+      const result = await discoverDevices({ ip: '9.9.9.9' });
+
+      expect(result).toEqual([]);
+      expect(MinerValidationService.fetchMinerData).not.toHaveBeenCalled();
+    });
+
+    it('handles validation service errors during direct ip lookup', async () => {
+      MinerValidationService.validateSingleIp.mockRejectedValue(new Error('validation error'));
 
       const result = await discoverDevices({ ip: '9.9.9.9' });
 
@@ -291,9 +366,29 @@ describe('discovery.service helpers', () => {
         ];
       });
 
-      mockedAxios.get
-        .mockResolvedValueOnce({ data: { ASICModel: 'ModelA' } })
-        .mockResolvedValueOnce({ data: { ASICModel: 'ModelB' } });
+      const validationResults: MinerValidationResult[] = [
+        { ip: '10.0.0.1', is_miner: true, model: 'ModelA' },
+        { ip: '10.0.0.2', is_miner: true, model: 'ModelB' },
+      ];
+      const minerDataA: MinerData = {
+        ip: '10.0.0.1',
+        mac: 'aa:bb:cc',
+        model: 'ModelA',
+        hostname: 'miner-a',
+        device_info: { model: 'ModelA' },
+      };
+      const minerDataB: MinerData = {
+        ip: '10.0.0.2',
+        mac: 'dd:ee:ff',
+        model: 'ModelB',
+        hostname: 'miner-b',
+        device_info: { model: 'ModelB' },
+      };
+
+      MinerValidationService.validateBatch.mockResolvedValue(validationResults);
+      MinerValidationService.fetchMinerData
+        .mockResolvedValueOnce(minerDataA)
+        .mockResolvedValueOnce(minerDataB);
 
       insertOne
         .mockResolvedValueOnce(undefined)
@@ -304,7 +399,8 @@ describe('discovery.service helpers', () => {
 
       expect(getActiveNetworkInterfaces).toHaveBeenCalled();
       expect(arpScan).toHaveBeenCalledWith('eth0');
-      expect(mockedAxios.get).toHaveBeenCalledTimes(2);
+      expect(MinerValidationService.validateBatch).toHaveBeenCalledWith(['10.0.0.1', '10.0.0.2']);
+      expect(MinerValidationService.fetchMinerData).toHaveBeenCalledTimes(2);
       expect(insertOne).toHaveBeenCalledTimes(2);
       expect(updateOne).toHaveBeenCalledTimes(1);
       expect(result).toHaveLength(2);
@@ -318,7 +414,7 @@ describe('discovery.service helpers', () => {
       const result = await discoverDevices();
 
       expect(result).toEqual([]);
-      expect(mockedAxios.get).not.toHaveBeenCalled();
+      expect(MinerValidationService.validateBatch).not.toHaveBeenCalled();
     });
 
     it('returns empty array when arp scan finds no devices and no ip filter provided', async () => {
@@ -328,19 +424,26 @@ describe('discovery.service helpers', () => {
       const result = await discoverDevices();
 
       expect(result).toEqual([]);
-      expect(mockedAxios.get).not.toHaveBeenCalled();
+      expect(MinerValidationService.validateBatch).not.toHaveBeenCalled();
     });
 
-    it('returns empty array when ASICModel missing', async () => {
-      mockedAxios.get.mockResolvedValue({ data: {} });
+    it('returns empty array when validation indicates not a miner', async () => {
+      const validationResult: MinerValidationResult = {
+        ip: '5.6.7.8',
+        is_miner: false,
+        error: 'Not a miner',
+      };
+
+      MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
 
       const result = await discoverDevices({ ip: '5.6.7.8' });
 
       expect(result).toEqual([]);
+      expect(insertOne).not.toHaveBeenCalled();
     });
 
-    it('handles axios errors gracefully', async () => {
-      mockedAxios.get.mockRejectedValue(new MockAxiosError('timeout', 'ECONNABORTED'));
+    it('handles validation errors gracefully', async () => {
+      MinerValidationService.validateSingleIp.mockRejectedValue(new Error('timeout'));
 
       const result = await discoverDevices({ ip: '9.9.9.9' });
 
@@ -348,7 +451,20 @@ describe('discovery.service helpers', () => {
     });
 
     it('falls back when insert fails unexpectedly', async () => {
-      mockedAxios.get.mockResolvedValue({ data: { ASICModel: 'ModelX' } });
+      const validationResult: MinerValidationResult = {
+        ip: '7.7.7.7',
+        is_miner: true,
+        model: 'ModelX',
+      };
+      const minerData: MinerData = {
+        ip: '7.7.7.7',
+        model: 'ModelX',
+        hostname: 'miner-x',
+        device_info: { model: 'ModelX' },
+      };
+
+      MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
+      MinerValidationService.fetchMinerData.mockResolvedValue(minerData);
       insertOne.mockRejectedValue(new Error('boom'));
 
       const result = await discoverDevices({ ip: '7.7.7.7' });
@@ -376,14 +492,27 @@ describe('discovery.service helpers', () => {
         { ip: '192.168.1.50', mac: 'dd:ee:ff', type: 'miner' },
       ]);
 
-      mockedAxios.get.mockResolvedValueOnce({ data: { ASICModel: 'ModelA' } });
+      const validationResult: MinerValidationResult = {
+        ip: '10.0.0.1',
+        is_miner: true,
+        model: 'ModelA',
+      };
+      const minerData: MinerData = {
+        ip: '10.0.0.1',
+        mac: 'aa:bb:cc',
+        model: 'ModelA',
+        hostname: 'miner-a',
+        device_info: { model: 'ModelA' },
+      };
+
+      MinerValidationService.validateBatch.mockResolvedValue([validationResult]);
+      MinerValidationService.fetchMinerData.mockResolvedValue(minerData);
       insertOne.mockResolvedValue(undefined);
 
       const result = await discoverDevices({ ip: '10.0', partialMatch: true });
 
       expect(result).toHaveLength(1);
-      expect(mockedAxios.get).toHaveBeenCalledTimes(1);
-      expect(mockedAxios.get).toHaveBeenCalledWith('http://10.0.0.1/api/system/info', { timeout: 1000 });
+      expect(MinerValidationService.validateBatch).toHaveBeenCalledWith(['10.0.0.1']);
     });
 
     it('returns empty array when no valid devices remain after filtering', async () => {
@@ -393,14 +522,28 @@ describe('discovery.service helpers', () => {
       const result = await discoverDevices({ ip: '10.0', partialMatch: true });
 
       expect(result).toEqual([]);
-      expect(mockedAxios.get).not.toHaveBeenCalled();
+      expect(MinerValidationService.validateBatch).not.toHaveBeenCalled();
     });
 
     it('keeps discovered device when insert fails unexpectedly during scan', async () => {
       getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
       arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
 
-      mockedAxios.get.mockResolvedValueOnce({ data: { ASICModel: 'ModelA' } });
+      const validationResult: MinerValidationResult = {
+        ip: '10.0.0.1',
+        is_miner: true,
+        model: 'ModelA',
+      };
+      const minerData: MinerData = {
+        ip: '10.0.0.1',
+        mac: 'aa:bb:cc',
+        model: 'ModelA',
+        hostname: 'miner-a',
+        device_info: { model: 'ModelA' },
+      };
+
+      MinerValidationService.validateBatch.mockResolvedValue([validationResult]);
+      MinerValidationService.fetchMinerData.mockResolvedValue(minerData);
       insertOne.mockRejectedValue(new Error('db down'));
 
       const result = await discoverDevices();
@@ -410,11 +553,17 @@ describe('discovery.service helpers', () => {
       expect(updateOne).not.toHaveBeenCalled();
     });
 
-    it('skips device during scan when ASICModel is missing', async () => {
+    it('skips device during scan when validation indicates not a miner', async () => {
       getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
       arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
 
-      mockedAxios.get.mockResolvedValueOnce({ data: {} });
+      const validationResult: MinerValidationResult = {
+        ip: '10.0.0.1',
+        is_miner: false,
+        error: 'Not a miner',
+      };
+
+      MinerValidationService.validateBatch.mockResolvedValue([validationResult]);
 
       const result = await discoverDevices();
 
@@ -422,40 +571,29 @@ describe('discovery.service helpers', () => {
       expect(insertOne).not.toHaveBeenCalled();
     });
 
-    it('handles non-timeout axios error during scan and continues', async () => {
+    it('handles validation errors during scan and continues', async () => {
       getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
       arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
 
-      mockedAxios.get.mockRejectedValueOnce(new MockAxiosError('connection refused', 'ECONNREFUSED'));
+      MinerValidationService.validateBatch.mockRejectedValueOnce(new Error('connection refused'));
 
       const result = await discoverDevices();
 
       expect(result).toEqual([]);
     });
 
-    it('handles non-Axios errors during scan by stringifying them', async () => {
+    it('handles batch validation returning empty results', async () => {
       getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
       arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
 
-      mockedAxios.get.mockRejectedValueOnce('boom');
+      MinerValidationService.validateBatch.mockResolvedValue([]);
 
       const result = await discoverDevices();
 
       expect(result).toEqual([]);
     });
 
-    it('logs and skips when request times out during scan', async () => {
-      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
-      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
-
-      mockedAxios.get.mockRejectedValueOnce(new MockAxiosError('timeout', 'ECONNABORTED'));
-
-      const result = await discoverDevices();
-
-      expect(result).toEqual([]);
-    });
-
-    it('appends mock devices when detection is enabled', async () => {
+    it('skips mock devices from validation when detection is enabled', async () => {
       config.detectMockDevices = true;
       config.mockDiscoveryHost = 'http://mock-host:7000';
       config.mockDeviceHost = 'host.docker.internal';
@@ -463,22 +601,19 @@ describe('discovery.service helpers', () => {
       getActiveNetworkInterfaces.mockResolvedValue([]);
       arpScan.mockResolvedValue([]);
 
-      mockedAxios.get
-        .mockResolvedValueOnce({ data: { servers: [{ port: 9001 }] } })
-        .mockResolvedValueOnce({ data: { ASICModel: 'MockModel' } });
-
-      insertOne.mockResolvedValue(undefined);
+      mockedAxios.get.mockResolvedValueOnce({ data: { servers: [{ port: 9001 }] } });
 
       const result = await discoverDevices();
 
-      expect(result).toHaveLength(1);
-      expect(result[0].ip).toContain('host.docker.internal');
+      // Mock devices are skipped from pyasic-bridge validation (as per code comment)
+      expect(result).toHaveLength(0);
+      expect(MinerValidationService.validateBatch).not.toHaveBeenCalled();
 
       config.detectMockDevices = false;
       config.mockDeviceHost = undefined;
     });
 
-    it('builds mock device ips from discovery host when mockDeviceHost is unset', async () => {
+    it('skips mock devices even when mock server list is provided', async () => {
       config.detectMockDevices = true;
       config.mockDiscoveryHost = 'http://mock-host:7000';
       config.mockDeviceHost = undefined;
@@ -486,20 +621,15 @@ describe('discovery.service helpers', () => {
       getActiveNetworkInterfaces.mockResolvedValue([]);
       arpScan.mockResolvedValue([]);
 
-      mockedAxios.get
-        .mockResolvedValueOnce({ data: { servers: [{ port: '9001' }, { port: 0 }, { port: 'wat' }] } })
-        .mockResolvedValueOnce({ data: { ASICModel: 'MockModelA' } })
-        .mockResolvedValueOnce({ data: { ASICModel: 'MockModelB' } })
-        .mockResolvedValueOnce({ data: { ASICModel: 'MockModelC' } });
-
-      insertOne.mockResolvedValue(undefined);
+      mockedAxios.get.mockResolvedValueOnce({
+        data: { servers: [{ port: '9001' }, { port: 0 }, { port: 'wat' }] },
+      });
 
       const result = await discoverDevices();
 
-      expect(result).toHaveLength(3);
-      expect(result[0].ip).toBe('mock-host:9001');
-      expect(result[1].ip).toBe('mock-host:0');
-      expect(result[2].ip).toBe('mock-host:wat');
+      // Mock devices are skipped from pyasic-bridge validation
+      expect(result).toHaveLength(0);
+      expect(MinerValidationService.validateBatch).not.toHaveBeenCalled();
     });
 
     it('returns empty array when discovery fails before scanning completes', async () => {

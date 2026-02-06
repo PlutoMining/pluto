@@ -16,6 +16,7 @@ describe("discovery entrypoint", () => {
     delete (process as any).exitCode;
 
     process.env.MOCK_DISCOVERY_HOST = "http://mock";
+    process.env.PYASIC_BRIDGE_HOST = "http://pyasic-bridge:8000";
   });
 
   afterAll(() => {
