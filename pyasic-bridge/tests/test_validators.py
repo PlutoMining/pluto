@@ -243,3 +243,55 @@ class TestConfigValidatorFactory:
         assert isinstance(field_names, frozenset)
         # Should include fields from BitaxeExtraConfig
         assert len(field_names) > 0
+
+
+class TestBitaxeExtraConfigModel:
+    """Direct tests for BitaxeExtraConfig model and helper."""
+
+    def test_non_int_values_trigger_before_validator_but_fail_type(self):
+        """Passing non-int values should go through 'not isinstance(int)' branch before type error."""
+        from pydantic import ValidationError
+
+        from app.validators.bitaxe import BitaxeExtraConfig
+
+        # Each of these should raise ValidationError due to type mismatch,
+        # but will exercise the validators' non-int branches first.
+        with pytest.raises(ValidationError):
+            BitaxeExtraConfig(rotation="90")  # type: ignore[arg-type]
+        with pytest.raises(ValidationError):
+            BitaxeExtraConfig(invertscreen="1")  # type: ignore[arg-type]
+        with pytest.raises(ValidationError):
+            BitaxeExtraConfig(display_timeout="30")  # type: ignore[arg-type]
+        with pytest.raises(ValidationError):
+            BitaxeExtraConfig(overheat_mode="1")  # type: ignore[arg-type]
+        with pytest.raises(ValidationError):
+            BitaxeExtraConfig(overclock_enabled="1")  # type: ignore[arg-type]
+        with pytest.raises(ValidationError):
+            BitaxeExtraConfig(frequency="490")  # type: ignore[arg-type]
+        with pytest.raises(ValidationError):
+            BitaxeExtraConfig(core_voltage="1100")  # type: ignore[arg-type]
+
+    def test_bitaxe_extra_config_field_names_from_espm_config_model_fields(self, monkeypatch):
+        """_bitaxe_extra_config_field_names should use ESPMinerExtraConfig.model_fields when available."""
+        import app.validators.bitaxe as bitaxe_mod
+
+        class DummyESPM:
+            model_fields = {"rotation": int, "frequency": int}
+
+        monkeypatch.setattr(bitaxe_mod, "ESPMinerExtraConfig", DummyESPM)
+
+        field_names = bitaxe_mod._bitaxe_extra_config_field_names()
+        assert field_names == frozenset(DummyESPM.model_fields)
+
+    def test_bitaxe_extra_config_field_names_from_espm_config_annotations(self, monkeypatch):
+        """_bitaxe_extra_config_field_names should use ESPMinerExtraConfig.__annotations__ when model_fields absent."""
+        import app.validators.bitaxe as bitaxe_mod
+
+        class DummyESPM2:
+            __annotations__ = {"core_voltage": int, "min_fan_speed": int}
+
+        monkeypatch.setattr(bitaxe_mod, "ESPMinerExtraConfig", DummyESPM2)
+
+        field_names = bitaxe_mod._bitaxe_extra_config_field_names()
+        assert field_names == frozenset(DummyESPM2.__annotations__)
+
