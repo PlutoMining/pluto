@@ -250,6 +250,75 @@
         }
       }
     },
+    "/miner/{ip}/config/validate": {
+      "post": {
+        "summary": "Validate Miner Config",
+        "description": "Validate miner config without applying it.",
+        "operationId": "validate_miner_config_miner__ip__config_validate_post",
+        "parameters": [
+          {
+            "name": "ip",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ip"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MinerConfigModel-Input"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/extra-config-schemas/bitaxe": {
+      "get": {
+        "summary": "Get Bitaxe Extra Config Schema",
+        "description": "Get JSON schema for Bitaxe extra_config.\n\nThis endpoint exists primarily to expose BitaxeExtraConfig in OpenAPI schema.\nThe schema can also be used directly, but the recommended approach is to extract\nschemas from the OpenAPI JSON file during build time.\n\nNote: This endpoint returns a sample BitaxeExtraConfig instance to ensure\nthe model appears in the OpenAPI schema. The actual schema is extracted\nfrom the OpenAPI JSON during build time.",
+        "operationId": "get_bitaxe_extra_config_schema_extra_config_schemas_bitaxe_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BitaxeExtraConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/miner/{ip}/restart": {
       "post": {
         "summary": "Restart Miner",
@@ -452,6 +521,191 @@
   },
   "components": {
     "schemas": {
+      "BitaxeExtraConfig": {
+        "properties": {
+          "rotation": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  0,
+                  90,
+                  180,
+                  270
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rotation",
+            "description": "Display rotation in degrees. Valid values: 0, 90, 180, 270"
+          },
+          "invertscreen": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invertscreen",
+            "description": "Invert screen. Valid values: 0 (normal), 1 (inverted)"
+          },
+          "display_timeout": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  1,
+                  2,
+                  5,
+                  15,
+                  30,
+                  60,
+                  120,
+                  240,
+                  480
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Timeout",
+            "description": "Display timeout in seconds. Valid values: -1, 1, 2, 5, 15, 30, 60, 120, 240, 480"
+          },
+          "overheat_mode": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overheat Mode",
+            "description": "Overheat mode. 0 = off, 1 = on."
+          },
+          "overclock_enabled": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overclock Enabled",
+            "description": "Overclock enabled. 0 = disabled, 1 = enabled."
+          },
+          "stats_frequency": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stats Frequency",
+            "description": "Stats frequency (e.g. 0)."
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  400,
+                  490,
+                  525,
+                  550,
+                  600,
+                  625
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency",
+            "description": "Frequency in MHz. Valid values: 400, 490, 525, 550, 600, 625"
+          },
+          "core_voltage": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  1000,
+                  1060,
+                  1100,
+                  1150,
+                  1200,
+                  1250
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Core Voltage",
+            "description": "Core voltage in mV. Valid values: 1000, 1060, 1100, 1150, 1200, 1250"
+          },
+          "min_fan_speed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Fan Speed",
+            "description": "Minimum fan speed (e.g. 25)."
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "BitaxeExtraConfig",
+        "description": "Pydantic model for Bitaxe extra_config validation.\n\nAll fields optional. Validates types (int, no coercion) and allowed values for rotation, invertscreen, display_timeout, frequency and core_voltage."
+      },
+      "ConfigValidationResponse": {
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "title": "Valid",
+            "description": "Whether the config is valid"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors",
+            "description": "List of validation error messages if invalid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid"
+        ],
+        "title": "ConfigValidationResponse",
+        "description": "Response of POST /miner/{ip}/config/validate: validation result."
+      },
       "DeviceInfo": {
         "properties": {
           "make": {

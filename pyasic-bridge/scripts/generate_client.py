@@ -282,6 +282,29 @@ def main() -> int:
     if not generate_client(openapi_schema, client_output_dir):
         return 1
     
+    # Extract extra_config schemas
+    print_info("📝 Extracting extra_config schemas...")
+    import subprocess
+    extract_script = script_dir / "extract_extra_config_schemas.py"
+    if extract_script.exists():
+        try:
+            result = subprocess.run(
+                [sys.executable, str(extract_script)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode == 0:
+                print_success("Extra_config schemas extracted successfully")
+            else:
+                print_warning("Failed to extract extra_config schemas, but client generation succeeded")
+                if result.stderr:
+                    print(f"   Error: {result.stderr}", file=sys.stderr)
+        except Exception as e:
+            print_warning(f"Could not run extract_extra_config_schemas.py: {e}, but client generation succeeded")
+    else:
+        print_warning("extract_extra_config_schemas.py not found, skipping schema extraction")
+    
     # Create index.ts
     print_info("📝 Creating main index.ts exports...")
     create_index_file(client_output_dir)
