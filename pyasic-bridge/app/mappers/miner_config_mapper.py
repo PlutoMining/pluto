@@ -125,60 +125,48 @@ def miner_config_to_pyasic(
         extra_config=None,
     )
 
-    # Preserve and merge extra_config. We always assign a dict so arbitrary
-    # keys (e.g. field_a, field_b) are not dropped when pyasic coerces
-    # dict -> MinerExtraConfig and that model has a fixed schema.
+    # Preserve and merge extra_config.
+    # We prefer to keep the existing concrete MinerExtraConfig type (e.g. ESPMinerExtraConfig,
+    # AntMinerExtraConfig, default MinerExtraConfig) and update only known fields, so that
+    # pyasic can still call methods like ``as_espminer()`` when sending configs.
     existing_extra = getattr(existing_pyasic_config, "extra_config", None)
     if existing_extra is None:
         return pyasic_config
 
     extra_dict = internal_config.extra_config or {}
-    if extra_dict:
-        if isinstance(existing_extra, dict):
-            existing_dict = dict(existing_extra)
+    if not extra_dict:
+        # No changes requested for extra_config; keep existing object as-is.
+        pyasic_config.extra_config = existing_extra
+        return pyasic_config
+
+    # Case 1: existing_extra is a Pydantic model (MinerExtraConfig or miner-specific subclass).
+    if hasattr(existing_extra, "model_fields") or hasattr(existing_extra, "__annotations__"):
+        # Collect field names from Pydantic v2 (model_fields) or v1 (__annotations__).
+        if hasattr(existing_extra, "model_fields"):
+            fields = existing_extra.model_fields
+            field_names = (
+                list(fields.keys())
+                if isinstance(fields, dict)
+                else list(fields)
+            )
         else:
-            existing_dict = {}
-            # Try model_dump() first (Pydantic v2) - includes all fields including extra
-            if hasattr(existing_extra, "model_dump"):
-                try:
-                    # mode='python' ensures we get a plain dict, include extra fields
-                    # exclude_unset=False ensures we get all fields, even if None
-                    dumped = existing_extra.model_dump(mode="python", exclude_unset=False)
-                    if isinstance(dumped, dict):
-                        existing_dict = dumped
-                except TypeError:
-                    # Fallback if mode parameter not supported
-                    try:
-                        dumped = existing_extra.model_dump(exclude_unset=False)
-                        if isinstance(dumped, dict):
-                            existing_dict = dumped
-                    except Exception:
-                        pass
-                except Exception:
-                    pass
-            
-            # Always check __pydantic_extra__ directly - model_dump() might not include it
-            # or might return empty dict even if extra fields exist
-            pydantic_extra = getattr(existing_extra, "__pydantic_extra__", None)
-            if isinstance(pydantic_extra, dict) and pydantic_extra:
-                existing_dict = {**existing_dict, **pydantic_extra}
-            
-            # Fallback: extract from model_fields/__annotations__ if still empty
-            # This handles cases where model_dump() doesn't work and __pydantic_extra__ is None
-            if not existing_dict:
-                existing_keys = (
-                    getattr(existing_extra, "model_fields", None)
-                    or getattr(existing_extra, "__annotations__", {})
-                )
-                key_iter = (
-                    existing_keys
-                    if not isinstance(existing_keys, dict)
-                    else existing_keys.keys()
-                )
-                existing_dict = {k: getattr(existing_extra, k, None) for k in key_iter}
-        merged_extra = {**existing_dict, **extra_dict}
+            annotations = getattr(existing_extra, "__annotations__", {}) or {}
+            field_names = list(annotations.keys())
+
+        # Update only known fields; unknown keys in extra_dict are ignored.
+        for key, value in extra_dict.items():
+            if key in field_names:
+                setattr(existing_extra, key, value)
+
+        pyasic_config.extra_config = existing_extra
+        return pyasic_config
+
+    # Case 2: existing_extra is already a dict – merge dictionaries as a fallback.
+    if isinstance(existing_extra, dict):
+        merged_extra = {**existing_extra, **extra_dict}
         pyasic_config.extra_config = merged_extra
     else:
+        # Fallback: we don't know how to safely merge this type; keep it unchanged.
         pyasic_config.extra_config = existing_extra
 
     return pyasic_config

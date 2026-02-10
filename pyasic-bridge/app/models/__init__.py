@@ -24,8 +24,10 @@ from .data import (
     TemperatureConfig,
 )
 from .data_raw import MinerDataRaw
+from .extra_config import BitaxeExtraConfig
 from .requests import MinerConfigPatch, ScanRequest, ValidateRequest
 from .responses import (
+    ConfigValidationResponse,
     MinerActionResponse,
     MinerConfigResponse,
     MinerErrorsResponse,
@@ -57,11 +59,14 @@ __all__ = [
     "TemperatureConfig",
     # data_raw
     "MinerDataRaw",
+    # extra_config
+    "BitaxeExtraConfig",
     # requests
     "MinerConfigPatch",
     "ScanRequest",
     "ValidateRequest",
     # responses
+    "ConfigValidationResponse",
     "MinerActionResponse",
     "MinerConfigResponse",
     "MinerErrorsResponse",
