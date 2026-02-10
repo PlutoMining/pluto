@@ -1,4 +1,5 @@
-import type { Device } from '@pluto/interfaces';
+import type { DiscoveredMiner } from '@pluto/interfaces';
+import type { MinerData } from '@pluto/pyasic-bridge-client';
 import axios from 'axios';
 import * as deviceService from '@/services/device.service';
 
@@ -12,6 +13,7 @@ jest.mock('@pluto/db', () => ({
 }));
 jest.mock('../../services/tracing.service', () => ({
   updateOriginalIpsListeners: jest.fn(),
+  getTracingByIp: jest.fn().mockReturnValue({}),
 }));
 jest.mock('../../config/environment', () => ({
   config: { discoveryServiceHost: 'http://discovery.test' },
@@ -28,6 +30,18 @@ const db = jest.requireMock('@pluto/db');
 const tracing = jest.requireMock('../../services/tracing.service');
 const { logger } = jest.requireMock('@pluto/logger');
 
+const makeDiscoveredMiner = (overrides?: Partial<DiscoveredMiner & { presetUuid?: string }>): DiscoveredMiner & { presetUuid?: string } => ({
+  ip: '10.0.0.1',
+  mac: 'aa:bb:cc:dd:ee:ff',
+  type: 'mock',
+  minerData: {
+    ip: '10.0.0.1',
+    hostname: 'miner-1',
+    model: 'BM1368',
+  } as MinerData,
+  ...overrides,
+} as DiscoveredMiner & { presetUuid?: string });
+
 describe('device.service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -35,9 +49,11 @@ describe('device.service', () => {
 
   describe('discoverDevices', () => {
     it('fetches discovered devices with query params', async () => {
-      mockedAxios.get.mockResolvedValue({ data: ['device'] });
+      mockedAxios.get.mockResolvedValue({ data: [makeDiscoveredMiner()] });
 
-      await expect(deviceService.discoverDevices({ ip: '1.1.1.1' })).resolves.toEqual(['device']);
+      await expect(deviceService.discoverDevices({ ip: '1.1.1.1' })).resolves.toEqual([
+        expect.objectContaining({ ip: '10.0.0.1' }),
+      ]);
 
       expect(mockedAxios.get).toHaveBeenCalledWith('http://discovery.test/discover', {
         params: { ip: '1.1.1.1', mac: undefined },
@@ -126,42 +142,23 @@ describe('device.service', () => {
     });
 
     it('imprints devices inserting new entries', async () => {
+      const device = makeDiscoveredMiner({ mac: 'mac-1' });
       const lookupSpy = jest
         .spyOn(deviceService, 'lookupMultipleDiscoveredDevices')
-        .mockResolvedValue([
-          {
-            mac: 'mac-1',
-            info: {
-              stratumPassword: 'secret',
-              wifiPassword: 'wifi',
-            },
-          } as unknown as Device,
-        ]);
+        .mockResolvedValue([device]);
 
       db.insertOne.mockResolvedValue(undefined);
 
       const devices = await deviceService.imprintDevices(['mac-1']);
 
       expect(lookupSpy).toHaveBeenCalledWith({ macs: ['mac-1'] });
-      expect(db.insertOne).toHaveBeenCalledWith(
-        'pluto_core',
-        'devices:imprinted',
-        'mac-1',
-        expect.objectContaining({
-          mac: 'mac-1',
-          info: {},
-        }),
-      );
+      expect(db.insertOne).toHaveBeenCalledWith('pluto_core', 'devices:imprinted', 'mac-1', device);
       expect(devices).toHaveLength(1);
     });
 
     it('updates devices when already imprinted', async () => {
-      jest.spyOn(deviceService, 'lookupMultipleDiscoveredDevices').mockResolvedValue([
-        {
-          mac: 'mac-2',
-          info: {},
-        } as unknown as Device,
-      ]);
+      const device = makeDiscoveredMiner({ mac: 'mac-2' });
+      jest.spyOn(deviceService, 'lookupMultipleDiscoveredDevices').mockResolvedValue([device]);
 
       const duplicateError = new Error('already exists');
       db.insertOne.mockRejectedValue(duplicateError);
@@ -169,21 +166,12 @@ describe('device.service', () => {
 
       await deviceService.imprintDevices(['mac-2']);
 
-      expect(db.updateOne).toHaveBeenCalledWith(
-        'pluto_core',
-        'devices:imprinted',
-        'mac-2',
-        expect.objectContaining({ mac: 'mac-2' }),
-      );
+      expect(db.updateOne).toHaveBeenCalledWith('pluto_core', 'devices:imprinted', 'mac-2', device);
     });
 
     it('rethrows non-duplicate insert errors', async () => {
-      jest.spyOn(deviceService, 'lookupMultipleDiscoveredDevices').mockResolvedValue([
-        {
-          mac: 'mac-3',
-          info: {},
-        } as unknown as Device,
-      ]);
+      const device = makeDiscoveredMiner({ mac: 'mac-3' });
+      jest.spyOn(deviceService, 'lookupMultipleDiscoveredDevices').mockResolvedValue([device]);
 
       const error = new Error('boom');
       db.insertOne.mockRejectedValue(error);
@@ -193,12 +181,8 @@ describe('device.service', () => {
     });
 
     it('surfaces update errors after duplicate insert', async () => {
-      jest.spyOn(deviceService, 'lookupMultipleDiscoveredDevices').mockResolvedValue([
-        {
-          mac: 'mac-4',
-          info: {},
-        } as unknown as Device,
-      ]);
+      const device = makeDiscoveredMiner({ mac: 'mac-4' });
+      jest.spyOn(deviceService, 'lookupMultipleDiscoveredDevices').mockResolvedValue([device]);
 
       const duplicateError = new Error('already exists');
       const updateError = new Error('update boom');
@@ -212,7 +196,7 @@ describe('device.service', () => {
 
   describe('listenToDevices', () => {
     it('listens to devices by fetching when not provided', async () => {
-      const devices = [{ mac: 'x', info: {} } as Device];
+      const devices = [makeDiscoveredMiner({ mac: 'x' })];
       db.findMany.mockResolvedValue(devices);
 
       const response = await deviceService.listenToDevices(undefined, true);
@@ -231,7 +215,7 @@ describe('device.service', () => {
     });
 
     it('reuses provided array', async () => {
-      const devices = [{ mac: 'y', info: {} } as Device];
+      const devices = [makeDiscoveredMiner({ mac: 'y' })];
 
       const response = await deviceService.listenToDevices(devices, false);
 
@@ -248,8 +232,8 @@ describe('device.service', () => {
       await deviceService.getImprintedDevices({ q: '10.0.0.1' });
 
       const predicate = db.findMany.mock.calls[0][2];
-      expect(predicate({ ip: '10.0.0.1' } as Device)).toBe(true);
-      expect(predicate({ ip: '10.0.0.10' } as Device)).toBe(false);
+      expect(predicate(makeDiscoveredMiner({ ip: '10.0.0.1' }))).toBe(true);
+      expect(predicate(makeDiscoveredMiner({ ip: '10.0.0.10' }))).toBe(false);
     });
 
     it('treats blank query as match-all', async () => {
@@ -258,7 +242,7 @@ describe('device.service', () => {
       await deviceService.getImprintedDevices({ q: '   ' });
 
       const predicate = db.findMany.mock.calls[0][2];
-      expect(predicate({ ip: '1.2.3.4' } as Device)).toBe(true);
+      expect(predicate(makeDiscoveredMiner({ ip: '1.2.3.4' }))).toBe(true);
     });
 
     it('matches full ip when stored as ip:port', async () => {
@@ -267,7 +251,7 @@ describe('device.service', () => {
       await deviceService.getImprintedDevices({ q: '10.0.0.1' });
 
       const predicate = db.findMany.mock.calls[0][2];
-      expect(predicate({ ip: '10.0.0.1:4028' } as Device)).toBe(true);
+      expect(predicate(makeDiscoveredMiner({ ip: '10.0.0.1:4028' }))).toBe(true);
     });
 
     it('logs and throws on db error', async () => {
@@ -275,7 +259,7 @@ describe('device.service', () => {
       db.findMany.mockRejectedValue(error);
 
       await expect(deviceService.getImprintedDevices({ q: 'x' })).rejects.toThrow('db down');
-      expect(logger.error).toHaveBeenCalledWith('Error in listenToDevices:', error);
+      expect(logger.error).toHaveBeenCalledWith('Error in getImprintedDevices:', error);
     });
 
     it('supports partial query matching for imprinted devices', async () => {
@@ -284,8 +268,8 @@ describe('device.service', () => {
       await deviceService.getImprintedDevices({ q: '10.0' });
 
       const predicate = db.findMany.mock.calls[0][2];
-      expect(predicate({ ip: '10.0.1.5' } as Device)).toBe(true);
-      expect(predicate({ ip: '11.0.0.1' } as Device)).toBe(false);
+      expect(predicate(makeDiscoveredMiner({ ip: '10.0.1.5' }))).toBe(true);
+      expect(predicate(makeDiscoveredMiner({ ip: '11.0.0.1' }))).toBe(false);
     });
 
     it('filters imprinted devices by query over hostname and mac', async () => {
@@ -294,23 +278,34 @@ describe('device.service', () => {
       await deviceService.getImprintedDevices({ q: 'S19' });
 
       const predicate = db.findMany.mock.calls[0][2];
-      expect(predicate({ info: { hostname: 'miner-s19-01' } } as Device)).toBe(true);
-      expect(predicate({ mac: 'aa:bb:cc:dd:ee:ff' } as Device)).toBe(false);
+      const minerWithHostname = makeDiscoveredMiner({
+        minerData: { ip: '10.0.0.1', hostname: 'miner-s19-01' } as MinerData,
+      });
+      expect(predicate(minerWithHostname)).toBe(true);
+      const minerWithoutMatch = makeDiscoveredMiner({
+        mac: 'xx:yy:zz:aa:bb:cc',
+        minerData: { ip: '10.0.0.2', hostname: 'other-miner' } as MinerData,
+      });
+      expect(predicate(minerWithoutMatch)).toBe(false);
 
       await deviceService.getImprintedDevices({ q: 'aa:bb' });
 
       const predicate2 = db.findMany.mock.calls[1][2];
-      expect(predicate2({ mac: 'aa:bb:cc:dd:ee:ff' } as Device)).toBe(true);
-      expect(predicate2({ info: { hostname: 'miner-s19-01' } } as Device)).toBe(false);
+      expect(predicate2(makeDiscoveredMiner({ mac: 'aa:bb:cc:dd:ee:ff' }))).toBe(true);
+      const minerWithDifferentMac = makeDiscoveredMiner({
+        mac: 'xx:yy:zz:11:22:33',
+        minerData: { ip: '10.0.0.1', hostname: 'miner-s19-01' } as MinerData,
+      });
+      expect(predicate2(minerWithDifferentMac)).toBe(false);
     });
   });
 
   describe('getImprintedDevice', () => {
     it('gets single imprinted device by mac', async () => {
-      const device = { mac: 'mac-3' } as Device;
+      const device = makeDiscoveredMiner({ mac: 'mac-3' });
       db.findOne.mockResolvedValue(device);
 
-      await expect(deviceService.getImprintedDevice('mac-3')).resolves.toEqual(device);
+      await expect(deviceService.getImprintedDevice('mac-3')).resolves.toEqual({ ...device, tracing: false });
       expect(db.findOne).toHaveBeenCalledWith('pluto_core', 'devices:imprinted', 'mac-3');
     });
 
@@ -330,9 +325,9 @@ describe('device.service', () => {
       await deviceService.getDevicesByPresetId('preset-1');
 
       const predicate = db.findMany.mock.calls[0][2];
-      expect(predicate({ presetUuid: 'preset-1' } as Device)).toBe(true);
-      expect(predicate({ presetUuid: 'preset-2' } as Device)).toBe(false);
-      expect(predicate({} as Device)).toBe(false);
+      expect(predicate(makeDiscoveredMiner({ presetUuid: 'preset-1' }))).toBe(true);
+      expect(predicate(makeDiscoveredMiner({ presetUuid: 'preset-2' }))).toBe(false);
+      expect(predicate(makeDiscoveredMiner({}))).toBe(false);
     });
 
     it('logs and throws on db error', async () => {
@@ -345,33 +340,20 @@ describe('device.service', () => {
   });
 
   describe('patchImprintedDevice', () => {
-    it('patches imprinted device sanitizing secrets', async () => {
-      const payload = {
-        mac: 'mac-4',
-        info: {
-          stratumPassword: 'secret',
-          wifiPassword: 'wifi',
-        },
-      } as Device;
+    it('patches imprinted device', async () => {
+      const payload = makeDiscoveredMiner({ mac: 'mac-4' });
       db.updateOne.mockResolvedValue(payload);
 
       await deviceService.patchImprintedDevice('mac-4', payload);
 
-      expect(db.updateOne).toHaveBeenCalledWith(
-        'pluto_core',
-        'devices:imprinted',
-        'mac-4',
-        expect.objectContaining({
-          info: {},
-        }),
-      );
+      expect(db.updateOne).toHaveBeenCalledWith('pluto_core', 'devices:imprinted', 'mac-4', payload);
     });
 
     it('logs and throws on db error', async () => {
       const error = new Error('db down');
       db.updateOne.mockRejectedValue(error);
 
-      await expect(deviceService.patchImprintedDevice('mac-4', {} as Device)).rejects.toThrow('db down');
+      await expect(deviceService.patchImprintedDevice('mac-4', makeDiscoveredMiner())).rejects.toThrow('db down');
       expect(logger.error).toHaveBeenCalledWith('Error in patchImprintedDevice:', error);
     });
   });

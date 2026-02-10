@@ -7,24 +7,11 @@
 */
 
 import { deleteOne, findMany, findOne, insertOne, updateOne } from "@pluto/db";
-import { Device, DeviceInfo } from "@pluto/interfaces";
+import { DiscoveredMiner } from "@pluto/interfaces";
 import { logger } from "@pluto/logger";
 import axios from "axios";
 import { config } from "../config/environment";
-import { updateOriginalIpsListeners } from "./tracing.service";
-
-const cleanDeviceInfo = (deviceInfo: DeviceInfo) => {
-  const deviceInfoCopy = { ...deviceInfo };
-  if (deviceInfoCopy.stratumPassword) {
-    delete deviceInfoCopy.stratumPassword;
-  }
-
-  if (deviceInfoCopy.wifiPassword) {
-    delete deviceInfoCopy.wifiPassword;
-  }
-
-  return deviceInfoCopy;
-};
+import { getTracingByIp, updateOriginalIpsListeners } from "./tracing.service";
 
 // Funzione per cercare dispositivi scoperti da una lista di MAC address
 export const discoverDevices = async ({
@@ -33,7 +20,7 @@ export const discoverDevices = async ({
 }: {
   ip?: string;
   mac?: string;
-} = {}): Promise<Device[]> => {
+} = {}): Promise<DiscoveredMiner[]> => {
   try {
     const response = await axios.get(`${config.discoveryServiceHost}/discover`, {
       params: { ip, mac },
@@ -64,7 +51,7 @@ export const lookupMultipleDiscoveredDevices = async ({
     ips?: "left" | "right" | "both" | "none";
     hostnames?: "left" | "right" | "both" | "none";
   };
-}): Promise<Device[]> => {
+}): Promise<DiscoveredMiner[]> => {
   try {
     // Costruzione del query object per Axios
     const params: Record<string, any> = {};
@@ -107,28 +94,27 @@ export const lookupMultipleDiscoveredDevices = async ({
 };
 
 // Funzione per imprintare i dispositivi
-export const imprintDevices = async (macs: string[]): Promise<Device[]> => {
+export const imprintDevices = async (macs: string[]): Promise<DiscoveredMiner[]> => {
   try {
     const devices = await lookupMultipleDiscoveredDevices({ macs });
 
     if (devices.length === 0) {
       logger.info("No devices found for the provided MAC addresses in the 'discovered' list.");
-      return []; // Ritorna un array vuoto se nessun dispositivo è stato trovato
+      return [];
     }
 
     for (const device of devices) {
       const { mac } = device;
-      device.info = cleanDeviceInfo(device.info);
 
       try {
         // Prova ad inserire il dispositivo
-        await insertOne<Device>("pluto_core", "devices:imprinted", mac, device);
+        await insertOne<DiscoveredMiner>("pluto_core", "devices:imprinted", mac, device);
         logger.info(`Device with MAC ${mac} has been imprinted.`);
       } catch (error) {
         if (error instanceof Error && error.message.includes("already exists")) {
           // Se l'inserimento fallisce perché esiste già, effettua un aggiornamento
           logger.info(`Device with MAC ${mac} already imprinted, updating...`);
-          await updateOne<Device>("pluto_core", "devices:imprinted", mac, device);
+          await updateOne<DiscoveredMiner>("pluto_core", "devices:imprinted", mac, device);
         } else {
           throw error;
         }
@@ -136,7 +122,7 @@ export const imprintDevices = async (macs: string[]): Promise<Device[]> => {
     }
 
     logger.info(`Successfully imprinted ${devices.length} devices.`);
-    return devices; // Restituisce i dispositivi imprintati
+    return devices;
   } catch (error) {
     logger.error("Error in imprintDevices:", error);
     throw error;
@@ -148,17 +134,17 @@ interface DiscoveryOptions {
 }
 
 // Funzione per iniziare ad ascoltare i dispositivi
-export const getImprintedDevices = async (options?: DiscoveryOptions): Promise<Device[]> => {
+export const getImprintedDevices = async (options?: DiscoveryOptions): Promise<DiscoveredMiner[]> => {
   try {
     const q = options?.q?.trim().toLowerCase();
     const isFullIp = q ? /^\d{1,3}(\.\d{1,3}){3}$/.test(q) : false;
 
-    const devices = await findMany<Device>("pluto_core", "devices:imprinted", (d) => {
+    const devices = await findMany<DiscoveredMiner>("pluto_core", "devices:imprinted", (d) => {
       if (!q) return true;
 
       const ip = d.ip?.toLowerCase() ?? "";
       const mac = d.mac?.toLowerCase() ?? "";
-      const hostname = d.info?.hostname?.toLowerCase?.() ?? "";
+      const hostname = d.minerData?.hostname?.toLowerCase() ?? "";
 
       if (isFullIp) {
         return ip === q || ip.startsWith(`${q}:`);
@@ -167,32 +153,37 @@ export const getImprintedDevices = async (options?: DiscoveryOptions): Promise<D
       return ip.includes(q) || mac.includes(q) || hostname.includes(q);
     });
 
-    return devices;
+    const tracingByIp = getTracingByIp();
+    return devices.map((d) => ({ ...d, tracing: tracingByIp[d.ip] ?? false }));
   } catch (error) {
-    logger.error("Error in listenToDevices:", error);
+    logger.error("Error in getImprintedDevices:", error);
     throw error;
   }
 };
 
-export const getImprintedDevice = async (mac: string): Promise<Device | null> => {
+export const getImprintedDevice = async (mac: string): Promise<DiscoveredMiner | null> => {
   try {
-    const device = await findOne<Device>("pluto_core", "devices:imprinted", mac);
-    return device;
+    const device = await findOne<DiscoveredMiner>("pluto_core", "devices:imprinted", mac);
+    if (!device) return null;
+    const tracingByIp = getTracingByIp();
+    return { ...device, tracing: tracingByIp[device.ip] ?? false };
   } catch (error) {
     logger.error("Error in getImprintedDevice:", error);
     throw error;
   }
 };
 
-export const getDevicesByPresetId = async (presetId: string): Promise<Device[]> => {
+export const getDevicesByPresetId = async (presetId: string): Promise<DiscoveredMiner[]> => {
   try {
-    const devices = await findMany<Device>("pluto_core", "devices:imprinted", (d) => {
-      if (d.presetUuid) {
-        return d.presetUuid === presetId;
+    const devices = await findMany<DiscoveredMiner & { presetUuid?: string }>("pluto_core", "devices:imprinted", (d) => {
+      const device = d as DiscoveredMiner & { presetUuid?: string };
+      if (device.presetUuid) {
+        return device.presetUuid === presetId;
       }
       return false;
     });
-    return devices;
+    const tracingByIp = getTracingByIp();
+    return devices.map((d) => ({ ...d, tracing: tracingByIp[d.ip] ?? false }));
   } catch (error) {
     logger.error("Error in getDevicesByPresetId:", error);
     throw error;
@@ -201,12 +192,10 @@ export const getDevicesByPresetId = async (presetId: string): Promise<Device[]> 
 
 export const patchImprintedDevice = async (
   id: string,
-  objectValue: Device
-): Promise<Device | null> => {
+  objectValue: DiscoveredMiner
+): Promise<DiscoveredMiner | null> => {
   try {
-    const payload = { ...objectValue, info: cleanDeviceInfo(objectValue.info) };
-
-    const device = await updateOne<Device>("pluto_core", "devices:imprinted", id, payload);
+    const device = await updateOne<DiscoveredMiner>("pluto_core", "devices:imprinted", id, objectValue);
 
     return device;
   } catch (error) {
@@ -215,11 +204,11 @@ export const patchImprintedDevice = async (
   }
 };
 
-export const deleteImprintedDevice = async (id: string): Promise<Device | null> => {
+export const deleteImprintedDevice = async (id: string): Promise<DiscoveredMiner | null> => {
   try {
-    const preset = await deleteOne<Device>("pluto_core", "devices:imprinted", id);
+    const device = await deleteOne<DiscoveredMiner>("pluto_core", "devices:imprinted", id);
 
-    return preset;
+    return device;
   } catch (error) {
     logger.error("Error in deleteImprintedDevice:", error);
     throw error;
@@ -228,12 +217,12 @@ export const deleteImprintedDevice = async (id: string): Promise<Device | null> 
 
 // Funzione per iniziare ad ascoltare i dispositivi
 export const listenToDevices = async (
-  devices?: Device[],
+  devices?: DiscoveredMiner[],
   traceLogs?: boolean
-): Promise<Device[]> => {
+): Promise<DiscoveredMiner[]> => {
   try {
     if (!devices) {
-      devices = await findMany<Device>("pluto_core", "devices:imprinted");
+      devices = await findMany<DiscoveredMiner>("pluto_core", "devices:imprinted");
     }
 
     updateOriginalIpsListeners(devices, traceLogs);

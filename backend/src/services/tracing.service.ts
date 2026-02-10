@@ -7,333 +7,317 @@
 */
 
 import { updateOne } from "@pluto/db";
-import {
-  Device,
-  DeviceFrequencyOptions,
-  DeviceInfo,
-  DeviceVoltageOptions,
-  ExtendedDeviceInfo,
-} from "@pluto/interfaces";
+import { DiscoveredMiner } from "@pluto/interfaces";
 import { createCustomLogger, logger } from "@pluto/logger";
 import { asyncForEach, sanitizeHostname } from "@pluto/utils";
-import axios from "axios";
 import { Server as NetServer } from "http";
 import { Server as ServerIO } from "socket.io";
-import WebSocket from "ws";
 import { config } from "../config/environment";
-import { normalizeSystemInfo, resolveAsicModelKey } from "./tracing.helpers";
+import { extractHostnameFromMinerData } from "./tracing.helpers";
 import {
   createMetricsForDevice,
   deleteMetricsForDevice,
   updateOverviewMetrics,
-} from "./metrics.service"; // Aggiunta funzione per rimuovere metriche
+} from "./metrics.service";
+import { pyasicBridgeService } from "./pyasic-bridge.service";
+import type { MinerData } from "@pluto/pyasic-bridge-client";
+
+/** Interval between polls per device. Each poll = one request backend→pyasic-bridge; pyasic then issues several HTTP requests to the miner (e.g. /, /api/system/info, /api/system/asic). */
+const getPollIntervalMs = (): number => config.pollIntervalMs;
+
+interface IpMapEntry {
+  cleanupWs?: () => void;
+  timeout?: NodeJS.Timeout;
+  minerData?: MinerData;
+  tracing?: boolean;
+}
 
 let isListeningLogs = false;
-let ipMap: {
-  [key: string]: {
-    ws?: WebSocket;
-    timeout?: NodeJS.Timeout;
-    info?: DeviceInfo;
-    tracing?: boolean;
-  };
-} = {}; // Mappa che tiene traccia degli IP attivi
-let ioInstance: ServerIO | undefined = undefined; // Cambiato a undefined invece di null
+let ipMap: Record<string, IpMapEntry> = {};
+let ioInstance: ServerIO | undefined;
 
 /**
- * Funzione che avvia la gestione dei WebSocket.
+ * Start the socket.io handler for device events.
  */
-export function startIoHandler(server: NetServer) {
-  if (!ioInstance) {
-    logger.info("Starting ioHandler for the devices");
-    ioInstance = new ServerIO(server, {
-      path: "/socket/io",
-      addTrailingSlash: false,
-      pingInterval: 10000,
-      pingTimeout: 5000,
-    });
+export function startIoHandler(server: NetServer): void {
+  if (ioInstance) return;
 
-    ioInstance.on("connection", (socket) => {
-      socket.on("enableLogsListening", () => {
-        isListeningLogs = true;
-        logger.info("External WebSocket listening enabled");
-        ioInstance!.emit("logsListeningStatus", isListeningLogs);
-      });
-
-      socket.on("disableLogsListening", () => {
-        isListeningLogs = false;
-        logger.info("External WebSocket listening disabled");
-        ioInstance!.emit("logsListeningStatus", isListeningLogs);
-      });
-
-      socket.on("checkLogsListening", () => {
-        socket.emit("logsListeningStatus", isListeningLogs);
-      });
-    });
-  }
-}
-
-/**
- * Funzione che aggiorna la lista degli IP per il polling,
- * aggiungendo solo nuovi IP e rimuovendo quelli non più presenti.
- */
-export async function updateOriginalIpsListeners(newDevices: Device[], traceLogs?: boolean) {
-  // Rimuovi gli IP che non sono più presenti
-  await asyncForEach(Object.keys(ipMap), async (existingIp) => {
-    if (!newDevices.some((d) => d.ip === existingIp)) {
-      logger.info(`Stopping monitoring for IP ${existingIp}`);
-
-      // Ferma il polling
-      clearTimeout(ipMap[existingIp].timeout);
-
-      // Chiudi la connessione WebSocket
-      ipMap[existingIp].ws?.close();
-
-      ioInstance?.emit("device_removed", {
-        ipRemoved: existingIp,
-        remainingIps: Object.keys(ipMap).filter((k) => k !== existingIp),
-      });
-
-      if (config.deleteDataOnDeviceRemove) {
-        try {
-          // Rimuovi le metriche di Prometheus
-          deleteMetricsForDevice(sanitizeHostname(ipMap[existingIp].info?.hostname!));
-          logger.info(`Deleted Prometheus metrics for IP ${existingIp}`);
-        } catch (err) {
-          logger.error(`Failed to delete Prometheus metrics for IP ${existingIp}:`, err);
-        }
-      }
-
-      // Rimuovi l'IP dalla mappa
-      delete ipMap[existingIp];
-    }
+  logger.info("Starting ioHandler for the devices");
+  ioInstance = new ServerIO(server, {
+    path: "/socket/io",
+    addTrailingSlash: false,
+    pingInterval: 10000,
+    pingTimeout: 5000,
   });
 
-  // Aggiungi nuovi IP
-  for (const device of newDevices) {
-    if (!ipMap[device.ip]) {
-      logger.info(`Adding new IP to the listening pool: ${device.ip}`);
-      await startDeviceMonitoring(device, traceLogs); // Inizia il monitoraggio del nuovo dispositivo
-    } else {
-      logger.info(`IP ${device.ip} is already being monitored.`);
-    }
-  }
+  ioInstance.on("connection", (socket) => {
+    socket.on("enableLogsListening", () => {
+      isListeningLogs = true;
+      logger.info("External WebSocket listening enabled");
+      ioInstance!.emit("logsListeningStatus", isListeningLogs);
+    });
+
+    socket.on("disableLogsListening", () => {
+      isListeningLogs = false;
+      logger.info("External WebSocket listening disabled");
+      ioInstance!.emit("logsListeningStatus", isListeningLogs);
+    });
+
+    socket.on("checkLogsListening", () => {
+      socket.emit("logsListeningStatus", isListeningLogs);
+    });
+  });
 }
 
 /**
- * Funzione che inizia il monitoraggio di un dispositivo.
+ * Update the list of monitored device IPs.
+ * Adds new devices and removes ones that are no longer present.
  */
-function startDeviceMonitoring(device: Device, traceLogs?: boolean) {
-  const { updatePrometheusMetrics } = createMetricsForDevice(
-    sanitizeHostname(device.info.hostname)
-  );
+export async function updateOriginalIpsListeners(
+  newDevices: DiscoveredMiner[],
+  traceLogs?: boolean
+): Promise<void> {
+  // Remove devices that are no longer present
+  await asyncForEach(Object.keys(ipMap), async (existingIp) => {
+    if (newDevices.some((d) => d.ip === existingIp)) return;
+    stopDeviceMonitoring(existingIp);
+  });
+
+  // Add new devices (first polls run in parallel)
+  const startPromises: Promise<void>[] = [];
+  for (const device of newDevices) {
+    if (ipMap[device.ip]) {
+      logger.info(`IP ${device.ip} is already being monitored.`);
+    } else {
+      logger.info(`Adding new IP to the listening pool: ${device.ip}`);
+      startPromises.push(startDeviceMonitoring(device, traceLogs));
+    }
+  }
+
+  await Promise.allSettled(startPromises);
+}
+
+/**
+ * Stop monitoring a single device by IP.
+ */
+function stopDeviceMonitoring(ip: string): void {
+  const entry = ipMap[ip];
+  if (!entry) return;
+
+  logger.info(`Stopping monitoring for IP ${ip}`);
+
+  clearTimeout(entry.timeout);
+  entry.cleanupWs?.();
+
+  const hostname = extractHostnameFromMinerData(entry.minerData);
+  ioInstance?.emit("device_removed", {
+    ipRemoved: ip,
+    remainingIps: Object.keys(ipMap).filter((k) => k !== ip),
+  });
+
+  if (config.deleteDataOnDeviceRemove) {
+    try {
+      deleteMetricsForDevice(sanitizeHostname(hostname));
+      logger.info(`Deleted Prometheus metrics for IP ${ip}`);
+    } catch (err) {
+      logger.error(`Failed to delete Prometheus metrics for IP ${ip}:`, err);
+    }
+  }
+
+  delete ipMap[ip];
+}
+
+/**
+ * Start monitoring a single device: register it, run the first poll,
+ * and optionally connect the log WebSocket.
+ */
+async function startDeviceMonitoring(
+  discoveredMiner: DiscoveredMiner,
+  traceLogs?: boolean
+): Promise<void> {
+  // Register entry BEFORE any async work so concurrent readers see it
+  ipMap[discoveredMiner.ip] = {
+    minerData: discoveredMiner.minerData,
+  };
+
+  const hostname = extractHostnameFromMinerData(discoveredMiner.minerData);
+  const { updatePrometheusMetrics } = createMetricsForDevice(sanitizeHostname(hostname));
 
   let retryAttempts = 0;
   const maxRetryAttempts = 5;
-  let ws: WebSocket | undefined;
-  let timeoutId: NodeJS.Timeout | undefined; // Aggiunto per salvare l'ID del timeout
 
-  // Funzione per connettersi al WebSocket
-  const connectWebSocket = (): void => {
-    ws = new WebSocket(`ws://${device.ip}/api/ws`);
+  const connectWebSocket = async (): Promise<void> => {
+    try {
+      const cleanup = await pyasicBridgeService.connectMinerLogsWebSocket(
+        discoveredMiner.ip,
+        (messageString: string) => {
+          logger.debug(
+            `Received log message for IP ${discoveredMiner.ip}: ${messageString.substring(0, 100)}...`
+          );
 
-    ws.on("open", () => {
-      logger.debug(`Connected to WebSocket for IP ${device.ip}`);
+          const logsLogger = createCustomLogger(hostname);
+          logsLogger.info(messageString);
+
+          if (isListeningLogs) {
+            ioInstance?.emit("logs_update", {
+              ...discoveredMiner,
+              logMessage: messageString,
+            });
+          }
+        },
+        (error: Error) => {
+          logger.error(`WebSocket error for IP ${discoveredMiner.ip}:`, error);
+          attemptReconnect();
+        },
+        () => {
+          logger.debug(`WebSocket closed for IP ${discoveredMiner.ip}`);
+          attemptReconnect();
+        }
+      );
+
       retryAttempts = 0;
-      // Aggiorna la mappa con il WebSocket attivo
-      ipMap[device.ip].ws = ws;
-    });
-
-    ws.on("close", () => {
-      logger.debug(`Disconnected from WebSocket for IP ${device.ip}`);
-      attemptReconnect();
-    });
-
-    ws.on("error", (error: Error) => {
-      logger.error(`Connection error for IP ${device.ip}:`, error);
-      attemptReconnect();
-    });
-
-    ws.on("message", (message: WebSocket.Data) => {
-      const messageString = message.toString();
-      logger.debug(`Received message for IP ${device.ip}:`, messageString);
-
-      const logsLogger = createCustomLogger(device.info.hostname);
-      logsLogger.info(messageString);
-
-      // Invia i log al client WebSocket se abilitato
-      if (isListeningLogs) {
-        ioInstance?.emit("logs_update", { ...device, info: messageString });
+      if (ipMap[discoveredMiner.ip]) {
+        ipMap[discoveredMiner.ip].cleanupWs = cleanup;
       }
-
-      // // Aggiorna le metriche con i dati dei log ricevuti
-      // updatePrometheusMetrics(messageString);
-    });
+    } catch (error) {
+      logger.error(`Failed to connect WebSocket for IP ${discoveredMiner.ip}:`, error);
+      attemptReconnect();
+    }
   };
 
-  // Funzione per tentare la riconnessione
   const attemptReconnect = (): void => {
     if (retryAttempts < maxRetryAttempts) {
       retryAttempts += 1;
       const retryDelay = Math.min(5000, retryAttempts * 1000);
-      logger.info(`Attempting to reconnect to ${device.ip} in ${retryDelay / 1000} seconds...`);
-      setTimeout(connectWebSocket, retryDelay);
+      logger.info(
+        `Attempting to reconnect WebSocket for ${discoveredMiner.ip} in ${retryDelay / 1000} seconds...`
+      );
+      setTimeout(() => void connectWebSocket(), retryDelay);
     } else {
-      logger.error(`Max retry attempts reached for IP ${device.ip}. Giving up.`);
+      logger.error(`Max retry attempts reached for IP ${discoveredMiner.ip}. Giving up.`);
     }
   };
 
-  // Funzione per eseguire il polling delle informazioni di sistema
   const pollSystemInfo = async (): Promise<void> => {
-    const startTime = Date.now(); // Registra il tempo di inizio
+    const startTime = Date.now();
 
     try {
-      logger.debug(`Polling system info from ${device.ip}`);
-      // Without an explicit timeout, axios can hang for a long time on network errors,
-      // making offline/online transitions feel sluggish.
-      const response = await axios.get(`http://${device.ip}/api/system/info`, {
-        timeout: config.systemInfoTimeoutMs,
-      });
-      const normalizedInfo = normalizeSystemInfo(response.data);
+      logger.debug(`Polling system info from ${discoveredMiner.ip} via pyasic-bridge`);
+      const minerData = await pyasicBridgeService.fetchMinerData(discoveredMiner.ip);
 
-      const asicModelKey = resolveAsicModelKey(normalizedInfo?.ASICModel);
-      const mappedFrequencyOptions =
-        (asicModelKey ? DeviceFrequencyOptions[asicModelKey] : undefined) || [];
-      const mappedCoreVoltageOptions =
-        (asicModelKey ? DeviceVoltageOptions[asicModelKey] : undefined) || [];
-
-      const extendedDevice: Device = {
-        ...device,
-        tracing: true,
-        info: normalizedInfo,
-      };
-
-      // Ensure tuning options are always present in websocket updates (new API omits them).
-      (extendedDevice.info as any).frequencyOptions =
-        mappedFrequencyOptions.length > 0
-          ? mappedFrequencyOptions
-          : Array.isArray((extendedDevice.info as any).frequencyOptions)
-          ? (extendedDevice.info as any).frequencyOptions
-          : [];
-      (extendedDevice.info as any).coreVoltageOptions =
-        mappedCoreVoltageOptions.length > 0
-          ? mappedCoreVoltageOptions
-          : Array.isArray((extendedDevice.info as any).coreVoltageOptions)
-          ? (extendedDevice.info as any).coreVoltageOptions
-          : [];
-
-      delete extendedDevice.presetUuid; // @hack to avoid that presetId gets reset
-
-      const updatedDevice = await updateOne<Device>(
-        "pluto_core",
-        "devices:imprinted",
-        device.mac,
-        extendedDevice
-      );
-
-      // Invia i dati delle informazioni di sistema al client WebSocket
-      ioInstance?.emit("stat_update", updatedDevice);
-
-      // Aggiorna le metriche Prometheus con i dati del sistema
-      updatePrometheusMetrics(normalizedInfo);
-
-      // Aggiorna i dati nella mappa ipMap per il dispositivo corrente
-      ipMap[device.ip].info = normalizedInfo;
-      ipMap[device.ip].tracing = true;
-
-    } catch (error: any) {
-      const errorMessage = typeof error?.message === "string" ? error.message : String(error);
-
-      logger.error(`Failed to make request to ${device.ip}:`, error);
-
-      // Persist offline state and broadcast it as a stat_update.
-      // Some UI views rely on DB/API state (not only websocket events), so if we only update the in-memory ipMap
-      // the device can look online in some screens until a refresh.
-      try {
-        const updatedDevice = await updateOne<Device>(
-          "pluto_core",
-          "devices:imprinted",
-          device.mac,
-          { tracing: false }
-        );
-
-        ioInstance?.emit("stat_update", updatedDevice);
-        ioInstance?.emit("error", { ...updatedDevice, error: errorMessage });
-      } catch (dbError) {
-        logger.error(`Failed to persist offline state for ${device.ip}:`, dbError);
-        ioInstance?.emit("error", { ...device, tracing: false, error: errorMessage });
+      if (!minerData) {
+        throw new Error("Failed to fetch miner data");
       }
 
-      // Ensure Prometheus doesn't keep reporting stale values when a device goes offline.
-      updatePrometheusMetrics({
-        power: 0,
-        voltage: 0,
-        current: 0,
-        fanSpeedRpm: 0,
-        fanspeed: 0,
-        fanrpm: 0,
-        temp: 0,
-        vrTemp: 0,
-        hashRate: 0,
-        hashRate_10m: 0,
-        sharesAccepted: 0,
-        sharesRejected: 0,
-        uptimeSeconds: 0,
-        freeHeap: 0,
-        freeHeapInternal: 0,
-        freeHeapSpiram: 0,
-        coreVoltage: 0,
-        coreVoltageActual: 0,
-        frequency: 0,
-      });
+      const updatedMiner: DiscoveredMiner = { ...discoveredMiner, minerData };
 
-      // // Se il polling fallisce, aggiorna il dispositivo come offline in ipMap
-      // ipMap[device.ip].metrics = {
-      //   hashrate: 0,
-      //   power: 0,
-      //   firmwareVersion: "unknown",
-      //   sharesAccepted: 0,
-      //   sharesRejected: 0,
-      //   isOnline: false,
-      // };
-
-      ipMap[device.ip].tracing = false;
-    } finally {
-      // Calcola il tempo impiegato dalla funzione di polling
-      const elapsedTime = Date.now() - startTime;
-      const remainingTime = Math.max(5000 - elapsedTime, 0); // Assicurati che non sia negativo
-
-      logger.debug(
-        `pollSystemInfo from ${device.ip} took ${elapsedTime} ms. Waiting for ${remainingTime} ms before next polling.`
+      const updatedDevice = await updateOne<DiscoveredMiner>(
+        "pluto_core",
+        "devices:imprinted",
+        discoveredMiner.mac,
+        updatedMiner
       );
 
-      // Ripetere il polling dopo il tempo rimanente e salva l'ID del timeout
-      timeoutId = setTimeout(pollSystemInfo, remainingTime);
-      ipMap[device.ip].timeout = timeoutId;
+      if (ipMap[discoveredMiner.ip]) {
+        ipMap[discoveredMiner.ip].minerData = minerData;
+        ipMap[discoveredMiner.ip].tracing = true;
+      }
 
-      // Alla fine di ogni polling, aggiorna le metriche di overview con i dati di tutti i dispositivi
-      const allMetrics: ExtendedDeviceInfo[] = Object.values(ipMap).map((entry) => ({
-        ...entry.info!,
-        tracing: entry.tracing,
-      }));
+      ioInstance?.emit("stat_update", { ...updatedDevice, tracing: true });
+      updatePrometheusMetrics(minerData);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      logger.error(`Failed to poll miner data for ${discoveredMiner.ip}:`, error);
+
+      if (ipMap[discoveredMiner.ip]) {
+        ipMap[discoveredMiner.ip].tracing = false;
+      }
+
+      try {
+        const updatedDevice = await updateOne<DiscoveredMiner>(
+          "pluto_core",
+          "devices:imprinted",
+          discoveredMiner.mac,
+          { ...discoveredMiner }
+        );
+
+        const payload = { ...updatedDevice, tracing: false };
+        ioInstance?.emit("stat_update", payload);
+        ioInstance?.emit("error", { ...payload, error: errorMessage });
+      } catch (dbError) {
+        logger.error(`Failed to persist offline state for ${discoveredMiner.ip}:`, dbError);
+        ioInstance?.emit("error", { ...discoveredMiner, tracing: false, error: errorMessage });
+      }
+
+      // Reset Prometheus metrics so stale values aren't reported for offline devices
+      updatePrometheusMetrics({
+        ip: discoveredMiner.ip,
+        hashrate: { rate: 0, unit: "H/s" },
+        wattage: 0,
+        voltage: 0,
+        fans: [],
+        temperature: 0,
+        hashboards: [],
+      } as unknown as MinerData);
+    } finally {
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(getPollIntervalMs() - elapsedTime, 0);
+
+      logger.debug(
+        `pollSystemInfo from ${discoveredMiner.ip} took ${elapsedTime} ms. Waiting for ${remainingTime} ms before next polling.`
+      );
+
+      // Schedule next poll only if device is still being monitored
+      if (ipMap[discoveredMiner.ip]) {
+        const timeoutId = setTimeout(pollSystemInfo, remainingTime);
+        ipMap[discoveredMiner.ip].timeout = timeoutId;
+      }
+
+      const allMetrics = Object.values(ipMap)
+        .filter((entry) => entry.minerData)
+        .map((entry) => entry.minerData!);
       updateOverviewMetrics(allMetrics);
     }
   };
 
-  // Avvia il polling la prima volta
-  pollSystemInfo();
+  // Run first poll eagerly so callers can await it
+  await pollSystemInfo();
 
   if (traceLogs) {
-    // Inizia la connessione WebSocket per questo dispositivo
-    connectWebSocket();
+    void connectWebSocket();
   }
-
-  // Aggiungi l'IP alla mappa con il WebSocket e l'ID di timeout per il polling
-  ipMap[device.ip] = { ws, timeout: timeoutId, info: device.info };
 }
 
 /**
- * Getter per ottenere l'istanza di `io`.
+ * Get the current socket.io instance.
  */
 export function getIoInstance(): ServerIO | undefined {
   return ioInstance;
+}
+
+/**
+ * Get current tracing (online) state per device IP.
+ * Used to enrich GET /api/devices/imprint responses so the frontend shows correct status on load.
+ */
+export function getTracingByIp(): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
+  for (const [ip, entry] of Object.entries(ipMap)) {
+    out[ip] = entry.tracing === true;
+  }
+  return out;
+}
+
+/**
+ * Reset all module state. For use in tests only.
+ */
+export function _resetForTesting(): void {
+  for (const entry of Object.values(ipMap)) {
+    clearTimeout(entry.timeout);
+    entry.cleanupWs?.();
+  }
+  ipMap = {};
+  ioInstance = undefined;
+  isListeningLogs = false;
 }
