@@ -138,6 +138,22 @@ class MinerService:
         """
         return await self.config.update_miner_config(ip, config)
 
+    async def validate_miner_config(self, ip: str, config: dict[str, Any]) -> dict[str, Any]:
+        """
+        Validate miner config without applying it.
+
+        Args:
+            ip: IP address of the miner
+            config: Config dictionary to validate
+
+        Returns:
+            Dictionary with 'valid' (bool) and 'errors' (list[str]) keys
+
+        Raises:
+            ValueError: If miner is not found
+        """
+        return await self.config.validate_miner_config(ip, config)
+
     async def restart_miner(self, ip: str) -> StatusResponse:
         """
         Restart a miner.

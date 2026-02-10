@@ -121,3 +121,49 @@ class MinerConfigService:
         # Use client's abstracted method to send config
         await self.client.send_miner_config(ip, miner_config)
         return StatusResponse(status="success")
+
+    async def validate_miner_config(self, ip: str, config: dict[str, Any]) -> dict[str, Any]:
+        """
+        Validate miner config without applying it.
+
+        Args:
+            ip: IP address of the miner
+            config: Config dictionary to validate
+
+        Returns:
+            Dictionary with 'valid' (bool) and 'errors' (list[str]) keys
+
+        Raises:
+            ValueError: If miner is not found
+        """
+        # Fetch current config for merging
+        existing_cfg = await self.client.get_miner_config_dict(ip)
+
+        # Convert existing pyasic config to internal model
+        existing_internal: MinerConfigModel = miner_config_from_pyasic(existing_cfg)
+        base_dict: dict[str, Any] = existing_internal.model_dump(exclude_none=True)
+
+        # Merge configs (same logic as update_miner_config)
+        merged_config: dict[str, Any] = {**base_dict, **config}
+
+        for nested_key in ("fan_mode", "temperature", "mining_mode", "extra_config"):
+            if nested_key in config:
+                incoming = config.get(nested_key)
+                existing_nested = base_dict.get(nested_key)
+                if isinstance(existing_nested, dict) and isinstance(incoming, dict):
+                    merged_config[nested_key] = {**existing_nested, **incoming}
+
+        # Get miner instance for validation
+        miner = await self.client.get_miner(ip)
+        if not miner:
+            raise ValueError(f"Miner not found at {ip}")
+
+        # Validate config using miner-specific validator
+        errors: list[str] = []
+        try:
+            validator = get_config_validator(miner)
+            validator.validate(merged_config, miner)
+            return {"valid": True, "errors": []}
+        except Exception as e:
+            errors.append(str(e))
+            return {"valid": False, "errors": errors}

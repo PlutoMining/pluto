@@ -53,3 +53,10 @@ MinerActionResponse = StatusResponse
 
 class MinerErrorsResponse(RootModel[list[MinerErrorEntry]]):
     """Response of GET /miner/{ip}/errors: list of error entries (pyasic BaseMinerError serialization)."""
+
+
+class ConfigValidationResponse(BaseModel):
+    """Response of POST /miner/{ip}/config/validate: validation result."""
+
+    valid: bool = Field(..., description="Whether the config is valid")
+    errors: list[str] = Field(default_factory=list, description="List of validation error messages if invalid")
