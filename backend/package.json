@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "build": "npm run common:build && tsc",
-    "common:install": "npm ci --prefix ../common/utils && npm ci --prefix ../common/db && npm ci --prefix ../common/interfaces && npm ci --prefix ../common/logger",
-    "common:build": "npm run build --prefix ../common/utils && npm run build --prefix ../common/db && npm run build --prefix ../common/interfaces && npm run build --prefix ../common/logger",
+    "common:install": "npm ci --prefix ../common/utils && npm ci --prefix ../common/db && npm ci --prefix ../common/interfaces && npm ci --prefix ../common/logger && npm ci --prefix ../common/pyasic-bridge-client",
+    "common:build": "npm run build --prefix ../common/utils && npm run build --prefix ../common/db && npm run build --prefix ../common/interfaces && npm run build --prefix ../common/logger && npm run build --prefix ../common/pyasic-bridge-client",
     "postinstall": "npm run common:install",
     "start": "node dist/index.js",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'tsx' src/index.ts",
@@ -24,6 +24,7 @@
     "@pluto/db": "file:../common/db",
     "@pluto/interfaces": "file:../common/interfaces",
     "@pluto/logger": "file:../common/logger",
+    "@pluto/pyasic-bridge-client": "file:../common/pyasic-bridge-client",
     "@pluto/utils": "file:../common/utils",
     "axios": "^1.7.7",
     "dotenv": "^16.4.5",
