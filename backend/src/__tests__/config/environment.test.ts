@@ -42,6 +42,22 @@ describe("backend config/environment", () => {
     expect(config.prometheusHost).toBe("http://prom.example");
   });
 
+  it("uses default pyasic-bridge host when PYASIC_BRIDGE_HOST is not set", async () => {
+    delete process.env.PYASIC_BRIDGE_HOST;
+    process.env.DISCOVERY_SERVICE_HOST = "http://discovery.test";
+
+    const { config } = await import("../../config/environment");
+    expect(config.pyasicBridgeHost).toBe("http://pyasic-bridge:8000");
+  });
+
+  it("reads pyasic-bridge host from PYASIC_BRIDGE_HOST", async () => {
+    process.env.PYASIC_BRIDGE_HOST = "http://pyasic.example:9000";
+    process.env.DISCOVERY_SERVICE_HOST = "http://discovery.test";
+
+    const { config } = await import("../../config/environment");
+    expect(config.pyasicBridgeHost).toBe("http://pyasic.example:9000");
+  });
+
   it("parses boolean flags", async () => {
     process.env.DISCOVERY_SERVICE_HOST = "http://discovery.test";
     process.env.AUTO_LISTEN = "true";

@@ -15,8 +15,11 @@ interface EnvConfig {
   autoListen: boolean;
   discoveryServiceHost: string;
   prometheusHost: string;
+  pyasicBridgeHost: string;
   deleteDataOnDeviceRemove: boolean;
   systemInfoTimeoutMs: number;
+  /** Interval between backend polls per device (ms). Each poll triggers one pyasic-bridge call, which may issue several HTTP requests to the miner. */
+  pollIntervalMs: number;
 }
 
 const requireEnv = (name: string): string => {
@@ -52,6 +55,8 @@ export const config: EnvConfig = {
   autoListen: parseBoolean("AUTO_LISTEN"),
   discoveryServiceHost: requireEnv("DISCOVERY_SERVICE_HOST"),
   prometheusHost: process.env.PROMETHEUS_HOST || "http://prometheus:9090",
+  pyasicBridgeHost: process.env.PYASIC_BRIDGE_HOST || "http://pyasic-bridge:8000",
   deleteDataOnDeviceRemove: parseBoolean("DELETE_DATA_ON_DEVICE_REMOVE"),
   systemInfoTimeoutMs: parseNumber("SYSTEM_INFO_TIMEOUT_MS", 1500),
+  pollIntervalMs: parseNumber("POLL_INTERVAL_MS", 5000),
 };
