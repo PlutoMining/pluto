@@ -109,13 +109,17 @@ class TestMinerConfigToPyasic:
         assert result.mining_mode.mode == "high"
 
     def test_preserves_and_merges_extra_config(self) -> None:
-        """
-        Test that extra_config merge works correctly.
-        
-        Note: pyasic's MinerExtraConfig doesn't preserve arbitrary fields when created
-        from a dict (it has no model_fields and no extra="allow"). So fields passed to
-        MinerConfig(extra_config={...}) are lost and cannot be recovered. We can only
-        preserve fields that were actually stored in the MinerExtraConfig instance.
+        """Test that extra_config merge keeps the concrete MinerExtraConfig type.
+
+        pyasic's MinerExtraConfig (and miner-specific subclasses) have a fixed schema
+        and methods like ``as_espminer()``. When we build a new MinerConfig for
+        send_config, we want to:
+
+        - keep the existing ``extra_config`` object type intact; and
+        - apply updates only for fields that are actually part of that model.
+
+        Unknown keys in the internal ``extra_config`` dict (like ``field_b`` in this
+        test) should be ignored rather than forcing ``extra_config`` to a plain dict.
         """
         try:
             from pyasic.config import MinerConfig as PyasicMinerConfig
@@ -151,24 +155,25 @@ class TestMinerConfigToPyasic:
         )
 
         result = miner_config_to_pyasic(internal, existing)
-        # Mapper always assigns merged extra_config as a dict
         assert result.extra_config is not None
         extra = result.extra_config
-        assert isinstance(extra, dict), "extra_config should be a dict after merge"
-        
-        # field_b from internal should be present (we're merging it in)
-        assert extra.get("field_b") == 42
-        
-        # field_a cannot be preserved because MinerExtraConfig doesn't store it.
-        # The mapper extracts what it can from existing_extra (which is empty {}),
-        # then merges with internal.extra_config, resulting in only field_b.
-        # This is the expected behavior given MinerExtraConfig's limitations.
-        assert "field_a" not in extra or extra.get("field_a") is None
+
+        # We should keep the existing concrete MinerExtraConfig type, not coerce to dict.
+        assert isinstance(
+            extra, type(existing.extra_config)
+        ), "extra_config should preserve the MinerExtraConfig type"
+
+        # Internal.extra_config only contains an unknown key ('field_b'); it should not
+        # suddenly appear as a real field on the model.
+        if hasattr(extra, "model_fields"):
+            assert "field_b" not in extra.model_fields
+        if hasattr(extra, "__annotations__"):
+            assert "field_b" not in extra.__annotations__
 
     def test_preserves_and_merges_extra_config_dict(self) -> None:
         """
         Test that extra_config merge works when existing.extra_config is a dict.
-        
+
         When extra_config is already a dict (not converted to MinerExtraConfig),
         all fields are preserved and merged correctly.
         """
@@ -209,7 +214,7 @@ class TestMinerConfigToPyasic:
         assert result.extra_config is not None
         extra = result.extra_config
         assert isinstance(extra, dict), "extra_config should be a dict after merge"
-        
+
         # All fields from existing should be preserved
         assert extra.get("field_a") == 1
         # field_b from internal should override existing
