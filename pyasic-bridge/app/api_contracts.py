@@ -11,6 +11,8 @@ from typing import Literal
 from pydantic import BaseModel
 
 from app.models import (
+    BitaxeExtraConfig,
+    ConfigValidationResponse,
     HealthResponse,
     MinerActionResponse,
     MinerConfigPatch,
@@ -123,6 +125,14 @@ API_CONTRACTS: dict[str, EndpointDefinition] = {
         request_body=MinerConfigPatch,
         response_body=MinerActionResponse,
     ),
+    "validate_miner_config": EndpointDefinition(
+        method="POST",
+        path="/miner/{ip}/config/validate",
+        description="Validate miner configuration without applying it",
+        path_params={"ip": str},
+        request_body=MinerConfigPatch,
+        response_body=ConfigValidationResponse,
+    ),
     # Miner actions
     "restart_miner": EndpointDefinition(
         method="POST",
@@ -160,6 +170,13 @@ API_CONTRACTS: dict[str, EndpointDefinition] = {
         description="Validate multiple IPs as miners",
         request_body=ValidateRequest,
         response_body=ValidateResponse,
+    ),
+    # Extra config schemas
+    "get_bitaxe_extra_config_schema": EndpointDefinition(
+        method="GET",
+        path="/extra-config-schemas/bitaxe",
+        description="Get JSON schema for Bitaxe extra_config",
+        response_body=BitaxeExtraConfig,
     ),
 }
 
