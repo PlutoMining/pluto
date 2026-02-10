@@ -17,9 +17,9 @@ permissions:
 jobs:
   test-mock:
     name: Test Mock
-    # Skip this job for PRs from feature/migrate-discovery branch
+    # Skip this job for PRs from feature/migrate-discovery and feature/migrate-backend branches
     # Mock will be migrated in a separate PR - re-enable this job when migrating mock
-    if: github.head_ref != 'feature/migrate-discovery'
+    if: github.head_ref != 'feature/migrate-discovery' && github.head_ref != 'feature/migrate-backend'
     runs-on: ubuntu-latest
 
     steps:
