@@ -9,89 +9,9 @@
 import { logger } from "@pluto/logger";
 import { Request, Response } from "express";
 import * as deviceService from "../services/device.service";
-import * as presetsService from "../services/presets.service";
-import { Device, DeviceFrequencyOptions, DeviceVoltageOptions } from "@pluto/interfaces";
-import axios from "axios";
-
-function resolveAsicModelKey(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined;
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  const bmMatch = trimmed.match(/BM\d{4}/);
-  return bmMatch?.[0] ?? trimmed;
-}
-
-const WRITABLE_SYSTEM_FIELDS = [
-  "hostname",
-  "frequency",
-  "coreVoltage",
-  "flipscreen",
-  "invertscreen",
-  "invertfanpolarity",
-  "autofanspeed",
-  "fanspeed",
-  "stratumURL",
-  "stratumPort",
-  "stratumUser",
-  "stratumPassword",
-  "wifiPassword",
-  "wifiPass",
-  "autoscreenoff",
-  "overheat_temp",
-] as const;
-
-function pickWritableSystemInfo(info: unknown) {
-  const raw = (info ?? {}) as Record<string, unknown>;
-  const out: Record<string, unknown> = {};
-
-  for (const key of WRITABLE_SYSTEM_FIELDS) {
-    if (raw[key] !== undefined) out[key] = raw[key];
-  }
-
-  const coerceNumber = (value: unknown) => {
-    if (typeof value === "number" && Number.isFinite(value)) return value;
-    if (typeof value === "string") {
-      const n = Number(value);
-      return Number.isFinite(n) ? n : undefined;
-    }
-    return undefined;
-  };
-
-  const coerceNumberField = (key: string) => {
-    if (out[key] === undefined) return;
-    const n = coerceNumber(out[key]);
-    if (n === undefined) {
-      delete out[key];
-      return;
-    }
-    out[key] = n;
-  };
-
-  coerceNumberField("frequency");
-  coerceNumberField("coreVoltage");
-  coerceNumberField("stratumPort");
-  coerceNumberField("fanspeed");
-  coerceNumberField("overheat_temp");
-  coerceNumberField("autoscreenoff");
-
-  const coerceStringField = (key: string) => {
-    if (out[key] === undefined) return;
-    if (typeof out[key] === "string") return;
-    delete out[key];
-  };
-
-  // Devices can report corrupted types (e.g. stratumURL as a number).
-  // The miner firmware rejects invalid types with "Wrong API input", so we
-  // only forward string values for string-backed system settings.
-  coerceStringField("hostname");
-  coerceStringField("stratumURL");
-  coerceStringField("stratumUser");
-  coerceStringField("stratumPassword");
-  coerceStringField("wifiPassword");
-  coerceStringField("wifiPass");
-
-  return out;
-}
+import { DiscoveredMiner } from "@pluto/interfaces";
+import type { MinerConfigModelInput } from "@pluto/pyasic-bridge-client";
+import { pyasicBridgeService } from "../services/pyasic-bridge.service";
 
 export const discoverDevices = async (req: Request, res: Response) => {
   try {
@@ -182,38 +102,9 @@ export const getImprintedDevices = async (req: Request, res: Response) => {
 
     const data = await deviceService.getImprintedDevices({ q });
 
-    const enrichedDevices = data.map((device) => {
-      const modelKey = resolveAsicModelKey((device as any)?.info?.ASICModel);
-      const mappedFrequencyOptions = (modelKey ? DeviceFrequencyOptions[modelKey] : undefined) || [];
-      const mappedCoreVoltageOptions = (modelKey ? DeviceVoltageOptions[modelKey] : undefined) || [];
-
-      const frequencyOptions =
-        mappedFrequencyOptions.length > 0
-          ? mappedFrequencyOptions
-          : Array.isArray(device.info.frequencyOptions)
-          ? device.info.frequencyOptions
-          : [];
-
-      const coreVoltageOptions =
-        mappedCoreVoltageOptions.length > 0
-          ? mappedCoreVoltageOptions
-          : Array.isArray(device.info.coreVoltageOptions)
-          ? device.info.coreVoltageOptions
-          : [];
-
-      return {
-        ...device,
-        info: {
-          ...device.info,
-          frequencyOptions,
-          coreVoltageOptions,
-        },
-      };
-    });
-
-    res.status(200).json({ message: "Devices retrieved successfully", data: enrichedDevices });
+    res.status(200).json({ message: "Devices retrieved successfully", data });
   } catch (error) {
-    logger.error("Error in imprintDevices request:", error);
+    logger.error("Error in getImprintedDevices request:", error);
     res.status(500).json({ error: "Failed to process the request" });
   }
 };
@@ -241,7 +132,7 @@ export const getDevicesByPresetId = async (req: Request, res: Response) => {
 };
 
 export const patchImprintedDevice = async (req: Request, res: Response) => {
-  const { device }: { device: Device } = req.body;
+  const { device }: { device: DiscoveredMiner } = req.body;
 
   try {
     const data = await deviceService.patchImprintedDevice(req.params.id, device);
@@ -307,22 +198,81 @@ export const restartDevice = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Device IP not available" });
     }
 
-    // Invia la richiesta di riavvio al dispositivo
-    const restartUrl = `http://${deviceIp}/api/system/restart`; // Assumendo che il dispositivo esponga un endpoint /api/system/restart
-    const response = await axios.post(restartUrl);
+    // Use pyasic-bridge service to restart the miner
+    await pyasicBridgeService.restartMiner(deviceIp);
 
-    // Inoltra la risposta del dispositivo al client
-    res
-      .status(response.status)
-      .json({ message: "Device restarted successfully", data: response.data });
+    res.status(200).json({ message: "Device restarted successfully", data: device });
   } catch (error) {
     logger.error("Error in restartDevice request:", error);
 
-    // Gestisci errori di Axios separatamente, se necessario
-    if (axios.isAxiosError(error)) {
-      res.status(error.response?.status || 500).json({
+    if (error instanceof Error) {
+      res.status(500).json({
         error: "Failed to restart the device",
-        details: error.response?.data || error.message,
+        details: error.message,
+      });
+    } else {
+      res.status(500).json({ error: "Failed to process the request" });
+    }
+  }
+};
+
+export const validateDeviceSystemInfo = async (req: Request, res: Response) => {
+  try {
+    const { id }: { id: string } = req.params as any;
+
+    logger.info("validateDeviceSystemInfo called", {
+      mac: id,
+      bodyKeys: Object.keys(req.body || {}),
+    });
+
+    // Ottieni la lista dei dispositivi e trova il dispositivo corrispondente al MAC
+    const devices = await deviceService.getImprintedDevices();
+
+    const device = devices.find((d) => id === d.mac);
+
+    if (!device) {
+      logger.error("Device not found in validateDeviceSystemInfo", { mac: id });
+      return res.status(404).json({ error: "Device not found" });
+    }
+
+    // Ottieni l'indirizzo IP del dispositivo
+    const deviceIp = device.ip;
+
+    if (!deviceIp) {
+      logger.error("Device IP not available", { mac: id });
+      return res.status(400).json({ error: "Device IP not available" });
+    }
+
+    // Extract MinerConfigModelInput from request body
+    const configPatch: MinerConfigModelInput = req.body as MinerConfigModelInput;
+
+    if (!configPatch || typeof configPatch !== "object") {
+      return res.status(400).json({ error: "Invalid config payload" });
+    }
+
+    logger.info("Validating config for miner via pyasic-bridge", {
+      ip: deviceIp,
+      configKeys: Object.keys(configPatch),
+    });
+
+    // Use pyasic-bridge service to validate miner config
+    const validationResult = await pyasicBridgeService.validateMinerConfig(deviceIp, configPatch);
+
+    res.status(200).json(validationResult);
+  } catch (error) {
+    logger.error("Error in validateDeviceSystemInfo request:", error);
+
+    if (error instanceof Error) {
+      // If validation fails with structured errors, return them
+      if (error.message.includes("validation")) {
+        return res.status(400).json({
+          valid: false,
+          errors: [error.message],
+        });
+      }
+      res.status(500).json({
+        error: "Failed to validate device system info",
+        details: error.message,
       });
     } else {
       res.status(500).json({ error: "Failed to process the request" });
@@ -337,8 +287,6 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
     logger.info("patchDeviceSystemInfo called", {
       mac: id,
       bodyKeys: Object.keys(req.body || {}),
-      hasPresetUuid: !!(req.body as any)?.presetUuid,
-      presetUuid: (req.body as any)?.presetUuid,
     });
 
     // Ottieni la lista dei dispositivi e trova il dispositivo corrispondente al MAC
@@ -359,81 +307,46 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Device IP not available" });
     }
 
-    const payload: Device | undefined = req.body as any;
-    if (!payload || typeof payload !== "object") {
-      throw new Error("Missing payload");
+    // Extract MinerConfigModelInput from request body
+    const configPatch: MinerConfigModelInput = req.body as MinerConfigModelInput;
+
+    if (!configPatch || typeof configPatch !== "object") {
+      return res.status(400).json({ error: "Invalid config payload" });
     }
 
-    const originalInfo = (payload as any).info;
-
-    if (payload.presetUuid) {
-      const preset = await presetsService.getPreset(payload.presetUuid);
-
-      if (preset) {
-        if (!payload.info) {
-          payload.info = {} as any;
-        }
-
-        logger.info("Applying preset to device", {
-          mac: payload.mac,
-          presetUuid: payload.presetUuid,
-          presetName: preset.name,
-          presetPort: preset.configuration.stratumPort,
-          presetPortType: typeof preset.configuration.stratumPort,
-        });
-
-        // Ensure we forward correct types to the miner API.
-        // Bitaxe expects a numeric port; if we pass a string (as stored in presets),
-        // the firmware can treat it as 0, effectively disabling the port.
-        const presetPort = preset.configuration.stratumPort;
-
-        payload.info.stratumPort =
-          typeof presetPort === "number" ? presetPort : Number(presetPort) || 0;
-        payload.info.stratumURL = preset.configuration.stratumURL;
-        // payload.info.stratumUser = preset.configuration.stratumUser;
-        payload.info.stratumPassword = preset.configuration.stratumPassword;
-
-        logger.info("Final system info payload to device", {
-          mac: payload.mac,
-          stratumPort: payload.info.stratumPort,
-          stratumURL: payload.info.stratumURL,
-        });
-      } else {
-        logger.error("Preset not found", { presetUuid: payload.presetUuid });
-        return res.status(400).json({ error: "Associated Preset id not available" });
-      }
-    }
-
-    // Invia la richiesta PATCH per aggiornare le informazioni di sistema
-    const patchUrl = `http://${deviceIp}/api/system`; // Assumendo che l'endpoint sia /api/system
-
-    const systemInfoPatch = pickWritableSystemInfo(payload.info ?? originalInfo);
-    const infoForLog = (payload.info ?? originalInfo) as any;
-
-    logger.info("Sending PATCH to device", {
-      url: patchUrl,
-      stratumPort: infoForLog?.stratumPort,
-      stratumURL: infoForLog?.stratumURL,
-      stratumUser: infoForLog?.stratumUser,
-      hasPassword: !!infoForLog?.stratumPassword,
-      frequency: (systemInfoPatch as any).frequency,
-      coreVoltage: (systemInfoPatch as any).coreVoltage,
+    logger.info("Sending config update to miner via pyasic-bridge", {
+      ip: deviceIp,
+      configKeys: Object.keys(configPatch),
     });
 
-    const response = await axios.patch(patchUrl, systemInfoPatch); // Passa solo i campi configurabili nel body
+    // Use pyasic-bridge service to update miner config
+    await pyasicBridgeService.updateMinerConfig(deviceIp, configPatch);
 
-    // Inoltra la risposta del dispositivo al client
-    res
-      .status(response.status)
-      .json({ message: "Device system info updated successfully", data: payload });
+    // Update device in database with new config
+    const updatedDevice: DiscoveredMiner = {
+      ...device,
+      minerData: {
+        ...device.minerData,
+        config: {
+          ...device.minerData.config,
+          ...configPatch,
+        },
+      },
+    };
+
+    const savedDevice = await deviceService.patchImprintedDevice(id, updatedDevice);
+
+    res.status(200).json({
+      message: "Device system info updated successfully",
+      data: savedDevice,
+    });
   } catch (error) {
-    logger.error("Error in putDeviceSystemInfo request:", error);
+    logger.error("Error in patchDeviceSystemInfo request:", error);
 
-    // Gestisci errori di Axios separatamente, se necessario
-    if (axios.isAxiosError(error)) {
-      res.status(error.response?.status || 500).json({
+    if (error instanceof Error) {
+      res.status(500).json({
         error: "Failed to update device system info",
-        details: error.response?.data || error.message,
+        details: error.message,
       });
     } else {
       res.status(500).json({ error: "Failed to process the request" });
