@@ -6,14 +6,14 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { Device } from "@pluto/interfaces";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import { DeviceStatusBadge } from "../Badge";
-import { getMinerName } from "@/utils/minerMap";
+import { getHostname, getModel, getFirmware, getUptime } from "@/utils/minerDataHelpers";
 import { DeleteIcon } from "../icons/DeleteIcon";
 import { convertIsoTomMdDYy, formatDetailedTime, formatTime } from "@/utils/formatTime";
 
 interface DeviceTableProps {
-  devices: Device[];
+  devices: DiscoveredMiner[];
   removeDeviceFunction: (deviceId: string) => void;
 }
 
@@ -36,10 +36,7 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
               Mac Address
             </th>
             <th className="border-b border-border px-4 py-3 text-center align-middle font-accent text-xs font-semibold uppercase text-muted-foreground">
-              Miner
-            </th>
-            <th className="border-b border-border px-4 py-3 text-center align-middle font-accent text-xs font-semibold uppercase text-muted-foreground">
-              ASIC
+              Model
             </th>
             <th className="border-b border-border px-4 py-3 text-center align-middle font-accent text-xs font-semibold uppercase text-muted-foreground">
               Uptime
@@ -56,50 +53,51 @@ export const DeviceTable: React.FC<DeviceTableProps> = ({ devices, removeDeviceF
           </tr>
         </thead>
         <tbody>
-          {devices.map((device) => (
-            <tr key={`registered-device-${device.mac}`} className="bg-card">
-              <td className="max-w-[140px] border-t border-border px-4 py-3 font-accent text-[13px] font-normal">
-                {device.info.hostname}
-              </td>
-              <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
-                {convertIsoTomMdDYy(device.createdAt!)}
-              </td>
-              <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
-                {device.ip}
-              </td>
-              <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
-                {device.mac}
-              </td>
-              <td className="w-[125px] max-w-[125px] border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
-                {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
-              </td>
-              <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
-                {device.info.ASICModel}
-              </td>
-              <td
-                className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal"
-                title={formatDetailedTime(device.info.uptimeSeconds)}
-              >
-                {formatTime(device.info.uptimeSeconds)}
-              </td>
-              <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
-                {device.info.version}
-              </td>
-              <td className="border-t border-border px-4 py-3 text-center">
-                <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
-              </td>
-              <td className="border-t border-border px-4 py-3 text-right">
-                <button
-                  type="button"
-                  onClick={() => removeDeviceFunction(device.mac)}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label={`Remove ${device.info.hostname}`}
+          {devices.map((device) => {
+            const m = device.minerData;
+            const hostname = getHostname(m);
+            return (
+              <tr key={`registered-device-${device.mac}`} className="bg-card">
+                <td className="max-w-[140px] border-t border-border px-4 py-3 font-accent text-[13px] font-normal">
+                  {hostname}
+                </td>
+                <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
+                  {convertIsoTomMdDYy(device.createdAt!)}
+                </td>
+                <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
+                  {device.ip}
+                </td>
+                <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
+                  {device.mac}
+                </td>
+                <td className="w-[125px] max-w-[125px] border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
+                  {getModel(m)}
+                </td>
+                <td
+                  className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal"
+                  title={formatDetailedTime(getUptime(m))}
                 >
-                  <DeleteIcon h={"20"} w={"14px"} />
-                </button>
-              </td>
-            </tr>
-          ))}
+                  {formatTime(getUptime(m))}
+                </td>
+                <td className="border-t border-border px-4 py-3 text-center font-accent text-[13px] font-normal">
+                  {getFirmware(m)}
+                </td>
+                <td className="border-t border-border px-4 py-3 text-center">
+                  <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
+                </td>
+                <td className="border-t border-border px-4 py-3 text-right">
+                  <button
+                    type="button"
+                    onClick={() => removeDeviceFunction(device.mac)}
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label={`Remove ${hostname}`}
+                  >
+                    <DeleteIcon h={"20"} w={"14px"} />
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
