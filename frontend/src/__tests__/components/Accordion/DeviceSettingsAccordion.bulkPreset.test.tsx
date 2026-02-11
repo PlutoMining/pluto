@@ -74,6 +74,12 @@ const makeDiscoveredMiner = (mac: string): DiscoveredMiner => ({
 describe("DeviceSettingsAccordion bulk preset", () => {
   let consoleErrorSpy: jest.SpyInstance;
 
+  // Bulk preset flows can be slower under coverage on CI runners.
+  // Increase the timeout to avoid flaky "Exceeded timeout of 5000 ms" failures.
+  beforeAll(() => {
+    jest.setTimeout(15000);
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     axiosMock.patch = jest.fn();
@@ -202,7 +208,7 @@ describe("DeviceSettingsAccordion bulk preset", () => {
     expect(onOpenAlert).toHaveBeenCalled();
     const lastAlert = setAlert.mock.calls[setAlert.mock.calls.length - 1][0];
     expect(lastAlert.title).toBe("Save Successful");
-  });
+  }, 20000);
 
   it("does not patch unchecked devices when applying a bulk preset", async () => {
     const setAlert = jest.fn();

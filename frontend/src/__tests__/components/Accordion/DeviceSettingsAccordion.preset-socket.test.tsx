@@ -326,6 +326,12 @@ describe("DeviceSettingsAccordion preset + socket behavior", () => {
 
     // Opening the accordion - frequency/core options are derived from device model, not socket updates
     const details = await openFirstDetails(container);
+
+    // Wait for Hardware settings fields to render after opening accordion
+    await waitFor(() => {
+      expect(details.querySelector("select#aa-frequency")).not.toBeNull();
+    });
+
     const freqSelect = details.querySelector("select#aa-frequency") as HTMLSelectElement;
     expect(freqSelect).not.toBeNull();
     // Options are derived from device model (BM1397), not from socket updates
@@ -375,7 +381,14 @@ describe("DeviceSettingsAccordion preset + socket behavior", () => {
     // Use a numeric value so validation doesn't block the Save action.
     fireEvent.change(port, { target: { value: "123" } });
 
-    fireEvent.click(within(details).getByRole("checkbox", { name: "Invertscreen" }));
+    // Wait for Hardware settings fields to render
+    await waitFor(() => {
+      expect(details.querySelector("input#aa-invertscreen")).not.toBeNull();
+    });
+
+    const invert = details.querySelector("input#aa-invertscreen") as HTMLInputElement;
+    expect(invert).not.toBeNull();
+    fireEvent.click(invert);
 
     fireEvent.click(within(details).getByRole("button", { name: "Save" }));
     const dialog = await screen.findByRole("dialog");
@@ -384,7 +397,6 @@ describe("DeviceSettingsAccordion preset + socket behavior", () => {
     await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(2));
 
     const firstPayload = axiosMock.patch.mock.calls[0][1];
-    // Verify invertscreen checkbox mapping (on -> 1)
     expect(firstPayload.extra_config?.invertscreen).toBe(1);
     // Note: URL may still contain original port if URL field already had port,
     // but port sanitization (stripping non-digits) is verified by the form handling

@@ -120,7 +120,7 @@ class TestAPIContracts:
     def test_service_methods_return_domain_models(self):
         """Service methods have correct return type annotations for domain models."""
         import inspect
-        from app.services import MinerService
+
         from app.models import (
             MinerConfigModel,
             MinerData,
@@ -130,6 +130,7 @@ class TestAPIContracts:
             MinerValidationResult,
             StatusResponse,
         )
+        from app.services import MinerService
 
         service = MinerService()
         expected_return_types = {
@@ -178,11 +179,12 @@ class TestAPIContracts:
     async def test_responses_validate_against_contracts(self):
         """Integration test: actual responses validate against contract schemas."""
         from unittest.mock import AsyncMock, MagicMock
+
         import httpx
 
         from app.api import get_miner_service
         from app.app import create_app
-        from app.models import MinerData, MinerInfo, StatusResponse
+        from app.models import MinerData, StatusResponse
         from app.services import MinerService
 
         # Create app with mocked service

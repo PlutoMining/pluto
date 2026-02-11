@@ -348,7 +348,13 @@ describe("DeviceSettingsAccordion additional coverage", () => {
     const password = details.querySelector("input#aa-stratumPassword") as HTMLInputElement;
     fireEvent.change(password, { target: { value: "1234" } });
 
-    const invert = within(details).getByRole("checkbox", { name: "Invertscreen" });
+    // Wait for Hardware settings fields to render
+    await waitFor(() => {
+      expect(details.querySelector("input#aa-invertscreen")).not.toBeNull();
+    });
+
+    const invert = details.querySelector("input#aa-invertscreen") as HTMLInputElement;
+    expect(invert).not.toBeNull();
     fireEvent.click(invert);
     fireEvent.click(invert);
 
@@ -359,10 +365,9 @@ describe("DeviceSettingsAccordion additional coverage", () => {
     await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(2));
 
     const firstPayload = axiosMock.patch.mock.calls[0][1];
-    // Verify password is correctly stored as string
+    // Verify password is correctly stored as string and checkbox mapping.
     expect(firstPayload.pools?.groups?.[0]?.pools?.[0]?.password).toBe("1234");
     expect(typeof firstPayload.pools?.groups?.[0]?.pools?.[0]?.password).toBe("string");
-    // Verify invertscreen checkbox mapping (off -> 0 after two toggles)
     expect(firstPayload.extra_config?.invertscreen).toBe(0);
     // Note: URL may still contain original port if URL field already had port,
     // but port parsing (stripping non-digits) is verified by the form handling

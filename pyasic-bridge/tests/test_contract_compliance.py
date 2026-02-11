@@ -9,9 +9,8 @@ Ensures the service implementation fully complies with contracts:
 """
 
 import inspect
-from typing import get_origin, get_args
+from typing import get_args, get_origin
 
-import pytest
 from fastapi.routing import APIRoute
 
 from app.api_contracts import API_CONTRACTS

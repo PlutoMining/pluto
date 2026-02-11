@@ -251,9 +251,16 @@ describe("DeviceSettingsAccordion", () => {
       fireEvent(details, new Event("toggle"));
     });
 
-    expect(screen.getByText("Hardware settings")).toBeInTheDocument();
-    expect(screen.getByText("Frequency")).toBeInTheDocument();
-    expect(screen.getByText("Core Voltage")).toBeInTheDocument();
+    // Wait for Hardware settings fields to render after opening accordion
+    await waitFor(() => {
+      expect(container.querySelector("select#aa-frequency")).not.toBeNull();
+    });
+
+    const frequencyField = container.querySelector("select#aa-frequency");
+    const coreVoltageField = container.querySelector("select#aa-core_voltage");
+
+    expect(frequencyField).not.toBeNull();
+    expect(coreVoltageField).not.toBeNull();
   });
 
   it("does not render Hardware settings section for default miner type", async () => {
@@ -281,6 +288,8 @@ describe("DeviceSettingsAccordion", () => {
       fireEvent(details, new Event("toggle"));
     });
 
-    expect(screen.queryByText("Hardware settings")).not.toBeInTheDocument();
+    // For non-Bitaxe miners, the Bitaxe-specific selects should not be rendered.
+    expect(container.querySelector("select#aa-frequency")).toBeNull();
+    expect(container.querySelector("select#aa-core_voltage")).toBeNull();
   });
 });
