@@ -18,12 +18,12 @@ import { DeviceTable } from "@/components/Table/DeviceTable";
 import { AddIcon } from "@/components/icons/AddIcon";
 import { useSocket } from "@/providers/SocketProvider";
 import { useDisclosure } from "@/hooks/useDisclosure";
-import { Device } from "@pluto/interfaces";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import axios from "axios";
 import React, { useCallback, useEffect, useState } from "react";
 
 export default function DevicesClient() {
-  const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
+  const [registeredDevices, setRegisteredDevices] = useState<DiscoveredMiner[] | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isConfirmationModalOpen,
@@ -43,7 +43,7 @@ export default function DevicesClient() {
   const fetchRegisteredDevices = useCallback(async () => {
     try {
       const response = await axios.get("/api/devices/imprint");
-      const imprintedDevices: Device[] = response.data.data;
+      const imprintedDevices: DiscoveredMiner[] = response.data.data;
       setRegisteredDevices([...imprintedDevices]);
       return imprintedDevices;
     } catch (error) {
@@ -51,7 +51,7 @@ export default function DevicesClient() {
     }
   }, []);
 
-  const putListenDevices = useCallback(async (imprintedDevices?: Device[]) => {
+  const putListenDevices = useCallback(async (imprintedDevices?: DiscoveredMiner[]) => {
     try {
       await axios.put("/api/devices/listen", {
         macs: imprintedDevices?.map((d) => d.mac),
@@ -68,7 +68,7 @@ export default function DevicesClient() {
   const { isConnected, socket } = useSocket();
 
   useEffect(() => {
-    const listener = (e: Device) => {
+    const listener = (e: DiscoveredMiner) => {
       setRegisteredDevices((prevDevices) => {
         if (!prevDevices) return prevDevices;
 

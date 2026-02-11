@@ -14,7 +14,18 @@ import { SearchInput } from "@/components/Input";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatDifficulty } from "@/utils/formatDifficulty";
 import { formatDetailedTime, formatTime } from "@/utils/formatTime";
-import { Device } from "@pluto/interfaces";
+import {
+  getHostname,
+  getHashrateGhs,
+  getBestDifficulty,
+  getBestSessionDifficulty,
+  getUptime,
+  getTemperatureAvg,
+  getWattage,
+  getSharesAccepted,
+  getSharesRejected,
+} from "@/utils/minerDataHelpers";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import axios from "axios";
 import NextLink from "next/link";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
@@ -26,14 +37,14 @@ function formatTemperature(value: number | undefined | null) {
 }
 
 export default function MonitoringTableClient() {
-  const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
+  const [registeredDevices, setRegisteredDevices] = useState<DiscoveredMiner[] | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const hasSearchedRef = useRef(false);
 
   const fetchDevicesAndUpdate = useCallback(async () => {
     try {
-      const deviceResponse = await axios.get<{ data: Device[] }>("/api/devices/imprint");
+      const deviceResponse = await axios.get<{ data: DiscoveredMiner[] }>("/api/devices/imprint");
       const fetchedDevices = deviceResponse.data.data;
 
       setRegisteredDevices(fetchedDevices || []);
@@ -49,7 +60,7 @@ export default function MonitoringTableClient() {
   const { isConnected, socket } = useSocket();
 
   useEffect(() => {
-    const listener = (e: Device) => {
+    const listener = (e: DiscoveredMiner) => {
       setRegisteredDevices((prevDevices) => {
         if (!prevDevices) return prevDevices;
 
@@ -101,7 +112,7 @@ export default function MonitoringTableClient() {
 
     const timeoutId = setTimeout(async () => {
       try {
-        const response = await axios.get<{ data: Device[] }>("/api/devices/imprint", {
+        const response = await axios.get<{ data: DiscoveredMiner[] }>("/api/devices/imprint", {
           params: { q: query },
           signal: controller.signal,
         });
@@ -131,100 +142,98 @@ export default function MonitoringTableClient() {
             </div>
           </div>
 
-          {registeredDevices && registeredDevices.length > 0 ? (
-            <div className="bg-card">
-              <div className="hidden overflow-x-auto border border-border md:block">
-                <table className="w-full border-collapse">
-                  <thead className="bg-muted">
-                    <tr>
-                      <th className="border-b border-border p-3 text-left font-accent text-xs font-normal uppercase text-muted-foreground">
-                        Name
-                      </th>
-                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                        Hashrate
-                      </th>
-                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                        Shares
-                      </th>
-                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                        Power
-                      </th>
-                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                        Temp
-                      </th>
-                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                        VR Temp
-                      </th>
-                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                        Current difficulty
-                      </th>
-                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                        Best difficulty
-                      </th>
-                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                        Uptime
-                      </th>
-                      <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                        Status
-                      </th>
-                      <th className="border-b border-border p-3" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {registeredDevices.map((device) => {
-                      const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
+        {registeredDevices && registeredDevices.length > 0 ? (
+          <div className="bg-card">
+            <div className="hidden tablet:block overflow-x-auto border border-border">
+              <table className="w-full border-collapse">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="border-b border-border p-3 text-left font-accent text-xs font-normal uppercase text-muted-foreground">
+                      Name
+                    </th>
+                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                      Hashrate
+                    </th>
+                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                      Shares
+                    </th>
+                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                      Power
+                    </th>
+                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                      Temp
+                    </th>
+                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                      Current difficulty
+                    </th>
+                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                      Best difficulty
+                    </th>
+                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                      Uptime
+                    </th>
+                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                      Status
+                    </th>
+                    <th className="border-b border-border p-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {registeredDevices.map((device) => {
+                    const m = device.minerData;
+                    const currentDiff = getBestSessionDifficulty(m);
+                    const hostname = getHostname(m);
+                    const power = getWattage(m);
+                    const temp = getTemperatureAvg(m);
 
-                      return (
-                        <tr key={device.mac} className="bg-card">
-                          <td className="border-t border-border p-3 text-left font-accent text-sm font-normal">
-                            {device.info.hostname}
-                          </td>
-                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                            {(device.info.hashRate_10m || device.info.hashRate)?.toFixed(2)} GH/s
-                          </td>
-                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                            <span className="text-muted-foreground">{device.info.sharesAccepted}</span>{" "}
-                            <span className="text-muted-foreground">|</span>{" "}
-                            <span className="text-primary">{device.info.sharesRejected}</span>
-                          </td>
-                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                            {device.info.power.toFixed(2)} W
-                          </td>
-                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                            {formatTemperature(device.info.temp)} °C
-                          </td>
-                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                            {formatTemperature(device.info.vrTemp)} °C
-                          </td>
-                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                            {formatDifficulty(currentDiff)}
-                          </td>
-                          <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                            {formatDifficulty(device.info.bestDiff)}
-                          </td>
-                          <td
-                            className="border-t border-border p-3 text-center font-accent text-sm font-normal"
-                            title={formatDetailedTime(device.info.uptimeSeconds)}
-                          >
-                            {formatTime(device.info.uptimeSeconds)}
-                          </td>
-                          <td className="border-t border-border p-3 text-center">
-                            <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
-                          </td>
-                          <td className="border-t border-border p-3 text-center">
-                            <NextLink
-                              href={`/monitoring/${device.info.hostname}`}
-                              className="inline-flex items-center gap-1 font-accent text-sm font-medium underline"
-                            >
-                              Dashboard <ArrowLeftSmallIcon color="currentColor" />
-                            </NextLink>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                    return (
+                    <tr key={device.mac} className="bg-card">
+                      <td className="border-t border-border p-3 text-left font-accent text-sm font-normal">
+                        {hostname}
+                      </td>
+                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                        {getHashrateGhs(m).toFixed(2)} GH/s
+                      </td>
+                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                        <span className="text-muted-foreground">{getSharesAccepted(m)}</span>{" "}
+                        <span className="text-muted-foreground">|</span>{" "}
+                        <span className="text-primary">{getSharesRejected(m)}</span>
+                      </td>
+                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                        {power != null ? `${power.toFixed(2)} W` : "N/A"}
+                      </td>
+                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                        {formatTemperature(temp)} °C
+                      </td>
+                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                        {formatDifficulty(currentDiff)}
+                      </td>
+                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
+                        {formatDifficulty(getBestDifficulty(m))}
+                      </td>
+                      <td
+                        className="border-t border-border p-3 text-center font-accent text-sm font-normal"
+                        title={formatDetailedTime(getUptime(m))}
+                      >
+                        {formatTime(getUptime(m))}
+                      </td>
+                      <td className="border-t border-border p-3 text-center">
+                        <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
+                      </td>
+                      <td className="border-t border-border p-3 text-center">
+                        <NextLink
+                          href={`/monitoring/${encodeURIComponent(hostname)}`}
+                          className="inline-flex items-center gap-1 font-accent text-sm font-medium underline"
+                        >
+                          Dashboard <ArrowLeftSmallIcon color="currentColor" />
+                        </NextLink>
+                      </td>
+                    </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
               <div className="md:hidden">
                 <DeviceMonitoringAccordion devices={registeredDevices} />
