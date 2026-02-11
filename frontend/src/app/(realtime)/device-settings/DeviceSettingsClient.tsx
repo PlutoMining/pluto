@@ -16,7 +16,7 @@ import { SearchInput } from "@/components/Input";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import { Modal } from "@/components/ui/modal";
 import { useDisclosure } from "@/hooks/useDisclosure";
-import { Device } from "@pluto/interfaces";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import axios from "axios";
 import NextLink from "next/link";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
@@ -30,14 +30,14 @@ export default function DeviceSettingsClient() {
   } = useDisclosure({ defaultIsOpen: false });
 
   const [alert, setAlert] = useState<AlertInterface>();
-  const [imprintedDevices, setImprintedDevices] = useState<Device[] | undefined>();
+  const [imprintedDevices, setImprintedDevices] = useState<DiscoveredMiner[] | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
 
   const hasSearchedRef = useRef(false);
 
   const fetchImprintedDevices = useCallback(async () => {
     try {
-      const response = await axios.get<{ data: Device[] }>("/api/devices/imprint");
+      const response = await axios.get<{ data: DiscoveredMiner[] }>("/api/devices/imprint");
       const devices = response.data.data;
 
       setImprintedDevices(devices);
@@ -117,7 +117,7 @@ export default function DeviceSettingsClient() {
 
     const timeoutId = setTimeout(async () => {
       try {
-        const response = await axios.get<{ data: Device[] }>("/api/devices/imprint", {
+        const response = await axios.get<{ data: DiscoveredMiner[] }>("/api/devices/imprint", {
           params: { q: query },
           signal: controller.signal,
         });

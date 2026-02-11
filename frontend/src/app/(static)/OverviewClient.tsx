@@ -29,8 +29,9 @@ import {
 } from "@/lib/prometheus";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatDifficulty, parseDifficulty } from "@/utils/formatDifficulty";
+import { getBestDifficulty } from "@/utils/minerDataHelpers";
 import { PLUTO_PRIMARY } from "@/components/charts/chartPalette";
-import type { Device } from "@pluto/interfaces";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import axios from "axios";
 
 function formatNumber(value: number, digits = 2) {
@@ -40,7 +41,7 @@ function formatNumber(value: number, digits = 2) {
 }
 
 export default function OverviewClient() {
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [devices, setDevices] = useState<DiscoveredMiner[]>([]);
   const [range, setRange] = useState<TimeRangeKey>("1h");
 
   const [polling, setPolling] = useState<PollingIntervalKey>("auto");
@@ -80,7 +81,7 @@ export default function OverviewClient() {
   const fleetBestDiff = useMemo(() => {
     let best = 0;
     for (const device of devices) {
-      const parsed = parseDifficulty(device.info.bestDiff);
+      const parsed = parseDifficulty(getBestDifficulty(device.minerData));
       if (parsed !== null && Number.isFinite(parsed)) best = Math.max(best, parsed);
     }
     return best;
@@ -90,7 +91,7 @@ export default function OverviewClient() {
     const fetchDevices = async () => {
       try {
         const response = await axios.get("/api/devices/imprint");
-        const imprintedDevices: Device[] = response.data.data;
+        const imprintedDevices: DiscoveredMiner[] = response.data.data;
         if (Array.isArray(imprintedDevices) && imprintedDevices.length > 0) setDevices(imprintedDevices);
       } catch (error) {
         console.error("Error discovering devices:", error);
@@ -103,7 +104,7 @@ export default function OverviewClient() {
   const { isConnected, socket } = useSocket();
 
   useEffect(() => {
-    const listener = (e: Device) => {
+    const listener = (e: DiscoveredMiner) => {
       setDevices((prev) => {
         if (!prev?.length) return prev;
 
