@@ -1,7 +1,78 @@
 import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 
 import { DeviceSettingsAccordion } from "@/components/Accordion";
+
+// Use a test-only stub for ExtraConfigSchemas so tests don't depend on the
+// generated client or Python tooling. This mirrors the Bitaxe schema fields
+// we care about for Hardware settings.
+jest.mock("@pluto/pyasic-bridge-client", () => ({
+  ExtraConfigSchemas: {
+    bitaxe: {
+      properties: {
+        frequency: {
+          anyOf: [
+            { type: "integer", enum: [400, 490, 525, 550, 600, 625] },
+            { type: "null" },
+          ],
+        },
+        core_voltage: {
+          anyOf: [
+            { type: "integer", enum: [1000, 1060, 1100, 1150, 1200, 1250] },
+            { type: "null" },
+          ],
+        },
+        rotation: {
+          anyOf: [
+            { type: "integer", enum: [0, 90, 180, 270] },
+            { type: "null" },
+          ],
+        },
+        invertscreen: {
+          anyOf: [
+            { type: "integer", enum: [0, 1] },
+            { type: "null" },
+          ],
+        },
+        display_timeout: {
+          anyOf: [
+            { type: "integer", enum: [-1, 1, 2, 5, 15, 30, 60, 120, 240, 480] },
+            { type: "null" },
+          ],
+        },
+        overheat_mode: {
+          anyOf: [
+            { type: "integer", enum: [0, 1] },
+            { type: "null" },
+          ],
+        },
+        overclock_enabled: {
+          anyOf: [
+            { type: "integer", enum: [0, 1] },
+            { type: "null" },
+          ],
+        },
+        stats_frequency: {
+          anyOf: [{ type: "integer" }, { type: "null" }],
+        },
+        min_fan_speed: {
+          anyOf: [{ type: "integer" }, { type: "null" }],
+        },
+      },
+    },
+    espminer: {
+      properties: {
+        frequency: {
+          anyOf: [
+            { type: "integer", enum: [400, 490, 525, 550, 600, 625] },
+            { type: "null" },
+          ],
+        },
+      },
+    },
+  },
+}));
 
 jest.mock("@/providers/SocketProvider", () => ({
   useSocket: () => ({
@@ -9,6 +80,44 @@ jest.mock("@/providers/SocketProvider", () => ({
     socket: { on: jest.fn(), off: jest.fn() },
   }),
 }));
+
+const makeDiscoveredMiner = (mac: string, hostname: string): DiscoveredMiner => ({
+  mac,
+  ip: mac === "aa" ? "10.0.0.1" : "10.0.0.2",
+  type: "Bitaxe",
+  tracing: true,
+  presetUuid: null,
+  minerData: {
+    ip: mac === "aa" ? "10.0.0.1" : "10.0.0.2",
+    hostname,
+    device_info: {
+      model: "BM1397",
+    },
+    config: {
+      pools: {
+        groups: [
+          {
+            pools: [
+              {
+                url: "stratum+tcp://pool.example.com:3333",
+                user: "user.worker",
+                password: "pass",
+              },
+            ],
+          },
+        ],
+      },
+      extra_config: {
+        frequency: 100,
+        core_voltage: 900,
+        fanspeed: 50,
+        autofanspeed: 1,
+        flipscreen: 0,
+        invertfanpolarity: 0,
+      },
+    },
+  },
+});
 
 describe("DeviceSettingsAccordion", () => {
   beforeEach(() => {
@@ -20,9 +129,19 @@ describe("DeviceSettingsAccordion", () => {
             uuid: "preset-1",
             name: "Preset 1",
             configuration: {
-              stratumURL: "pool.example.com",
-              stratumPort: 3333,
-              stratumUser: "user",
+              pools: {
+                groups: [
+                  {
+                    pools: [
+                      {
+                        url: "stratum+tcp://pool.example.com:3333",
+                        user: "user",
+                        password: "",
+                      },
+                    ],
+                  },
+                ],
+              },
             },
             associatedDevices: [],
           },
@@ -36,49 +155,9 @@ describe("DeviceSettingsAccordion", () => {
     const onOpenAlert = jest.fn();
 
     const devices = [
-      {
-        mac: "aa",
-        ip: "10.0.0.1",
-        tracing: true,
-        presetUuid: null,
-        info: {
-          hostname: "miner-01",
-          stratumUser: "user.worker",
-          stratumURL: "pool.example.com",
-          stratumPort: 3333,
-          stratumPassword: "pass",
-          flipscreen: 0,
-          invertfanpolarity: 0,
-          autofanspeed: 1,
-          fanspeed: 50,
-          frequency: 100,
-          frequencyOptions: [{ label: "100", value: 100 }],
-          coreVoltage: 900,
-          coreVoltageOptions: [{ label: "900", value: 900 }],
-        },
-      },
-      {
-        mac: "bb",
-        ip: "10.0.0.2",
-        tracing: true,
-        presetUuid: null,
-        info: {
-          hostname: "miner-02",
-          stratumUser: "user.worker",
-          stratumURL: "pool.example.com",
-          stratumPort: 3333,
-          stratumPassword: "pass",
-          flipscreen: 0,
-          invertfanpolarity: 0,
-          autofanspeed: 1,
-          fanspeed: 50,
-          frequency: 100,
-          frequencyOptions: [{ label: "100", value: 100 }],
-          coreVoltage: 900,
-          coreVoltageOptions: [{ label: "900", value: 900 }],
-        },
-      },
-    ] as any;
+      makeDiscoveredMiner("aa", "miner-01"),
+      makeDiscoveredMiner("bb", "miner-02"),
+    ];
 
     const { container } = render(
       <DeviceSettingsAccordion
@@ -124,29 +203,7 @@ describe("DeviceSettingsAccordion", () => {
     const setAlert = jest.fn();
     const onOpenAlert = jest.fn();
 
-    const devices = [
-      {
-        mac: "aa",
-        ip: "10.0.0.1",
-        tracing: true,
-        presetUuid: null,
-        info: {
-          hostname: "miner-01",
-          stratumUser: "user.worker",
-          stratumURL: "pool.example.com",
-          stratumPort: 3333,
-          stratumPassword: "pass",
-          flipscreen: 0,
-          invertfanpolarity: 0,
-          autofanspeed: 1,
-          fanspeed: 50,
-          frequency: 100,
-          frequencyOptions: [{ label: "100", value: 100 }],
-          coreVoltage: 900,
-          coreVoltageOptions: [{ label: "900", value: 900 }],
-        },
-      },
-    ] as any;
+    const devices = [makeDiscoveredMiner("aa", "miner-01")];
 
     const { container } = render(
       <DeviceSettingsAccordion
@@ -174,5 +231,56 @@ describe("DeviceSettingsAccordion", () => {
 
     fireEvent.click(selectAll);
     expect(details.open).toBe(false);
+  });
+
+  it("renders Hardware settings section for Bitaxe with schema-driven fields", async () => {
+    const devices = [makeDiscoveredMiner("aa", "miner-01")];
+    const { container } = render(
+      <DeviceSettingsAccordion
+        fetchedDevices={devices}
+        alert={undefined}
+        setAlert={jest.fn() as any}
+        onOpenAlert={jest.fn()}
+      />
+    );
+    await waitFor(() => expect((global as any).fetch).toHaveBeenCalledWith("/api/presets"));
+
+    const details = container.querySelector("details") as HTMLDetailsElement;
+    await act(async () => {
+      details.open = true;
+      fireEvent(details, new Event("toggle"));
+    });
+
+    expect(screen.getByText("Hardware settings")).toBeInTheDocument();
+    expect(screen.getByText("Frequency")).toBeInTheDocument();
+    expect(screen.getByText("Core Voltage")).toBeInTheDocument();
+  });
+
+  it("does not render Hardware settings section for default miner type", async () => {
+    const antminer: DiscoveredMiner = {
+      ...makeDiscoveredMiner("aa", "miner-01"),
+      type: "Antminer S19",
+      minerData: {
+        ...makeDiscoveredMiner("aa", "miner-01").minerData,
+        device_info: { model: "S19" },
+      },
+    };
+    const { container } = render(
+      <DeviceSettingsAccordion
+        fetchedDevices={[antminer]}
+        alert={undefined}
+        setAlert={jest.fn() as any}
+        onOpenAlert={jest.fn()}
+      />
+    );
+    await waitFor(() => expect((global as any).fetch).toHaveBeenCalledWith("/api/presets"));
+
+    const details = container.querySelector("details") as HTMLDetailsElement;
+    await act(async () => {
+      details.open = true;
+      fireEvent(details, new Event("toggle"));
+    });
+
+    expect(screen.queryByText("Hardware settings")).not.toBeInTheDocument();
   });
 });
