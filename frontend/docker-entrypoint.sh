@@ -57,6 +57,15 @@ install_common_module() {
 # Install dependencies in common modules
 install_common_module "/home/node/common/interfaces" "interfaces" || true
 install_common_module "/home/node/common/utils" "utils" || true
+install_common_module "/home/node/common/pyasic-bridge-client" "pyasic-bridge-client" || true
+
+# Build pyasic-bridge-client if it exists
+if [ -d "/home/node/common/pyasic-bridge-client" ]; then
+  echo "Building pyasic-bridge-client..."
+  cd /home/node/common/pyasic-bridge-client
+  npm run build || echo "Warning: Failed to build pyasic-bridge-client"
+  cd /home/node/app
+fi
 
 # Return to the app directory
 cd /home/node/app
