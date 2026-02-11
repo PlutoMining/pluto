@@ -5,6 +5,8 @@
   "license": "AGPL-3.0",
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "npm run clean && next dev",
+    "clean": "rm -rf .next",
     "build": "ESLINT_USE_FLAT_CONFIG=false next build",
     "start": "next start",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint --ext .ts,.tsx src",
@@ -16,12 +18,14 @@
   "dependencies": {
     "@network-utils/arp-lookup": "^2.1.0",
     "@pluto/interfaces": "file:../common/interfaces",
+    "@pluto/pyasic-bridge-client": "file:../common/pyasic-bridge-client",
     "@pluto/utils": "file:../common/utils",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-separator": "^1.1.8",
+    "ajv": "^6.12.6",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tooltip": "^1.2.8",
     "axios": "^1.7.2",
