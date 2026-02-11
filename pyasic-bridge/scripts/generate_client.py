@@ -203,9 +203,26 @@ def generate_client(openapi_schema: Path, client_output_dir: Path) -> bool:
         return False
 
 
-def create_index_file(client_output_dir: Path) -> None:
-    """Create main index.ts file that re-exports from generated code."""
-    index_content = '''/**
+def create_index_file(client_output_dir: Path, has_schemas: bool) -> None:
+    """Create main index.ts file that re-exports from generated code.
+
+    Args:
+        client_output_dir: Path to client output directory
+        has_schemas: Whether extra-config-schemas.gen.ts was successfully generated
+    """
+    # Build exports list
+    exports = [
+        "export * from './src/sdk.gen';",
+        "export * from './src/types.gen';",
+    ]
+
+    # Only export schemas if they were successfully generated
+    if has_schemas:
+        exports.append("export * from './src/extra-config-schemas.gen';")
+
+    exports_str = '\n'.join(exports)
+
+    index_content = f'''/**
  * Copyright (C) 2024 Alberto Gangarossa.
  * Pluto is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License
@@ -223,8 +240,7 @@ def create_index_file(client_output_dir: Path) -> None:
  */
 
 // Re-export everything from the generated client
-export * from './src/sdk.gen';
-export * from './src/types.gen';
+{exports_str}
 '''
     
     index_file = client_output_dir / "index.ts"
@@ -284,6 +300,7 @@ def main() -> int:
     
     # Extract extra_config schemas
     print_info("📝 Extracting extra_config schemas...")
+    schemas_extracted = False
     import subprocess
     extract_script = script_dir / "extract_extra_config_schemas.py"
     if extract_script.exists():
@@ -295,7 +312,13 @@ def main() -> int:
                 text=True,
             )
             if result.returncode == 0:
-                print_success("Extra_config schemas extracted successfully")
+                # Verify the file was actually created
+                schemas_file = client_output_dir / "src" / "extra-config-schemas.gen.ts"
+                if schemas_file.exists():
+                    schemas_extracted = True
+                    print_success("Extra_config schemas extracted successfully")
+                else:
+                    print_warning("Schema extraction script succeeded but file not found")
             else:
                 print_warning("Failed to extract extra_config schemas, but client generation succeeded")
                 if result.stderr:
@@ -307,7 +330,7 @@ def main() -> int:
     
     # Create index.ts
     print_info("📝 Creating main index.ts exports...")
-    create_index_file(client_output_dir)
+    create_index_file(client_output_dir, schemas_extracted)
     
     # Create .gitignore
     print_info("📝 Creating .gitignore...")
