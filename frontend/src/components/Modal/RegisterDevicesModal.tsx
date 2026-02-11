@@ -6,7 +6,7 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { Device } from "@pluto/interfaces";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import { isValidIp, isValidMac } from "@pluto/utils";
 import axios from "axios";
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
@@ -53,7 +53,7 @@ function ModalBodyContent({
   onClose: () => void;
   onDevicesChanged: () => Promise<void>;
 }) {
-  const [discoveredDevices, setDiscoveredDevices] = useState<Device[] | null>(null);
+  const [discoveredDevices, setDiscoveredDevices] = useState<DiscoveredMiner[] | null>(null);
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
   const [tabIndex, setTabIndex] = useState(0);
 
@@ -85,12 +85,12 @@ function ModalBodyContent({
 
       // Effettua la chiamata per ottenere le imprinted devices
       const imprintedResponse = await axios.get("/api/devices/imprint");
-      const imprintedDevices: Device[] = imprintedResponse.data?.data;
+      const imprintedDevices: DiscoveredMiner[] = imprintedResponse.data?.data ?? [];
 
       // Effettua la chiamata per ottenere le discovered devices
       const discoveredResponse = await axios.get("/api/devices/discover");
       if (discoveredResponse.status === 200) {
-        const discoveredDevices: Device[] = discoveredResponse.data;
+        const discoveredDevices: DiscoveredMiner[] = discoveredResponse.data;
 
         // Filtra i discoveredDevices escludendo quelli già imprinted
         const filteredDiscoveredDevices = discoveredDevices.filter(
@@ -123,7 +123,7 @@ function ModalBodyContent({
         },
       });
 
-      const discoveredDevices: Device[] = response.data;
+      const discoveredDevices: DiscoveredMiner[] = response.data;
 
       if (discoveredDevices.length === 1) {
         discoveredDevices[0].mac = ipAndMacAddress.macAddress;

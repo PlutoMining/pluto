@@ -7,12 +7,11 @@
 */
 
 import React, { useEffect, useRef, useState } from "react";
-import { Device } from "@pluto/interfaces";
-import { getMinerName } from "@/utils/minerMap";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import { Checkbox } from "../Checkbox";
 
 interface RegisterDeviceTableProps {
-  devices: Device[];
+  devices: DiscoveredMiner[];
   allChecked: boolean;
   onChange: (index: number) => void;
   checkedItems: boolean[];
@@ -88,13 +87,13 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                       Mac Address
                     </th>
                     <th className="border-b border-border p-3 text-left font-heading text-xs font-medium capitalize text-foreground">
-                      Miner
+                      Make
                     </th>
                     <th className="border-b border-border p-3 text-left font-heading text-xs font-medium capitalize text-foreground">
-                      ASIC
+                      Model
                     </th>
                     <th className="border-b border-border p-3 text-left font-heading text-xs font-medium capitalize text-foreground">
-                      FW v.
+                      FW
                     </th>
                   </tr>
                 </thead>
@@ -105,7 +104,7 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                         <Checkbox
                           id={device.mac}
                           name={device.mac}
-                          label={device.info.hostname}
+                          label={device.minerData?.hostname ?? device.ip ?? device.mac ?? "—"}
                           onChange={() => onChange(index)}
                           isChecked={checkedItems[index]}
                         />
@@ -117,13 +116,13 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                         {device.mac}
                       </td>
                       <td className="border-t border-border p-3 font-accent text-[13px]">
-                        {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
+                        {device.minerData?.make ?? "—"}
                       </td>
                       <td className="border-t border-border p-3 font-accent text-[13px]">
-                        {device.info.ASICModel}
+                        {device.minerData?.model ?? "—"}
                       </td>
                       <td className="border-t border-border p-3 font-accent text-[13px]">
-                        {device.info.version}
+                        {device.minerData?.fw_ver ?? "—"}
                       </td>
                     </tr>
                   ))}
@@ -138,8 +137,8 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                   className="border-t border-border first:border-t-0"
                 >
                   <summary className="flex cursor-pointer items-center justify-between gap-3 bg-muted px-4 py-3">
-                    <span className="min-w-0 flex-1 truncate font-body text-sm font-semibold capitalize">
-                      {device.info.hostname}
+                    <span className="font-body text-sm font-semibold capitalize">
+                      {device.minerData?.hostname ?? device.ip ?? device.mac ?? "—"}
                     </span>
                     <input
                       type="checkbox"
@@ -164,21 +163,21 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
-                        <span className="font-heading text-sm font-medium capitalize">Miner</span>
-                        <span className="max-w-[65%] break-all text-right font-accent text-sm text-muted-foreground">
-                          {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
+                        <span className="font-heading text-sm font-medium capitalize">Make</span>
+                        <span className="font-accent text-sm text-muted-foreground">
+                          {device.minerData?.make ?? "—"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
-                        <span className="font-heading text-sm font-medium capitalize">ASIC</span>
-                        <span className="max-w-[65%] break-all text-right font-accent text-sm text-muted-foreground">
-                          {device.info.ASICModel}
+                        <span className="font-heading text-sm font-medium capitalize">Model</span>
+                        <span className="font-accent text-sm text-muted-foreground">
+                          {device.minerData?.model ?? "—"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
-                        <span className="font-heading text-sm font-medium capitalize">FW v.</span>
-                        <span className="max-w-[65%] break-all text-right font-accent text-sm text-muted-foreground">
-                          {device.info.version}
+                        <span className="font-heading text-sm font-medium capitalize">FW</span>
+                        <span className="font-accent text-sm text-muted-foreground">
+                          {device.minerData?.fw_ver ?? "—"}
                         </span>
                       </div>
                     </div>
