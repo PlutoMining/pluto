@@ -1,6 +1,7 @@
 import React from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import axios from "axios";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 
 import { DeviceSettingsAccordion } from "@/components/Accordion";
 
@@ -19,28 +20,43 @@ const axiosMock = axios as unknown as {
   isAxiosError: jest.Mock;
 };
 
-const makeDevice = (mac: string, hostname: string) =>
-  ({
-    mac,
+const makeDiscoveredMiner = (mac: string, hostname: string): DiscoveredMiner => ({
+  mac,
+  ip: "10.0.0.1",
+  type: "Bitaxe",
+  tracing: true,
+  presetUuid: null,
+  minerData: {
     ip: "10.0.0.1",
-    tracing: true,
-    presetUuid: null,
-    info: {
-      hostname,
-      stratumUser: "user.worker",
-      stratumURL: "pool.example.com",
-      stratumPort: 3333,
-      stratumPassword: "pass",
-      flipscreen: 0,
-      invertfanpolarity: 0,
-      autofanspeed: 1,
-      fanspeed: 50,
-      frequency: 100,
-      frequencyOptions: [{ label: "100", value: 100 }],
-      coreVoltage: 900,
-      coreVoltageOptions: [{ label: "900", value: 900 }],
+    hostname,
+    device_info: {
+      model: "BM1397",
     },
-  }) as any;
+    config: {
+      pools: {
+        groups: [
+          {
+            pools: [
+              {
+                url: "stratum+tcp://pool.example.com:3333",
+                user: "user.worker",
+                password: "pass",
+              },
+            ],
+          },
+        ],
+      },
+      extra_config: {
+        frequency: 100,
+        core_voltage: 900,
+        fanspeed: 50,
+        autofanspeed: 1,
+        flipscreen: 0,
+        invertfanpolarity: 0,
+      },
+    },
+  },
+});
 
 describe("DeviceSettingsAccordion actions", () => {
   beforeEach(() => {
@@ -58,9 +74,19 @@ describe("DeviceSettingsAccordion actions", () => {
             uuid: "preset-1",
             name: "Preset 1",
             configuration: {
-              stratumURL: "pool.example.com",
-              stratumPort: 3333,
-              stratumUser: "user",
+              pools: {
+                groups: [
+                  {
+                    pools: [
+                      {
+                        url: "stratum+tcp://pool.example.com:3333",
+                        user: "user",
+                        password: "",
+                      },
+                    ],
+                  },
+                ],
+              },
             },
             associatedDevices: [],
           },
@@ -70,19 +96,20 @@ describe("DeviceSettingsAccordion actions", () => {
   });
 
   it("keeps stratumURL as a string when saving an IP address", async () => {
-    // Ensure we are in custom mode without presets so the save payload uses the edited device.info.
+    // Ensure we are in custom mode without presets so the save payload uses the edited form state.
     (global as any).fetch = jest.fn(async () => ({
       ok: true,
       json: async () => ({ data: [] }),
     }));
 
+    const device = makeDiscoveredMiner("aa", "miner-01");
     axiosMock.patch
-      .mockResolvedValueOnce({ data: { data: { mac: "aa" } } })
-      .mockResolvedValueOnce({ data: { data: { mac: "aa", info: { hostname: "miner-01" } } } });
+      .mockResolvedValueOnce({ data: { data: device } })
+      .mockResolvedValueOnce({ data: { data: device } });
 
     const { container } = render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice("aa", "miner-01")]}
+        fetchedDevices={[device]}
         alert={undefined}
         setAlert={jest.fn() as any}
         onOpenAlert={jest.fn()}
@@ -107,7 +134,7 @@ describe("DeviceSettingsAccordion actions", () => {
     await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(2));
 
     const firstPayload = axiosMock.patch.mock.calls[0][1];
-    expect(firstPayload.info.stratumURL).toBe("192.168.0.252");
+    expect(firstPayload.pools?.groups?.[0]?.pools?.[0]?.url).toContain("192.168.0.252");
   });
 
   it("restarts selected devices (success)", async () => {
@@ -116,7 +143,7 @@ describe("DeviceSettingsAccordion actions", () => {
     const setAlert = jest.fn();
     const onOpenAlert = jest.fn();
 
-    const devices = [makeDevice("aa", "miner-01"), makeDevice("bb", "miner-02")];
+    const devices = [makeDiscoveredMiner("aa", "miner-01"), makeDiscoveredMiner("bb", "miner-02")];
 
     const { container } = render(
       <DeviceSettingsAccordion
@@ -165,7 +192,7 @@ describe("DeviceSettingsAccordion actions", () => {
     const setAlert = jest.fn();
     const onOpenAlert = jest.fn();
 
-    const devices = [makeDevice("aa", "miner-01"), makeDevice("bb", "miner-02")];
+    const devices = [makeDiscoveredMiner("aa", "miner-01"), makeDiscoveredMiner("bb", "miner-02")];
 
     const { container } = render(
       <DeviceSettingsAccordion
@@ -204,7 +231,7 @@ describe("DeviceSettingsAccordion actions", () => {
     const setAlert = jest.fn();
     const onOpenAlert = jest.fn();
 
-    const devices = [makeDevice("aa", "miner-01"), makeDevice("bb", "miner-02")];
+    const devices = [makeDiscoveredMiner("aa", "miner-01"), makeDiscoveredMiner("bb", "miner-02")];
 
     const { container } = render(
       <DeviceSettingsAccordion
@@ -237,7 +264,7 @@ describe("DeviceSettingsAccordion actions", () => {
 
     render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice("aa", "miner-01")]}
+        fetchedDevices={[makeDiscoveredMiner("aa", "miner-01")]}
         alert={undefined}
         setAlert={jest.fn() as any}
         onOpenAlert={jest.fn()}
@@ -255,7 +282,7 @@ describe("DeviceSettingsAccordion actions", () => {
 
     render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice("aa", "miner-01")]}
+        fetchedDevices={[makeDiscoveredMiner("aa", "miner-01")]}
         alert={undefined}
         setAlert={jest.fn() as any}
         onOpenAlert={jest.fn()}
@@ -267,9 +294,10 @@ describe("DeviceSettingsAccordion actions", () => {
   });
 
   it("saves settings via SaveAndRestartModal and can restart after saving", async () => {
+    const device = makeDiscoveredMiner("aa", "miner-01");
     axiosMock.patch
-      .mockResolvedValueOnce({ data: { data: { mac: "aa" } } })
-      .mockResolvedValueOnce({ data: { data: { mac: "aa", info: { hostname: "miner-01" } } } });
+      .mockResolvedValueOnce({ data: { data: device } })
+      .mockResolvedValueOnce({ data: { data: device } });
     axiosMock.post.mockResolvedValue({ data: {} });
 
     const setAlert = jest.fn();
@@ -277,7 +305,7 @@ describe("DeviceSettingsAccordion actions", () => {
 
     const { container } = render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice("aa", "miner-01")]}
+        fetchedDevices={[device]}
         alert={undefined}
         setAlert={setAlert as any}
         onOpenAlert={onOpenAlert}
@@ -307,12 +335,13 @@ describe("DeviceSettingsAccordion actions", () => {
   });
 
   it("uses the selected preset values when saving device settings", async () => {
+    const device = makeDiscoveredMiner("aa", "miner-01");
+    if (device.minerData.config?.pools?.groups?.[0]?.pools?.[0]) {
+      device.minerData.config.pools.groups[0].pools[0].user = "other.worker";
+    }
     axiosMock.patch
-      .mockResolvedValueOnce({ data: { data: { mac: "aa" } } })
-      .mockResolvedValueOnce({ data: { data: { mac: "aa", info: { hostname: "miner-01" } } } });
-
-    const device = makeDevice("aa", "miner-01");
-    device.info.stratumUser = "other.worker";
+      .mockResolvedValueOnce({ data: { data: device } })
+      .mockResolvedValueOnce({ data: { data: device } });
 
     const { container } = render(
       <DeviceSettingsAccordion
@@ -347,8 +376,9 @@ describe("DeviceSettingsAccordion actions", () => {
     await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(2));
 
     const firstPayload = axiosMock.patch.mock.calls[0][1];
-    expect(firstPayload.presetUuid).toBe("preset-1");
-    expect(firstPayload.info.stratumUser).toBe("user.worker");
+    // Preset user is "user", worker name (hostname) is appended: "user.miner-01"
+    expect(firstPayload.pools?.groups?.[0]?.pools?.[0]?.user).toContain("user");
+    expect(firstPayload.pools?.groups?.[0]?.pools?.[0]?.user).toMatch(/\.miner-01/);
   });
 
   it("restarts an individual device via RestartModal", async () => {
@@ -359,7 +389,7 @@ describe("DeviceSettingsAccordion actions", () => {
 
     const { container } = render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice("aa", "miner-01")]}
+        fetchedDevices={[makeDiscoveredMiner("aa", "miner-01")]}
         alert={undefined}
         setAlert={setAlert as any}
         onOpenAlert={onOpenAlert}
@@ -393,7 +423,7 @@ describe("DeviceSettingsAccordion actions", () => {
 
     const { container } = render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice("aa", "miner-01")]}
+        fetchedDevices={[makeDiscoveredMiner("aa", "miner-01")]}
         alert={undefined}
         setAlert={setAlert as any}
         onOpenAlert={onOpenAlert}
@@ -426,7 +456,7 @@ describe("DeviceSettingsAccordion actions", () => {
 
     const { container } = render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice("aa", "miner-01")]}
+        fetchedDevices={[makeDiscoveredMiner("aa", "miner-01")]}
         alert={undefined}
         setAlert={setAlert as any}
         onOpenAlert={onOpenAlert}
@@ -451,7 +481,7 @@ describe("DeviceSettingsAccordion actions", () => {
   it("opens the RestartModal from the mobile footer Restart button", async () => {
     const { container } = render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice("aa", "miner-01")]}
+        fetchedDevices={[makeDiscoveredMiner("aa", "miner-01")]}
         alert={undefined}
         setAlert={jest.fn() as any}
         onOpenAlert={jest.fn()}

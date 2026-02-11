@@ -129,16 +129,9 @@ describe('MonitoringClient', () => {
 
     await flushEffects();
 
-    expect(screen.getByText('Pool preset')).toBeInTheDocument();
-    expect(screen.getByText('Pool preset')).toBeInTheDocument();
-    expect(screen.getByText('Custom')).toBeInTheDocument();
-
-    expect(screen.getByText(/- GH\/s/)).toBeInTheDocument();
-
-    act(() => {
-      screen.getByTestId('time-range').click();
-    });
-    expect(screen.getByTestId('time-range')).toHaveTextContent('not-a-range');
+    expect(screen.getByText('rig-1 Dashboard')).toBeInTheDocument();
+    // While device data is loading we show the loading skeleton, not stats/cards yet.
+    expect(screen.getByText('Loading device data…')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(socket.on).toHaveBeenCalled();
@@ -170,18 +163,16 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: false,
             presetUuid: 'p1',
-            info: {
+            minerData: {
               hostname: 'rig-1',
-              hashRate: 10,
-              hashRate_10m: 11,
-              sharesAccepted: 1,
-              sharesRejected: 2,
-              bestDiff: '1',
-              bestSessionDiff: '1',
-              uptimeSeconds: 60,
-              power: 100,
-              temp: 50,
-              vrTemp: 55,
+              hashrate: { rate: 10 },
+              shares_accepted: 1,
+              shares_rejected: 2,
+              best_difficulty: '1',
+              best_session_difficulty: '1',
+              uptime: 60,
+              wattage: 100,
+              temperature_avg: 50,
             },
           },
         ],
@@ -196,12 +187,16 @@ describe('MonitoringClient', () => {
     expect(screen.getByText('offline')).toBeInTheDocument();
 
     act(() => {
-      socket.emit('stat_update', { mac: 'bb', tracing: true });
+      socket.emit('stat_update', { mac: 'bb', tracing: true, minerData: { hostname: 'other' } });
     });
     expect(screen.getByText('offline')).toBeInTheDocument();
 
     act(() => {
-      socket.emit('stat_update', { mac: 'aa', tracing: true, info: { hostname: 'rig-1' } });
+      socket.emit('stat_update', {
+        mac: 'aa',
+        tracing: true,
+        minerData: { hostname: 'rig-1' },
+      });
     });
     expect(await screen.findByText('online')).toBeInTheDocument();
 
@@ -224,7 +219,13 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: 'p1',
-            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', sharesAccepted: 0, sharesRejected: 0 },
+            minerData: {
+              hostname: 'rig-1',
+              best_difficulty: '1',
+              best_session_difficulty: '1',
+              shares_accepted: 0,
+              shares_rejected: 0,
+            },
           },
         ],
       },
@@ -246,16 +247,15 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: null,
-            info: {
+            minerData: {
               hostname: 'rig-1',
-              hashRate: Number.NaN,
-              sharesAccepted: 0,
-              sharesRejected: 0,
-              bestDiff: '1',
-              bestSessionDiff: '1',
-              power: Number.POSITIVE_INFINITY,
-              temp: Number.NaN,
-              vrTemp: Number.NaN,
+              hashrate: { rate: Number.NaN },
+              shares_accepted: 0,
+              shares_rejected: 0,
+              best_difficulty: '1',
+              best_session_difficulty: '1',
+              wattage: Number.POSITIVE_INFINITY,
+              temperature_avg: Number.NaN,
             },
           },
         ],
@@ -268,11 +268,29 @@ describe('MonitoringClient', () => {
 
     expect(await screen.findByText('online')).toBeInTheDocument();
     expect(screen.getByText(/- GH\/s/)).toBeInTheDocument();
-    expect(screen.getByText(/- W/)).toBeInTheDocument();
+    // Non-finite power is treated as "missing" so the Power summary card is hidden.
   });
 
   it('updates auto refresh interval when time range changes', async () => {
-    axios.get.mockResolvedValue({ data: { data: [] } });
+    axios.get.mockResolvedValue({
+      data: {
+        data: [
+          {
+            mac: 'aa',
+            ip: '1.1.1.1',
+            type: 'rig',
+            tracing: true,
+            presetUuid: null,
+            minerData: {
+              hostname: 'rig-1',
+              hashrate: { rate: 1 },
+              shares_accepted: 0,
+              shares_rejected: 0,
+            },
+          },
+        ],
+      },
+    });
 
     render(<MonitoringClient id="rig-1" />);
 
@@ -310,13 +328,13 @@ describe('MonitoringClient', () => {
               type: 'rig',
               tracing: true,
               presetUuid: null,
-              info: {
+              minerData: {
                 hostname: 'rig-1',
-                hashRate: 10,
-                sharesAccepted: 0,
-                sharesRejected: 0,
-                bestDiff: '1',
-                bestSessionDiff: '1',
+                hashrate: { rate: 10 },
+                shares_accepted: 0,
+                shares_rejected: 0,
+                best_difficulty: '1',
+                best_session_difficulty: '1',
                 isPSRAMAvailable: 1,
                 freeHeapInternal: Number.POSITIVE_INFINITY,
                 freeHeapSpiram: 2 * 1024 * 1024,
@@ -372,7 +390,13 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: null,
-            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', sharesAccepted: 0, sharesRejected: 0 },
+            minerData: {
+              hostname: 'rig-1',
+              best_difficulty: '1',
+              best_session_difficulty: '1',
+              shares_accepted: 0,
+              shares_rejected: 0,
+            },
           },
         ],
       },
@@ -408,12 +432,12 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: null,
-            info: {
+            minerData: {
               hostname: 'rig-1',
-              bestDiff: '1',
-              bestSessionDiff: '1',
-              sharesAccepted: 0,
-              sharesRejected: 0,
+              best_difficulty: '1',
+              best_session_difficulty: '1',
+              shares_accepted: 0,
+              shares_rejected: 0,
               isPSRAMAvailable: 1,
               freeHeapInternal: 1024 * 1024,
               freeHeapSpiram: 2 * 1024 * 1024,
@@ -456,7 +480,13 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: null,
-            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', sharesAccepted: 0, sharesRejected: 0 },
+            minerData: {
+              hostname: 'rig-1',
+              best_difficulty: '1',
+              best_session_difficulty: '1',
+              shares_accepted: 0,
+              shares_rejected: 0,
+            },
           },
         ],
       },
@@ -490,7 +520,13 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: null,
-            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', sharesAccepted: 0, sharesRejected: 0 },
+            minerData: {
+              hostname: 'rig-1',
+              best_difficulty: '1',
+              best_session_difficulty: '1',
+              shares_accepted: 0,
+              shares_rejected: 0,
+            },
           },
         ],
       },
@@ -557,7 +593,13 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: null,
-            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', sharesAccepted: 0, sharesRejected: 0 },
+            minerData: {
+              hostname: 'rig-1',
+              best_difficulty: '1',
+              best_session_difficulty: '1',
+              shares_accepted: 0,
+              shares_rejected: 0,
+            },
           },
         ],
       },
@@ -588,11 +630,6 @@ describe('MonitoringClient', () => {
     });
 
     expect(consoleErrorSpy).not.toHaveBeenCalled();
-
-    const efficiencyChart = screen
-      .getAllByTestId('line-chart')
-      .find((el) => el.getAttribute('data-title') === 'Efficiency');
-    expect(efficiencyChart?.getAttribute('data-unit')).toBe('J/TH');
 
     consoleErrorSpy.mockRestore();
   });

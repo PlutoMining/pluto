@@ -77,18 +77,16 @@ describe('MonitoringTableClient', () => {
             ip: '1.1.1.1',
             type: 'rig',
             tracing: true,
-            info: {
+            minerData: {
               hostname: 'rig-1',
-              hashrate_10m: 10,
-              hashRate: 10,
-              sharesAccepted: 1,
-              sharesRejected: 0,
-              power: 100,
-              temp: 50,
-              vrTemp: 55,
-              bestDiff: '1',
-              bestSessionDiff: '1',
-              uptimeSeconds: 60,
+              hashrate: { rate: 10 },
+              shares_accepted: 1,
+              shares_rejected: 0,
+              wattage: 100,
+              temperature_avg: 50,
+              best_difficulty: '1',
+              best_session_difficulty: '1',
+              uptime: 60,
             },
           },
         ],
@@ -108,7 +106,24 @@ describe('MonitoringTableClient', () => {
     axios.get
       .mockResolvedValueOnce({ data: { data: [] } }) // initial
       .mockResolvedValueOnce({
-        data: { data: [{ mac: 'aa', ip: '1.1.1.1', type: 'rig', tracing: true, info: { hostname: 'rig-1', power: 1 } }] },
+        data: {
+          data: [
+            {
+              mac: 'aa',
+              ip: '1.1.1.1',
+              type: 'rig',
+              tracing: true,
+              minerData: {
+                hostname: 'rig-1',
+                hashrate: { rate: 1 },
+                shares_accepted: 0,
+                shares_rejected: 0,
+                wattage: 1,
+                temperature_avg: 0,
+              },
+            },
+          ],
+        },
       }) // search
       .mockResolvedValueOnce({ data: { data: [] } }); // clear
 
@@ -152,19 +167,16 @@ describe('MonitoringTableClient', () => {
             ip: '1.1.1.1',
             type: 'rig',
             tracing: false,
-            info: {
+            minerData: {
               hostname: 'rig-1',
-              hashRate_10m: 10,
-              hashRate: 5,
-              sharesAccepted: 1,
-              sharesRejected: 0,
-              power: 100,
-              temp: 50.25,
-              vrTemp: null,
-              currentDiff: '10',
-              bestDiff: '1',
-              bestSessionDiff: '2',
-              uptimeSeconds: 60,
+              hashrate: { rate: 5 },
+              shares_accepted: 1,
+              shares_rejected: 0,
+              wattage: 100,
+              temperature_avg: 50.25,
+              best_difficulty: '1',
+              best_session_difficulty: '2',
+              uptime: 60,
             },
           },
         ],
@@ -175,11 +187,14 @@ describe('MonitoringTableClient', () => {
 
     expect(await screen.findByText('rig-1')).toBeInTheDocument();
     expect(screen.getByText(/50\.3/)).toBeInTheDocument();
-    expect(screen.getByText(/N\/A/)).toBeInTheDocument();
     expect(screen.getByTestId('device-status')).toHaveTextContent('offline');
 
     act(() => {
-      socket.emit('stat_update', { mac: 'aa', tracing: true, info: { hostname: 'rig-1-updated', power: 200 } });
+      socket.emit('stat_update', {
+        mac: 'aa',
+        tracing: true,
+        minerData: { hostname: 'rig-1-updated' },
+      });
     });
 
     expect(await screen.findByText('rig-1-updated')).toBeInTheDocument();
@@ -211,17 +226,16 @@ describe('MonitoringTableClient', () => {
             ip: '1.1.1.1',
             type: 'rig',
             tracing: true,
-            info: {
+            minerData: {
               hostname: 'rig-1',
-              hashRate: 10,
-              sharesAccepted: 1,
-              sharesRejected: 0,
-              power: 100,
-              temp: Number.NaN,
-              vrTemp: Number.POSITIVE_INFINITY,
-              bestDiff: '1',
-              bestSessionDiff: '1',
-              uptimeSeconds: 60,
+              hashrate: { rate: 10 },
+              shares_accepted: 1,
+              shares_rejected: 0,
+              wattage: 100,
+              temperature_avg: Number.NaN,
+              best_difficulty: '1',
+              best_session_difficulty: '1',
+              uptime: 60,
             },
           },
         ],
