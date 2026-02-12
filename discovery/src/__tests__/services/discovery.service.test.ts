@@ -46,6 +46,9 @@ class MockAxiosError extends Error {
   }
 }
 axiosModule.AxiosError = MockAxiosError;
+axiosModule.isAxiosError = jest.fn((error: any) => {
+  return error instanceof MockAxiosError || (error && typeof error.code === 'string');
+});
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const { getActiveNetworkInterfaces, arpScan } = jest.requireMock('@/services/arpScanWrapper');
@@ -612,6 +615,46 @@ describe('discovery.service helpers', () => {
       expect(insertOne).not.toHaveBeenCalled();
     });
 
+    it('filters discovered miners by mac when mac option is provided', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([
+        { ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' },
+        { ip: '10.0.0.2', mac: 'dd:ee:ff', type: 'miner' },
+      ]);
+
+      const validationResults: MinerValidationResult[] = [
+        { ip: '10.0.0.1', is_miner: true, model: 'ModelA' },
+        { ip: '10.0.0.2', is_miner: true, model: 'ModelB' },
+      ];
+      const minerDataA: MinerData = {
+        ip: '10.0.0.1',
+        mac: 'aa:bb:cc',
+        model: 'ModelA',
+        hostname: 'miner-a',
+        device_info: { model: 'ModelA' },
+      };
+      const minerDataB: MinerData = {
+        ip: '10.0.0.2',
+        mac: 'dd:ee:ff',
+        model: 'ModelB',
+        hostname: 'miner-b',
+        device_info: { model: 'ModelB' },
+      };
+
+      MinerValidationService.validateBatch.mockResolvedValue(validationResults);
+      MinerValidationService.fetchMinerData
+        .mockResolvedValueOnce(minerDataA)
+        .mockResolvedValueOnce(minerDataB);
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices({ mac: 'aa:bb:cc' });
+
+      expect(getActiveNetworkInterfaces).toHaveBeenCalled();
+      expect(arpScan).toHaveBeenCalledWith('eth0');
+      expect(result).toHaveLength(1);
+      expect(result[0].mac).toBe('aa:bb:cc');
+    });
+
     it('handles validation errors during scan and continues', async () => {
       getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
       arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
@@ -634,43 +677,45 @@ describe('discovery.service helpers', () => {
       expect(result).toEqual([]);
     });
 
-    it('skips mock devices from validation when detection is enabled', async () => {
+    it('includes mock devices in validation when detection is enabled', async () => {
       config.detectMockDevices = true;
       config.mockDiscoveryHost = 'http://mock-host:7000';
       config.mockDeviceHost = 'host.docker.internal';
 
+      // No real devices from ARP
       getActiveNetworkInterfaces.mockResolvedValue([]);
       arpScan.mockResolvedValue([]);
 
+      // Mock discovery service returns one mock server
       mockedAxios.get.mockResolvedValueOnce({ data: { servers: [{ port: 9001 }] } });
+
+      // validateBatch will be called with the mock device IP
+      const mockIp = 'host.docker.internal:9001';
+      const validationResult: MinerValidationResult = {
+        ip: mockIp,
+        is_miner: true,
+        model: 'MockModel',
+      };
+      const minerData: MinerData = {
+        ip: mockIp,
+        mac: 'ff:ff:ff:ff:23:29',
+        model: 'MockModel',
+        hostname: 'mockaxe1',
+        device_info: { model: 'MockModel' } as any,
+      };
+
+      MinerValidationService.validateBatch.mockResolvedValue([validationResult]);
+      MinerValidationService.fetchMinerData.mockResolvedValue(minerData);
+      insertOne.mockResolvedValue(undefined);
 
       const result = await discoverDevices();
 
-      // Mock devices are skipped from pyasic-bridge validation (as per code comment)
-      expect(result).toHaveLength(0);
-      expect(MinerValidationService.validateBatch).not.toHaveBeenCalled();
+      expect(result).toHaveLength(1);
+      expect(result[0].ip).toBe(mockIp);
+      expect(MinerValidationService.validateBatch).toHaveBeenCalledWith([mockIp]);
 
       config.detectMockDevices = false;
       config.mockDeviceHost = undefined;
-    });
-
-    it('skips mock devices even when mock server list is provided', async () => {
-      config.detectMockDevices = true;
-      config.mockDiscoveryHost = 'http://mock-host:7000';
-      config.mockDeviceHost = undefined;
-
-      getActiveNetworkInterfaces.mockResolvedValue([]);
-      arpScan.mockResolvedValue([]);
-
-      mockedAxios.get.mockResolvedValueOnce({
-        data: { servers: [{ port: '9001' }, { port: 0 }, { port: 'wat' }] },
-      });
-
-      const result = await discoverDevices();
-
-      // Mock devices are skipped from pyasic-bridge validation
-      expect(result).toHaveLength(0);
-      expect(MinerValidationService.validateBatch).not.toHaveBeenCalled();
     });
 
     it('returns empty array when discovery fails before scanning completes', async () => {

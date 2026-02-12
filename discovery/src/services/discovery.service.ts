@@ -323,25 +323,33 @@ export async function discoverDevices(options?: DiscoveryOptions): Promise<Disco
       return [];
     }
 
-    // Split mock vs non-mock devices
-    // Note: For now, we skip mock devices from pyasic-bridge validation as per user request
-    // Mock device handling will be migrated in another PR
+    // Detect mock devices based on MAC prefix (ff:ff:ff:ff:*)
     const mockDevices = validDevices.filter((device) =>
       UtilsService.isMockDevice(device.mac)
     );
-    const nonMockDevices = validDevices.filter(
-      (device) => !UtilsService.isMockDevice(device.mac)
-    );
-
     if (mockDevices.length > 0) {
       logger.info(
-        `Skipping ${mockDevices.length} mock device(s) - will be handled in separate PR`
+        `Detected ${mockDevices.length} mock device(s) based on MAC prefix; including them in validation.`
       );
     }
 
-    // Process non-mock devices with chunking and concurrency control
-    logger.info(`Processing ${nonMockDevices.length} non-mock device(s) for validation`);
-    const discoveredMiners = await processNonMockDevices(nonMockDevices);
+    // Process all devices (real + mock) with chunking and concurrency control via pyasic-bridge
+    logger.info(`Processing ${validDevices.length} device(s) for validation`);
+    const discoveredMiners = await processNonMockDevices(validDevices);
+
+    // If a MAC filter was provided (without a direct IP lookup), filter the final results by MAC.
+    if (options?.mac) {
+      const macFilter = options.mac.toLowerCase();
+      const filteredByMac = discoveredMiners.filter(
+        (miner) => miner.mac?.toLowerCase() === macFilter
+      );
+
+      logger.info(
+        `Discovery completed. ${filteredByMac.length} validated miner(s) found after MAC filter (from ${discoveredMiners.length} total).`
+      );
+
+      return filteredByMac;
+    }
 
     logger.info(`Discovery completed. ${discoveredMiners.length} validated miners found.`);
     return discoveredMiners;
