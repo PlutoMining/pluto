@@ -82,6 +82,13 @@ describe("BitaxeAxeOSDataGenerator", () => {
     expect(result2.macAddr).toBe("ff:ff:ff:ff:00:ff");
   });
 
+  it("falls back to zero-based MAC suffix when hostname has no numeric suffix", () => {
+    const generator = new BitaxeAxeOSDataGenerator();
+    const result = generator.generate("mockaxe", 0);
+
+    expect(result.macAddr).toBe("ff:ff:ff:ff:00:00");
+  });
+
   it("merges overrides into generated base", () => {
     const generator = new BitaxeAxeOSDataGenerator();
     const overrides = { power: 99, hostname: "custom-host" };
