@@ -7,9 +7,12 @@
 */
 
 import { Router } from "express";
-import { getSystemInfo, patchSystemInfo, restartSystem } from "../controllers/system.controller";
+import { getRoot, getSystemInfo, patchSystemInfo, restartSystem } from "../controllers/system.controller";
 
 const router = Router();
+
+// Root route for AxeOS detection by pyasic library
+router.get("/", getRoot);
 
 // Rotta per ottenere le informazioni di sistema
 router.get("/api/system/info", getSystemInfo);
