@@ -1,3 +1,5 @@
+import routes from "@/routes/system.routes";
+
 describe("system.routes", () => {
   const originalEnv = process.env;
 
@@ -16,21 +18,18 @@ describe("system.routes", () => {
   });
 
   it("mounts /api/system/info", () => {
-    const routes = require("@/routes/system.routes").default;
     const layer = (routes as any).stack.find((l: any) => l.route?.path === "/api/system/info");
     expect(layer).toBeTruthy();
     expect(layer.route.methods).toMatchObject({ get: true });
   });
 
   it("mounts /api/system", () => {
-    const routes = require("@/routes/system.routes").default;
     const layer = (routes as any).stack.find((l: any) => l.route?.path === "/api/system");
     expect(layer).toBeTruthy();
     expect(layer.route.methods).toMatchObject({ patch: true });
   });
 
   it("mounts /api/system/restart", () => {
-    const routes = require("@/routes/system.routes").default;
     const layer = (routes as any).stack.find((l: any) => l.route?.path === "/api/system/restart");
     expect(layer).toBeTruthy();
     expect(layer.route.methods).toMatchObject({ post: true });
