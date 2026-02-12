@@ -49,23 +49,36 @@ describe("PresetAccordion", () => {
     const preset = {
       uuid: "p2",
       name: "Preset with devices",
+      // Use pyasic-style MinerConfigModelInput pool config; the component only
+      // cares that a pool entry exists, not about the exact values.
       configuration: {
-        stratumURL: "pool.example.com",
-        stratumPort: 3333,
-        stratumUser: "user",
+        pools: {
+          groups: [
+            {
+              pools: [
+                {
+                  url: "stratum+tcp://pool.example.com:3333",
+                  user: "user",
+                  password: "",
+                },
+              ],
+            },
+          ],
+        },
       },
+      // Associated devices now follow the DiscoveredMiner shape (pyasic MinerData).
       associatedDevices: [
         {
           mac: "aa",
           ip: "10.0.0.1",
           tracing: true,
-          info: { hostname: "miner-01" },
+          minerData: { hostname: "miner-01" },
         },
         {
           mac: "bb",
           ip: "10.0.0.2",
           // intentionally omit tracing to cover `device.tracing || false`
-          info: { hostname: "miner-02" },
+          minerData: { hostname: "miner-02" },
         },
       ],
     } as any;
