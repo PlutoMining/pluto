@@ -22,7 +22,27 @@ import { v4 as uuidv4 } from "uuid";
 function validateFieldByName(name: string, value: string) {
   switch (name) {
     case "poolUrl":
-      return validateDomain(value, { allowIP: true });
+      // Allow full stratum URLs like `stratum+tcp://host:port`
+      // by validating only the hostname/IP portion.
+      {
+        const trimmed = value.trim();
+        if (!trimmed) return true;
+
+        // Strip known stratum scheme if present.
+        let hostPart = trimmed.replace(/^stratum\+tcp:\/\//i, "");
+
+        // Drop path, if any.
+        if (hostPart.includes("/")) {
+          hostPart = hostPart.split("/")[0];
+        }
+
+        // Drop port, if any.
+        if (hostPart.includes(":")) {
+          hostPart = hostPart.split(":")[0];
+        }
+
+        return validateDomain(hostPart, { allowIP: true });
+      }
     case "poolUser":
       return !value.includes(".");
     default:
