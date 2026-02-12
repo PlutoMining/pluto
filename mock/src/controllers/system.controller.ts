@@ -8,7 +8,8 @@
 
 import { Request, Response } from "express";
 import { generateSystemInfo, generateSystemInfoAlt } from "../services/mock.service";
-import { DeviceApiVersion, DeviceInfo } from "@pluto/interfaces";
+import { DeviceApiVersion } from "../types/axeos.types";
+import { MockMinerContext } from "../contexts/mock-miner-context";
 
 // Funzione per calcolare l'uptime
 const calculateUptime = (startTime: Date): number => {
@@ -20,40 +21,58 @@ const calculateUptime = (startTime: Date): number => {
 
 export const getSystemInfo = async (req: Request, res: Response) => {
   try {
-    // Recupera il hostname salvato in app.locals
-    const hostname = req.app.locals.hostname;
-    const apiVersion = req.app.locals.apiVersion;
+    const context: MockMinerContext<unknown> | undefined = req.app.locals.mockContext;
 
-    // console.log(req.app.locals.startTime);
+    if (!context) {
+      // Fallback to legacy behaviour if context is missing for any reason.
+      const hostname = req.app.locals.hostname;
+      const apiVersion = req.app.locals.apiVersion;
+      const uptimeSeconds = calculateUptime(req.app.locals.startTime);
+      const systemInfo =
+        apiVersion === DeviceApiVersion.Legacy
+          ? generateSystemInfo(hostname, uptimeSeconds, req.app.locals.systemInfo)
+          : generateSystemInfoAlt(hostname, uptimeSeconds, req.app.locals.systemInfo);
+      res.json(systemInfo);
+      return;
+    }
 
-    const uptimeSeconds = calculateUptime(req.app.locals.startTime);
-    const systemInfo =
-      apiVersion === DeviceApiVersion.Legacy
-        ? generateSystemInfo(hostname, uptimeSeconds, req.app.locals.systemInfo)
-        : generateSystemInfoAlt(hostname, uptimeSeconds, req.app.locals.systemInfo);
+    const systemInfo = context.getSystemInfo();
     res.json(systemInfo);
   } catch (error) {
-    res.status(500).json({ error: "Failed to retrieve system info" });
+    // Log the actual error for debugging
+    console.error("[Mock Service] Error in getSystemInfo:", error);
+    res.status(500).json({
+      error: "Failed to retrieve system info",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
 export const patchSystemInfo = async (req: Request, res: Response) => {
   try {
-    const updatedInfo: Partial<DeviceInfo> = req.body;
+    const updatedInfo = req.body as Record<string, unknown>;
 
-    // Se ci sono campi da aggiornare, vengono salvati su req.app.locals
-    if (!req.app.locals.systemInfo) {
-      req.app.locals.systemInfo = {};
+    const context: MockMinerContext<unknown> | undefined = req.app.locals.mockContext;
+
+    if (!context) {
+      // Legacy fallback: keep the previous behaviour if context is not present.
+      if (!req.app.locals.systemInfo) {
+        req.app.locals.systemInfo = {};
+      }
+
+      req.app.locals.systemInfo = {
+        ...req.app.locals.systemInfo,
+        ...updatedInfo,
+      };
+
+      res.status(200).json({ message: "System info updated successfully" });
+      return;
     }
 
-    // Aggiorna i campi di systemInfo solo se presenti nel body
-    req.app.locals.systemInfo = {
-      ...req.app.locals.systemInfo,
-      ...updatedInfo,
-    };
+    context.patchSystemInfo(updatedInfo as any);
 
     res.status(200).json({ message: "System info updated successfully" });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to update system info" });
   }
 };
@@ -76,3 +95,19 @@ export const restartSystem = async (req: Request, res: Response) => {
     res.status(500).json({ error: (error as Error).message });
   }
 };
+
+/**
+ * Root route handler for miner detection.
+ *
+ * Delegates to the strategy's getRootHtml() method to get miner-specific HTML.
+ * This allows each miner type to provide its own root HTML response.
+ */
+export const getRoot = async (req: Request, res: Response) => {
+  const context: MockMinerContext<unknown> | undefined = req.app.locals.mockContext;
+
+  // Get HTML from strategy
+  const html = context?.getRootHtml() ?? "";
+  res.setHeader("Content-Type", "text/html");
+  res.status(200).send(html);
+};
+

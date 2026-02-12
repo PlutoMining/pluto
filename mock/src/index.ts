@@ -11,7 +11,7 @@ import { logger } from "@pluto/logger";
 import { config } from "./config/environment";
 import express, { Express } from "express";
 import path from "path";
-import { DeviceApiVersion } from "@pluto/interfaces";
+import { DeviceApiVersion } from "./types/axeos.types";
 
 interface ServerInfo {
   port: number;
@@ -26,11 +26,12 @@ const { listingPort, ports } = config;
 const createMockServerWorker = (
   port: number,
   hostname: string,
-  apiVersion: DeviceApiVersion
+  apiVersion: DeviceApiVersion,
+  minerType = "axeos"
 ): Promise<void> => {
   return new Promise((resolve, reject) => {
     const worker = new Worker(path.resolve(__dirname, "./mockWorker.js"), {
-      workerData: { port, hostname, apiVersion },
+      workerData: { port, hostname, apiVersion, minerType },
     });
 
     worker.on("message", (message: any) => {
