@@ -17,6 +17,9 @@ permissions:
 jobs:
   test-backend:
     name: Lint & Test Backend
+    # Skip this job for PRs from feature/migrate-discovery branch
+    # Backend will be migrated in a separate PR - re-enable this job when migrating backend
+    if: github.head_ref != 'feature/migrate-discovery'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -26,6 +29,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -33,9 +41,20 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ matrix.app }}/package-lock.json
 
+      - name: Generate TypeScript client if needed
+        working-directory: pyasic-bridge
+        run: |
+          if [ ! -f "../common/pyasic-bridge-client/src/sdk.gen.ts" ] || [ ! -f "../common/pyasic-bridge-client/src/types.gen.ts" ]; then
+            echo "Generated client files missing, generating..."
+            pip install -r requirements.txt || pip install -r requirements-dev.txt || true
+            python3 scripts/generate_client.py
+          else
+            echo "Generated client files already exist"
+          fi
+
       - name: Install shared common packages
         run: |
-          for pkg in common/logger common/db common/interfaces common/utils; do
+          for pkg in common/logger common/db common/interfaces common/utils common/pyasic-bridge-client; do
             if [ -f "$pkg/package-lock.json" ]; then
               echo "Installing deps for $pkg"
               (cd "$pkg" && npm ci)

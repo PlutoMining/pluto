@@ -7,24 +7,15 @@
 */
 
 import { findMany, findOne, insertOne, updateOne } from "@pluto/db";
-import { Device } from "@pluto/interfaces";
+import { DiscoveredMiner } from "@pluto/interfaces";
 import { logger } from "@pluto/logger";
 import axios from "axios";
 import { config } from "../config/environment";
 import { ArpScanResult, arpScan, getActiveNetworkInterfaces } from "./arpScanWrapper";
-
-function toHexByte(value: number) {
-  return value.toString(16).padStart(2, "0");
-}
-
-function mockMacFromPort(port: unknown) {
-  const numericPort = typeof port === "number" ? port : Number(port);
-  if (!Number.isFinite(numericPort) || numericPort <= 0) return undefined;
-
-  const hi = (numericPort >> 8) & 0xff;
-  const lo = numericPort & 0xff;
-  return `ff:ff:ff:ff:${toHexByte(hi)}:${toHexByte(lo)}`;
-}
+import { ConcurrencyLimiter } from "./concurrency-limiter.service";
+import { DeviceConverterService } from "./device-converter.service";
+import { MinerValidationService } from "./miner-validation.service";
+import { UtilsService } from "./utils.service";
 
 interface DiscoveryOptions {
   ip?: string;
@@ -32,85 +23,249 @@ interface DiscoveryOptions {
   partialMatch?: boolean; // Opzione per ricerche parziali sull'IP
 }
 
-export async function discoverDevices(options?: DiscoveryOptions) {
+/**
+ * Stores a discovered miner in the discovery database with upsert logic.
+ */
+async function storeDiscoveredMiner(discoveredMiner: DiscoveredMiner): Promise<void> {
+  try {
+    await insertOne<DiscoveredMiner>(
+      "pluto_discovery",
+      "devices:discovered",
+      discoveredMiner.mac,
+      discoveredMiner
+    );
+    logger.info(`Discovered miner ${discoveredMiner.ip} inserted successfully.`);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("already exists")) {
+      logger.info(`Discovered miner ${discoveredMiner.ip} already exists, updating...`);
+      await updateOne<DiscoveredMiner>(
+        "pluto_discovery",
+        "devices:discovered",
+        discoveredMiner.mac,
+        discoveredMiner
+      );
+    } else {
+      throw error;
+    }
+  }
+}
+
+/**
+ * Handles discovery of a single IP address (bypasses ARP scan).
+ */
+async function discoverSingleIp(
+  ip: string,
+  mac?: string
+): Promise<DiscoveredMiner[]> {
+  logger.info(
+    `Bypassing ARP discovery and directly validating IP via pyasic-bridge: ${ip}`
+  );
+
+  const validationResult = await MinerValidationService.validateSingleIp(ip);
+
+  if (!validationResult || !validationResult.is_miner) {
+    logger.info(
+      `Device ${ip} is not a valid miner according to pyasic-bridge${
+        validationResult?.error ? `: ${validationResult.error}` : ""
+      }`
+    );
+    return [];
+  }
+
+  // Fetch miner data to enrich device info
+  const minerData = await MinerValidationService.fetchMinerData(ip);
+  const deviceMac = mac || minerData?.mac || "unknown";
+
+  const discoveredMiner = DeviceConverterService.createDiscoveredMiner(
+    ip,
+    deviceMac,
+    validationResult,
+    null,
+    minerData
+  );
+
+  logger.info(
+    `Discovered miner ${ip} (${validationResult.model || "unknown model"}) validated and added to the list.`
+  );
+
+  await storeDiscoveredMiner(discoveredMiner);
+  return [discoveredMiner];
+}
+
+/**
+ * Retrieves mock devices from the mock discovery service.
+ */
+async function getMockDevices(): Promise<ArpScanResult[]> {
+  try {
+    logger.info(`Fetching mock devices from ${config.mockDiscoveryHost}/servers`);
+    const response = await axios.get(`${config.mockDiscoveryHost}/servers`, {
+      timeout: 5000,
+    });
+    
+    if (!response.data || !Array.isArray(response.data.servers)) {
+      logger.warn("Mock discovery service returned invalid response format");
+      throw new Error("No mock servers found");
+    }
+
+    logger.info(`Mock servers retrieved: ${response.data.servers.length} found.`);
+
+    return response.data.servers.map((server: any, index: number) => ({
+      // Use MOCK_DEVICE_HOST for device IPs (allows Docker containers to reach mock devices)
+      // If MOCK_DEVICE_HOST is set, use it; otherwise extract from mockDiscoveryHost
+      ip: config.mockDeviceHost
+        ? `${config.mockDeviceHost}:${server.port}`
+        : config.mockDiscoveryHost.replace(/https?:\/\/(.+)(:.+)$/, `$1:${server.port}`),
+      // Deterministic MAC based on port so it stays stable across restarts/removals.
+      // This avoids generating a different MAC when the /servers ordering changes.
+      mac:
+        UtilsService.mockMacFromPort(server.port) ??
+        `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`,
+      type: "unknown",
+    }));
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      logger.error(
+        `Failed to fetch mock devices from ${config.mockDiscoveryHost}: ${error.message} (${error.code || "unknown"})`
+      );
+    } else {
+      logger.error(`Error fetching mock devices:`, error);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Validates a chunk of IPs and returns discovered miners.
+ */
+async function validateChunk(
+  chunk: string[],
+  ipToArpDevice: Map<string, ArpScanResult>
+): Promise<DiscoveredMiner[]> {
+  const chunkMiners: DiscoveredMiner[] = [];
+
+  logger.info(`Validating chunk of ${chunk.length} IPs: ${chunk.join(", ")}`);
+
+  try {
+    const validationResults = await MinerValidationService.validateBatch(chunk);
+    logger.info(`Received validation results for chunk: ${validationResults.length} results`);
+
+    // Process validation results
+    for (const result of validationResults) {
+    if (!result.is_miner) {
+      logger.debug(
+        `Device ${result.ip} is not a supported miner: ${result.error || "unknown reason"}`
+      );
+      continue;
+    }
+
+    const arpDevice = ipToArpDevice.get(result.ip);
+    if (!arpDevice) {
+      logger.warn(`No ARP device found for validated IP: ${result.ip}`);
+      continue;
+    }
+
+    const storageIp = arpDevice.ip; // Keep original IP (host.docker.internal for mock devices) for storage
+
+    // Fetch full miner data
+    const minerData = await MinerValidationService.fetchMinerData(result.ip);
+
+    // Create DiscoveredMiner from validation result and miner data
+    const discoveredMiner = DeviceConverterService.createDiscoveredMiner(
+      storageIp,
+      arpDevice.mac,
+      result,
+      arpDevice,
+      minerData
+    );
+
+    chunkMiners.push(discoveredMiner);
+    logger.info(
+      `Discovered miner ${storageIp} (${result.model || "unknown model"}) validated and added to the list.`
+    );
+
+      // Store in database immediately (progressive storage)
+      await storeDiscoveredMiner(discoveredMiner);
+    }
+
+    return chunkMiners;
+  } catch (error) {
+    logger.error(`Error processing validation chunk:`, error);
+    if (error instanceof Error) {
+      logger.error(`Chunk error details: ${error.message} (${error.name})`);
+    }
+    // Return partial results even if some devices failed
+    return chunkMiners;
+  }
+}
+
+/**
+ * Processes non-mock devices with chunking and concurrency control.
+ */
+async function processNonMockDevices(
+  nonMockDevices: ArpScanResult[]
+): Promise<DiscoveredMiner[]> {
+  if (nonMockDevices.length === 0) {
+    return [];
+  }
+
+  // Create a map of IP to ARP scan result for quick lookup
+  const ipToArpDevice = new Map<string, ArpScanResult>();
+  for (const device of nonMockDevices) {
+    ipToArpDevice.set(device.ip, device);
+  }
+
+  // Extract IPs for validation
+  const ipsToValidate = Array.from(ipToArpDevice.keys());
+
+  // Split IPs into chunks
+  const chunks = UtilsService.chunkArray(ipsToValidate, config.pyasicValidationBatchSize);
+  logger.info(
+    `Split ${ipsToValidate.length} IPs into ${chunks.length} chunks of size ${config.pyasicValidationBatchSize}`
+  );
+
+  // Create concurrency limiter
+  const limiter = new ConcurrencyLimiter(config.pyasicValidationConcurrency);
+
+  // Process chunks with concurrency limit
+  const chunkPromises = chunks.map((chunk) =>
+    limiter.execute(() => validateChunk(chunk, ipToArpDevice))
+  );
+
+  // Wait for all chunks to complete (using allSettled to continue even if some fail)
+  const results = await Promise.allSettled(chunkPromises);
+
+  // Collect all discovered miners from successful chunks
+  const discoveredMiners: DiscoveredMiner[] = [];
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      discoveredMiners.push(...result.value);
+    } else {
+      logger.error(`Chunk validation failed:`, result.reason);
+    }
+  }
+
+  return discoveredMiners;
+}
+
+/**
+ * Main discovery function that orchestrates ARP scan, validation, and miner storage.
+ */
+export async function discoverDevices(options?: DiscoveryOptions): Promise<DiscoveredMiner[]> {
   logger.info("Starting device discovery process...");
 
   try {
+    // Handle single IP discovery (bypasses ARP scan)
     if (options?.ip && !options.partialMatch) {
-      logger.info(
-        `Bypassing ARP discovery and directly attempting feature detection for IP: ${options.ip}`
-      );
-
-      try {
-        const response = await axios.get(`http://${options.ip}/api/system/info`, {
-          timeout: 1000,
-        });
-
-        logger.info(`Received response from ${options.ip}:`, response.data);
-
-        if (response.data && response.data.ASICModel) {
-          const deviceInfo: Device = {
-            ip: options.ip,
-            mac: response.data.mac || options?.mac || "unknown",
-            type: "unknown",
-            info: response.data,
-          };
-
-          logger.info(`Device ${options.ip} with ASICModel detected and added to the list.`);
-
-          try {
-            // Tenta di inserire il dispositivo
-            await insertOne<Device>(
-              "pluto_discovery",
-              "devices:discovered",
-              deviceInfo.mac,
-              deviceInfo
-            );
-            logger.info(`Device ${options.ip} inserted successfully.`);
-          } catch (error) {
-            if (error instanceof Error && error.message.includes("already exists")) {
-              // Se l'inserimento fallisce, effettua un aggiornamento
-              logger.info(`Device ${options.ip} already exists, updating...`);
-              await updateOne<Device>(
-                "pluto_discovery",
-                "devices:discovered",
-                deviceInfo.mac,
-                deviceInfo
-              );
-            } else {
-              throw error;
-            }
-          }
-
-          return [deviceInfo];
-        } else {
-          logger.info(`Device ${options.ip} does not contain ASICModel, skipping.`);
-          return [];
-        }
-      } catch (error) {
-        if (error instanceof axios.AxiosError) {
-          if (error.code === "ECONNABORTED") {
-            logger.error(`Request to ${options.ip} timed out.`);
-          } else {
-            logger.error(`Failed to make request to ${options.ip}:`, error.message);
-          }
-        } else {
-          logger.error(
-            `Unexpected error while making request to ${options.ip}:`,
-            error instanceof Error ? error.message : String(error)
-          );
-        }
-        return [];
-      }
+      return await discoverSingleIp(options.ip, options.mac);
     }
 
+    // Perform ARP scan
     const arpScanInterfaces = await getActiveNetworkInterfaces();
 
     let arpTable = (
       await Promise.allSettled(
         arpScanInterfaces.map(async (arpScanInterface) => {
           try {
-            // Esegui l'ARP scan per l'interfaccia specificata
             const localArpTable = await arpScan(arpScanInterface);
             return localArpTable;
           } catch (error) {
@@ -118,14 +273,13 @@ export async function discoverDevices(options?: DiscoveryOptions) {
               `Error retrieving ARP table for interface ${arpScanInterface}:`,
               error instanceof Error ? error.message : String(error)
             );
-            // Restituisci un array vuoto in caso di errore per non interrompere l'esecuzione
             return [];
           }
         })
       )
     )
-      .filter((result) => result.status === "fulfilled") // Considera solo i risultati che hanno avuto successo
-      .map((result) => (result as PromiseFulfilledResult<ArpScanResult[]>).value) // Estrai il valore dai risultati risolti
+      .filter((result) => result.status === "fulfilled")
+      .map((result) => (result as PromiseFulfilledResult<ArpScanResult[]>).value)
       .flat();
 
     if (arpTable.length > 0) {
@@ -137,34 +291,23 @@ export async function discoverDevices(options?: DiscoveryOptions) {
       );
     }
 
+    // Add mock devices if enabled
     if (config.detectMockDevices) {
-      const response = await axios.get(`${config.mockDiscoveryHost}/servers`);
-      if (response.data && Array.isArray(response.data.servers)) {
-        logger.info(`Mock servers retrieved: ${response.data.servers.length} found.`);
-
-        const mockDevices = response.data.servers.map((server: any, index: number) => ({
-          // Use MOCK_DEVICE_HOST for device IPs (allows Docker containers to reach mock devices)
-          // If MOCK_DEVICE_HOST is set, use it; otherwise extract from mockDiscoveryHost
-          ip: config.mockDeviceHost
-            ? `${config.mockDeviceHost}:${server.port}`
-            : config.mockDiscoveryHost.replace(/https?:\/\/(.+)(:.+)$/, `$1:${server.port}`),
-          // Deterministic MAC based on port so it stays stable across restarts/removals.
-          // This avoids generating a different MAC when the /servers ordering changes.
-          mac:
-            mockMacFromPort(server.port) ??
-            `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`,
-          type: "unknown",
-        }));
-
+      try {
+        const mockDevices = await getMockDevices();
         arpTable = arpTable.concat(mockDevices);
         logger.info(`Mock devices added to the ARP table. Total devices: ${arpTable.length}`);
-      } else {
-        throw new Error("No mock servers found");
+      } catch (error) {
+        logger.warn(
+          `Failed to fetch mock devices, continuing without them:`,
+          error instanceof Error ? error.message : String(error)
+        );
+        // Continue discovery without mock devices
       }
     }
 
+    // Apply IP filter if specified
     let filteredArpTable = arpTable;
-
     if (options?.ip && options.partialMatch) {
       filteredArpTable = arpTable.filter((device: ArpScanResult) =>
         device.ip.includes(options.ip!)
@@ -180,95 +323,50 @@ export async function discoverDevices(options?: DiscoveryOptions) {
       return [];
     }
 
-    const devices: Device[] = [];
+    // Split mock vs non-mock devices
+    // Note: For now, we skip mock devices from pyasic-bridge validation as per user request
+    // Mock device handling will be migrated in another PR
+    const mockDevices = validDevices.filter((device) =>
+      UtilsService.isMockDevice(device.mac)
+    );
+    const nonMockDevices = validDevices.filter(
+      (device) => !UtilsService.isMockDevice(device.mac)
+    );
 
-    for (const element of validDevices) {
-      // For mock devices, discovery (host network) needs to use localhost for verification
-      // but store host.docker.internal for backend containers to reach them
-      const isMockDevice = element.mac.startsWith("ff:ff:ff:ff:");
-      const verificationIp = isMockDevice && element.ip.includes("host.docker.internal")
-        ? element.ip.replace("host.docker.internal", "localhost")
-        : element.ip;
-      const storageIp = element.ip; // Keep original IP (host.docker.internal for mock devices) for storage
-
-      logger.info(`Attempting to connect to device with IP: ${verificationIp} and MAC: ${element.mac}`);
-
-      try {
-        const response = await axios.get(`http://${verificationIp}/api/system/info`, { timeout: 1000 });
-
-        logger.info(`Received response from ${verificationIp}:`, response.data);
-
-        if (response.data && response.data.ASICModel) {
-          const deviceInfo: Device = {
-            ip: storageIp, // Use storage IP (host.docker.internal for mock devices) so backend can reach them
-            mac: element.mac,
-            type: element.type,
-            info: response.data,
-          };
-
-          devices.push(deviceInfo);
-          logger.info(`Device ${storageIp} with ASICModel added to the list.`);
-
-          try {
-            // Tenta di inserire il dispositivo
-            await insertOne<Device>(
-              "pluto_discovery",
-              "devices:discovered",
-              element.mac,
-              deviceInfo
-            );
-            logger.info(`Device ${storageIp} inserted successfully.`);
-          } catch (error) {
-            if (error instanceof Error && error.message.includes("already exists")) {
-              // Se l'inserimento fallisce, effettua un aggiornamento
-              logger.info(`Device ${storageIp} already exists, updating...`);
-              await updateOne<Device>(
-                "pluto_discovery",
-                "devices:discovered",
-                element.mac,
-                deviceInfo
-              );
-            } else {
-              throw error;
-            }
-          }
-        } else {
-          logger.info(`Device ${element.ip} does not contain ASICModel, skipping.`);
-        }
-      } catch (error) {
-        if (error instanceof axios.AxiosError) {
-          if (error.code === "ECONNABORTED") {
-            logger.error(`Request to ${element.ip} timed out.`);
-          } else {
-            logger.error(`Failed to make request to ${element.ip}:`, error.message);
-          }
-        } else {
-          logger.error(
-            `Unexpected error while making request to ${element.ip}:`,
-            error instanceof Error ? error.message : String(error)
-          );
-        }
-      }
+    if (mockDevices.length > 0) {
+      logger.info(
+        `Skipping ${mockDevices.length} mock device(s) - will be handled in separate PR`
+      );
     }
 
-    logger.info(`Discovery completed. ${devices.length} devices found with ASICModel.`);
-    return devices;
+    // Process non-mock devices with chunking and concurrency control
+    logger.info(`Processing ${nonMockDevices.length} non-mock device(s) for validation`);
+    const discoveredMiners = await processNonMockDevices(nonMockDevices);
+
+    logger.info(`Discovery completed. ${discoveredMiners.length} validated miners found.`);
+    return discoveredMiners;
   } catch (err) {
-    logger.error(err);
+    logger.error("Discovery process failed:", err);
+    if (err instanceof Error) {
+      logger.error(`Error details: ${err.message}`);
+      logger.error(`Error stack: ${err.stack}`);
+    }
     return [];
   }
 }
 
-// Funzione per cercare un dispositivo scoperto
-export const lookupDiscoveredDevice = async (mac: string): Promise<Device | undefined> => {
+/**
+ * Lookup a single discovered miner by MAC address.
+ */
+export const lookupDiscoveredDevice = async (mac: string): Promise<DiscoveredMiner | undefined> => {
   try {
-    const deviceInfo = await findOne<Device>("pluto_discovery", `devices:discovered`, mac);
+    const discoveredMiner = await findOne<DiscoveredMiner>("pluto_discovery", `devices:discovered`, mac);
 
-    if (deviceInfo) {
-      logger.info(`Device found in devices:discovered for MAC: ${mac}`);
-      return deviceInfo;
+    if (discoveredMiner) {
+      logger.info(`Discovered miner found in devices:discovered for MAC: ${mac}`);
+      return discoveredMiner;
     } else {
-      logger.info(`No device found in devices:discovered for MAC: ${mac}`);
+      logger.info(`No discovered miner found in devices:discovered for MAC: ${mac}`);
       return undefined;
     }
   } catch (error) {
@@ -277,7 +375,9 @@ export const lookupDiscoveredDevice = async (mac: string): Promise<Device | unde
   }
 };
 
-// Funzione per cercare dispositivi scoperti da una lista di MAC address
+/**
+ * Lookup multiple discovered miners by MAC addresses, IPs, or hostnames.
+ */
 export const lookupMultipleDiscoveredDevices = async ({
   macs,
   ips,
@@ -296,9 +396,9 @@ export const lookupMultipleDiscoveredDevices = async ({
     ips?: "left" | "right" | "both" | "none";
     hostnames?: "left" | "right" | "both" | "none";
   };
-}): Promise<Device[]> => {
+}): Promise<DiscoveredMiner[]> => {
   try {
-    const devices = await findMany<Device>("pluto_discovery", `devices:discovered`, (device) => {
+    const discoveredMiners = await findMany<DiscoveredMiner>("pluto_discovery", `devices:discovered`, (discoveredMiner) => {
       const matchWithPartial = (
         value: string,
         list: string[],
@@ -319,21 +419,22 @@ export const lookupMultipleDiscoveredDevices = async ({
 
       // Matching per MAC addresses
       if (macs && macs.length > 0) {
-        if (!matchWithPartial(device.mac, macs, partialMatch.macs || "both")) {
+        if (!matchWithPartial(discoveredMiner.mac, macs, partialMatch.macs || "both")) {
           return false;
         }
       }
 
       // Matching per IP addresses
       if (ips && ips.length > 0) {
-        if (!matchWithPartial(device.ip, ips, partialMatch.ips || "both")) {
+        if (!matchWithPartial(discoveredMiner.ip, ips, partialMatch.ips || "both")) {
           return false;
         }
       }
 
       // Matching per Hostnames
       if (hostnames && hostnames.length > 0) {
-        if (!matchWithPartial(device.info.hostname, hostnames, partialMatch.hostnames || "both")) {
+        const hostname = discoveredMiner.minerData.hostname ?? discoveredMiner.ip;
+        if (!matchWithPartial(hostname, hostnames, partialMatch.hostnames || "both")) {
           return false;
         }
       }
@@ -341,9 +442,9 @@ export const lookupMultipleDiscoveredDevices = async ({
       return true;
     });
 
-    return devices.filter(Boolean) as Device[];
+    return discoveredMiners.filter(Boolean) as DiscoveredMiner[];
   } catch (error) {
-    logger.error("Error during multiple discovered devices lookup", error);
+    logger.error("Error during multiple discovered miners lookup", error);
     throw error;
   }
 };

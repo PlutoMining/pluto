@@ -21,6 +21,7 @@
     "@pluto/db": "file:../common/db",
     "@pluto/interfaces": "file:../common/interfaces",
     "@pluto/logger": "file:../common/logger",
+    "@pluto/pyasic-bridge-client": "file:../common/pyasic-bridge-client",
     "axios": "^1.7.7",
     "dotenv": "^16.4.5",
     "express": "^4.19.2"
