@@ -307,6 +307,19 @@ validate_git_state() {
   return 0
 }
 
+# Get version for a service (package.json for Node, app/__init__.py __version__ for Python)
+# Usage: get_service_version_for_validation SERVICE
+get_service_version_for_validation() {
+  local service=$1
+  if [[ -f "$service/package.json" ]]; then
+    grep '"version":' "$service/package.json" | sed -E 's/.*"version":\s*"([^"]+)".*/\1/' | head -1
+  elif [[ -f "$service/app/__init__.py" ]]; then
+    sed -n "s/.*__version__[[:space:]]*=[[:space:]]*[\"']\\([^\"']*\\)[\"'].*/\1/p" "$service/app/__init__.py" | head -1
+  else
+    echo ""
+  fi
+}
+
 # Validate service versions are consistent
 # Usage: validate_service_versions SERVICES_ARRAY
 validate_service_versions() {
@@ -315,16 +328,22 @@ validate_service_versions() {
   local first_service=""
   
   for service in "${services[@]}"; do
-    if [[ ! -f "$service/package.json" ]]; then
-      log_warning "Skipping $service (no package.json)"
+    local version_file=""
+    if [[ -f "$service/package.json" ]]; then
+      version_file="$service/package.json"
+    elif [[ -f "$service/app/__init__.py" ]]; then
+      version_file="$service/app/__init__.py"
+    fi
+    if [[ -z "$version_file" ]]; then
+      log_warning "Skipping $service (no package.json or app/__init__.py)"
       continue
     fi
     
     local version
-    version=$(grep '"version":' "$service/package.json" | sed -E 's/.*"version":\s*"([^"]+)".*/\1/' || echo "")
+    version=$(get_service_version_for_validation "$service")
     
     if [[ -z "$version" ]]; then
-      log_warning "Could not read version from $service/package.json"
+      log_warning "Could not read version from $service ($version_file)"
       continue
     fi
     
