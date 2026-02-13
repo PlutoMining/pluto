@@ -43,7 +43,6 @@ export default function PresetsClient() {
   const [selectedPresetUuid, setSelectedPresetUuid] = useState<string | undefined>(undefined);
 
   const fetchPresets = useCallback(async () => {
-  const fetchPresets = useCallback(async () => {
     try {
       const response = await fetch("/api/presets");
       if (response.ok) {
@@ -56,9 +55,7 @@ export default function PresetsClient() {
       console.error("Error fetching presets", error);
     }
   }, []);
-  }, []);
 
-  const fetchAssociatedDevices = useCallback(async (presetId: string) => {
   const fetchAssociatedDevices = useCallback(async (presetId: string) => {
     try {
       const response = await axios.get(`/api/devices/presets/${presetId}`);
@@ -69,9 +66,7 @@ export default function PresetsClient() {
       return [];
     }
   }, []);
-  }, []);
 
-  const fetchPresetsWithAssociatedDevices = useCallback(async () => {
   const fetchPresetsWithAssociatedDevices = useCallback(async () => {
     try {
       const presets = await fetchPresets();

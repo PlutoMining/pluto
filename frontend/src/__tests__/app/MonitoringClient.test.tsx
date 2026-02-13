@@ -129,7 +129,6 @@ describe('MonitoringClient', () => {
 
     await flushEffects();
 
-    expect(screen.getByText('rig-1 Dashboard')).toBeInTheDocument();
     // While device data is loading we show the loading skeleton, not stats/cards yet.
     expect(screen.getByText('Loading device data…')).toBeInTheDocument();
 

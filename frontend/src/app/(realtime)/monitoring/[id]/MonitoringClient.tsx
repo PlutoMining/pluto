@@ -13,7 +13,6 @@ import { LineChartCard } from "@/components/charts/LineChartCard";
 import { MultiLineChartCard } from "@/components/charts/MultiLineChartCard";
 import { ChartsToolbar } from "@/components/charts/ChartsToolbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatDifficulty } from "@/utils/formatDifficulty";
@@ -389,15 +388,9 @@ export default function MonitoringClient({ id }: { id: string }) {
   }, [host, rangeSeconds, refreshMs]);
 
   return (
-    <div className="container flex-1 px-4 py-4 tablet:px-8 tablet:py-6">
-      <div className="mb-3 flex flex-col gap-4 tablet:mb-4 tablet:flex-row tablet:items-center tablet:justify-between">
-        <div className="flex items-center gap-3">
-          <NextLink href="/monitoring">
-            <Button variant="outlined">Go back</Button>
-          </NextLink>
-          <h1 className="font-heading text-3xl font-bold uppercase">{id} Dashboard</h1>
-        </div>
-      </div>
+    <div className="flex-1 py-6">
+      <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+        <div className="mb-3 md:mb-4" />
 
       {deviceLoadState === "loading" && (
         <div className="flex min-h-[320px] flex-col items-center justify-center rounded-none border border-border bg-card py-16">
@@ -409,15 +402,12 @@ export default function MonitoringClient({ id }: { id: string }) {
       {deviceLoadState === "not-found" && (
         <div className="flex min-h-[320px] flex-col items-center justify-center rounded-none border border-border bg-card py-16">
           <p className="font-body text-lg text-muted-foreground">Device not found</p>
-          <NextLink href="/monitoring" className="mt-4">
-            <Button variant="outlined">Back to monitoring</Button>
-          </NextLink>
         </div>
       )}
 
       {deviceLoadState === "ready" && (
         <>
-      <div className="grid gap-4 tablet:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {device != null && (
           <Card className="rounded-none">
             <CardHeader>
@@ -445,7 +435,7 @@ export default function MonitoringClient({ id }: { id: string }) {
         )}
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-4 tablet:mt-4 tablet:grid-cols-4 desktop:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-4 md:mt-4 md:grid-cols-4 xl:grid-cols-4">
         {hasHashrate && (
           <Card className="rounded-none">
             <CardHeader>
@@ -601,6 +591,7 @@ export default function MonitoringClient({ id }: { id: string }) {
       </div>
         </>
       )}
+    </div>
     </div>
   );
 }
