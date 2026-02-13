@@ -12,52 +12,83 @@ import { AlertInterface, AlertStatus } from "@/components/Alert/interfaces";
 import Button from "@/components/Button/Button";
 import { Input } from "@/components/Input/Input";
 import { useDisclosure } from "@/hooks/useDisclosure";
-import { Preset } from "@pluto/interfaces";
-import { validateDomain, validateTCPPort } from "@pluto/utils";
+import type { Preset } from "@pluto/interfaces";
+import type { MinerConfigModelInput } from "@pluto/pyasic-bridge-client";
+import { validateDomain } from "@pluto/utils";
 import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 function validateFieldByName(name: string, value: string) {
   switch (name) {
-    case "stratumURL":
-      return validateDomain(value, { allowIP: true });
-    case "stratumPort": {
-      const numericRegex = /^\d+$/;
-      return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
-    }
-    case "stratumUser":
-      // return validateBitcoinAddress(value);
+    case "poolUrl":
+      // Allow full stratum URLs like `stratum+tcp://host:port`
+      // by validating only the hostname/IP portion.
+      {
+        const trimmed = value.trim();
+        if (!trimmed) return true;
+
+        // Strip known stratum scheme if present.
+        let hostPart = trimmed.replace(/^stratum\+tcp:\/\//i, "");
+
+        // Drop path, if any.
+        if (hostPart.includes("/")) {
+          hostPart = hostPart.split("/")[0];
+        }
+
+        // Drop port, if any.
+        if (hostPart.includes(":")) {
+          hostPart = hostPart.split(":")[0];
+        }
+
+        return validateDomain(hostPart, { allowIP: true });
+      }
+    case "poolUser":
       return !value.includes(".");
     default:
       return true;
   }
 }
 
-function hasEmptyFields(obj: any, excludeKeys: string[]): boolean {
-  for (const key in obj) {
-    if (excludeKeys.includes(key)) {
-      continue;
-    }
-
-    if (typeof obj[key] === "object" && obj[key] !== null) {
-      if (hasEmptyFields(obj[key], excludeKeys)) return true;
-    } else if (obj[key] === "") {
-      return true;
-    }
-  }
-  return false;
+interface PresetFormState {
+  name: string;
+  poolUrl: string;
+  poolUser: string;
+  poolPassword: string;
 }
 
-function hasErrorFields(obj: any): boolean {
-  for (const key in obj) {
-    if (typeof obj[key] === "object" && obj[key] !== null) {
-      if (hasErrorFields(obj[key])) return true;
-    } else if (obj[key] !== "") {
-      return true;
-    }
-  }
-  return false;
+interface PresetFormErrors {
+  name: string;
+  poolUrl: string;
+  poolUser: string;
+  poolPassword: string;
+}
+
+function formToConfig(form: PresetFormState): MinerConfigModelInput {
+  return {
+    pools: {
+      groups: [
+        {
+          pools: [
+            {
+              url: form.poolUrl || undefined,
+              user: form.poolUser || undefined,
+              password: form.poolPassword || undefined,
+            },
+          ],
+        },
+      ],
+    },
+  };
+}
+
+function configToForm(config?: MinerConfigModelInput): Pick<PresetFormState, "poolUrl" | "poolUser" | "poolPassword"> {
+  const pool = config?.pools?.groups?.[0]?.pools?.[0];
+  return {
+    poolUrl: pool?.url ?? "",
+    poolUser: pool?.user ?? "",
+    poolPassword: pool?.password ?? "",
+  };
 }
 
 export const PresetEditor = ({
@@ -78,25 +109,18 @@ export const PresetEditor = ({
   const [alert, setAlert] = useState<AlertInterface>();
   const [isSaveLoading, setIsSaveLoading] = useState<boolean>(false);
 
-  const [presetErrors, setPresetErrors] = useState<Partial<Preset>>({
+  const [formErrors, setFormErrors] = useState<PresetFormErrors>({
     name: "",
-    configuration: {
-      stratumURL: "",
-      stratumPort: "",
-      stratumUser: "",
-      stratumPassword: "",
-    },
+    poolUrl: "",
+    poolUser: "",
+    poolPassword: "",
   });
 
-  const [preset, setPreset] = useState<Partial<Preset>>({
-    uuid: presetId,
+  const [form, setForm] = useState<PresetFormState>({
     name: "",
-    configuration: {
-      stratumURL: "",
-      stratumPort: "",
-      stratumUser: "",
-      stratumPassword: "",
-    },
+    poolUrl: "",
+    poolUser: "",
+    poolPassword: "",
   });
 
   const [presets, setPresets] = useState<Preset[]>();
@@ -107,16 +131,13 @@ export const PresetEditor = ({
       if (response.ok) {
         const data: { data: Preset[] } = await response.json();
         setPresets(data.data);
-        const newData = data.data.find((p: { uuid: string }) => p.uuid === preset.uuid);
-        if (newData) {
-          setPreset((prevPreset) => ({
-            ...prevPreset,
-            ...newData,
-            name: "",
-            configuration: {
-              ...prevPreset.configuration,
-              ...newData.configuration,
-            },
+        const found = data.data.find((p) => p.uuid === presetId);
+        if (found) {
+          const poolFields = configToForm(found.configuration);
+          setForm((prev) => ({
+            ...prev,
+            name: "", // Name is always blank for duplicated presets
+            ...poolFields,
           }));
         }
       } else {
@@ -125,14 +146,13 @@ export const PresetEditor = ({
     } catch (error) {
       console.error("Error fetching presets", error);
     }
-  }, [preset.uuid]);
+  }, [presetId]);
 
-  // Carica il preset se un presetId è fornito
   useEffect(() => {
-    if (preset.uuid) {
-      fetchPreset();
+    if (presetId) {
+      void fetchPreset();
     }
-  }, [fetchPreset, preset.uuid]);
+  }, [presetId, fetchPreset]);
 
   const validateField = useCallback((name: string, value: string) => {
     let label =
@@ -142,58 +162,33 @@ export const PresetEditor = ({
         ? ""
         : `${name} is not correct.`;
 
-    if (name === "presetName") {
-      const preset = presets?.find((p) => p.name === value);
-      if (preset) {
-        label = `A preset called "${preset.name}" already exists.`;
+    if (name === "name") {
+      const existing = presets?.find((p) => p.name === value);
+      if (existing) {
+        label = `A preset called "${existing.name}" already exists.`;
       }
-      setPresetErrors((prevPreset) => ({
-        ...prevPreset,
-        name: label,
-      }));
-    } else {
-      setPresetErrors((prevPreset) => ({
-        ...prevPreset,
-        configuration: {
-          ...prevPreset.configuration,
-          [name]: label,
-        },
-      }));
     }
+
+    setFormErrors((prev) => ({ ...prev, [name]: label }));
   }, [presets]);
 
   const handleChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
     validateField(name, value);
-
-    if (name === "presetName") {
-      setPreset((prevPreset) => ({
-        ...prevPreset,
-        name: value,
-      }));
-    } else {
-      setPreset((prevPreset) => ({
-        ...prevPreset,
-        configuration: {
-          ...prevPreset.configuration,
-          [name]: value,
-        },
-      }));
-    }
+    setForm((prev) => ({ ...prev, [name]: value }));
   }, [validateField]);
 
   const handleSavePreset = useCallback(() => {
     const uuid = uuidv4();
-    const updatedPreset = {
-      ...preset,
+    const newPreset: Partial<Preset> = {
       uuid,
+      name: form.name,
+      configuration: formToConfig(form),
     };
 
-    // console.log(updatedPreset);
-
     setIsSaveLoading(true);
-    const promise = axios.post("/api/presets", updatedPreset);
+    const promise = axios.post("/api/presets", newPreset);
 
     promise
       .then(() => {
@@ -211,16 +206,24 @@ export const PresetEditor = ({
       .finally(() => {
         setIsSaveLoading(false);
       });
-  }, [onCloseSuccessfullyModal, onOpenAlert, preset]);
+  }, [onCloseSuccessfullyModal, onOpenAlert, form]);
 
   const closeAlert = useCallback(() => {
     setAlert(undefined);
     onCloseAlert();
   }, [onCloseAlert]);
 
-  const isPresetValid = useCallback(() => {
-    return hasEmptyFields(preset, ["uuid"]) || hasErrorFields(presetErrors);
-  }, [preset, presetErrors]);
+  const hasEmptyFields = (): boolean => {
+    return !form.name || !form.poolUrl || !form.poolUser;
+  };
+
+  const hasErrors = (): boolean => {
+    return Object.values(formErrors).some((v) => v !== "");
+  };
+
+  const isPresetInvalid = () => {
+    return hasEmptyFields() || hasErrors();
+  };
 
   return (
     <>
@@ -233,53 +236,44 @@ export const PresetEditor = ({
           <div className="flex flex-col gap-4">
             <Input
               label="Pool Preset Name"
-              name="presetName"
+              name="name"
               id="presetName"
               placeholder="Enter preset name"
-              defaultValue={preset.name}
+              defaultValue={form.name}
               onChange={handleChange}
-              error={presetErrors.name}
+              error={formErrors.name}
             />
 
             <div className="flex flex-col gap-4">
               <p className="font-heading text-sm font-medium">Settings</p>
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-8 tablet:grid-cols-2 desktop:grid-cols-3">
                 <Input
-                  label="Stratum URL"
-                  name="stratumURL"
-                  id="stratumURL"
-                  placeholder="stratumURL"
-                  defaultValue={preset.configuration?.stratumURL}
+                  label="Pool URL"
+                  name="poolUrl"
+                  id="poolUrl"
+                  placeholder="stratum+tcp://pool:3333"
+                  defaultValue={form.poolUrl}
                   onChange={handleChange}
-                  error={presetErrors.configuration?.stratumURL}
+                  error={formErrors.poolUrl}
                 />
                 <Input
-                  label="Stratum Port"
-                  name="stratumPort"
-                  id="stratumPort"
-                  placeholder="stratumPort"
-                  defaultValue={preset.configuration?.stratumPort}
+                  label="Pool User"
+                  name="poolUser"
+                  id="poolUser"
+                  placeholder="Add your pool user"
+                  defaultValue={form.poolUser}
                   onChange={handleChange}
-                  error={presetErrors.configuration?.stratumPort}
+                  error={formErrors.poolUser}
                 />
                 <Input
-                  label="Stratum User"
-                  name="stratumUser"
-                  id="stratumUser"
-                  placeholder="stratumUser"
-                  defaultValue={preset.configuration?.stratumUser}
-                  onChange={handleChange}
-                  error={presetErrors.configuration?.stratumUser}
-                />
-                <Input
-                  label="Stratum Password"
-                  name="stratumPassword"
+                  label="Pool Password"
+                  name="poolPassword"
                   type="password"
-                  id="stratumPassword"
-                  placeholder="stratumPassword"
-                  defaultValue={preset.configuration?.stratumPassword}
+                  id="poolPassword"
+                  placeholder="Add your pool password"
+                  defaultValue={form.poolPassword}
                   onChange={handleChange}
-                  error={presetErrors.configuration?.stratumPassword}
+                  error={formErrors.poolPassword}
                 />
               </div>
             </div>
@@ -292,7 +286,7 @@ export const PresetEditor = ({
               variant="primary"
               onClick={handleSavePreset}
               label="Save Preset"
-              disabled={isPresetValid()}
+              disabled={isPresetInvalid()}
             />
           </div>
         </form>

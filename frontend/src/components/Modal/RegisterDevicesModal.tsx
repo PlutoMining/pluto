@@ -6,7 +6,7 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { Device } from "@pluto/interfaces";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import { isValidIp, isValidMac } from "@pluto/utils";
 import axios from "axios";
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
@@ -53,7 +53,7 @@ function ModalBodyContent({
   onClose: () => void;
   onDevicesChanged: () => Promise<void>;
 }) {
-  const [discoveredDevices, setDiscoveredDevices] = useState<Device[] | null>(null);
+  const [discoveredDevices, setDiscoveredDevices] = useState<DiscoveredMiner[] | null>(null);
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
   const [tabIndex, setTabIndex] = useState(0);
 
@@ -85,17 +85,18 @@ function ModalBodyContent({
 
       // Effettua la chiamata per ottenere le imprinted devices
       const imprintedResponse = await axios.get("/api/devices/imprint");
-      const imprintedDevices: Device[] = imprintedResponse.data?.data;
+      const imprintedDevices: DiscoveredMiner[] = imprintedResponse.data?.data ?? [];
 
       // Effettua la chiamata per ottenere le discovered devices
       const discoveredResponse = await axios.get("/api/devices/discover");
       if (discoveredResponse.status === 200) {
-        const discoveredDevices: Device[] = discoveredResponse.data;
+        const discoveredDevices: DiscoveredMiner[] = discoveredResponse.data;
 
-        // Filtra i discoveredDevices escludendo quelli già imprinted
-        const filteredDiscoveredDevices = discoveredDevices.filter(
-          (device) => !imprintedDevices.some((imprinted) => imprinted.mac === device.mac)
-        );
+        // Filtra i discoveredDevices escludendo quelli già imprinted (case-insensitive match on MAC)
+        const filteredDiscoveredDevices = discoveredDevices.filter((device) => {
+          const deviceMac = device.mac?.toLowerCase();
+          return !imprintedDevices.some((imprinted) => imprinted.mac?.toLowerCase() === deviceMac);
+        });
 
         // Aggiorna lo stato con i dispositivi filtrati
         setDiscoveredDevices([...filteredDiscoveredDevices]);
@@ -115,21 +116,35 @@ function ModalBodyContent({
   const searchDevice = useCallback(async () => {
     try {
       setIsLoadingData(true);
+      // Clear previous results while searching
+      setDiscoveredDevices(null);
 
-      const response = await axios.get("/api/devices/discover", {
-        params: {
-          ip: ipAndMacAddress.ipAddress,
-          mac: ipAndMacAddress.macAddress,
-        },
+      const [discoverResponse, imprintedResponse] = await Promise.all([
+        axios.get("/api/devices/discover", {
+          params: {
+            ip: ipAndMacAddress.ipAddress,
+            mac: ipAndMacAddress.macAddress,
+          },
+        }),
+        axios.get("/api/devices/imprint"),
+      ]);
+
+      const discoveredDevices: DiscoveredMiner[] = discoverResponse.data;
+      const imprintedDevices: DiscoveredMiner[] = imprintedResponse.data?.data ?? [];
+
+      // Exclude devices that are already imprinted (i.e. already added by the user), case-insensitive on MAC
+      const filteredDiscoveredDevices = discoveredDevices.filter((device) => {
+        const deviceMac = device.mac?.toLowerCase();
+        return !imprintedDevices.some((imprinted) => imprinted.mac?.toLowerCase() === deviceMac);
       });
 
-      const discoveredDevices: Device[] = response.data;
-
-      if (discoveredDevices.length === 1) {
-        discoveredDevices[0].mac = ipAndMacAddress.macAddress;
+      // If the user provided a MAC, prefer it for a single-result lookup.
+      // Otherwise, keep the MAC returned by the backend/pyasic-bridge.
+      if (filteredDiscoveredDevices.length === 1 && ipAndMacAddress.macAddress) {
+        filteredDiscoveredDevices[0].mac = ipAndMacAddress.macAddress;
       }
 
-      setDiscoveredDevices(discoveredDevices);
+      setDiscoveredDevices(filteredDiscoveredDevices);
     } catch (error) {
       console.error("Error discovering devices:", error);
     } finally {
@@ -184,7 +199,7 @@ function ModalBodyContent({
 
     const isValid = name === "ipAddress" ? isValidIp(value) : isValidMac(value);
 
-    const errorLabel = value === "" ? `${name} is required` : isValid ? "" : `${name} is not valid`;
+    const errorLabel = value === "" ? "" : isValid ? "" : `${name} is not valid`;
 
     setErrors((prevErrors) => ({ ...prevErrors, [name]: errorLabel }));
     setIpAndMacAddress((prevState) => ({
@@ -194,7 +209,12 @@ function ModalBodyContent({
   }, []);
 
   const areManuallySearchFieldsValid = useCallback(() => {
-    return hasErrorFields(errors) || hasEmptyFields(ipAndMacAddress);
+    const hasAnyValue = ipAndMacAddress.ipAddress !== "" || ipAndMacAddress.macAddress !== "";
+    const hasValidationErrors = hasErrorFields(errors);
+
+    // Disable when there are validation errors or when both fields are empty.
+    // Allow searching when at least one of IP or MAC is a non-empty, valid value.
+    return !hasAnyValue || hasValidationErrors;
   }, [errors, ipAndMacAddress]);
 
   return (
@@ -263,11 +283,15 @@ function ModalBodyContent({
               />
             </div>
 
-            {discoveredDevices ? (
-              discoveredDevices.length > 0 && ipAndMacAddress.macAddress ? (
+            {isLoadingData ? (
+              <div className="mx-auto my-4 flex w-full flex-col items-center">
+                <CircularProgressWithDots />
+              </div>
+            ) : discoveredDevices ? (
+              discoveredDevices.length > 0 ? (
                 <div className="mt-2 flex flex-col gap-4">
                   <p className="font-heading text-sm font-bold text-foreground">
-                    Result for {ipAndMacAddress.macAddress}
+                    Result for {ipAndMacAddress.macAddress || ipAndMacAddress.ipAddress}
                   </p>
                   <RegisterDeviceTable
                     devices={discoveredDevices}

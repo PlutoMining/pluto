@@ -14,7 +14,7 @@ import Button from "@/components/Button/Button";
 import { AddNewPresetModal, BasicModal } from "@/components/Modal";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import { useDisclosure } from "@/hooks/useDisclosure";
-import { Device, Preset } from "@pluto/interfaces";
+import { DiscoveredMiner, Preset } from "@pluto/interfaces";
 import axios from "axios";
 import React, { MouseEvent, useCallback, useEffect, useState } from "react";
 
@@ -59,7 +59,7 @@ export default function PresetsClient() {
   const fetchAssociatedDevices = useCallback(async (presetId: string) => {
     try {
       const response = await axios.get(`/api/devices/presets/${presetId}`);
-      const discoveredDevices: Device[] = response.data.data;
+      const discoveredDevices: DiscoveredMiner[] = response.data.data;
       return discoveredDevices;
     } catch (error) {
       console.error("Error discovering preset devices:", error);
@@ -83,10 +83,10 @@ export default function PresetsClient() {
       console.error("Error during presets' update:", error);
       setPresets([]);
     }
-  }, [fetchAssociatedDevices, fetchPresets]);
+  }, [fetchPresets, fetchAssociatedDevices]);
 
   useEffect(() => {
-    fetchPresetsWithAssociatedDevices();
+    void fetchPresetsWithAssociatedDevices();
   }, [alert, fetchPresetsWithAssociatedDevices]);
 
   const closeAlert = useCallback(() => {

@@ -7,7 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { computeLinearBreakpoints, PLUTO_HEAT, steppedColor } from "@/components/charts/chartPalette";
 import { formatDifficulty } from "@/utils/formatDifficulty";
 import { formatDetailedTime } from "@/utils/formatTime";
-import type { Device } from "@pluto/interfaces";
+import {
+  getHostname,
+  getHashrateGhs,
+  getUptime,
+  getBestDifficulty,
+  getBestSessionDifficulty,
+  getEffectiveTempForHeatmap,
+  getMaxChipTempFromHashboards,
+  getWattage,
+} from "@/utils/minerDataHelpers";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 
 const TEMP_MIN_C = 30;
 const TEMP_MAX_C = 85;
@@ -50,37 +60,29 @@ export function DeviceHeatmapCard({
   devices,
 }: {
   title?: string;
-  devices: Device[];
+  devices: DiscoveredMiner[];
 }) {
   const items = React.useMemo(() => {
     return [...devices]
-      .filter((d) => d?.info?.hostname)
-      .sort((a, b) => String(a.info.hostname).localeCompare(String(b.info.hostname)))
+      .filter((d) => getHostname(d?.minerData) !== "unknown")
+      .sort((a, b) => getHostname(a.minerData).localeCompare(getHostname(b.minerData)))
       .map((device) => {
-        const hashrate = device.info.hashRate_10m ?? device.info.hashRate ?? 0;
-        const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
-        const temp = device.info.temp;
-        const vrTemp = device.info.vrTemp;
-        const effectiveTemp =
-          typeof temp === "number" && Number.isFinite(temp)
-            ? typeof vrTemp === "number" && Number.isFinite(vrTemp)
-              ? Math.max(temp, vrTemp)
-              : temp
-            : typeof vrTemp === "number" && Number.isFinite(vrTemp)
-            ? vrTemp
-            : undefined;
-        const power = device.info.power;
+        const m = device.minerData;
+        const hashrate = getHashrateGhs(m);
+        const currentDiff = getBestSessionDifficulty(m);
+        const effectiveTemp = getEffectiveTempForHeatmap(m);
+        const chipTemp = getMaxChipTempFromHashboards(m);
+        const power = getWattage(m);
 
         return {
-          hostname: device.info.hostname,
+          hostname: getHostname(m),
           online: Boolean(device.tracing),
           hashrate,
-          temp,
-          vrTemp,
           effectiveTemp,
+          chipTemp,
           power,
-          uptimeSeconds: device.info.uptimeSeconds,
-          bestDiff: device.info.bestDiff,
+          uptimeSeconds: getUptime(m),
+          bestDiff: getBestDifficulty(m),
           currentDiff,
         };
       });
@@ -136,8 +138,8 @@ export function DeviceHeatmapCard({
               `Status: ${item.online ? "online" : "offline"}`,
               `Hashrate: ${formatMaybeNumber(item.hashrate, 2)} GH/s`,
               `Power: ${formatMaybeNumber(item.power, 2)} W`,
-              `Temp: ${formatMaybeNumber(item.temp, 1)} °C`,
-              `VR Temp: ${formatMaybeNumber(item.vrTemp, 1)} °C`,
+              `Temp: ${formatMaybeNumber(item.effectiveTemp, 1)} °C`,
+              `Chip temp: ${formatMaybeNumber(item.chipTemp, 1)} °C`,
               `Current diff: ${formatDifficulty(item.currentDiff)}`,
               `Best diff: ${formatDifficulty(item.bestDiff)}`,
               `Uptime: ${formatDetailedTime(item.uptimeSeconds)}`,
@@ -178,10 +180,14 @@ export function DeviceHeatmapCard({
                   className="mt-1 flex min-w-0 items-center justify-between gap-2 text-xs"
                   style={{ color: textStyle.color, textShadow: textStyle.shadow }}
                 >
-                  <span className="min-w-0 truncate">
-                    {formatMaybeNumber(item.temp, 1)}°C
-                    <span className="opacity-90"> / </span>
-                    {formatMaybeNumber(item.vrTemp, 1)}°C
+                  <span>
+                    {formatMaybeNumber(item.effectiveTemp, 1)}°C
+                    {item.chipTemp != null ? (
+                      <>
+                        <span className="opacity-90"> / </span>
+                        {formatMaybeNumber(item.chipTemp, 1)}°C chip
+                      </>
+                    ) : null}
                   </span>
                   <span className="shrink-0 opacity-90">{formatMaybeNumber(item.power, 0)}W</span>
                 </div>

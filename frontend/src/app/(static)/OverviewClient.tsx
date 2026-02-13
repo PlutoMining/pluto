@@ -29,8 +29,10 @@ import {
 } from "@/lib/prometheus";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatDifficulty, parseDifficulty } from "@/utils/formatDifficulty";
+import { getBestDifficulty } from "@/utils/minerDataHelpers";
 import { PLUTO_PRIMARY } from "@/components/charts/chartPalette";
-import type { Device } from "@pluto/interfaces";
+import type { DiscoveredMiner } from "@pluto/interfaces";
+import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
 import axios from "axios";
 
 function formatNumber(value: number, digits = 2) {
@@ -40,7 +42,8 @@ function formatNumber(value: number, digits = 2) {
 }
 
 export default function OverviewClient() {
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [devices, setDevices] = useState<DiscoveredMiner[]>([]);
+  const [devicesLoaded, setDevicesLoaded] = useState(false);
   const [range, setRange] = useState<TimeRangeKey>("1h");
 
   const [polling, setPolling] = useState<PollingIntervalKey>("auto");
@@ -80,7 +83,7 @@ export default function OverviewClient() {
   const fleetBestDiff = useMemo(() => {
     let best = 0;
     for (const device of devices) {
-      const parsed = parseDifficulty(device.info.bestDiff);
+      const parsed = parseDifficulty(getBestDifficulty(device.minerData));
       if (parsed !== null && Number.isFinite(parsed)) best = Math.max(best, parsed);
     }
     return best;
@@ -90,10 +93,14 @@ export default function OverviewClient() {
     const fetchDevices = async () => {
       try {
         const response = await axios.get("/api/devices/imprint");
-        const imprintedDevices: Device[] = response.data.data;
-        if (Array.isArray(imprintedDevices) && imprintedDevices.length > 0) setDevices(imprintedDevices);
+        const imprintedDevices: DiscoveredMiner[] = response.data.data;
+        if (Array.isArray(imprintedDevices)) {
+          setDevices(imprintedDevices);
+        }
       } catch (error) {
         console.error("Error discovering devices:", error);
+      } finally {
+        setDevicesLoaded(true);
       }
     };
 
@@ -103,7 +110,7 @@ export default function OverviewClient() {
   const { isConnected, socket } = useSocket();
 
   useEffect(() => {
-    const listener = (e: Device) => {
+    const listener = (e: DiscoveredMiner) => {
       setDevices((prev) => {
         if (!prev?.length) return prev;
 
@@ -278,6 +285,17 @@ export default function OverviewClient() {
   }, [firmwareData]);
 
   const firmwareTotal = useMemo(() => firmwareData.reduce((acc, r) => acc + r.count, 0), [firmwareData]);
+
+  if (!devicesLoaded) {
+    return (
+      <div className="container flex-1 px-4 py-4 tablet:px-8 tablet:py-6">
+        <h1 className="mb-4 font-heading text-3xl font-bold uppercase">Overview Dashboard</h1>
+        <div className="mx-auto my-8 flex w-full flex-col items-center">
+          <CircularProgressWithDots />
+        </div>
+      </div>
+    );
+  }
 
   if (devices.length === 0) {
     return (
