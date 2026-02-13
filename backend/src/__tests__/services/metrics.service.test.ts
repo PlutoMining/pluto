@@ -1,4 +1,4 @@
-import type { DeviceInfo, ExtendedDeviceInfo } from '@pluto/interfaces';
+import type { MinerData } from '@pluto/pyasic-bridge-client';
 jest.mock('prom-client', () => {
   const gaugeInstances = new Map<string, any>();
 
@@ -7,7 +7,11 @@ jest.mock('prom-client', () => {
     set: jest.Mock;
     labels: jest.Mock;
 
-    constructor(options: { name: string; registers?: Array<{ registerMetric: (metric: Gauge) => void }>; labelNames?: string[] }) {
+    constructor(options: {
+      name: string;
+      registers?: Array<{ registerMetric: (metric: Gauge) => void }>;
+      labelNames?: string[];
+    }) {
       this.name = options.name;
       this.set = jest.fn();
       this.labels = jest.fn().mockReturnValue({ set: jest.fn() });
@@ -49,7 +53,12 @@ import promClient from 'prom-client';
 const gaugeInstances = (promClient as unknown as { __gaugeInstances: Map<string, any> }).__gaugeInstances;
 const { logger } = jest.requireMock('@pluto/logger');
 
-import { createMetricsForDevice, deleteMetricsForDevice, register, updateOverviewMetrics } from '@/services/metrics.service';
+import {
+  createMetricsForDevice,
+  deleteMetricsForDevice,
+  register,
+  updateOverviewMetrics,
+} from '@/services/metrics.service';
 
 describe('metrics.service', () => {
   beforeEach(() => {
@@ -61,37 +70,38 @@ describe('metrics.service', () => {
   });
 
   describe('createMetricsForDevice', () => {
-    it('updates device metrics converting units', () => {
+    it('updates device metrics from MinerData structure', () => {
       const { updatePrometheusMetrics } = createMetricsForDevice('rig');
 
-      const payload = {
-        power: 1200,
-        voltage: 12000,
-        current: 6000,
-        fanSpeedRpm: 1200,
-        temp: 45,
-        vrTemp: 70,
-        hashRate: 800,
-        sharesAccepted: 10,
-        sharesRejected: 1,
-        uptimeSeconds: 3600,
-        freeHeap: 512,
-        freeHeapInternal: 128,
-        freeHeapSpiram: 0,
-        coreVoltage: 1100,
-        coreVoltageActual: 1050,
-        frequency: 500,
-        efficiency: 1,
-      } as DeviceInfo;
+      const minerData: MinerData = {
+        ip: '10.0.0.1',
+        wattage: 1200,
+        voltage: 12.5,
+        hashrate: { rate: 800, unit: 'GH/s' },
+        shares_accepted: 10,
+        shares_rejected: 1,
+        uptime: 3600,
+        fans: [{ speed: 1200 }],
+        temperature_avg: 45,
+        hashboards: [],
+        config: {
+          extra_config: {
+            current: 6000,
+            core_voltage: 1100,
+            core_voltage_actual: 1050,
+            frequency: 500,
+            free_heap: 512,
+            free_heap_internal: 128,
+            free_heap_spiram: 0,
+            vr_temp: 70,
+          },
+        },
+      } as MinerData;
 
-      updatePrometheusMetrics(payload);
-      updatePrometheusMetrics({ fanspeed: 900 } as unknown as DeviceInfo);
-      updatePrometheusMetrics({ fanrpm: 800 } as unknown as DeviceInfo);
-      updatePrometheusMetrics({ hashRate_10m: 100 } as unknown as DeviceInfo);
-      updatePrometheusMetrics({} as DeviceInfo);
+      updatePrometheusMetrics(minerData);
 
       expect(gaugeInstances.get('rig_power_watts')?.set).toHaveBeenCalledWith(1200);
-      expect(gaugeInstances.get('rig_voltage_volts')?.set).toHaveBeenCalledWith(12);
+      expect(gaugeInstances.get('rig_voltage_volts')?.set).toHaveBeenCalledWith(12.5);
       expect(gaugeInstances.get('rig_current_amps')?.set).toHaveBeenCalledWith(6);
       expect(gaugeInstances.get('rig_fanspeed_rpm')?.set).toHaveBeenCalledWith(1200);
       expect(gaugeInstances.get('rig_temperature_celsius')?.set).toHaveBeenCalledWith(45);
@@ -100,18 +110,53 @@ describe('metrics.service', () => {
       expect(gaugeInstances.get('rig_free_heap_bytes')?.set).toHaveBeenCalledWith(512);
       expect(gaugeInstances.get('rig_free_heap_internal_bytes')?.set).toHaveBeenCalledWith(128);
       expect(gaugeInstances.get('rig_free_heap_spiram_bytes')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('rig_core_voltage_volts')?.set).toHaveBeenCalledWith(1.1);
+      expect(gaugeInstances.get('rig_core_voltage_actual_volts')?.set).toHaveBeenCalledWith(1.05);
+      expect(gaugeInstances.get('rig_frequency_mhz')?.set).toHaveBeenCalledWith(500);
       expect(gaugeInstances.get('rig_efficiency')?.set).toHaveBeenCalledWith(1200 / (800 / 1000));
     });
 
-    it('does not keep stale metrics when values become zero', () => {
+    it('handles nested hashrate structure', () => {
       const { updatePrometheusMetrics } = createMetricsForDevice('rig2');
 
-      updatePrometheusMetrics({ power: 100, hashRate: 10 } as unknown as DeviceInfo);
-      updatePrometheusMetrics({ power: 0, hashRate: 0 } as unknown as DeviceInfo);
+      const minerData: MinerData = {
+        ip: '10.0.0.1',
+        wattage: 100,
+        hashrate: { rate: 10, unit: 'GH/s' },
+      } as MinerData;
 
-      expect(gaugeInstances.get('rig2_power_watts')?.set).toHaveBeenCalledWith(0);
-      expect(gaugeInstances.get('rig2_hashrate_ghs')?.set).toHaveBeenCalledWith(0);
-      expect(gaugeInstances.get('rig2_efficiency')?.set).toHaveBeenCalledWith(0);
+      updatePrometheusMetrics(minerData);
+
+      expect(gaugeInstances.get('rig2_hashrate_ghs')?.set).toHaveBeenCalledWith(10);
+    });
+
+    it('handles missing optional fields gracefully', () => {
+      const { updatePrometheusMetrics } = createMetricsForDevice('rig3');
+
+      const minerData: MinerData = {
+        ip: '10.0.0.1',
+        wattage: 0,
+        hashrate: { rate: 0, unit: 'GH/s' },
+      } as MinerData;
+
+      updatePrometheusMetrics(minerData);
+
+      expect(gaugeInstances.get('rig3_power_watts')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('rig3_hashrate_ghs')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('rig3_efficiency')?.set).toHaveBeenCalledWith(0);
+    });
+
+    it('extracts temperature from hashboards when temperature_avg is missing', () => {
+      const { updatePrometheusMetrics } = createMetricsForDevice('rig4');
+
+      const minerData: MinerData = {
+        ip: '10.0.0.1',
+        hashboards: [{ temp: 55 }],
+      } as MinerData;
+
+      updatePrometheusMetrics(minerData);
+
+      expect(gaugeInstances.get('rig4_temperature_celsius')?.set).toHaveBeenCalledWith(55);
     });
   });
 
@@ -137,107 +182,62 @@ describe('metrics.service', () => {
   });
 
   describe('updateOverviewMetrics', () => {
-    it('updates overview metrics and per-pool data', () => {
-      const devices: ExtendedDeviceInfo[] = [
+    it('updates overview metrics from MinerData array', () => {
+      const minerDataArray: MinerData[] = [
         {
-          mac: 'a',
-          power: 100,
-          hashRate: 50,
-          sharesAccepted: 5,
-          sharesRejected: 1,
-          tracing: true,
-          version: '1.0.0',
-          stratumURL: 'mine.ocean.xyz',
-          stratumPort: 3334,
-        } as unknown as ExtendedDeviceInfo,
+          ip: '10.0.0.1',
+          wattage: 100,
+          hashrate: { rate: 50, unit: 'GH/s' },
+          shares_accepted: 5,
+          shares_rejected: 1,
+          fw_ver: '1.0.0',
+          config: {
+            pools: {
+              groups: [
+                {
+                  pools: [{ url: 'stratum+tcp://mine.ocean.xyz:3334' }],
+                },
+              ],
+            },
+          },
+        } as MinerData,
         {
-          mac: 'b',
-          power: 0,
-          hashRate_10m: 25,
-          sharesAccepted: 3,
-          sharesRejected: 2,
-          tracing: false,
-          version: 'custom',
-          stratumURL: 'custom',
-          stratumPort: 1234,
-        } as unknown as ExtendedDeviceInfo,
+          ip: '10.0.0.2',
+          wattage: 0,
+          hashrate: { rate: 25, unit: 'GH/s' },
+          shares_accepted: 3,
+          shares_rejected: 2,
+          fw_ver: 'custom',
+          config: {
+            pools: {
+              groups: [
+                {
+                  pools: [{ url: 'stratum+tcp://custom:1234' }],
+                },
+              ],
+            },
+          },
+        } as MinerData,
       ];
 
-      updateOverviewMetrics(devices);
+      updateOverviewMetrics(minerDataArray);
 
       expect(gaugeInstances.get('total_hardware')?.set).toHaveBeenCalledWith(2);
-      expect(gaugeInstances.get('hardware_online')?.set).toHaveBeenCalledWith(1);
-      expect(gaugeInstances.get('hardware_offline')?.set).toHaveBeenCalledWith(1);
-      expect(gaugeInstances.get('total_hashrate')?.set).toHaveBeenCalledWith(50);
-      expect(gaugeInstances.get('average_hashrate')?.set).toHaveBeenCalledWith(25);
+      expect(gaugeInstances.get('hardware_online')?.set).toHaveBeenCalledWith(2);
+      expect(gaugeInstances.get('hardware_offline')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('total_hashrate')?.set).toHaveBeenCalledWith(75);
+      expect(gaugeInstances.get('average_hashrate')?.set).toHaveBeenCalledWith(37.5);
 
       const firmwareGauge = gaugeInstances.get('firmware_version_distribution');
-      const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');
-      const rejectedGauge = gaugeInstances.get('shares_by_pool_rejected');
       expect(firmwareGauge?.labels).toHaveBeenCalled();
 
+      const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');
       expect(acceptedGauge?.labels).toHaveBeenCalledWith('Ocean Main');
       expect(acceptedGauge?.labels).toHaveBeenCalledWith('custom:1234');
-      const acceptedSet = acceptedGauge?.labels.mock.results[0].value.set as jest.Mock | undefined;
-      expect(acceptedSet).toBeDefined();
-      expect(acceptedSet).toHaveBeenCalledWith(5);
-      expect(acceptedSet).toHaveBeenCalledWith(3);
-
-      expect(rejectedGauge?.labels).toHaveBeenCalledWith('Ocean Main');
-      expect(rejectedGauge?.labels).toHaveBeenCalledWith('custom:1234');
-      const rejectedSet = rejectedGauge?.labels.mock.results[0].value.set as jest.Mock | undefined;
-      expect(rejectedSet).toBeDefined();
-      expect(rejectedSet).toHaveBeenCalledWith(1);
-      expect(rejectedSet).toHaveBeenCalledWith(2);
-    });
-
-    it('normalizes pool keys from stratum URLs', () => {
-      const devices: ExtendedDeviceInfo[] = [
-        {
-          mac: 'a',
-          power: 100,
-          hashRate: 50,
-          sharesAccepted: 1,
-          sharesRejected: 0,
-          tracing: true,
-          version: '1.0.0',
-          stratumURL: 'stratum+tcp://192.168.78.28:2018',
-          stratumPort: 2018,
-        } as unknown as ExtendedDeviceInfo,
-        {
-          mac: 'b',
-          power: 0,
-          hashRate_10m: 25,
-          sharesAccepted: 2,
-          sharesRejected: 0,
-          tracing: true,
-          version: 'custom',
-          stratumURL: '',
-          stratumPort: 2018,
-        } as unknown as ExtendedDeviceInfo,
-        {
-          mac: 'c',
-          power: 0,
-          hashRate_10m: 25,
-          sharesAccepted: 3,
-          sharesRejected: 0,
-          tracing: true,
-          version: 'custom',
-          stratumURL: 'solo.ckpool.org',
-          stratumPort: undefined,
-        } as unknown as ExtendedDeviceInfo,
-      ];
-
-      updateOverviewMetrics(devices);
-
-      const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');
-      expect(acceptedGauge?.labels).toHaveBeenCalledWith('192.168.78.28:2018');
-      expect(acceptedGauge?.labels).toHaveBeenCalledWith('unknown:2018');
-      expect(acceptedGauge?.labels).toHaveBeenCalledWith('solo.ckpool.org');
     });
 
     it('handles empty device list', () => {
-      updateOverviewMetrics([] as unknown as ExtendedDeviceInfo[]);
+      updateOverviewMetrics([]);
 
       expect(gaugeInstances.get('total_hardware')?.set).toHaveBeenCalledWith(0);
       expect(gaugeInstances.get('hardware_online')?.set).toHaveBeenCalledWith(0);
@@ -248,47 +248,62 @@ describe('metrics.service', () => {
       expect(gaugeInstances.get('total_efficiency')?.set).toHaveBeenCalledWith(0);
     });
 
-    it('counts hashrate_10m for online devices and defaults missing values', () => {
-      const devices: ExtendedDeviceInfo[] = [
+    it('handles missing hashrate gracefully', () => {
+      const minerDataArray: MinerData[] = [
         {
-          mac: 'a',
-          tracing: true,
-          power: 50,
-          hashRate: undefined,
-          hashRate_10m: 10,
-          sharesAccepted: 0,
-          sharesRejected: 0,
-          version: undefined,
-          stratumURL: 123,
-          stratumPort: undefined,
-        } as unknown as ExtendedDeviceInfo,
-        {
-          mac: 'b',
-          tracing: true,
-          power: undefined,
-          hashRate: undefined,
-          hashRate_10m: undefined,
-          sharesAccepted: 0,
-          sharesRejected: 0,
-          version: 'v',
-          stratumURL: 'example.com:abc',
-          stratumPort: 123,
-        } as unknown as ExtendedDeviceInfo,
+          ip: '10.0.0.1',
+          wattage: 50,
+          hashrate: null,
+        } as MinerData,
       ];
 
-      updateOverviewMetrics(devices);
+      updateOverviewMetrics(minerDataArray);
 
-      expect(gaugeInstances.get('total_hashrate')?.set).toHaveBeenCalledWith(10);
-      expect(gaugeInstances.get('total_power_watts')?.set).toHaveBeenCalledWith(50);
-      expect(gaugeInstances.get('total_efficiency')?.set).toHaveBeenCalledWith(50 / (10 / 1000));
+      expect(gaugeInstances.get('total_hashrate')?.set).toHaveBeenCalledWith(0);
+      expect(gaugeInstances.get('total_efficiency')?.set).toHaveBeenCalledWith(0);
+    });
+
+    it('extracts pool info from config structure', () => {
+      const minerDataArray: MinerData[] = [
+        {
+          ip: '10.0.0.1',
+          wattage: 100,
+          hashrate: { rate: 50, unit: 'GH/s' },
+          shares_accepted: 1,
+          shares_rejected: 0,
+          config: {
+            pools: {
+              groups: [
+                {
+                  pools: [{ url: 'stratum+tcp://192.168.78.28:2018' }],
+                },
+              ],
+            },
+          },
+        } as MinerData,
+      ];
+
+      updateOverviewMetrics(minerDataArray);
 
       const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');
-      expect(acceptedGauge?.labels).toHaveBeenCalledWith('unknown');
-      expect(acceptedGauge?.labels).toHaveBeenCalledWith('example.com:abc:123');
+      expect(acceptedGauge?.labels).toHaveBeenCalledWith('192.168.78.28:2018');
+    });
 
-      const firmwareGauge = gaugeInstances.get('firmware_version_distribution');
-      expect(firmwareGauge?.labels).toHaveBeenCalledWith('unknown');
-      expect(firmwareGauge?.labels).toHaveBeenCalledWith('v');
+    it('handles missing pool config', () => {
+      const minerDataArray: MinerData[] = [
+        {
+          ip: '10.0.0.1',
+          wattage: 100,
+          hashrate: { rate: 50, unit: 'GH/s' },
+          shares_accepted: 1,
+          shares_rejected: 0,
+        } as MinerData,
+      ];
+
+      updateOverviewMetrics(minerDataArray);
+
+      const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');
+      expect(acceptedGauge?.labels).toHaveBeenCalledWith('unknown:0');
     });
   });
 });

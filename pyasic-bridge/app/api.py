@@ -12,6 +12,8 @@ from fastapi import APIRouter, Depends, HTTPException, WebSocket
 
 from .api_contracts import API_CONTRACTS
 from .models import (
+    BitaxeExtraConfig,
+    ConfigValidationResponse,
     HealthResponse,
     MinerConfigPatch,
     RootResponse,
@@ -83,9 +85,10 @@ async def get_miner_data(
 ):
     """Get normalized data from a specific miner using get_data()."""
     try:
-        logger.debug(f"Fetching miner data for {ip}")
+        logger.info("GET /miner/%s/data - Fetching miner data", ip)
         result = await service.get_miner_data(ip)
-        logger.debug(f"Successfully fetched miner data for {ip}, model: {type(result).__name__}")
+        # In production this is a MinerData model; in tests it may be a plain dict.
+        logger.info("GET /miner/%s/data - Successfully fetched miner data", ip)
         return result
     except ValueError as e:
         # Miner not found or not a valid miner - return 404
@@ -153,10 +156,52 @@ async def update_miner_config(
     except ExtraConfigNotAvailableError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except ValueError as e:
+        # Distinguish between "miner not found" and other value-related errors.
+        message = str(e)
+        if "not found" in message.lower():
+            raise HTTPException(status_code=404, detail=message) from e
+        # For other ValueErrors (e.g. validation issues), return 400.
+        raise HTTPException(status_code=400, detail=message) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.post(
+    "/miner/{ip}/config/validate",
+    response_model=API_CONTRACTS["validate_miner_config"].response_body,
+)
+async def validate_miner_config(
+    ip: str,
+    config: MinerConfigPatch,
+    service: MinerService = Depends(get_miner_service),
+):
+    """Validate miner config without applying it."""
+    try:
+        result = await service.validate_miner_config(ip, config.model_dump(exclude_none=True))
+        return ConfigValidationResponse(**result)
+    except ValueError as e:
         # e.g. miner not found
         raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/extra-config-schemas/bitaxe", response_model=BitaxeExtraConfig)
+async def get_bitaxe_extra_config_schema():
+    """
+    Get JSON schema for Bitaxe extra_config.
+
+    This endpoint exists primarily to expose BitaxeExtraConfig in OpenAPI schema.
+    The schema can also be used directly, but the recommended approach is to extract
+    schemas from the OpenAPI JSON file during build time.
+
+    Note: This endpoint returns a sample BitaxeExtraConfig instance to ensure
+    the model appears in the OpenAPI schema. The actual schema is extracted
+    from the OpenAPI JSON during build time.
+    """
+    # Return a sample instance to ensure the model is included in OpenAPI schema
+    # The actual schema extraction happens from the OpenAPI JSON file
+    return BitaxeExtraConfig()
 
 
 @router.post(
@@ -239,7 +284,15 @@ async def validate_miners(
     try:
         if not request.ips:
             raise ValueError("IPs list cannot be empty")
-        return await service.validate_miners(request.ips)
+        logger.info(
+            "POST /miners/validate - Validating %d IP(s): %s",
+            len(request.ips),
+            ", ".join(request.ips),
+        )
+        # The service returns a list of MinerValidationResult models in production,
+        # but tests may mock it with plain dicts. Just pass the results through.
+        results = await service.validate_miners(request.ips)
+        return results
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:

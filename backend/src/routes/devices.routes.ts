@@ -20,6 +20,7 @@ import {
   patchDeviceSystemInfo,
   putListenDevices,
   restartDevice,
+  validateDeviceSystemInfo,
 } from "../controllers/devices.controller";
 
 const router = Router();
@@ -35,6 +36,7 @@ router.get("/devices/imprint/:id", getImprintedDevice);
 router.get("/devices/presets/:presetId", getDevicesByPresetId);
 router.put("/devices/listen", putListenDevices);
 router.post("/devices/:id/system/restart", restartDevice);
+router.post("/devices/:id/system/validate", validateDeviceSystemInfo);
 router.patch("/devices/:id/system", patchDeviceSystemInfo);
 
 export default router;

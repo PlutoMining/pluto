@@ -45,4 +45,15 @@ export interface DiscoveredMiner extends Entity {
    * Storage IP address (may differ from minerData.ip for mock devices or Docker networking)
    */
   storageIp?: string;
+
+  /**
+   * UUID of the preset currently assigned to this miner (if any).
+   */
+  presetUuid?: string | null;
+
+  /**
+   * Whether the backend is currently polling this miner successfully (online).
+   * Set by the backend from in-memory state; not persisted.
+   */
+  tracing?: boolean;
 }
