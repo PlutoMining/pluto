@@ -6,6 +6,7 @@ jest.mock('prom-client', () => {
     name: string;
     set: jest.Mock;
     labels: jest.Mock;
+    reset: jest.Mock;
 
     constructor(options: {
       name: string;
@@ -15,6 +16,7 @@ jest.mock('prom-client', () => {
       this.name = options.name;
       this.set = jest.fn();
       this.labels = jest.fn().mockReturnValue({ set: jest.fn() });
+      this.reset = jest.fn();
       gaugeInstances.set(this.name, this);
       options.registers?.forEach((registry) => registry.registerMetric(this));
     }
