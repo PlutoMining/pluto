@@ -126,7 +126,6 @@ export const PresetEditor = ({
   const [presets, setPresets] = useState<Preset[]>();
 
   const fetchPreset = useCallback(async () => {
-  const fetchPreset = useCallback(async () => {
     try {
       const response = await fetch("/api/presets");
       if (response.ok) {

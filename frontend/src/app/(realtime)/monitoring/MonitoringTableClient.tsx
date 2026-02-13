@@ -144,7 +144,7 @@ export default function MonitoringTableClient() {
 
         {registeredDevices && registeredDevices.length > 0 ? (
           <div className="bg-card">
-            <div className="hidden tablet:block overflow-x-auto border border-border">
+            <div className="hidden overflow-x-auto border border-border md:block">
               <table className="w-full border-collapse">
                 <thead className="bg-muted">
                   <tr>
@@ -162,6 +162,9 @@ export default function MonitoringTableClient() {
                     </th>
                     <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
                       Temp
+                    </th>
+                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
+                      VR Temp
                     </th>
                     <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
                       Current difficulty
