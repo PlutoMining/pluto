@@ -24,17 +24,19 @@ if (!(global as any).matchMedia) {
 
 jest.mock('next/link', () => {
   const React = require('react');
+  const Link = React.forwardRef(({ href, children, ...props }: any, ref: any) => {
+    const resolved =
+      typeof href === 'string'
+        ? href
+        : href && typeof href === 'object'
+          ? href.pathname || ''
+          : '';
+    return React.createElement('a', { href: resolved, ref, ...props }, children);
+  });
+  Link.displayName = 'NextLink';
   return {
     __esModule: true,
-    default: ({ href, children, ...props }: any) => {
-      const resolved =
-        typeof href === 'string'
-          ? href
-          : href && typeof href === 'object'
-            ? href.pathname || ''
-            : '';
-      return React.createElement('a', { href: resolved, ...props }, children);
-    },
+    default: Link,
   };
 });
 

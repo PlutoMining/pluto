@@ -88,15 +88,15 @@ export function DeviceHeatmapCard({
 
   return (
     <Card className="rounded-none">
-      <CardHeader className="flex flex-col gap-2 tablet:flex-row tablet:items-center tablet:justify-between">
+      <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <CardTitle>{title}</CardTitle>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 border border-border" style={{ background: "hsl(var(--muted))" }} />
             <span>Offline / Unknown</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               {PLUTO_HEAT.map((c, idx) => (
                 <span
                   key={`${c}-${idx}`}
@@ -119,7 +119,7 @@ export function DeviceHeatmapCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-2 mobileL:grid-cols-3 tablet:grid-cols-4 desktop:grid-cols-6">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-6">
           {items.map((item) => {
             const bg = item.online ? temperatureToColor(item.effectiveTemp) : "hsl(var(--muted))";
             const textStyle = item.online
@@ -163,7 +163,7 @@ export function DeviceHeatmapCard({
                   aria-hidden
                 />
                 <div
-                  className="text-sm font-semibold"
+                  className="min-w-0 truncate text-sm font-semibold"
                   style={{ color: textStyle.color, textShadow: textStyle.shadow }}
                 >
                   {item.hostname}
@@ -175,15 +175,15 @@ export function DeviceHeatmapCard({
                   {formatMaybeNumber(item.hashrate, 2)} GH/s
                 </div>
                 <div
-                  className="mt-1 flex items-center justify-between gap-2 text-xs"
+                  className="mt-1 flex min-w-0 items-center justify-between gap-2 text-xs"
                   style={{ color: textStyle.color, textShadow: textStyle.shadow }}
                 >
-                  <span>
+                  <span className="min-w-0 truncate">
                     {formatMaybeNumber(item.temp, 1)}°C
                     <span className="opacity-90"> / </span>
                     {formatMaybeNumber(item.vrTemp, 1)}°C
                   </span>
-                  <span className="opacity-90">{formatMaybeNumber(item.power, 0)}W</span>
+                  <span className="shrink-0 opacity-90">{formatMaybeNumber(item.power, 0)}W</span>
                 </div>
                 <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100" />
               </NextLink>

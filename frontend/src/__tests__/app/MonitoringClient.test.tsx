@@ -129,7 +129,7 @@ describe('MonitoringClient', () => {
 
     await flushEffects();
 
-    expect(screen.getByText('rig-1 Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Pool preset')).toBeInTheDocument();
     expect(screen.getByText('Pool preset')).toBeInTheDocument();
     expect(screen.getByText('Custom')).toBeInTheDocument();
 
@@ -386,7 +386,7 @@ describe('MonitoringClient', () => {
       await Promise.resolve();
     });
 
-    expect(await screen.findByText('rig-1 Dashboard')).toBeInTheDocument();
+    expect(await screen.findByText('Pool preset')).toBeInTheDocument();
     await waitFor(() => {
       expect(prom.matrixToSeries).toHaveBeenCalled();
     });

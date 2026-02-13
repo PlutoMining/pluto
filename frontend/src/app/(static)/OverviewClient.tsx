@@ -281,20 +281,18 @@ export default function OverviewClient() {
 
   if (devices.length === 0) {
     return (
-      <div className="container flex-1 px-4 py-4 tablet:px-8 tablet:py-6">
-        <h1 className="mb-4 font-heading text-3xl font-bold uppercase">Overview Dashboard</h1>
-        <NoDeviceAddedSection />
+      <div className="flex-1 py-6">
+        <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+          <NoDeviceAddedSection />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container flex-1 px-4 py-4 tablet:px-8 tablet:py-6">
-      <div className="mb-3 tablet:mb-4">
-        <h1 className="font-heading text-3xl font-bold uppercase">Overview Dashboard</h1>
-      </div>
-
-      <div className="grid gap-4 tablet:grid-cols-4">
+    <div className="flex-1 py-6">
+      <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card className="rounded-none">
           <CardHeader>
             <CardTitle>Total hardware</CardTitle>
@@ -329,12 +327,12 @@ export default function OverviewClient() {
         </Card>
       </div>
 
-      <div className="mt-3 grid gap-4 tablet:mt-4">
+      <div className="mt-3 grid gap-4 md:mt-4">
         <DeviceHeatmapCard title="Device map" devices={devices} />
       </div>
 
       <ChartsToolbar
-        className="mt-3 tablet:mt-4"
+        className="mt-3 md:mt-4"
         range={range}
         onRangeChange={setRange}
         polling={polling}
@@ -342,12 +340,12 @@ export default function OverviewClient() {
         autoRefreshMs={autoRefreshMs}
       />
 
-      <div className="mt-3 grid gap-4 tablet:mt-4 tablet:grid-cols-2">
+      <div className="mt-3 grid gap-4 md:mt-4 md:grid-cols-2">
         <LineChartCard title="Total hashrate" points={hashrateSeries} unit="GH/s" />
         <LineChartCard title="Total power" points={powerSeries} unit="W" curve="step" />
       </div>
 
-      <div className="mt-3 grid gap-4 tablet:mt-4 tablet:grid-cols-2">
+      <div className="mt-3 grid gap-4 md:mt-4 md:grid-cols-2">
         <LineChartCard title="Total efficiency" points={effSeries} unit="J/TH" />
         <TreemapChartCard
           title="Firmware distribution"
@@ -371,13 +369,13 @@ export default function OverviewClient() {
         />
       </div>
 
-      <div className="mt-3 grid gap-4 tablet:mt-4">
+      <div className="mt-3 grid gap-4 md:mt-4">
         <Card className="rounded-none">
           <CardHeader>
             <CardTitle>Shares by pool</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 tablet:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               {sharesByPool.map((pool) => {
                 const donutData = [
                   { kind: "Accepted", value: pool.accepted },
@@ -406,6 +404,7 @@ export default function OverviewClient() {
             </div>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );

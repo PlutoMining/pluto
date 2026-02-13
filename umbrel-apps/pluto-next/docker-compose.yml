@@ -62,7 +62,7 @@ services:
     user: "1000:1000"
 
   frontend:
-    image: ghcr.io/plutomining/pluto-frontend:2.0.0-beta.4@sha256:f268783c5052f718a115226a8ced9012527f48179e9e3ec10e69f6feb7611793
+    image: ghcr.io/plutomining/pluto-frontend:2.0.0-beta.7@sha256:7b66d2a7ec046bf1406d90e5715d190675618999ba4ee49f5f2768b299c02127
     pid: host
     restart: on-failure
     depends_on:

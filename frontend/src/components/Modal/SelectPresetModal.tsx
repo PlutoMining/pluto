@@ -58,7 +58,7 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
   return (
     <Modal open={isOpen} onClose={onClose} variant="sheet">
       <div className="w-full max-w-[1440px] border border-border bg-card text-card-foreground">
-        <div className="relative mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto p-4 tablet:p-8">
+        <div className="relative mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto p-4 md:p-8">
           <div className="flex items-start justify-between gap-6">
             <h2 className="font-heading text-2xl font-medium">Pool Preset</h2>
             <button
