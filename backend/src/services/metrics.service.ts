@@ -393,6 +393,10 @@ export const updateOverviewMetrics = (devicesData: MinerData[]) => {
   totalPowerGauge.set(totalPower);
   totalEfficiencyGauge.set(efficiency);
 
+  // Azzeriamo la metrica della distribuzione firmware prima di ricostruirla,
+  // così non rimangono versioni "stale" da esecuzioni precedenti.
+  firmwareVersionGauge.reset();
+
   // Conta il numero di dispositivi per ciascuna versione firmware
   const firmwareCount = devicesData.reduce((acc: { [version: string]: number }, minerData) => {
     const version = minerData.fw_ver ?? minerData.firmware ?? "unknown";
