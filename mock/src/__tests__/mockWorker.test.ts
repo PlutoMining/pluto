@@ -1,4 +1,4 @@
-import { DeviceApiVersion } from "@pluto/interfaces";
+import { DeviceApiVersion } from "@/types/axeos.types";
 
 describe("mockWorker", () => {
   const originalEnv = process.env;
