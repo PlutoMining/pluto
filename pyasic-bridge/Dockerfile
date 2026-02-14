@@ -12,12 +12,15 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 WORKDIR /app
 
 # Install only production dependencies (no test/lint tools)
-COPY requirements-prod.txt .
+# When building from the monorepo root (see scripts/beta-release.sh),
+# requirements live under the pyasic-bridge directory.
+COPY pyasic-bridge/requirements-prod.txt .
 RUN pip install --no-cache-dir -r requirements-prod.txt && \
     rm -rf /root/.cache/pip
 
-# Copy only application code (tests and dev files excluded via .dockerignore)
-COPY app/ ./app/
+# Copy only application code
+# The app code is under pyasic-bridge/app when using the repo root as context.
+COPY pyasic-bridge/app ./app/
 
 # Change ownership to non-root user
 RUN chown -R appuser:appuser /app
