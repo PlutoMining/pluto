@@ -14,7 +14,18 @@ import { SearchInput } from "@/components/Input";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatDifficulty } from "@/utils/formatDifficulty";
 import { formatDetailedTime, formatTime } from "@/utils/formatTime";
-import { Device } from "@pluto/interfaces";
+import {
+  getHostname,
+  getHashrateGhs,
+  getBestDifficulty,
+  getBestSessionDifficulty,
+  getUptime,
+  getTemperatureAvg,
+  getWattage,
+  getSharesAccepted,
+  getSharesRejected,
+} from "@/utils/minerDataHelpers";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import axios from "axios";
 import NextLink from "next/link";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
@@ -26,14 +37,14 @@ function formatTemperature(value: number | undefined | null) {
 }
 
 export default function MonitoringTableClient() {
-  const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
+  const [registeredDevices, setRegisteredDevices] = useState<DiscoveredMiner[] | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const hasSearchedRef = useRef(false);
 
   const fetchDevicesAndUpdate = useCallback(async () => {
     try {
-      const deviceResponse = await axios.get<{ data: Device[] }>("/api/devices/imprint");
+      const deviceResponse = await axios.get<{ data: DiscoveredMiner[] }>("/api/devices/imprint");
       const fetchedDevices = deviceResponse.data.data;
 
       setRegisteredDevices(fetchedDevices || []);
@@ -49,7 +60,7 @@ export default function MonitoringTableClient() {
   const { isConnected, socket } = useSocket();
 
   useEffect(() => {
-    const listener = (e: Device) => {
+    const listener = (e: DiscoveredMiner) => {
       setRegisteredDevices((prevDevices) => {
         if (!prevDevices) return prevDevices;
 
@@ -101,7 +112,7 @@ export default function MonitoringTableClient() {
 
     const timeoutId = setTimeout(async () => {
       try {
-        const response = await axios.get<{ data: Device[] }>("/api/devices/imprint", {
+        const response = await axios.get<{ data: DiscoveredMiner[] }>("/api/devices/imprint", {
           params: { q: query },
           signal: controller.signal,
         });
@@ -122,18 +133,18 @@ export default function MonitoringTableClient() {
   }, [fetchDevicesAndUpdate, searchQuery]);
 
   return (
-    <div className="container flex-1 py-6">
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
-          <h1 className="font-heading text-3xl font-bold uppercase">Monitoring</h1>
-          <div className="w-full tablet:w-auto">
-            <SearchInput label="Search device" onChange={handleSearch} placeholder="Search device" />
+    <div className="flex-1 py-6">
+      <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
+            <div className="w-full">
+              <SearchInput label="Search device" onChange={handleSearch} placeholder="Search device" />
+            </div>
           </div>
-        </div>
 
         {registeredDevices && registeredDevices.length > 0 ? (
           <div className="bg-card">
-            <div className="hidden tablet:block overflow-x-auto border border-border">
+            <div className="hidden overflow-x-auto border border-border md:block">
               <table className="w-full border-collapse">
                 <thead className="bg-muted">
                   <tr>
@@ -172,48 +183,49 @@ export default function MonitoringTableClient() {
                 </thead>
                 <tbody>
                   {registeredDevices.map((device) => {
-                    const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
+                    const m = device.minerData;
+                    const currentDiff = getBestSessionDifficulty(m);
+                    const hostname = getHostname(m);
+                    const power = getWattage(m);
+                    const temp = getTemperatureAvg(m);
 
                     return (
                     <tr key={device.mac} className="bg-card">
                       <td className="border-t border-border p-3 text-left font-accent text-sm font-normal">
-                        {device.info.hostname}
+                        {hostname}
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {(device.info.hashRate_10m || device.info.hashRate)?.toFixed(2)} GH/s
+                        {getHashrateGhs(m).toFixed(2)} GH/s
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        <span className="text-muted-foreground">{device.info.sharesAccepted}</span>{" "}
+                        <span className="text-muted-foreground">{getSharesAccepted(m)}</span>{" "}
                         <span className="text-muted-foreground">|</span>{" "}
-                        <span className="text-primary">{device.info.sharesRejected}</span>
+                        <span className="text-primary">{getSharesRejected(m)}</span>
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {device.info.power.toFixed(2)} W
+                        {power != null ? `${power.toFixed(2)} W` : "N/A"}
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {formatTemperature(device.info.temp)} °C
-                      </td>
-                      <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {formatTemperature(device.info.vrTemp)} °C
+                        {formatTemperature(temp)} °C
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
                         {formatDifficulty(currentDiff)}
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
-                        {formatDifficulty(device.info.bestDiff)}
+                        {formatDifficulty(getBestDifficulty(m))}
                       </td>
                       <td
                         className="border-t border-border p-3 text-center font-accent text-sm font-normal"
-                        title={formatDetailedTime(device.info.uptimeSeconds)}
+                        title={formatDetailedTime(getUptime(m))}
                       >
-                        {formatTime(device.info.uptimeSeconds)}
+                        {formatTime(getUptime(m))}
                       </td>
                       <td className="border-t border-border p-3 text-center">
                         <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
                       </td>
                       <td className="border-t border-border p-3 text-center">
                         <NextLink
-                          href={`/monitoring/${device.info.hostname}`}
+                          href={`/monitoring/${encodeURIComponent(hostname)}`}
                           className="inline-flex items-center gap-1 font-accent text-sm font-medium underline"
                         >
                           Dashboard <ArrowLeftSmallIcon color="currentColor" />
@@ -226,19 +238,20 @@ export default function MonitoringTableClient() {
               </table>
             </div>
 
-            <div className="tablet:hidden">
-              <DeviceMonitoringAccordion devices={registeredDevices} />
+              <div className="md:hidden">
+                <DeviceMonitoringAccordion devices={registeredDevices} />
+              </div>
             </div>
-          </div>
-        ) : (
-          <p className="text-center text-sm text-muted-foreground">
-            To start using Pluto, go to{" "}
-            <NextLink href={"/devices"} className="underline">
-              Your Devices
-            </NextLink>{" "}
-            and add one or more devices.
-          </p>
-        )}
+          ) : (
+            <p className="text-center text-sm text-muted-foreground">
+              To start using Pluto, go to{" "}
+              <NextLink href={"/devices"} className="underline">
+                Your Devices
+              </NextLink>{" "}
+              and add one or more devices.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

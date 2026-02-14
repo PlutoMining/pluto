@@ -9,24 +9,35 @@
 import { useSocket } from "@/providers/SocketProvider";
 import { formatDetailedTime } from "@/utils/formatTime";
 import { formatDifficulty } from "@/utils/formatDifficulty";
-import { Device } from "@pluto/interfaces";
+import {
+  getHostname,
+  getHashrateGhs,
+  getBestDifficulty,
+  getBestSessionDifficulty,
+  getUptime,
+  getTemperatureAvg,
+  getWattage,
+  getSharesAccepted,
+  getSharesRejected,
+} from "@/utils/minerDataHelpers";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import NextLink from "next/link";
 import { useEffect, useState } from "react";
 import { DeviceStatusBadge } from "../Badge";
 import { ArrowLeftSmallIcon } from "../icons/ArrowIcon";
 
 interface DeviceMonitoringAccordionProps {
-  devices: Device[] | undefined;
+  devices: DiscoveredMiner[] | undefined;
 }
 
 interface AccordionItemProps {
-  device: Device;
+  device: DiscoveredMiner;
 }
 
 export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps> = ({
   devices: deviceList,
 }) => {
-  const [devices, setDevices] = useState<Device[]>(deviceList || []);
+  const [devices, setDevices] = useState<DiscoveredMiner[]>(deviceList || []);
 
   const { isConnected, socket } = useSocket();
 
@@ -35,7 +46,7 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
   }, [deviceList]);
 
   useEffect(() => {
-    const listener = (e: Device) => {
+    const listener = (e: DiscoveredMiner) => {
       setDevices((prevDevices) => {
         // Trova l'indice del dispositivo da aggiornare
         const deviceIndex = prevDevices.findIndex((device) => device.mac === e.mac);
@@ -88,21 +99,24 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
 };
 
 const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
-  const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
+  const m = device.minerData;
+  const hostname = getHostname(m);
+  const power = getWattage(m);
+  const temp = getTemperatureAvg(m);
 
   return (
     <>
       <summary className="flex cursor-pointer items-center justify-between gap-4 bg-muted p-4">
         <div className="flex items-center gap-4">
           <span className="text-muted-foreground">▾</span>
-          <span className="font-body text-sm font-semibold capitalize">{device.info.hostname}</span>
+          <span className="font-body text-sm font-semibold capitalize">{hostname}</span>
           <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
         </div>
         <NextLink
-          href={`/monitoring/${device.info.hostname}`}
+          href={`/monitoring/${encodeURIComponent(hostname)}`}
           onClick={(e) => e.stopPropagation()}
           className="text-muted-foreground hover:text-foreground"
-          aria-label={`Open ${device.info.hostname}`}
+          aria-label={`Open ${hostname}`}
         >
           <ArrowLeftSmallIcon color="currentColor" />
         </NextLink>
@@ -110,18 +124,17 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
 
       <div className="border-t border-border bg-card p-4">
         <div className="flex flex-col gap-2">
-          <Row label="Hash rate" value={`${(device.info.hashRate_10m || device.info.hashRate)?.toFixed(2)} GH/s`} />
+          <Row label="Hash rate" value={`${getHashrateGhs(m).toFixed(2)} GH/s`} />
           <Row
             label="Shares"
-            value={`${device.info.sharesAccepted} | ${device.info.sharesRejected}`}
+            value={`${getSharesAccepted(m)} | ${getSharesRejected(m)}`}
             highlightRight
           />
-          <Row label="Power" value={`${device.info.power.toFixed(2)} W`} />
-          <Row label="Temp." value={`${formatTemperature(device.info.temp)} °C`} />
-          <Row label="VR Temp." value={`${formatTemperature(device.info.vrTemp)} °C`} />
-          <Row label="Current difficulty" value={formatDifficulty(currentDiff)} />
-          <Row label="Best difficulty" value={formatDifficulty(device.info.bestDiff)} />
-          <Row label="Uptime" value={formatDetailedTime(device.info.uptimeSeconds)} />
+          <Row label="Power" value={power != null ? `${power.toFixed(2)} W` : "N/A"} />
+          <Row label="Temp." value={`${formatTemperature(temp)} °C`} />
+          <Row label="Current difficulty" value={formatDifficulty(getBestSessionDifficulty(m))} />
+          <Row label="Best difficulty" value={formatDifficulty(getBestDifficulty(m))} />
+          <Row label="Uptime" value={formatDetailedTime(getUptime(m))} />
         </div>
       </div>
     </>

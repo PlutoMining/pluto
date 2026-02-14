@@ -3,15 +3,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { DeviceAccordion } from "@/components/Accordion/DeviceAccordion";
 
-jest.mock("@/utils/minerMap", () => ({
-  getMinerName: jest.fn(),
-}));
-
 jest.mock("@/utils/formatTime", () => ({
   formatDetailedTime: jest.fn(),
 }));
 
-const minerMap = jest.requireMock("@/utils/minerMap") as { getMinerName: jest.Mock };
 const formatTime = jest.requireMock("@/utils/formatTime") as { formatDetailedTime: jest.Mock };
 
 describe("DeviceAccordion", () => {
@@ -23,9 +18,6 @@ describe("DeviceAccordion", () => {
   });
 
   it("renders devices and calls removeFunction", () => {
-    minerMap.getMinerName
-      .mockImplementationOnce(() => "Antminer")
-      .mockImplementationOnce(() => undefined);
     formatTime.formatDetailedTime
       .mockImplementationOnce(() => "10 minutes")
       .mockImplementationOnce(() => "20 minutes");
@@ -37,13 +29,11 @@ describe("DeviceAccordion", () => {
         mac: "aa",
         createdAt: "2026-01-20T00:00:00.000Z",
         tracing: true,
-        info: {
+        minerData: {
           hostname: "miner-01",
-          boardVersion: "x",
-          deviceModel: "FallbackModel",
-          ASICModel: "S19",
-          uptimeSeconds: 600,
-          version: "v1",
+          model: "Model-A",
+          fw_ver: "v1",
+          uptime: 600,
         },
       },
       {
@@ -51,13 +41,11 @@ describe("DeviceAccordion", () => {
         mac: "bb",
         createdAt: "2026-01-20T00:00:00.000Z",
         tracing: false,
-        info: {
+        minerData: {
           hostname: "miner-02",
-          boardVersion: "y",
-          deviceModel: "FallbackModel",
-          ASICModel: "S21",
-          uptimeSeconds: 1200,
-          version: "v2",
+          model: "Model-B",
+          fw_ver: "v2",
+          uptime: 1200,
         },
       },
     ] as any;
@@ -68,10 +56,6 @@ describe("DeviceAccordion", () => {
 
     expect(screen.getByText("miner-01")).toBeInTheDocument();
     expect(screen.getByText("miner-02")).toBeInTheDocument();
-
-    // Miner row falls back when getMinerName returns undefined.
-    expect(screen.getByText("Antminer")).toBeInTheDocument();
-    expect(screen.getAllByText("FallbackModel").length).toBeGreaterThanOrEqual(1);
 
     expect(screen.getByText("10 minutes")).toBeInTheDocument();
     expect(screen.getByText("20 minutes")).toBeInTheDocument();

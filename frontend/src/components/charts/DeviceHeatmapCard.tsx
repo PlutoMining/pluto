@@ -7,7 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { computeLinearBreakpoints, PLUTO_HEAT, steppedColor } from "@/components/charts/chartPalette";
 import { formatDifficulty } from "@/utils/formatDifficulty";
 import { formatDetailedTime } from "@/utils/formatTime";
-import type { Device } from "@pluto/interfaces";
+import {
+  getHostname,
+  getHashrateGhs,
+  getUptime,
+  getBestDifficulty,
+  getBestSessionDifficulty,
+  getEffectiveTempForHeatmap,
+  getMaxChipTempFromHashboards,
+  getWattage,
+} from "@/utils/minerDataHelpers";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 
 const TEMP_MIN_C = 30;
 const TEMP_MAX_C = 85;
@@ -50,37 +60,29 @@ export function DeviceHeatmapCard({
   devices,
 }: {
   title?: string;
-  devices: Device[];
+  devices: DiscoveredMiner[];
 }) {
   const items = React.useMemo(() => {
     return [...devices]
-      .filter((d) => d?.info?.hostname)
-      .sort((a, b) => String(a.info.hostname).localeCompare(String(b.info.hostname)))
+      .filter((d) => getHostname(d?.minerData) !== "unknown")
+      .sort((a, b) => getHostname(a.minerData).localeCompare(getHostname(b.minerData)))
       .map((device) => {
-        const hashrate = device.info.hashRate_10m ?? device.info.hashRate ?? 0;
-        const currentDiff = (device.info as any).currentDiff ?? device.info.bestSessionDiff;
-        const temp = device.info.temp;
-        const vrTemp = device.info.vrTemp;
-        const effectiveTemp =
-          typeof temp === "number" && Number.isFinite(temp)
-            ? typeof vrTemp === "number" && Number.isFinite(vrTemp)
-              ? Math.max(temp, vrTemp)
-              : temp
-            : typeof vrTemp === "number" && Number.isFinite(vrTemp)
-            ? vrTemp
-            : undefined;
-        const power = device.info.power;
+        const m = device.minerData;
+        const hashrate = getHashrateGhs(m);
+        const currentDiff = getBestSessionDifficulty(m);
+        const effectiveTemp = getEffectiveTempForHeatmap(m);
+        const chipTemp = getMaxChipTempFromHashboards(m);
+        const power = getWattage(m);
 
         return {
-          hostname: device.info.hostname,
+          hostname: getHostname(m),
           online: Boolean(device.tracing),
           hashrate,
-          temp,
-          vrTemp,
           effectiveTemp,
+          chipTemp,
           power,
-          uptimeSeconds: device.info.uptimeSeconds,
-          bestDiff: device.info.bestDiff,
+          uptimeSeconds: getUptime(m),
+          bestDiff: getBestDifficulty(m),
           currentDiff,
         };
       });
@@ -88,15 +90,15 @@ export function DeviceHeatmapCard({
 
   return (
     <Card className="rounded-none">
-      <CardHeader className="flex flex-col gap-2 tablet:flex-row tablet:items-center tablet:justify-between">
+      <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <CardTitle>{title}</CardTitle>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 border border-border" style={{ background: "hsl(var(--muted))" }} />
             <span>Offline / Unknown</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               {PLUTO_HEAT.map((c, idx) => (
                 <span
                   key={`${c}-${idx}`}
@@ -119,7 +121,7 @@ export function DeviceHeatmapCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-2 mobileL:grid-cols-3 tablet:grid-cols-4 desktop:grid-cols-6">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-6">
           {items.map((item) => {
             const bg = item.online ? temperatureToColor(item.effectiveTemp) : "hsl(var(--muted))";
             const textStyle = item.online
@@ -136,8 +138,8 @@ export function DeviceHeatmapCard({
               `Status: ${item.online ? "online" : "offline"}`,
               `Hashrate: ${formatMaybeNumber(item.hashrate, 2)} GH/s`,
               `Power: ${formatMaybeNumber(item.power, 2)} W`,
-              `Temp: ${formatMaybeNumber(item.temp, 1)} °C`,
-              `VR Temp: ${formatMaybeNumber(item.vrTemp, 1)} °C`,
+              `Temp: ${formatMaybeNumber(item.effectiveTemp, 1)} °C`,
+              `Chip temp: ${formatMaybeNumber(item.chipTemp, 1)} °C`,
               `Current diff: ${formatDifficulty(item.currentDiff)}`,
               `Best diff: ${formatDifficulty(item.bestDiff)}`,
               `Uptime: ${formatDetailedTime(item.uptimeSeconds)}`,
@@ -163,7 +165,7 @@ export function DeviceHeatmapCard({
                   aria-hidden
                 />
                 <div
-                  className="text-sm font-semibold"
+                  className="min-w-0 truncate text-sm font-semibold"
                   style={{ color: textStyle.color, textShadow: textStyle.shadow }}
                 >
                   {item.hostname}
@@ -175,15 +177,19 @@ export function DeviceHeatmapCard({
                   {formatMaybeNumber(item.hashrate, 2)} GH/s
                 </div>
                 <div
-                  className="mt-1 flex items-center justify-between gap-2 text-xs"
+                  className="mt-1 flex min-w-0 items-center justify-between gap-2 text-xs"
                   style={{ color: textStyle.color, textShadow: textStyle.shadow }}
                 >
                   <span>
-                    {formatMaybeNumber(item.temp, 1)}°C
-                    <span className="opacity-90"> / </span>
-                    {formatMaybeNumber(item.vrTemp, 1)}°C
+                    {formatMaybeNumber(item.effectiveTemp, 1)}°C
+                    {item.chipTemp != null ? (
+                      <>
+                        <span className="opacity-90"> / </span>
+                        {formatMaybeNumber(item.chipTemp, 1)}°C chip
+                      </>
+                    ) : null}
                   </span>
-                  <span className="opacity-90">{formatMaybeNumber(item.power, 0)}W</span>
+                  <span className="shrink-0 opacity-90">{formatMaybeNumber(item.power, 0)}W</span>
                 </div>
                 <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100" />
               </NextLink>

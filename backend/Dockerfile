@@ -1,8 +1,15 @@
 # Stage 1: Build
 FROM node:24-alpine AS builder
 
+# Install python3 for generating the pyasic-bridge TypeScript client
+RUN apk add --no-cache python3
+
 # Set the working directory
 WORKDIR /home/node/app
+
+# Copy tooling directory early (needed for tsconfig.base.json used by common packages)
+RUN mkdir -p /home/node/tooling
+COPY ./tooling /home/node/tooling
 
 # Copy package.json and package-lock.json and install dependencies
 COPY ./backend/package*.json ./
@@ -12,11 +19,8 @@ RUN npm ci --prefix /home/node/common/utils
 RUN npm ci --prefix /home/node/common/db
 RUN npm ci --prefix /home/node/common/interfaces
 RUN npm ci --prefix /home/node/common/logger
+RUN npm ci --prefix /home/node/common/pyasic-bridge-client
 RUN npm ci
-
-# Copy tooling directory (needed for tsconfig.base.json)
-RUN mkdir -p /home/node/tooling
-COPY ./tooling /home/node/tooling
 
 # Copy the rest of the files and build the application
 COPY ./backend .
@@ -26,6 +30,7 @@ RUN npm run build --prefix /home/node/common/utils
 RUN npm run build --prefix /home/node/common/db
 RUN npm run build --prefix /home/node/common/interfaces
 RUN npm run build --prefix /home/node/common/logger
+RUN npm run build --prefix /home/node/common/pyasic-bridge-client
 
 RUN npm run build
 

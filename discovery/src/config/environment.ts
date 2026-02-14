@@ -15,6 +15,10 @@ interface EnvConfig {
   mockDiscoveryHost: string;
   mockDeviceHost?: string; // Optional hostname for mock device IPs (Docker compatibility)
   detectMockDevices: boolean;
+  pyasicBridgeHost: string;
+  pyasicValidationBatchSize: number;
+  pyasicValidationConcurrency: number;
+  pyasicValidationTimeout: number;
 }
 
 const requireEnv = (name: string): string => {
@@ -56,4 +60,8 @@ export const config: EnvConfig = {
     typeof process.env.MOCK_DEVICE_HOST === "string" && process.env.MOCK_DEVICE_HOST.trim() !== ""
       ? process.env.MOCK_DEVICE_HOST
       : undefined,
+  pyasicBridgeHost: requireEnv("PYASIC_BRIDGE_HOST"),
+  pyasicValidationBatchSize: parseNumber("PYASIC_VALIDATION_BATCH_SIZE", 10),
+  pyasicValidationConcurrency: parseNumber("PYASIC_VALIDATION_CONCURRENCY", 3),
+  pyasicValidationTimeout: parseNumber("PYASIC_VALIDATION_TIMEOUT", 3000),
 };

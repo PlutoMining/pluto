@@ -6,12 +6,16 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import type { Device } from "./device-info.interface";
+import type { DiscoveredMiner } from "./discovered-miner.interface";
 import type { Entity } from "./entity.interface";
 
 export interface Preset extends Entity {
   uuid: string;
   name: string;
   configuration: Record<string, any>;
-  associatedDevices?: Device[];
+  /**
+   * Devices currently associated with this preset.
+   * Uses the pyasic-based DiscoveredMiner model.
+   */
+  associatedDevices?: DiscoveredMiner[];
 }

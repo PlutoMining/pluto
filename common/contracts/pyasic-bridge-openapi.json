@@ -1,0 +1,2486 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Pyasic Bridge",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "Root endpoint: service info and links.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RootResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Health check endpoint.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scan": {
+      "post": {
+        "summary": "Scan Miners",
+        "description": "Scan for miners using pyasic",
+        "operationId": "scan_miners_scan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/miner/{ip}/data": {
+      "get": {
+        "summary": "Get Miner Data",
+        "description": "Get normalized data from a specific miner using get_data().",
+        "operationId": "get_miner_data_miner__ip__data_get",
+        "parameters": [
+          {
+            "name": "ip",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ip"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MinerData"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/miner/{ip}/data/raw": {
+      "get": {
+        "summary": "Get Miner Data Raw",
+        "description": "Get raw data from a specific miner without normalization.",
+        "operationId": "get_miner_data_raw_miner__ip__data_raw_get",
+        "parameters": [
+          {
+            "name": "ip",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ip"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MinerDataRaw"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/miner/{ip}/config": {
+      "get": {
+        "summary": "Get Miner Config",
+        "description": "Get config from a specific miner.",
+        "operationId": "get_miner_config_miner__ip__config_get",
+        "parameters": [
+          {
+            "name": "ip",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ip"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MinerConfigModel-Output"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Miner Config",
+        "description": "Update miner config.",
+        "operationId": "update_miner_config_miner__ip__config_patch",
+        "parameters": [
+          {
+            "name": "ip",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ip"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MinerConfigModel-Input"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/miner/{ip}/config/validate": {
+      "post": {
+        "summary": "Validate Miner Config",
+        "description": "Validate miner config without applying it.",
+        "operationId": "validate_miner_config_miner__ip__config_validate_post",
+        "parameters": [
+          {
+            "name": "ip",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ip"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MinerConfigModel-Input"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/extra-config-schemas/bitaxe": {
+      "get": {
+        "summary": "Get Bitaxe Extra Config Schema",
+        "description": "Get JSON schema for Bitaxe extra_config.\n\nThis endpoint exists primarily to expose BitaxeExtraConfig in OpenAPI schema.\nThe schema can also be used directly, but the recommended approach is to extract\nschemas from the OpenAPI JSON file during build time.\n\nNote: This endpoint returns a sample BitaxeExtraConfig instance to ensure\nthe model appears in the OpenAPI schema. The actual schema is extracted\nfrom the OpenAPI JSON during build time.",
+        "operationId": "get_bitaxe_extra_config_schema_extra_config_schemas_bitaxe_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BitaxeExtraConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/miner/{ip}/restart": {
+      "post": {
+        "summary": "Restart Miner",
+        "description": "Restart a miner.",
+        "operationId": "restart_miner_miner__ip__restart_post",
+        "parameters": [
+          {
+            "name": "ip",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ip"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/miner/{ip}/fault-light/on": {
+      "post": {
+        "summary": "Fault Light On",
+        "description": "Turn on fault light.",
+        "operationId": "fault_light_on_miner__ip__fault_light_on_post",
+        "parameters": [
+          {
+            "name": "ip",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ip"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/miner/{ip}/fault-light/off": {
+      "post": {
+        "summary": "Fault Light Off",
+        "description": "Turn off fault light.",
+        "operationId": "fault_light_off_miner__ip__fault_light_off_post",
+        "parameters": [
+          {
+            "name": "ip",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ip"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/miner/{ip}/errors": {
+      "get": {
+        "summary": "Get Miner Errors",
+        "description": "Get miner errors if available.",
+        "operationId": "get_miner_errors_miner__ip__errors_get",
+        "parameters": [
+          {
+            "name": "ip",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ip"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MinerErrorsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/miners/validate": {
+      "post": {
+        "summary": "Validate Miners",
+        "description": "Validate multiple IPs to check if they are supported miners.",
+        "operationId": "validate_miners_miners_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BitaxeExtraConfig": {
+        "properties": {
+          "rotation": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  0,
+                  90,
+                  180,
+                  270
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rotation",
+            "description": "Display rotation in degrees. Valid values: 0, 90, 180, 270"
+          },
+          "invertscreen": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invertscreen",
+            "description": "Invert screen. Valid values: 0 (normal), 1 (inverted)"
+          },
+          "display_timeout": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  1,
+                  2,
+                  5,
+                  15,
+                  30,
+                  60,
+                  120,
+                  240,
+                  480
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Timeout",
+            "description": "Display timeout in seconds. Valid values: -1, 1, 2, 5, 15, 30, 60, 120, 240, 480"
+          },
+          "overheat_mode": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overheat Mode",
+            "description": "Overheat mode. 0 = off, 1 = on."
+          },
+          "overclock_enabled": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overclock Enabled",
+            "description": "Overclock enabled. 0 = disabled, 1 = enabled."
+          },
+          "stats_frequency": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stats Frequency",
+            "description": "Stats frequency (e.g. 0)."
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  400,
+                  490,
+                  525,
+                  550,
+                  600,
+                  625
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency",
+            "description": "Frequency in MHz. Valid values: 400, 490, 525, 550, 600, 625"
+          },
+          "core_voltage": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  1000,
+                  1060,
+                  1100,
+                  1150,
+                  1200,
+                  1250
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Core Voltage",
+            "description": "Core voltage in mV. Valid values: 1000, 1060, 1100, 1150, 1200, 1250"
+          },
+          "min_fan_speed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Fan Speed",
+            "description": "Minimum fan speed (e.g. 25)."
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "BitaxeExtraConfig",
+        "description": "Pydantic model for Bitaxe extra_config validation.\n\nAll fields optional. Validates types (int, no coercion) and allowed values for rotation, invertscreen, display_timeout, frequency and core_voltage."
+      },
+      "ConfigValidationResponse": {
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "title": "Valid",
+            "description": "Whether the config is valid"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors",
+            "description": "List of validation error messages if invalid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid"
+        ],
+        "title": "ConfigValidationResponse",
+        "description": "Response of POST /miner/{ip}/config/validate: validation result."
+      },
+      "DeviceInfo": {
+        "properties": {
+          "make": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Make"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "firmware": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Firmware"
+          },
+          "algo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Algo"
+          }
+        },
+        "type": "object",
+        "title": "DeviceInfo",
+        "description": "Device make/model/firmware info."
+      },
+      "FanModeConfig": {
+        "properties": {
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "speed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed"
+          },
+          "minimum_fans": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Fans"
+          }
+        },
+        "type": "object",
+        "title": "FanModeConfig",
+        "description": "Fan mode configuration."
+      },
+      "FanReading": {
+        "properties": {
+          "speed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed"
+          }
+        },
+        "type": "object",
+        "title": "FanReading",
+        "description": "Single fan speed reading."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HashboardReading": {
+        "properties": {
+          "slot": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot"
+          },
+          "hashrate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HashrateStruct"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "inlet_temp": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inlet Temp"
+          },
+          "outlet_temp": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outlet Temp"
+          },
+          "temp": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temp"
+          },
+          "chip_temp": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chip Temp"
+          },
+          "chips": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chips"
+          },
+          "expected_chips": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Chips"
+          },
+          "serial_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serial Number"
+          },
+          "missing": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Missing"
+          },
+          "tuned": {
+            "title": "Tuned"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "voltage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voltage"
+          }
+        },
+        "type": "object",
+        "title": "HashboardReading",
+        "description": "Single hashrate board reading."
+      },
+      "HashrateStruct": {
+        "properties": {
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HashrateUnit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate"
+          }
+        },
+        "type": "object",
+        "title": "HashrateStruct",
+        "description": "Hashrate with unit and rate."
+      },
+      "HashrateUnit": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "suffix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suffix"
+          }
+        },
+        "type": "object",
+        "title": "HashrateUnit",
+        "description": "Hashrate unit (value + suffix, e.g. TH/s, Gh/s)."
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "healthy"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse",
+        "description": "Health check response."
+      },
+      "MinerConfigModel-Input": {
+        "properties": {
+          "pools": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PoolsConfig-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fan_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FanModeConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemperatureConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mining_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MiningModeConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "extra_config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Config"
+          }
+        },
+        "type": "object",
+        "title": "MinerConfigModel",
+        "description": "Miner configuration (pools, fan, temp, mode, extra)."
+      },
+      "MinerConfigModel-Output": {
+        "properties": {
+          "pools": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PoolsConfig-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fan_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FanModeConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemperatureConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mining_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MiningModeConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "extra_config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Config"
+          }
+        },
+        "type": "object",
+        "title": "MinerConfigModel",
+        "description": "Miner configuration (pools, fan, temp, mode, extra)."
+      },
+      "MinerData": {
+        "properties": {
+          "ip": {
+            "type": "string",
+            "title": "Ip",
+            "description": "Miner IP address"
+          },
+          "device_info": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeviceInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "serial_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serial Number"
+          },
+          "psu_serial_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Psu Serial Number"
+          },
+          "mac": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mac"
+          },
+          "api_ver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Ver"
+          },
+          "fw_ver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fw Ver"
+          },
+          "hostname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hostname"
+          },
+          "sticker_hashrate": {
+            "title": "Sticker Hashrate"
+          },
+          "expected_hashrate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HashrateStruct"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expected_hashboards": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Hashboards"
+          },
+          "expected_chips": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Chips"
+          },
+          "expected_fans": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Fans"
+          },
+          "env_temp": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Env Temp"
+          },
+          "wattage": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wattage"
+          },
+          "voltage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voltage"
+          },
+          "network_difficulty": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Network Difficulty"
+          },
+          "best_difficulty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Difficulty"
+          },
+          "best_session_difficulty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Session Difficulty"
+          },
+          "shares_accepted": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shares Accepted"
+          },
+          "shares_rejected": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shares Rejected"
+          },
+          "fans": {
+            "items": {
+              "$ref": "#/components/schemas/FanReading"
+            },
+            "type": "array",
+            "title": "Fans"
+          },
+          "fan_psu": {
+            "title": "Fan Psu"
+          },
+          "hashboards": {
+            "items": {
+              "$ref": "#/components/schemas/HashboardReading"
+            },
+            "type": "array",
+            "title": "Hashboards"
+          },
+          "config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MinerConfigModel-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fault_light": {
+            "title": "Fault Light"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/MinerErrorEntry"
+            },
+            "type": "array",
+            "title": "Errors"
+          },
+          "is_mining": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Mining"
+          },
+          "uptime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uptime"
+          },
+          "pools": {
+            "items": {},
+            "type": "array",
+            "title": "Pools"
+          },
+          "hashrate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HashrateStruct"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wattage_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wattage Limit"
+          },
+          "total_chips": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Chips"
+          },
+          "nominal": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nominal"
+          },
+          "percent_expected_chips": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent Expected Chips"
+          },
+          "percent_expected_hashrate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent Expected Hashrate"
+          },
+          "percent_expected_wattage": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent Expected Wattage"
+          },
+          "temperature_avg": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Avg"
+          },
+          "efficiency": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HashrateStruct"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "efficiency_fract": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Efficiency Fract"
+          },
+          "datetime": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datetime"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          },
+          "make": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Make"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "firmware": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Firmware"
+          },
+          "algo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Algo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ip"
+        ],
+        "title": "MinerData",
+        "description": "Normalized miner data returned by GET /miner/{ip}/data.\n\nMatches the structure produced by the pyasic-bridge normalizers."
+      },
+      "MinerDataRaw": {
+        "properties": {
+          "device_info": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Info",
+            "description": "Device make/model/firmware (used by normalizer factory)"
+          },
+          "hashrate": {
+            "title": "Hashrate",
+            "description": "Hashrate (dict with rate/unit or object; normalized to Gh/s)"
+          },
+          "best_difficulty": {
+            "title": "Best Difficulty",
+            "description": "Best difficulty (normalized to string)"
+          },
+          "best_session_difficulty": {
+            "title": "Best Session Difficulty",
+            "description": "Best session difficulty (normalized to string)"
+          },
+          "wattage": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wattage",
+            "description": "Power in watts (used for efficiency calculation)"
+          },
+          "efficiency": {
+            "title": "Efficiency",
+            "description": "Efficiency value (normalized to J/Th)"
+          },
+          "efficiency_fract": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Efficiency Fract",
+            "description": "Efficiency fallback (used if efficiency missing)"
+          },
+          "extra_fields": {
+            "title": "Extra Fields",
+            "description": "Vendor-specific fields (e.g. Bitaxe extra_fields)"
+          },
+          "make": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Make",
+            "description": "Top-level make (factory detection)"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model",
+            "description": "Top-level model (factory detection)"
+          },
+          "mac": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mac",
+            "description": "MAC address (pyasic may use mac or macAddr)"
+          },
+          "macAddr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Macaddr",
+            "description": "Alternative MAC key from pyasic"
+          },
+          "hostname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hostname"
+          },
+          "api_ver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Ver"
+          },
+          "fw_ver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fw Ver"
+          },
+          "serial_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serial Number"
+          },
+          "psu_serial_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Psu Serial Number"
+          },
+          "expected_hashrate": {
+            "title": "Expected Hashrate"
+          },
+          "expected_hashboards": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Hashboards"
+          },
+          "expected_chips": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Chips"
+          },
+          "expected_fans": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Fans"
+          },
+          "env_temp": {
+            "title": "Env Temp"
+          },
+          "voltage": {
+            "title": "Voltage"
+          },
+          "network_difficulty": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Network Difficulty"
+          },
+          "shares_accepted": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shares Accepted"
+          },
+          "shares_rejected": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shares Rejected"
+          },
+          "fans": {
+            "items": {},
+            "type": "array",
+            "title": "Fans"
+          },
+          "fan_psu": {
+            "title": "Fan Psu"
+          },
+          "hashboards": {
+            "items": {},
+            "type": "array",
+            "title": "Hashboards"
+          },
+          "config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MinerConfigModel-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fault_light": {
+            "title": "Fault Light"
+          },
+          "errors": {
+            "items": {},
+            "type": "array",
+            "title": "Errors"
+          },
+          "is_mining": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Mining"
+          },
+          "uptime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uptime"
+          },
+          "pools": {
+            "items": {},
+            "type": "array",
+            "title": "Pools"
+          },
+          "wattage_limit": {
+            "title": "Wattage Limit"
+          },
+          "total_chips": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Chips"
+          },
+          "nominal": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nominal"
+          },
+          "percent_expected_chips": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent Expected Chips"
+          },
+          "percent_expected_hashrate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent Expected Hashrate"
+          },
+          "percent_expected_wattage": {
+            "title": "Percent Expected Wattage"
+          },
+          "temperature_avg": {
+            "title": "Temperature Avg"
+          },
+          "datetime": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datetime"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          },
+          "firmware": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Firmware"
+          },
+          "algo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Algo"
+          },
+          "sticker_hashrate": {
+            "title": "Sticker Hashrate"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "MinerDataRaw",
+        "description": "Raw miner data returned by GET /miner/{ip}/data/raw.\n\nMatches the structure returned by pyasic (as_dict()) before normalization.\nThe normalizer reads: device_info, hashrate, best_difficulty,\nbest_session_difficulty, wattage, efficiency, efficiency_fract,\nextra_fields, make, model. Other keys are preserved via extra=\"allow\"."
+      },
+      "MinerErrorEntry": {
+        "properties": {
+          "error_code": {
+            "type": "integer",
+            "title": "Error Code",
+            "description": "Error code from miner"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "error_code"
+        ],
+        "title": "MinerErrorEntry",
+        "description": "Single miner error (aligned with pyasic BaseMinerError serialization).\n\npyasic get_errors() returns list of BaseMinerError; serialized at least error_code.\nSubclasses may add message, description, etc. extra=\"allow\" preserves them."
+      },
+      "MinerErrorsResponse": {
+        "items": {
+          "$ref": "#/components/schemas/MinerErrorEntry"
+        },
+        "type": "array",
+        "title": "MinerErrorsResponse",
+        "description": "Response of GET /miner/{ip}/errors: list of error entries (pyasic BaseMinerError serialization)."
+      },
+      "MinerInfo": {
+        "properties": {
+          "ip": {
+            "type": "string",
+            "title": "Ip",
+            "description": "Miner IP address"
+          },
+          "mac": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mac",
+            "description": "MAC address if available"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model",
+            "description": "Device model name"
+          },
+          "hostname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hostname",
+            "description": "Device hostname"
+          },
+          "hashrate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hashrate",
+            "description": "Reported hashrate"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MinerData",
+            "description": "Normalized miner data (pyasic get_data() shape)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ip",
+          "data"
+        ],
+        "title": "MinerInfo",
+        "description": "Normalized miner info returned from scan/validation (data = pyasic get_data() normalized)."
+      },
+      "MinerValidationResult": {
+        "properties": {
+          "ip": {
+            "type": "string",
+            "title": "Ip",
+            "description": "IP that was validated"
+          },
+          "is_miner": {
+            "type": "boolean",
+            "title": "Is Miner",
+            "description": "Whether the IP responded as a miner"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model",
+            "description": "Detected miner model if applicable"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "Error message if validation failed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ip",
+          "is_miner"
+        ],
+        "title": "MinerValidationResult",
+        "description": "Result of validating a single IP as a miner."
+      },
+      "MiningModeConfig": {
+        "properties": {
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          }
+        },
+        "type": "object",
+        "title": "MiningModeConfig",
+        "description": "Mining mode (e.g. normal)."
+      },
+      "PoolEntry": {
+        "properties": {
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "user": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "title": "PoolEntry",
+        "description": "Pool URL/user/password."
+      },
+      "PoolGroup": {
+        "properties": {
+          "pools": {
+            "items": {
+              "$ref": "#/components/schemas/PoolEntry"
+            },
+            "type": "array",
+            "title": "Pools"
+          },
+          "quota": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quota"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "title": "PoolGroup",
+        "description": "Group of pools with quota."
+      },
+      "PoolsConfig-Input": {
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/PoolGroup"
+            },
+            "type": "array",
+            "title": "Groups"
+          }
+        },
+        "type": "object",
+        "title": "PoolsConfig",
+        "description": "Pools configuration."
+      },
+      "PoolsConfig-Output": {
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/PoolGroup"
+            },
+            "type": "array",
+            "title": "Groups"
+          }
+        },
+        "type": "object",
+        "title": "PoolsConfig",
+        "description": "Pools configuration."
+      },
+      "RootResponse": {
+        "properties": {
+          "service": {
+            "type": "string",
+            "title": "Service",
+            "description": "Service name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "API version"
+          },
+          "docs": {
+            "type": "string",
+            "title": "Docs",
+            "description": "Path to OpenAPI docs"
+          },
+          "health": {
+            "type": "string",
+            "title": "Health",
+            "description": "Path to health endpoint"
+          }
+        },
+        "type": "object",
+        "required": [
+          "service",
+          "version",
+          "docs",
+          "health"
+        ],
+        "title": "RootResponse",
+        "description": "Root endpoint: service info and links."
+      },
+      "ScanRequest": {
+        "properties": {
+          "subnet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subnet",
+            "description": "CIDR subnet to scan (e.g. 192.168.1.0/24)"
+          },
+          "ip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip",
+            "description": "Single IP address to scan"
+          }
+        },
+        "type": "object",
+        "title": "ScanRequest",
+        "description": "Request body for triggering a subnet or single-IP scan."
+      },
+      "ScanResponse": {
+        "items": {
+          "$ref": "#/components/schemas/MinerInfo"
+        },
+        "type": "array",
+        "title": "ScanResponse",
+        "description": "Response of POST /scan: list of MinerInfo."
+      },
+      "StatusResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "e.g. 'success'"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "StatusResponse",
+        "description": "Status response for PATCH config, POST restart, POST fault-light (aligned with bridge return)."
+      },
+      "TemperatureConfig": {
+        "properties": {
+          "target": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "hot": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hot"
+          },
+          "danger": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Danger"
+          }
+        },
+        "type": "object",
+        "title": "TemperatureConfig",
+        "description": "Temperature limits config."
+      },
+      "ValidateRequest": {
+        "properties": {
+          "ips": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Ips",
+            "description": "List of IP addresses to validate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ips"
+        ],
+        "title": "ValidateRequest",
+        "description": "Request body for validating one or more IPs as miners."
+      },
+      "ValidateResponse": {
+        "items": {
+          "$ref": "#/components/schemas/MinerValidationResult"
+        },
+        "type": "array",
+        "title": "ValidateResponse",
+        "description": "Response of POST /miners/validate: list of MinerValidationResult."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

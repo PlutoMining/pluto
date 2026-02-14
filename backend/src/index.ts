@@ -25,10 +25,10 @@ export function createBackendServer() {
   app.use(express.json());
   app.use(removeSecretsMiddleware);
 
-  // Imposta il server nell'app per poterlo riutilizzare nei controller
+  // Store server reference on app for reuse in controllers
   app.set("server", server);
 
-  // Aggiungi le rotte
+  // Register routes
   app.use(metricsRoutes);
   app.use(prometheusRoutes);
   app.use(devicesRoutes);
@@ -47,7 +47,7 @@ export async function startServer(opts?: { port?: number; autoListen?: boolean }
     server.listen(port, async () => {
       try {
         if (autoListen) {
-          await listenToDevices(); //no filter and log tracing disabled
+          await listenToDevices();
         }
         resolve();
       } catch (err) {
@@ -65,8 +65,20 @@ export async function startServer(opts?: { port?: number; autoListen?: boolean }
   return { server, port: actualPort };
 }
 
-export const serverPromise = startServer().catch((err) => {
-  logger.error("Failed to start backend server", err);
-  process.exitCode = 1;
-  return undefined;
-});
+/**
+ * Top-level entry point: starts the server and handles fatal errors.
+ */
+export async function main(): Promise<{ server: http.Server; port: number } | undefined> {
+  try {
+    return await startServer();
+  } catch (err) {
+    logger.error("Failed to start backend server", err);
+    process.exitCode = 1;
+    return undefined;
+  }
+}
+
+/* istanbul ignore next -- entry point guard */
+if (require.main === module) {
+  void main();
+}

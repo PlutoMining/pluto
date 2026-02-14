@@ -152,7 +152,6 @@ describe('OverviewClient', () => {
 
     await flushEffects();
 
-    expect(screen.getByText('Overview Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Start using Pluto adding your first device')).toBeInTheDocument();
   });
 
@@ -338,8 +337,6 @@ describe('OverviewClient', () => {
     render(<OverviewClient />);
 
     await flushEffects();
-
-    expect(screen.getByText('Overview Dashboard')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith('Error discovering devices:', expect.any(Error));

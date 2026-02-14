@@ -79,9 +79,13 @@ describe("RegisterDevicesModal", () => {
     const onClose = jest.fn();
     const onDevicesChanged = jest.fn().mockResolvedValue(undefined);
 
-    mockedAxios.get.mockResolvedValueOnce({
-      data: [{ ip: "192.168.0.10", mac: "00:00:00:00:00:00" }],
-    });
+    mockedAxios.get
+      .mockResolvedValueOnce({
+        data: [{ ip: "192.168.0.10", mac: "00:00:00:00:00:00" }],
+      })
+      .mockResolvedValueOnce({
+        data: { data: [] },
+      });
     mockedAxios.patch.mockResolvedValueOnce({});
 
     render(
@@ -112,6 +116,46 @@ describe("RegisterDevicesModal", () => {
     await waitFor(() => {
       expect(mockedAxios.patch).toHaveBeenCalledWith("/api/devices/imprint", {
         mac: "aa:bb:cc:dd:ee:ff",
+      });
+      expect(onDevicesChanged).toHaveBeenCalledTimes(1);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("allows manual search by IP only and uses backend MAC", async () => {
+    const onClose = jest.fn();
+    const onDevicesChanged = jest.fn().mockResolvedValue(undefined);
+
+    mockedAxios.get
+      .mockResolvedValueOnce({
+        data: [{ ip: "192.168.0.10", mac: "11:22:33:44:55:66" }],
+      })
+      .mockResolvedValueOnce({
+        data: { data: [] },
+      });
+    mockedAxios.patch.mockResolvedValueOnce({});
+
+    render(
+      <RegisterDevicesModal isOpen={true} onClose={onClose} onDevicesChanged={onDevicesChanged} />
+    );
+
+    await screen.findByRole("dialog");
+
+    const search = screen.getByRole("button", { name: "Search" });
+    expect(search).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("IP Address"), { target: { value: "192.168.0.10" } });
+    expect(search).not.toBeDisabled();
+
+    fireEvent.click(search);
+
+    await screen.findByText("Result for 192.168.0.10");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add device" }));
+
+    await waitFor(() => {
+      expect(mockedAxios.patch).toHaveBeenCalledWith("/api/devices/imprint", {
+        mac: "11:22:33:44:55:66",
       });
       expect(onDevicesChanged).toHaveBeenCalledTimes(1);
       expect(onClose).toHaveBeenCalledTimes(1);
@@ -205,7 +249,9 @@ describe("RegisterDevicesModal", () => {
     const onClose = jest.fn();
     const onDevicesChanged = jest.fn().mockResolvedValue(undefined);
 
-    mockedAxios.get.mockResolvedValueOnce({ data: [] });
+    mockedAxios.get
+      .mockResolvedValueOnce({ data: [] })
+      .mockResolvedValueOnce({ data: { data: [] } });
 
     render(
       <RegisterDevicesModal isOpen={true} onClose={onClose} onDevicesChanged={onDevicesChanged} />
@@ -236,19 +282,29 @@ describe("RegisterDevicesModal", () => {
     const search = screen.getByRole("button", { name: "Search" });
     expect(search).toBeDisabled();
 
-    // Valid IP but MAC still empty => required
-    fireEvent.change(screen.getByLabelText("IP Address"), { target: { value: "192.168.0.10" } });
+    // Invalid IP only => still disabled
+    fireEvent.change(screen.getByLabelText("IP Address"), { target: { value: "999" } });
+    expect(screen.getByText("ipAddress is not valid")).toBeInTheDocument();
     expect(search).toBeDisabled();
 
-    // Invalid MAC => still disabled
+    // Clear IP -> both fields empty => disabled, no validation error
+    fireEvent.change(screen.getByLabelText("IP Address"), { target: { value: "" } });
+    expect(screen.queryByText("ipAddress is not valid")).toBeNull();
+    expect(search).toBeDisabled();
+
+    // Valid IP only => enabled
+    fireEvent.change(screen.getByLabelText("IP Address"), { target: { value: "192.168.0.10" } });
+    expect(search).not.toBeDisabled();
+
+    // Invalid MAC alongside valid IP => disabled
     fireEvent.change(screen.getByLabelText("MAC Address"), { target: { value: "not-a-mac" } });
     expect(screen.getByText("macAddress is not valid")).toBeInTheDocument();
     expect(search).toBeDisabled();
 
-    // Required errors also keep it disabled
+    // Clear MAC again -> back to only valid IP => enabled
     fireEvent.change(screen.getByLabelText("MAC Address"), { target: { value: "" } });
-    expect(screen.getByText("macAddress is required")).toBeInTheDocument();
-    expect(search).toBeDisabled();
+    expect(screen.queryByText("macAddress is not valid")).toBeNull();
+    expect(search).not.toBeDisabled();
   });
 
   it("logs when auto-discovery returns a non-200 response", async () => {
@@ -301,9 +357,13 @@ describe("RegisterDevicesModal", () => {
     const onClose = jest.fn();
     const onDevicesChanged = jest.fn().mockResolvedValue(undefined);
 
-    mockedAxios.get.mockResolvedValueOnce({
-      data: [{ ip: "192.168.0.10", mac: "00:00:00:00:00:00" }],
-    });
+    mockedAxios.get
+      .mockResolvedValueOnce({
+        data: [{ ip: "192.168.0.10", mac: "00:00:00:00:00:00" }],
+      })
+      .mockResolvedValueOnce({
+        data: { data: [] },
+      });
     mockedAxios.patch.mockRejectedValueOnce(new Error("nope"));
 
     render(

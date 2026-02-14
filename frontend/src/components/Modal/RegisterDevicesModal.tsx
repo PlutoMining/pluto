@@ -6,7 +6,7 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { Device } from "@pluto/interfaces";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import { isValidIp, isValidMac } from "@pluto/utils";
 import axios from "axios";
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
@@ -53,7 +53,7 @@ function ModalBodyContent({
   onClose: () => void;
   onDevicesChanged: () => Promise<void>;
 }) {
-  const [discoveredDevices, setDiscoveredDevices] = useState<Device[] | null>(null);
+  const [discoveredDevices, setDiscoveredDevices] = useState<DiscoveredMiner[] | null>(null);
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
   const [tabIndex, setTabIndex] = useState(0);
 
@@ -85,17 +85,18 @@ function ModalBodyContent({
 
       // Effettua la chiamata per ottenere le imprinted devices
       const imprintedResponse = await axios.get("/api/devices/imprint");
-      const imprintedDevices: Device[] = imprintedResponse.data?.data;
+      const imprintedDevices: DiscoveredMiner[] = imprintedResponse.data?.data ?? [];
 
       // Effettua la chiamata per ottenere le discovered devices
       const discoveredResponse = await axios.get("/api/devices/discover");
       if (discoveredResponse.status === 200) {
-        const discoveredDevices: Device[] = discoveredResponse.data;
+        const discoveredDevices: DiscoveredMiner[] = discoveredResponse.data;
 
-        // Filtra i discoveredDevices escludendo quelli già imprinted
-        const filteredDiscoveredDevices = discoveredDevices.filter(
-          (device) => !imprintedDevices.some((imprinted) => imprinted.mac === device.mac)
-        );
+        // Filtra i discoveredDevices escludendo quelli già imprinted (case-insensitive match on MAC)
+        const filteredDiscoveredDevices = discoveredDevices.filter((device) => {
+          const deviceMac = device.mac?.toLowerCase();
+          return !imprintedDevices.some((imprinted) => imprinted.mac?.toLowerCase() === deviceMac);
+        });
 
         // Aggiorna lo stato con i dispositivi filtrati
         setDiscoveredDevices([...filteredDiscoveredDevices]);
@@ -115,21 +116,35 @@ function ModalBodyContent({
   const searchDevice = useCallback(async () => {
     try {
       setIsLoadingData(true);
+      // Clear previous results while searching
+      setDiscoveredDevices(null);
 
-      const response = await axios.get("/api/devices/discover", {
-        params: {
-          ip: ipAndMacAddress.ipAddress,
-          mac: ipAndMacAddress.macAddress,
-        },
+      const [discoverResponse, imprintedResponse] = await Promise.all([
+        axios.get("/api/devices/discover", {
+          params: {
+            ip: ipAndMacAddress.ipAddress,
+            mac: ipAndMacAddress.macAddress,
+          },
+        }),
+        axios.get("/api/devices/imprint"),
+      ]);
+
+      const discoveredDevices: DiscoveredMiner[] = discoverResponse.data;
+      const imprintedDevices: DiscoveredMiner[] = imprintedResponse.data?.data ?? [];
+
+      // Exclude devices that are already imprinted (i.e. already added by the user), case-insensitive on MAC
+      const filteredDiscoveredDevices = discoveredDevices.filter((device) => {
+        const deviceMac = device.mac?.toLowerCase();
+        return !imprintedDevices.some((imprinted) => imprinted.mac?.toLowerCase() === deviceMac);
       });
 
-      const discoveredDevices: Device[] = response.data;
-
-      if (discoveredDevices.length === 1) {
-        discoveredDevices[0].mac = ipAndMacAddress.macAddress;
+      // If the user provided a MAC, prefer it for a single-result lookup.
+      // Otherwise, keep the MAC returned by the backend/pyasic-bridge.
+      if (filteredDiscoveredDevices.length === 1 && ipAndMacAddress.macAddress) {
+        filteredDiscoveredDevices[0].mac = ipAndMacAddress.macAddress;
       }
 
-      setDiscoveredDevices(discoveredDevices);
+      setDiscoveredDevices(filteredDiscoveredDevices);
     } catch (error) {
       console.error("Error discovering devices:", error);
     } finally {
@@ -184,7 +199,7 @@ function ModalBodyContent({
 
     const isValid = name === "ipAddress" ? isValidIp(value) : isValidMac(value);
 
-    const errorLabel = value === "" ? `${name} is required` : isValid ? "" : `${name} is not valid`;
+    const errorLabel = value === "" ? "" : isValid ? "" : `${name} is not valid`;
 
     setErrors((prevErrors) => ({ ...prevErrors, [name]: errorLabel }));
     setIpAndMacAddress((prevState) => ({
@@ -194,11 +209,16 @@ function ModalBodyContent({
   }, []);
 
   const areManuallySearchFieldsValid = useCallback(() => {
-    return hasErrorFields(errors) || hasEmptyFields(ipAndMacAddress);
+    const hasAnyValue = ipAndMacAddress.ipAddress !== "" || ipAndMacAddress.macAddress !== "";
+    const hasValidationErrors = hasErrorFields(errors);
+
+    // Disable when there are validation errors or when both fields are empty.
+    // Allow searching when at least one of IP or MAC is a non-empty, valid value.
+    return !hasAnyValue || hasValidationErrors;
   }, [errors, ipAndMacAddress]);
 
   return (
-    <div className="mt-6 flex h-full flex-col gap-4">
+    <div className="mt-6 flex flex-col gap-4">
       <div className="flex gap-6 border-b border-border pb-2">
         <button
           type="button"
@@ -228,10 +248,10 @@ function ModalBodyContent({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         {tabIndex === 0 ? (
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 gap-4 mobileL:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input
                 label="IP Address"
                 name="ipAddress"
@@ -259,15 +279,19 @@ function ModalBodyContent({
                 isLoading={isLoadingData}
                 disabled={areManuallySearchFieldsValid()}
                 label="Search"
-                className="w-full tablet:w-auto"
+                className="w-full md:w-auto"
               />
             </div>
 
-            {discoveredDevices ? (
-              discoveredDevices.length > 0 && ipAndMacAddress.macAddress ? (
+            {isLoadingData ? (
+              <div className="mx-auto my-4 flex w-full flex-col items-center">
+                <CircularProgressWithDots />
+              </div>
+            ) : discoveredDevices ? (
+              discoveredDevices.length > 0 ? (
                 <div className="mt-2 flex flex-col gap-4">
                   <p className="font-heading text-sm font-bold text-foreground">
-                    Result for {ipAndMacAddress.macAddress}
+                    Result for {ipAndMacAddress.macAddress || ipAndMacAddress.ipAddress}
                   </p>
                   <RegisterDeviceTable
                     devices={discoveredDevices}
@@ -277,15 +301,15 @@ function ModalBodyContent({
                     handleAllCheckbox={handleAllCheckbox}
                     selectedTab={tabIndex}
                   />
-                  <div className="flex flex-col gap-3 tablet:flex-row tablet:gap-4">
-                    <Button variant="outlined" onClick={onClose} label="Cancel" className="w-full tablet:w-auto" />
+                  <div className="flex flex-col gap-3 md:flex-row md:gap-4">
+                    <Button variant="outlined" onClick={onClose} label="Cancel" className="w-full md:w-auto" />
                     <Button
                       variant="primary"
                       onClick={() => registerDevice()}
                       rightIcon={<AddIcon color="currentColor" />}
                       disabled={discoveredDevices.length !== 1}
                       label="Add device"
-                      className="w-full tablet:w-auto"
+                      className="w-full md:w-auto"
                     />
                   </div>
                 </div>
@@ -300,14 +324,14 @@ function ModalBodyContent({
             <p className="font-heading text-2xl font-normal">Looking for Devices...</p>
           </div>
         ) : (
-          <div className="flex h-full flex-col gap-4">
+          <div className="flex flex-col gap-4">
             {discoveredDevices && discoveredDevices.length > 0 ? (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
                   <p className="text-xs text-muted-foreground">
                     “{discoveredDevices.length}” new devices found
                   </p>
-                  <label className="flex items-center gap-2 tablet:hidden">
+                  <label className="flex items-center gap-2 md:hidden">
                     <span className="text-xs text-muted-foreground">Select all</span>
                     <input
                       type="checkbox"
@@ -327,8 +351,8 @@ function ModalBodyContent({
                   selectedTab={tabIndex}
                 />
 
-                <div className="flex flex-col gap-3 tablet:flex-row tablet:gap-4">
-                  <Button variant="outlined" onClick={onClose} label="Cancel" className="w-full tablet:w-auto" />
+                <div className="flex flex-col gap-3 md:flex-row md:gap-4">
+                  <Button variant="outlined" onClick={onClose} label="Cancel" className="w-full md:w-auto" />
                   <Button
                     variant="primary"
                     onClick={() => registerDevices()}
@@ -339,7 +363,7 @@ function ModalBodyContent({
                         ? checkedFetchedItems.filter((el) => el === true).length
                         : ""
                     } device`}
-                    className="w-full tablet:w-auto"
+                    className="w-full md:w-auto"
                   />
                 </div>
               </div>
@@ -361,7 +385,7 @@ export const RegisterDevicesModal: React.FC<RegisterDevicesModalProps> = ({
   return (
     <Modal open={isOpen} onClose={onClose} variant="sheet">
       <div className="w-full max-w-[1440px] border border-border bg-card text-card-foreground">
-        <div className="relative mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto p-6 tablet:p-8">
+        <div className="relative mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto p-6 md:p-8">
           <div className="flex items-start justify-between gap-6">
             <h2 className="font-heading text-2xl font-medium">Add a new Device</h2>
             <button

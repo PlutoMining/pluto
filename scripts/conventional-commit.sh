@@ -11,6 +11,7 @@ Interactive Conventional Commit helper for Pluto.
 Notes:
 - Does NOT stage files; run `git add ...` first.
 - By default opens your git editor for body/footer editing.
+- Commit types show their SemVer bump level: (minor), (patch), (none), or (major) with breaking changes.
 
 Options:
   --no-edit   Create commit without opening editor
@@ -46,8 +47,34 @@ if git diff --cached --quiet; then
   exit 1
 fi
 
+# Base types without bump indicators
 types=(feat fix docs style refactor perf test build ci chore revert)
-scopes=(backend frontend discovery prometheus mock common scripts docs release)
+
+# Map types to their bump levels according to Conventional Commits spec
+# Only feat and fix have implicit SemVer bumps; others require BREAKING CHANGE
+# See: https://www.conventionalcommits.org/en/v1.0.0/
+declare -A type_bumps=(
+  [feat]="minor"      # New features → MINOR bump
+  [fix]="patch"       # Bug fixes → PATCH bump
+  [docs]="none"       # Documentation only (no version bump)
+  [style]="none"      # Code style/formatting (no version bump)
+  [refactor]="none"   # Code refactoring (no version bump)
+  [perf]="none"       # Performance improvements (no version bump)
+  [test]="none"       # Test changes (no version bump)
+  [build]="none"      # Build system changes (no version bump)
+  [ci]="none"         # CI configuration changes (no version bump)
+  [chore]="none"      # Maintenance tasks (no version bump)
+  [revert]="none"     # Reverts (no version bump, unless reverting a breaking change)
+)
+
+# Create display array with bump indicators
+types_display=()
+for t in "${types[@]}"; do
+  bump="${type_bumps[$t]}"
+  types_display+=("${t} (${bump})")
+done
+
+scopes=(backend frontend discovery prometheus mock pyasic-bridge common scripts docs release)
 
 pick_from_list() {
   local prompt="$1"; shift
@@ -65,7 +92,9 @@ pick_from_list() {
   done
 }
 
-type=$(pick_from_list "Select commit type:" "${types[@]}")
+type_with_bump=$(pick_from_list "Select commit type:" "${types_display[@]}")
+# Extract just the type name (before the space and parentheses)
+type="${type_with_bump%% (*}"
 
 echo
 echo "Common scopes: ${scopes[*]}"
@@ -87,6 +116,7 @@ if [[ "${breaking}" == "y" || "${breaking}" == "yes" ]]; then
   else
     breaking_footer="BREAKING CHANGE: <describe the breaking change>"
   fi
+  echo "Note: Breaking changes trigger a MAJOR version bump." >&2
 fi
 
 header=""

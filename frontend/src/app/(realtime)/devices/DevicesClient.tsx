@@ -18,12 +18,12 @@ import { DeviceTable } from "@/components/Table/DeviceTable";
 import { AddIcon } from "@/components/icons/AddIcon";
 import { useSocket } from "@/providers/SocketProvider";
 import { useDisclosure } from "@/hooks/useDisclosure";
-import { Device } from "@pluto/interfaces";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import axios from "axios";
 import React, { useCallback, useEffect, useState } from "react";
 
 export default function DevicesClient() {
-  const [registeredDevices, setRegisteredDevices] = useState<Device[] | null>(null);
+  const [registeredDevices, setRegisteredDevices] = useState<DiscoveredMiner[] | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isConfirmationModalOpen,
@@ -43,7 +43,7 @@ export default function DevicesClient() {
   const fetchRegisteredDevices = useCallback(async () => {
     try {
       const response = await axios.get("/api/devices/imprint");
-      const imprintedDevices: Device[] = response.data.data;
+      const imprintedDevices: DiscoveredMiner[] = response.data.data;
       setRegisteredDevices([...imprintedDevices]);
       return imprintedDevices;
     } catch (error) {
@@ -51,7 +51,7 @@ export default function DevicesClient() {
     }
   }, []);
 
-  const putListenDevices = useCallback(async (imprintedDevices?: Device[]) => {
+  const putListenDevices = useCallback(async (imprintedDevices?: DiscoveredMiner[]) => {
     try {
       await axios.put("/api/devices/listen", {
         macs: imprintedDevices?.map((d) => d.mac),
@@ -68,7 +68,7 @@ export default function DevicesClient() {
   const { isConnected, socket } = useSocket();
 
   useEffect(() => {
-    const listener = (e: Device) => {
+    const listener = (e: DiscoveredMiner) => {
       setRegisteredDevices((prevDevices) => {
         if (!prevDevices) return prevDevices;
 
@@ -155,28 +155,28 @@ export default function DevicesClient() {
   }, [onCloseAlert]);
 
   return (
-    <div className="container flex-1 py-6">
-      {alert ? (
-        <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
-      ) : null}
+    <div className="flex-1 py-6">
+      <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
+        {alert ? (
+          <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
+        ) : null}
 
-      <form className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
-          <h1 className="font-heading text-3xl font-bold uppercase">Your devices</h1>
-          <Button
-            variant={"primary"}
-            onClick={onOpen}
-            rightIcon={<AddIcon color="currentColor" />}
-            label="Add device"
-            className="w-full tablet:w-auto"
-          />
-        </div>
+        <form className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
+            <Button
+              variant={"primary"}
+              onClick={onOpen}
+              rightIcon={<AddIcon color="currentColor" />}
+              label="Add device"
+              className="w-full md:w-auto"
+            />
+          </div>
 
         {registeredDevices ? (
           registeredDevices.length > 0 ? (
             <div className="border border-border bg-card text-card-foreground">
               <DeviceTable devices={registeredDevices} removeDeviceFunction={removeRegisteredDevice} />
-              <div className="tablet:hidden border-t border-border">
+              <div className="md:hidden border-t border-border">
                 <DeviceAccordion removeFunction={removeRegisteredDevice} devices={registeredDevices} />
               </div>
             </div>
@@ -207,7 +207,8 @@ export default function DevicesClient() {
           secondaryActionLabel={"Cancel"}
           secondaryAction={onConfirmationModalClose}
         />
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

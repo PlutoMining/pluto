@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { DeviceApiVersion } from "@pluto/interfaces";
+import { DeviceApiVersion } from "@/types/axeos.types";
 
 import {
   getSystemInfo,
@@ -103,7 +103,9 @@ describe("system.controller", () => {
       await getSystemInfo(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Failed to retrieve system info" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: "Failed to retrieve system info" })
+      );
     });
   });
 

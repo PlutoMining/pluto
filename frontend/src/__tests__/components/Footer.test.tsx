@@ -14,7 +14,7 @@ describe("Footer", () => {
     expect(githubLink).not.toBeNull();
     expect(githubLink).toHaveAttribute("target", "_blank");
 
-    const discordLink = container.querySelector('a[href="https://discord.gg/osmu"]');
+    const discordLink = container.querySelector('a[href="https://discord.gg/Nksp22hA"]');
     expect(discordLink).not.toBeNull();
     expect(discordLink).toHaveAttribute("target", "_blank");
 
