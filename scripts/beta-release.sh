@@ -20,7 +20,7 @@ source "${SCRIPT_ROOT}/scripts/lib/semver.sh"
 
 # NOTE: mock is included so we can publish mock device images for beta testing.
 # It is not part of the Umbrel pluto-next manifest bundle by default.
-AVAILABLE_SERVICES=(backend discovery frontend prometheus mock)
+AVAILABLE_SERVICES=(backend discovery frontend prometheus mock pyasic-bridge)
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-ghcr.io/plutomining}"
 DIFF_BASE="${BETA_DIFF_BASE:-origin/main}"
 TAG_SUFFIX="${BETA_TAG_SUFFIX:-beta}"
@@ -142,7 +142,7 @@ detect_changed_services() {
 
   git diff --name-only "${DIFF_BASE}...HEAD" \
     | awk -F/ '
-      /^(backend|discovery|frontend|prometheus|mock)\// {print $1}
+      /^(backend|discovery|frontend|prometheus|mock|pyasic-bridge)\// {print $1}
     ' \
     | sort -u
 }
