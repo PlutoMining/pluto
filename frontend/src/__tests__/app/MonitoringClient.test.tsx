@@ -395,6 +395,8 @@ describe('MonitoringClient', () => {
               best_session_difficulty: '1',
               shares_accepted: 0,
               shares_rejected: 0,
+              hashrate: { rate: 1 },
+              wattage: 1,
             },
           },
         ],
@@ -437,6 +439,8 @@ describe('MonitoringClient', () => {
               best_session_difficulty: '1',
               shares_accepted: 0,
               shares_rejected: 0,
+              hashrate: { rate: 1 },
+              wattage: 1,
               isPSRAMAvailable: 1,
               freeHeapInternal: 1024 * 1024,
               freeHeapSpiram: 2 * 1024 * 1024,
@@ -457,6 +461,7 @@ describe('MonitoringClient', () => {
 
     await waitFor(() => {
       const charts = screen.getAllByTestId('line-chart');
+      expect(charts.length).toBeGreaterThan(0);
       expect(Math.max(...charts.map((c) => Number(c.getAttribute('data-points') ?? '0')))).toBeGreaterThan(0);
     });
 
