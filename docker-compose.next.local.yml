@@ -110,7 +110,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: ghcr.io/plutomining/pluto-frontend:3.0.0-beta.0@sha256:892a00743c17606f2932477a665b88765d13f8450bd813600a038d0fd42f808f
+    image: ghcr.io/plutomining/pluto-frontend:3.0.0-beta.1@sha256:bbe8561a5090c95199903379256af42f95b2b5a9087e484293be005ddc8600ce
     container_name: pluto-next_frontend_1
     ports:
       - "7677:7677" # Map port 7777 on the host to port 7777 on the container
@@ -162,7 +162,7 @@ services:
     #build:
       # context: .
       # dockerfile: pyasic-bridge/Dockerfile
-    image: ghcr.io/plutomining/pluto-pyasic-bridge:1.0.0-beta.0@sha256:6598fba5ec65f6f0af34c63ddeaa1b04553eeb2b2147802dd89b60e8331094e0
+    image: ghcr.io/plutomining/pluto-pyasic-bridge:1.0.0-beta.2@sha256:02781d7d33cb26937352005dfa6f079508cc9fe0df2482ce04b887608aae712a
     container_name: pluto-next_pyasic-bridge_1
     ports:
       - "8000:8000"
