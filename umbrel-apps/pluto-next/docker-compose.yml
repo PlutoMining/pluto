@@ -8,7 +8,7 @@ services:
     restart: on-failure
 
   mock:
-    image: ghcr.io/plutomining/pluto-mock:0.7.0-beta.2@sha256:d671879becdc28863fea1a30a8ff4e9d72b65119f20d74b579a340a68a2b2ee8
+    image: ghcr.io/plutomining/pluto-mock:1.0.0-beta.0@sha256:6c1a764c994477203fc70e5a4fdb5a5e061a29bbb84b2b1c7935a38a768b483c
     ports:
       - "7670:7670"
       - "7651:7651"
@@ -30,7 +30,7 @@ services:
     user: "1000:1000"
 
   discovery:
-    image: ghcr.io/plutomining/pluto-discovery:1.2.0-beta.3@sha256:be54194031cd2e781f7141e6008ba74221cd60b451e1c4813c082d622f2ebbd4
+    image: ghcr.io/plutomining/pluto-discovery:2.0.0-beta.0@sha256:5f04d73a85a29f69cc6b5a4f16400f713c621ae57745c62792e9eb3cfec167ea
     network_mode: "host"
     pid: host
     cap_add:
@@ -41,12 +41,13 @@ services:
       - PORT=7675
       - DETECT_MOCK_DEVICES=true
       - MOCK_DISCOVERY_HOST=http://172.17.0.1:7670
+      - PYASIC_BRIDGE_HOST=http://localhost:8000
     volumes:
       - ${APP_DATA_DIR}/data/leveldb:/home/node/app/data
     user: "1000:1000"
 
   backend:
-    image: ghcr.io/plutomining/pluto-backend:2.0.0-beta.2@sha256:16151792ac2113c435c8c8fbb892833153dd436df6ff513d28319a55c1b8d9c7
+    image: ghcr.io/plutomining/pluto-backend:3.0.0-beta.0@sha256:b2b86aeb043fda0c054b78a67abb765f2e51c3c80595bd79771bf4f5523a83fe
     pid: host
     restart: on-failure
     environment:
@@ -54,15 +55,18 @@ services:
       - AUTO_LISTEN=true
       - DISCOVERY_SERVICE_HOST=http://172.17.0.1:7675
       - DELETE_DATA_ON_DEVICE_REMOVE=true
+      - PYASIC_BRIDGE_HOST=http://pyasic-bridge:8000
     volumes:
       - ${APP_DATA_DIR}/data/leveldb:/home/node/app/data
     depends_on:
       prometheus:
         condition: service_healthy
+      pyasic-bridge:
+        condition: service_healthy
     user: "1000:1000"
 
   frontend:
-    image: ghcr.io/plutomining/pluto-frontend:2.0.0-beta.7@sha256:7b66d2a7ec046bf1406d90e5715d190675618999ba4ee49f5f2768b299c02127
+    image: ghcr.io/plutomining/pluto-frontend:3.0.0-beta.1@sha256:bbe8561a5090c95199903379256af42f95b2b5a9087e484293be005ddc8600ce
     pid: host
     restart: on-failure
     depends_on:
@@ -75,7 +79,7 @@ services:
     user: "1000:1000"
 
   prometheus:
-    image: ghcr.io/plutomining/pluto-prometheus:1.2.0-beta.2@sha256:681182b9942d16b117ee0aadfb1a58702d7b02df4ee80b4120ba8fd7d09c081f
+    image: ghcr.io/plutomining/pluto-prometheus:1.2.0-beta.3@sha256:9d6d864939e2e1b85703ea0a3f78c8e7dc87ac16c3983673dc3326689bae77fc
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -93,3 +97,18 @@ services:
       timeout: 5s
       retries: 5
     user: "65534:65534"
+
+  pyasic-bridge:
+    image: ghcr.io/plutomining/pluto-pyasic-bridge:1.0.0-beta.2@sha256:02781d7d33cb26937352005dfa6f079508cc9fe0df2482ce04b887608aae712a
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\" || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    user: "1000:1000"
