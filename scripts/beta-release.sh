@@ -27,6 +27,7 @@ TAG_SUFFIX="${BETA_TAG_SUFFIX:-beta}"
 
 DRY_RUN=false
 CUSTOM_SERVICES=()
+SERVICE_VERSION_OVERRIDES=()
 APP_VERSION=""
 BUMP_VERSION=false
 UPDATE_MANIFESTS=false
@@ -49,6 +50,7 @@ Options:
   --app-version X.Y.Z-pr   Explicit pluto-next app version to write into umbrel-app.yml
   --diff-base <ref>        Git ref (default: ${DIFF_BASE}) used to detect changed services
   --tag-suffix <suffix>    Secondary tag pushed alongside the explicit version (default: ${TAG_SUFFIX})
+  --service-version svc=X  Manually override version for a service (can be passed multiple times)
   --skip-login             Skip Docker login prompt
   --bump-version           Automatically bump package.json versions to beta per service based on git history
                            (major / minor / patch via scripts/lib/semver.sh, then add -beta.N)
@@ -75,6 +77,14 @@ parse_args() {
     --services)
       [[ -n "${2:-}" ]] || err "--services requires a value"
       IFS=',' read -r -a CUSTOM_SERVICES <<<"${2// /}"
+      shift 2
+      ;;
+    --service-version)
+      [[ -n "${2:-}" ]] || err "--service-version requires a value (format: service=X.Y.Z-pr)"
+      if [[ "$2" != *"="* ]]; then
+        err "--service-version value must be in the form service=version (got '$2')"
+      fi
+      SERVICE_VERSION_OVERRIDES+=("$2")
       shift 2
       ;;
     --app-version)
@@ -178,6 +188,22 @@ get_service_version() {
   else
     err "No version source for $service (need package.json or app/__init__.py)"
   fi
+}
+
+# Find a manual version override for a given service, if any.
+# Prints the override version and returns 0 if found; returns 1 otherwise.
+find_override_for_service() {
+  local service=$1
+  local pair
+  for pair in "${SERVICE_VERSION_OVERRIDES[@]}"; do
+    local svc="${pair%%=*}"
+    local ver="${pair#*=}"
+    if [[ "$svc" == "$service" ]]; then
+      echo "$ver"
+      return 0
+    fi
+  done
+  return 1
 }
 
 # Function to check the current Git branch
@@ -543,7 +569,7 @@ build_and_push_service() {
 
   log_progress "Building ${service} (${version})"
   
-  if retry_command 2 docker buildx build --platform linux/amd64,linux/arm64 \
+  if retry_command 2 docker buildx build --platform linux/amd64,linux/arm64 --no-cache \
       "${tags[@]}" \
       -f "${service}/Dockerfile" . --push; then
     log_progress_done
@@ -678,7 +704,12 @@ main() {
     service_current_versions[$i]="$current_version"
 
     local version
-    if $BUMP_VERSION; then
+    # Prefer an explicit manual override if provided for this service.
+    local override_version=""
+    if override_version=$(find_override_for_service "$service"); then
+      version="$override_version"
+      ensure_prerelease "$version"
+    elif $BUMP_VERSION; then
       # Automatically bump version to beta based on semantic versioning rules,
       # inferred from git log for this service between DIFF_BASE and HEAD.
       local bump_level
