@@ -2,7 +2,7 @@ services:
   # Override to build and run LOCAL images (no registry push/pull).
   #
   # Usage:
-  #   docker compose -f docker-compose.next.local.yml -f docker-compose.next.local.build.yml up --build
+  #   docker compose -f docker-compose.next.local.yml -f docker-compose.next.local.build.yml up --build --force-recreate
   #
   # Notes:
   # - Keeps the same ports/volumes/env as docker-compose.next.local.yml
@@ -39,3 +39,9 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
     image: pluto-frontend:local
+
+  pyasic-bridge:
+    build:
+      context: .
+      dockerfile: pyasic-bridge/Dockerfile
+    image: pluto-pyasic-bridge:local

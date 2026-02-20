@@ -22,19 +22,16 @@ const utilsMock = jest.requireMock("@pluto/utils") as {
 };
 
 const fillRequiredFields = () => {
-  fireEvent.change(screen.getByLabelText("Pool Preset Name"), {
+  fireEvent.change(screen.getByPlaceholderText("Enter preset name"), {
     target: { value: "My Preset" },
   });
-  fireEvent.change(screen.getByLabelText("Stratum URL"), {
-    target: { value: "pool.example.com" },
+  fireEvent.change(screen.getByLabelText("Pool URL"), {
+    target: { value: "stratum+tcp://pool.example.com:3333" },
   });
-  fireEvent.change(screen.getByLabelText("Stratum Port"), {
-    target: { value: "3333" },
-  });
-  fireEvent.change(screen.getByLabelText("Stratum User"), {
+  fireEvent.change(screen.getByLabelText("Pool User"), {
     target: { value: "user" },
   });
-  fireEvent.change(screen.getByLabelText("Stratum Password"), {
+  fireEvent.change(screen.getByLabelText("Pool Password"), {
     target: { value: "pass" },
   });
 };
@@ -60,7 +57,6 @@ describe("PresetEditor", () => {
 
     // First, fail a couple of validations to cover error branches.
     utilsMock.validateDomain.mockReturnValueOnce(false).mockReturnValue(true);
-    utilsMock.validateTCPPort.mockReturnValueOnce(false).mockReturnValue(true);
 
     axiosMock.post.mockResolvedValue({ data: {} });
 
@@ -75,16 +71,12 @@ describe("PresetEditor", () => {
     expect(save).toBeDisabled();
 
     // invalid domain
-    fireEvent.change(screen.getByLabelText("Stratum URL"), { target: { value: "bad" } });
-    expect(await screen.findByText("stratumURL is not correct.")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Pool URL"), { target: { value: "bad" } });
+    expect(await screen.findByText("poolUrl is not correct.")).toBeInTheDocument();
 
-    // invalid port
-    fireEvent.change(screen.getByLabelText("Stratum Port"), { target: { value: "abc" } });
-    expect(await screen.findByText("stratumPort is not correct.")).toBeInTheDocument();
-
-    // invalid stratumUser (contains a '.')
-    fireEvent.change(screen.getByLabelText("Stratum User"), { target: { value: "user.worker" } });
-    expect(await screen.findByText("stratumUser is not correct.")).toBeInTheDocument();
+    // invalid poolUser (contains a '.')
+    fireEvent.change(screen.getByLabelText("Pool User"), { target: { value: "user.worker" } });
+    expect(await screen.findByText("poolUser is not correct.")).toBeInTheDocument();
 
     fillRequiredFields();
 
@@ -102,10 +94,19 @@ describe("PresetEditor", () => {
         uuid: "uuid-1",
         name: "My Preset",
         configuration: {
-          stratumURL: "pool.example.com",
-          stratumPort: "3333",
-          stratumUser: "user",
-          stratumPassword: "pass",
+          pools: {
+            groups: [
+              {
+                pools: [
+                  {
+                    url: "stratum+tcp://pool.example.com:3333",
+                    user: "user",
+                    password: "pass",
+                  },
+                ],
+              },
+            ],
+          },
         },
       })
     );
@@ -117,10 +118,10 @@ describe("PresetEditor", () => {
       <PresetEditor onCloseModal={jest.fn()} onCloseSuccessfullyModal={jest.fn()} />
     );
 
-    const input = screen.getByLabelText("Stratum URL");
+    const input = screen.getByLabelText("Pool URL");
     fireEvent.change(input, { target: { value: "pool.example.com" } });
     fireEvent.change(input, { target: { value: "" } });
-    expect(await screen.findByText("stratumURL is required.")).toBeInTheDocument();
+    expect(await screen.findByText("poolUrl is required.")).toBeInTheDocument();
   });
 
   it("keeps Save disabled when there are validation errors but no empty fields", async () => {
@@ -134,7 +135,7 @@ describe("PresetEditor", () => {
 
     const save = screen.getByRole("button", { name: "Save Preset" });
     await waitFor(() => expect(save).toBeDisabled());
-    expect(await screen.findByText("stratumURL is not correct.")).toBeInTheDocument();
+    expect(await screen.findByText("poolUrl is not correct.")).toBeInTheDocument();
   });
 
   it("shows an alert when save fails and allows dismissing it", async () => {
@@ -186,10 +187,19 @@ describe("PresetEditor", () => {
             uuid: "preset-1",
             name: "Existing",
             configuration: {
-              stratumURL: "pool.example.com",
-              stratumPort: 3333,
-              stratumUser: "user",
-              stratumPassword: "pass",
+              pools: {
+                groups: [
+                  {
+                    pools: [
+                      {
+                        url: "stratum+tcp://pool.example.com:3333",
+                        user: "user",
+                        password: "pass",
+                      },
+                    ],
+                  },
+                ],
+              },
             },
             associatedDevices: [],
           },
@@ -197,10 +207,19 @@ describe("PresetEditor", () => {
             uuid: "preset-2",
             name: "Other",
             configuration: {
-              stratumURL: "pool.example.com",
-              stratumPort: 3333,
-              stratumUser: "user",
-              stratumPassword: "pass",
+              pools: {
+                groups: [
+                  {
+                    pools: [
+                      {
+                        url: "stratum+tcp://pool2.example.com:3333",
+                        user: "user2",
+                        password: "pass2",
+                      },
+                    ],
+                  },
+                ],
+              },
             },
             associatedDevices: [],
           },
@@ -224,7 +243,7 @@ describe("PresetEditor", () => {
       expect(jsonCalled).toBe(true);
     });
 
-    fireEvent.change(screen.getByLabelText("Pool Preset Name"), {
+    fireEvent.change(screen.getByPlaceholderText("Enter preset name"), {
       target: { value: "Existing" },
     });
 

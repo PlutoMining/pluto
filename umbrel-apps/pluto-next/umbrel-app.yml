@@ -1,8 +1,8 @@
 manifestVersion: 1
 id: pluto-next
-name: Pluto Next
+name: Pluto Beta
 category: bitcoin
-version: "2.0.1-beta.3"
+version: "2.0.0-beta.2"
 tagline: Pluto
 icon: https://raw.githubusercontent.com/PlutoMining/pluto/main/images/pluto-next/icon.jpg
 description: >
@@ -24,9 +24,9 @@ gallery:
 path: ""
 defaultPassword: ""
 releaseNotes: >
-  Version 2.0.1-beta.3
-  - Rebranding
-  - Dark mode
-  - NerdAxe support
+  Version 2.0.0-beta.1
+  - New layout
+  - New graphs and charts
+  - Support to multiple type of miners
 
 submitter: Pluto

@@ -7,7 +7,9 @@
 */
 
 import { Preset } from "@pluto/interfaces";
-import { MouseEvent } from "react";
+import type { MinerConfigModelInput } from "@pluto/pyasic-bridge-client";
+import { parseStratumUrl } from "@/utils/deviceConfigHelpers";
+import { MouseEvent, useMemo } from "react";
 import { HostnameBadge } from "../Badge";
 import Button from "../Button/Button";
 import { DeleteIcon } from "../icons/DeleteIcon";
@@ -29,6 +31,21 @@ export const PresetAccordion: React.FC<PresetProps> = ({
   index,
   isDuplicateDisabled,
 }) => {
+  const { displayUrl, displayPort, displayUser } = useMemo(() => {
+    const config = preset.configuration as MinerConfigModelInput;
+    const poolConfig = config.pools?.groups?.[0]?.pools?.[0];
+
+    const url = poolConfig?.url || "";
+    const { port } = parseStratumUrl(url);
+    const user = poolConfig?.user || "";
+
+    return {
+      displayUrl: url,
+      displayPort: port ?? "",
+      displayUser: user,
+    };
+  }, [preset.configuration]);
+
   return (
     <details
       key={`preset-${preset.uuid}`}
@@ -46,7 +63,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
         <div className="flex flex-col gap-4">
           <p className="font-heading text-sm font-semibold uppercase">Settings</p>
 
-          <div className="flex flex-col gap-4 tablet:flex-row">
+          <div className="flex flex-col gap-4 md:flex-row">
             <div className="flex-1">
               <Input
                 isDisabled={true}
@@ -54,7 +71,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
                 label="Stratum URL"
                 name="stratumURL"
                 id={`${preset.uuid}-stratumUrl`}
-                defaultValue={preset.configuration.stratumURL}
+                defaultValue={displayUrl}
               />
             </div>
             <div className="flex-1">
@@ -64,7 +81,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
                 label="Stratum Port"
                 name="stratumPort"
                 id={`${preset.uuid}-stratumPort`}
-                defaultValue={preset.configuration.stratumPort}
+                defaultValue={displayPort}
               />
             </div>
             <div className="flex-[2]">
@@ -74,7 +91,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
                 label="Stratum User"
                 name="stratumUser"
                 id={`${preset.uuid}-stratumUser`}
-                defaultValue={preset.configuration.stratumUser}
+                defaultValue={displayUser}
               />
             </div>
           </div>
@@ -87,7 +104,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
                 <HostnameBadge
                   key={`hostname-badge-${i}`}
                   mac={device.mac}
-                  hostname={device.info.hostname}
+                  hostname={device.minerData?.hostname ?? device.ip}
                   ip={device.ip}
                   tracing={device.tracing || false}
                 />

@@ -6,9 +6,28 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { DeviceInfo, ExtendedDeviceInfo } from "@pluto/interfaces";
+import type { MinerData } from "@pluto/pyasic-bridge-client";
 import { logger } from "@pluto/logger";
 import client from "prom-client";
+
+/** Read a numeric field from extra_config. Standard is snake_case (same as MinerData). */
+function readExtraConfigNumber(
+  extraConfig: unknown,
+  key: string
+): number | null {
+  if (extraConfig == null || typeof extraConfig !== "object" || Array.isArray(extraConfig)) return null;
+  const v = (extraConfig as Record<string, unknown>)[key];
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
+/**
+ * Normalize to SI units (volts or amps) from raw device value.
+ * Large values (|v| >= 100) are treated as millivolts/milliamps; smaller as already V/A.
+ */
+function toSiVoltsOrAmps(value: number | null | undefined): number | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  return Math.abs(value) >= 100 ? value / 1000 : value;
+}
 
 const poolMap = new Map<string, string>();
 
@@ -131,33 +150,71 @@ export const createMetricsForDevice = (hostname: string) => {
   });
 
   return {
-    updatePrometheusMetrics: (data: Partial<DeviceInfo>) => {
+    updatePrometheusMetrics: (data: Partial<MinerData>) => {
       const setGauge = (gauge: client.Gauge<string>, value: unknown, map?: (n: number) => number) => {
         if (typeof value !== "number" || !Number.isFinite(value)) return;
         gauge.set(map ? map(value) : value);
       };
 
-      const hashrate = data.hashRate ?? data.hashRate_10m;
+      // Extract hashrate from nested structure
+      const hashrate =
+        (typeof data.hashrate === "object" && data.hashrate !== null && "rate" in data.hashrate
+          ? (data.hashrate as { rate?: number }).rate
+          : null) ?? 0;
 
-      setGauge(powerGauge, data.power);
-      setGauge(voltageGauge, data.voltage, (v) => v / 1000); // Assume voltage in millivolts
-      setGauge(currentGauge, data.current, (c) => c / 1000); // Assume current in milliamps
-      setGauge(fanSpeedGauge, data.fanSpeedRpm ?? data.fanrpm ?? data.fanspeed);
-      setGauge(tempGauge, data.temp);
-      setGauge(vrTempGauge, data.vrTemp);
+      // Extract fan speed from fans array
+      const fanSpeed = data.fans && data.fans.length > 0 && typeof data.fans[0] === "object" && data.fans[0] !== null && "speed" in data.fans[0]
+        ? (data.fans[0] as { speed?: number }).speed
+        : null;
+
+      // Extract temperature from temperature_avg or hashboards
+      const temp = data.temperature_avg ??
+        (data.hashboards && data.hashboards.length > 0 && typeof data.hashboards[0] === "object" && data.hashboards[0] !== null && "temp" in data.hashboards[0]
+          ? (data.hashboards[0] as { temp?: number }).temp
+          : null);
+
+      // Extract voltage from top-level or hashboards (e.g. hashboard.voltage in mV)
+      const voltage =
+        data.voltage ??
+        (data.hashboards && data.hashboards.length > 0 && typeof data.hashboards[0] === "object" && data.hashboards[0] !== null && "voltage" in data.hashboards[0]
+          ? (data.hashboards[0] as { voltage?: number }).voltage
+          : null);
+
+      // Extract VR temp from hashboards or extra_config
+      const vrTemp =
+        (data.hashboards && data.hashboards.length > 0 && typeof data.hashboards[0] === "object" && data.hashboards[0] !== null && "chip_temp" in data.hashboards[0]
+          ? (data.hashboards[0] as { chip_temp?: number }).chip_temp
+          : null) ??
+        readExtraConfigNumber(data.config?.extra_config, "vr_temp");
+
+      // extra_config: snake_case only (same convention as MinerData: shares_accepted, temperature_avg, etc.)
+      const current = readExtraConfigNumber(data.config?.extra_config, "current");
+      const coreVoltage = readExtraConfigNumber(data.config?.extra_config, "core_voltage");
+      const coreVoltageActual = readExtraConfigNumber(data.config?.extra_config, "core_voltage_actual");
+      const frequency = readExtraConfigNumber(data.config?.extra_config, "frequency");
+      const freeHeap = readExtraConfigNumber(data.config?.extra_config, "free_heap");
+      const freeHeapInternal = readExtraConfigNumber(data.config?.extra_config, "free_heap_internal");
+      const freeHeapSpiram = readExtraConfigNumber(data.config?.extra_config, "free_heap_spiram");
+
+      setGauge(powerGauge, data.wattage);
+      setGauge(voltageGauge, toSiVoltsOrAmps(voltage));
+      setGauge(currentGauge, toSiVoltsOrAmps(current));
+      setGauge(fanSpeedGauge, fanSpeed);
+      setGauge(tempGauge, temp);
+      setGauge(vrTempGauge, vrTemp);
       setGauge(hashRateGauge, hashrate);
-      setGauge(sharesAcceptedGauge, data.sharesAccepted);
-      setGauge(sharesRejectedGauge, data.sharesRejected);
-      setGauge(uptimeGauge, data.uptimeSeconds);
-      setGauge(freeHeapGauge, data.freeHeap);
-      setGauge(freeHeapInternalGauge, data.freeHeapInternal);
-      setGauge(freeHeapSpiramGauge, data.freeHeapSpiram);
-      setGauge(coreVoltageGauge, data.coreVoltage, (v) => v / 1000); // Assume voltage in millivolts
-      setGauge(coreVoltageActualGauge, data.coreVoltageActual, (v) => v / 1000); // Assume voltage in millivolts
-      setGauge(frequencyGauge, data.frequency);
+      setGauge(sharesAcceptedGauge, data.shares_accepted);
+      setGauge(sharesRejectedGauge, data.shares_rejected);
+      setGauge(uptimeGauge, data.uptime);
+      setGauge(freeHeapGauge, freeHeap);
+      setGauge(freeHeapInternalGauge, freeHeapInternal);
+      setGauge(freeHeapSpiramGauge, freeHeapSpiram);
+      setGauge(coreVoltageGauge, toSiVoltsOrAmps(coreVoltage));
+      setGauge(coreVoltageActualGauge, toSiVoltsOrAmps(coreVoltageActual));
+      setGauge(frequencyGauge, frequency);
 
-      if (typeof data.power === "number" && Number.isFinite(data.power) && typeof hashrate === "number" && Number.isFinite(hashrate)) {
-        const efficiency = data.power > 0 && hashrate > 0 ? data.power / (hashrate / 1000) : 0;
+      if (typeof data.wattage === "number" && Number.isFinite(data.wattage) && typeof hashrate === "number" && Number.isFinite(hashrate)) {
+        const efficiency = data.wattage > 0 && hashrate > 0 ? data.wattage / (hashrate / 1000) : 0;
         efficiencyGauge.set(efficiency);
       }
     },
@@ -279,20 +336,49 @@ function normalizePoolKey(stratumURL: unknown, stratumPort: unknown) {
   return hostPort;
 }
 
-// Funzione per aggiornare tutte le metriche di overview
-export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
-  const totalDevices = devicesData.length;
-  const onlineDevices = devicesData.filter((device) => device.tracing).length;
-  const offlineDevices = totalDevices - onlineDevices;
+// Helper function to extract hashrate from MinerData
+function extractHashrate(minerData: MinerData | null | undefined): number {
+  if (!minerData) return 0;
+  if (typeof minerData.hashrate === "object" && minerData.hashrate !== null && "rate" in minerData.hashrate) {
+    return (minerData.hashrate as { rate?: number }).rate ?? 0;
+  }
+  return 0;
+}
 
-  const totalHashrate = devicesData.reduce((acc, device) => {
-    if (!device.tracing) return acc;
-    const hashRate = device.hashRate ?? device.hashRate_10m ?? 0; // Usa 0 se entrambi sono null o undefined
-    return acc + hashRate;
+// Helper function to extract pool URL and port from MinerData
+function extractPoolInfo(minerData: MinerData | null | undefined): { url: string | null; port: number | null } {
+  if (!minerData?.config?.pools?.groups?.[0]?.pools?.[0]) {
+    return { url: null, port: null };
+  }
+  const pool = minerData.config.pools.groups[0].pools[0];
+  const url = typeof pool === "object" && pool !== null && "url" in pool ? (pool.url as string | null) : null;
+  
+  // Extract port from URL if present
+  let port: number | null = null;
+  if (url) {
+    const match = url.match(/:(\d+)/);
+    if (match) {
+      port = parseInt(match[1], 10);
+    }
+  }
+  
+  return { url, port };
+}
+
+// Funzione per aggiornare tutte le metriche di overview
+export const updateOverviewMetrics = (devicesData: MinerData[]) => {
+  const totalDevices = devicesData.length;
+  // For now, assume all devices in the array are online (tracing)
+  // This will be updated when we integrate with DiscoveredMiner properly
+  const onlineDevices = totalDevices;
+  const offlineDevices = 0;
+
+  const totalHashrate = devicesData.reduce((acc, minerData) => {
+    return acc + extractHashrate(minerData);
   }, 0);
   const averageHashrate = totalDevices > 0 ? totalHashrate / totalDevices : 0;
 
-  const totalPower = devicesData.reduce((acc, device) => (device.tracing ? acc + (device.power ?? 0) : acc), 0);
+  const totalPower = devicesData.reduce((acc, minerData) => acc + (minerData.wattage ?? 0), 0);
   // Fleet efficiency (J/TH) is computed with the same formula used for single devices:
   // efficiency (J / TH) = power (W) / (hashrate GH/s / 1000)
   const efficiency =
@@ -307,28 +393,33 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
   totalPowerGauge.set(totalPower);
   totalEfficiencyGauge.set(efficiency);
 
+  // Azzeriamo la metrica della distribuzione firmware prima di ricostruirla,
+  // così non rimangono versioni "stale" da esecuzioni precedenti.
+  firmwareVersionGauge.reset();
+
   // Conta il numero di dispositivi per ciascuna versione firmware
-  const firmwareCount = devicesData.reduce((acc: { [version: string]: number }, device) => {
-    const version = device.version || "unknown"; // Gestisce il caso di versioni mancanti
+  const firmwareCount = devicesData.reduce((acc: { [version: string]: number }, minerData) => {
+    const version = minerData.fw_ver ?? minerData.firmware ?? "unknown";
     acc[version] = (acc[version] || 0) + 1;
     return acc;
   }, {});
 
   // Imposta i valori della metrica firmware per ciascuna versione
   Object.entries(firmwareCount).forEach(([version, count]) => {
-    firmwareVersionGauge.labels(version).set(count); // Usa la label `version` per ogni versione firmware
+    firmwareVersionGauge.labels(version).set(count);
   });
 
   // Conta le shares per pool (accepted e rejected)
   const sharesByPool = devicesData.reduce(
     (
       acc: { accepted: { [pool: string]: number }; rejected: { [pool: string]: number } },
-      device
+      minerData
     ) => {
-      const poolKey = normalizePoolKey(device.stratumURL, device.stratumPort);
+      const { url, port } = extractPoolInfo(minerData);
+      const poolKey = normalizePoolKey(url, port);
       const pool = poolMap.get(poolKey) || poolKey;
-      acc.accepted[pool] = (acc.accepted[pool] || 0) + device.sharesAccepted;
-      acc.rejected[pool] = (acc.rejected[pool] || 0) + device.sharesRejected;
+      acc.accepted[pool] = (acc.accepted[pool] || 0) + (minerData.shares_accepted ?? 0);
+      acc.rejected[pool] = (acc.rejected[pool] || 0) + (minerData.shares_rejected ?? 0);
       return acc;
     },
     { accepted: {}, rejected: {} }
@@ -336,10 +427,10 @@ export const updateOverviewMetrics = (devicesData: ExtendedDeviceInfo[]) => {
 
   // Imposta le shares accepted e rejected per ciascun pool
   Object.entries(sharesByPool.accepted).forEach(([pool, count]) => {
-    sharesByPoolAcceptedGauge.labels(pool).set(count); // Usa la label `pool` per le shares accepted
+    sharesByPoolAcceptedGauge.labels(pool).set(count);
   });
 
   Object.entries(sharesByPool.rejected).forEach(([pool, count]) => {
-    sharesByPoolRejectedGauge.labels(pool).set(count); // Usa la label `pool` per le shares rejected
+    sharesByPoolRejectedGauge.labels(pool).set(count);
   });
 };

@@ -41,34 +41,46 @@ describe("DeviceMonitoringAccordion", () => {
       {
         mac: "aa",
         tracing: true,
-        info: {
+        minerData: {
           hostname: "miner-01",
-          hashRate_10m: 100.1234,
-          sharesAccepted: 10,
-          sharesRejected: 2,
-          power: 1200,
-          temp: null,
-          vrTemp: 42.5,
-          bestSessionDiff: 111,
-          bestDiff: 999,
-          uptimeSeconds: 600,
-          currentDiff: 123,
+          hashrate: { rate: 100.1234 },
+          shares_accepted: 10,
+          shares_rejected: 2,
+          wattage: 1200,
+          temperature_avg: null, // -> "N/A °C"
+          best_session_difficulty: 111,
+          best_difficulty: 999,
+          uptime: 600,
         },
       },
       {
         mac: "bb",
         tracing: false,
-        info: {
+        minerData: {
           hostname: "miner-02",
-          hashRate: 50,
-          sharesAccepted: 1,
-          sharesRejected: 5,
-          power: 500,
-          temp: Number.NaN,
-          vrTemp: 42,
-          bestSessionDiff: 222,
-          bestDiff: 333,
-          uptimeSeconds: 1200,
+          hashrate: { rate: 50 },
+          shares_accepted: 1,
+          shares_rejected: 5,
+          wattage: 500,
+          temperature_avg: 42.5,
+          best_session_difficulty: 222,
+          best_difficulty: 333,
+          uptime: 1200,
+        },
+      },
+      {
+        mac: "cc",
+        tracing: true,
+        minerData: {
+          hostname: "miner-03",
+          hashrate: { rate: 1 },
+          shares_accepted: 0,
+          shares_rejected: 0,
+          wattage: 123,
+          temperature_avg: 42,
+          best_session_difficulty: 0,
+          best_difficulty: 0,
+          uptime: 60,
         },
       },
     ] as any;
@@ -78,7 +90,7 @@ describe("DeviceMonitoringAccordion", () => {
     expect(screen.getByText("miner-01")).toBeInTheDocument();
     expect(screen.getByText("miner-02")).toBeInTheDocument();
 
-    // Temperatures cover null and NaN branches.
+    // Temperatures cover null and finite branches.
     expect(screen.getAllByText("N/A °C").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("42.5 °C")).toBeInTheDocument();
     expect(screen.getByText("42 °C")).toBeInTheDocument();
@@ -87,8 +99,8 @@ describe("DeviceMonitoringAccordion", () => {
     expect(screen.getByText("10")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
 
-    // currentDiff uses nullish coalescing fallback.
-    expect(screen.getByText("diff:123")).toBeInTheDocument();
+    // Current and best difficulty use MinerData best_session_difficulty / best_difficulty.
+    expect(screen.getByText("diff:111")).toBeInTheDocument();
     expect(screen.getByText("diff:222")).toBeInTheDocument();
 
     const links = Array.from(container.querySelectorAll("a[href]"));
@@ -108,17 +120,16 @@ describe("DeviceMonitoringAccordion", () => {
       {
         mac: "aa",
         tracing: true,
-        info: {
+        minerData: {
           hostname: "miner-01",
-          hashRate: 1,
-          sharesAccepted: 1,
-          sharesRejected: 0,
-          power: 100,
-          temp: 40,
-          vrTemp: 41,
-          bestSessionDiff: 111,
-          bestDiff: 222,
-          uptimeSeconds: 600,
+          hashrate: { rate: 1 },
+          shares_accepted: 1,
+          shares_rejected: 0,
+          wattage: 100,
+          temperature_avg: 40,
+          best_session_difficulty: 111,
+          best_difficulty: 222,
+          uptime: 600,
         },
       },
     ] as any;
@@ -144,9 +155,9 @@ describe("DeviceMonitoringAccordion", () => {
       listener({
         mac: "aa",
         tracing: false,
-        info: {
-          ...devices[0].info,
-          power: 999,
+        minerData: {
+          ...devices[0].minerData,
+          wattage: 999,
         },
       });
     });

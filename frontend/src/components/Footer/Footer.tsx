@@ -13,13 +13,13 @@ import { DiscordLogo, GithubLogo } from "../icons/FooterIcons";
 export const Footer = () => {
   return (
     <footer className="mt-auto border-t border-border bg-background py-4 text-muted-foreground">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-8 tablet:flex-row tablet:items-center tablet:justify-between">
-        <div className="hidden flex-col-reverse gap-2 tablet:flex tablet:flex-col tablet:items-start desktop:flex-row desktop:items-center desktop:gap-4">
-          <div className="flex w-full items-center justify-between gap-4 tablet:w-auto tablet:justify-start">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-8 md:flex-row md:items-center md:justify-between">
+        <div className="hidden flex-col-reverse gap-2 md:flex md:flex-col md:items-start xl:flex-row xl:items-center xl:gap-4">
+          <div className="flex w-full items-center justify-between gap-4 md:w-auto md:justify-start">
             <span className="font-heading text-xs font-medium text-foreground">Terms & Conditions</span>
             <div className="flex items-center gap-2">
               <GithubLogo url="https://github.com/PlutoMining/pluto" target="_blank" className="text-primary" />
-              <DiscordLogo url="https://discord.gg/osmu" target="_blank" className="text-primary" />
+          <DiscordLogo url="https://discord.gg/Nksp22hA" target="_blank" className="text-primary" />
             </div>
           </div>
           <p className="text-xs font-light">© 2024 Pluto. All rights reserved. This open-source application software is licensed under the AGPL 3.0 License.</p>

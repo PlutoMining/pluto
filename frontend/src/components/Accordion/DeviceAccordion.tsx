@@ -6,18 +6,18 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import { Device } from "@pluto/interfaces";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import { DeviceStatusBadge } from "../Badge";
-import { getMinerName } from "@/utils/minerMap";
+import { getHostname, getModel, getFirmware, getUptime } from "@/utils/minerDataHelpers";
 import { formatDetailedTime } from "@/utils/formatTime";
 
 interface DeviceAccordionProps {
-  devices: Device[];
+  devices: DiscoveredMiner[];
   removeFunction: (deviceId: string) => void;
 }
 
 interface AccordionItemProps {
-  device: Device;
+  device: DiscoveredMiner;
   removeFunction: (deviceId: string) => void;
 }
 
@@ -48,7 +48,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
       <summary className="flex cursor-pointer items-center justify-between gap-4 bg-card px-4 py-3 hover:bg-muted">
         <div className="flex items-center gap-4">
           <span className="text-primary">▾</span>
-          <span className="font-body text-sm font-semibold capitalize">{device.info.hostname}</span>
+          <span className="font-body text-sm font-semibold capitalize">{getHostname(device.minerData)}</span>
           <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
         </div>
 
@@ -67,12 +67,11 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
 
       <div className="border-t border-border bg-card p-4">
         <div className="flex flex-col gap-2">
-          <Row label="Date added" value={new Date(device.createdAt!).toLocaleDateString()} />
+          <Row label="Date added" value={device.createdAt ? new Date(device.createdAt).toLocaleDateString() : "-"} />
           <Row label="IP" value={device.ip} />
-          <Row label="Miner" value={getMinerName(device.info.boardVersion) || device.info?.deviceModel} />
-          <Row label="ASIC" value={device.info.ASICModel} />
-          <Row label="FW v." value={device.info.version} />
-          <Row label="Uptime" value={formatDetailedTime(device.info.uptimeSeconds)} />
+          <Row label="Model" value={getModel(device.minerData)} />
+          <Row label="FW v." value={getFirmware(device.minerData)} />
+          <Row label="Uptime" value={formatDetailedTime(getUptime(device.minerData))} />
         </div>
       </div>
     </>
@@ -82,8 +81,8 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device, removeFunction })
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="font-body text-sm font-medium capitalize">{label}</span>
-      <span className="font-accent text-sm text-muted-foreground">{value}</span>
+      <span className="shrink-0 font-body text-sm font-medium capitalize">{label}</span>
+      <span className="max-w-[65%] break-all text-right font-accent text-sm text-muted-foreground">{value}</span>
     </div>
   );
 }

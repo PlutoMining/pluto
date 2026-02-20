@@ -23,6 +23,7 @@ services:
           /vol/frontend_node_modules \
           /vol/frontend_common_utils_node_modules \
           /vol/frontend_common_interfaces_node_modules \
+          /vol/frontend_common_pyasic_bridge_client_node_modules \
         ; do
           mkdir -p "$$d"
           chown -R 1000:1000 "$$d"
@@ -43,6 +44,7 @@ services:
       - frontend_node_modules:/vol/frontend_node_modules
       - frontend_common_utils_node_modules:/vol/frontend_common_utils_node_modules
       - frontend_common_interfaces_node_modules:/vol/frontend_common_interfaces_node_modules
+      - frontend_common_pyasic_bridge_client_node_modules:/vol/frontend_common_pyasic_bridge_client_node_modules
     restart: "no"
   # app_proxy:
   #   image: getumbrel/app-proxy:latest
@@ -120,6 +122,7 @@ services:
       - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
       - ./common/db:/home/node/common/db # Monta il modulo (writable per development)
       - ./common/logger:/home/node/common/logger # Monta il modulo (writable per development)
+      - ./common/pyasic-bridge-client:/home/node/common/pyasic-bridge-client # Pyasic bridge TS client
       - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./discovery:/home/node/app/
       - ./data/leveldb:/home/node/app/data
@@ -158,6 +161,7 @@ services:
       - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
       - ./common/db:/home/node/common/db # Monta il modulo (writable per development)
       - ./common/logger:/home/node/common/logger # Monta il modulo (writable per development)
+      - ./common/pyasic-bridge-client:/home/node/common/pyasic-bridge-client # Pyasic bridge TS client
       - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./backend:/home/node/app/
       - ./data/leveldb:/home/node/app/data
@@ -179,6 +183,7 @@ services:
         - "require('net').connect(7776,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
       interval: 5s
       timeout: 3s
+      start_period: 120s
       retries: 20
     user: "1000:1000"
 
@@ -206,12 +211,14 @@ services:
     volumes:
       - ./common/utils:/home/node/common/utils # Monta il modulo (writable per development)
       - ./common/interfaces:/home/node/common/interfaces # Monta il modulo (writable per development)
+      - ./common/pyasic-bridge-client:/home/node/common/pyasic-bridge-client # Pyasic bridge TS client
       - ./tooling:/home/node/tooling # Monta il modulo tooling per tsconfig.base.json
       - ./frontend:/home/node/app/
       - ./umbrel-apps/pluto-next/umbrel-app.yml:/tmp/umbrel-app.yml:ro
       - frontend_node_modules:/home/node/app/node_modules
       - frontend_common_utils_node_modules:/home/node/common/utils/node_modules
       - frontend_common_interfaces_node_modules:/home/node/common/interfaces/node_modules
+      - frontend_common_pyasic_bridge_client_node_modules:/home/node/common/pyasic-bridge-client/node_modules
     user: "1000:1000"
 
   prometheus:
@@ -236,7 +243,28 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     user: "65534:65534"
+
+  pyasic-bridge:
+    build:
+      context: pyasic-bridge
+      dockerfile: Dockerfile.development
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./pyasic-bridge:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\" || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
 volumes:
   backend_node_modules:
@@ -254,3 +282,4 @@ volumes:
   frontend_node_modules:
   frontend_common_utils_node_modules:
   frontend_common_interfaces_node_modules:
+  frontend_common_pyasic_bridge_client_node_modules:

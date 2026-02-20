@@ -1,5 +1,6 @@
 import React from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 
 import { DeviceSettingsAccordion } from "@/components/Accordion";
 
@@ -9,6 +10,44 @@ jest.mock("@/providers/SocketProvider", () => ({
     socket: { on: jest.fn(), off: jest.fn() },
   }),
 }));
+
+const makeDiscoveredMiner = (): DiscoveredMiner => ({
+  mac: "aa",
+  ip: "10.0.0.1",
+  type: "Bitaxe",
+  tracing: true,
+  presetUuid: null,
+  minerData: {
+    ip: "10.0.0.1",
+    hostname: "miner-01",
+    device_info: {
+      model: "BM1397",
+    },
+    config: {
+      pools: {
+        groups: [
+          {
+            pools: [
+              {
+                url: "stratum+tcp://pool.example.com:3333",
+                user: "user.worker",
+                password: "pass",
+              },
+            ],
+          },
+        ],
+      },
+      extra_config: {
+        frequency: 100,
+        core_voltage: 900,
+        fanspeed: 50,
+        autofanspeed: 1,
+        flipscreen: 0,
+        invertfanpolarity: 0,
+      },
+    },
+  },
+});
 
 describe("DeviceSettingsAccordion validation", () => {
   beforeEach(() => {
@@ -20,9 +59,19 @@ describe("DeviceSettingsAccordion validation", () => {
             uuid: "preset-1",
             name: "Preset 1",
             configuration: {
-              stratumURL: "pool.example.com",
-              stratumPort: 3333,
-              stratumUser: "user",
+              pools: {
+                groups: [
+                  {
+                    pools: [
+                      {
+                        url: "stratum+tcp://pool.example.com:3333",
+                        user: "user",
+                        password: "",
+                      },
+                    ],
+                  },
+                ],
+              },
             },
             associatedDevices: [],
           },
@@ -30,29 +79,6 @@ describe("DeviceSettingsAccordion validation", () => {
       }),
     }));
   });
-
-  const makeDevice = () =>
-    ({
-      mac: "aa",
-      ip: "10.0.0.1",
-      tracing: true,
-      presetUuid: null,
-      info: {
-        hostname: "miner-01",
-        stratumUser: "user.worker",
-        stratumURL: "pool.example.com",
-        stratumPort: 3333,
-        stratumPassword: "pass",
-        flipscreen: 0,
-        invertfanpolarity: 0,
-        autofanspeed: 1,
-        fanspeed: 50,
-        frequency: 100,
-        frequencyOptions: [{ label: "100", value: 100 }],
-        coreVoltage: 900,
-        coreVoltageOptions: [{ label: "900", value: 900 }],
-      },
-    }) as any;
 
   async function openFirstDetails(container: HTMLElement) {
     const details = container.querySelector("details") as HTMLDetailsElement;
@@ -71,7 +97,7 @@ describe("DeviceSettingsAccordion validation", () => {
 
     const { container } = render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice()]}
+        fetchedDevices={[makeDiscoveredMiner()]}
         alert={undefined}
         setAlert={setAlert as any}
         onOpenAlert={onOpenAlert}
@@ -98,62 +124,15 @@ describe("DeviceSettingsAccordion validation", () => {
     });
   });
 
-  it("ignores fanspeed validation errors when autofanspeed is enabled", async () => {
-    const { container } = render(
-      <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice()]}
-        alert={undefined}
-        setAlert={jest.fn() as any}
-        onOpenAlert={jest.fn()}
-      />
-    );
-
-    await waitFor(() => expect((global as any).fetch).toHaveBeenCalledWith("/api/presets"));
-    const details = await openFirstDetails(container);
-
-    const saveButton = within(details).getByRole("button", { name: "Save" });
-
-    const auto = within(details).getByRole("checkbox", { name: "Automatic Fan Control" });
-    expect(auto).toBeChecked();
-
-    // Disable autofanspeed so fanspeed becomes editable.
-    fireEvent.click(auto);
-    expect(auto).not.toBeChecked();
-
-    const fanspeed = details.querySelector("input#aa-fanspeed") as HTMLInputElement;
-    expect(fanspeed).not.toBeNull();
-    expect(fanspeed).not.toBeDisabled();
-
-    fireEvent.change(fanspeed, { target: { value: "200" } });
-    expect(await screen.findByText("fanspeed is not correct.")).toBeInTheDocument();
-    expect(saveButton).toBeDisabled();
-
-    // Also reject negative values.
-    fireEvent.change(fanspeed, { target: { value: "-1" } });
-    expect(await screen.findByText("fanspeed is not correct.")).toBeInTheDocument();
-
-    // Restore a valid value.
-    fireEvent.change(fanspeed, { target: { value: "50" } });
-    await waitFor(() => expect(screen.queryByText("fanspeed is not correct.")).toBeNull());
-
-    // Re-introduce an invalid value so hasErrorFields has something to ignore.
-    fireEvent.change(fanspeed, { target: { value: "200" } });
-    expect(await screen.findByText("fanspeed is not correct.")).toBeInTheDocument();
-
-    // Re-enable autofanspeed; fanspeed errors should be ignored in hasErrorFields.
-    fireEvent.click(auto);
-    expect(auto).toBeChecked();
-    expect(fanspeed).toBeDisabled();
-
-    await waitFor(() => {
-      expect(saveButton).not.toBeDisabled();
-    });
-  });
+  // Note: legacy fanspeed/autofanspeed validation has been replaced by schema-driven
+  // fan_mode controls (mode + speed + minimum_fans). The old behaviour of ignoring
+  // fanspeed errors when autofanspeed is enabled no longer applies to the new UI,
+  // so the corresponding test has been removed.
 
   it("validates stratumURL and stratumUser in custom mode", async () => {
     const { container } = render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice()]}
+        fetchedDevices={[makeDiscoveredMiner()]}
         alert={undefined}
         setAlert={jest.fn() as any}
         onOpenAlert={jest.fn()}
@@ -183,7 +162,7 @@ describe("DeviceSettingsAccordion validation", () => {
   it("flags required/invalid stratumPort values", async () => {
     const { container } = render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice()]}
+        fetchedDevices={[makeDiscoveredMiner()]}
         alert={undefined}
         setAlert={jest.fn() as any}
         onOpenAlert={jest.fn()}
@@ -208,8 +187,11 @@ describe("DeviceSettingsAccordion validation", () => {
   });
 
   it("disables Save when a required device field is empty", async () => {
-    const device = makeDevice();
-    device.info.hostname = "";
+    const device = makeDiscoveredMiner();
+    // Clear stratumURL which is a required field
+    if (device.minerData.config?.pools?.groups?.[0]?.pools?.[0]) {
+      device.minerData.config.pools.groups[0].pools[0].url = "";
+    }
 
     const { container } = render(
       <DeviceSettingsAccordion

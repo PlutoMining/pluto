@@ -7,12 +7,11 @@
 */
 
 import React, { useEffect, useRef, useState } from "react";
-import { Device } from "@pluto/interfaces";
-import { getMinerName } from "@/utils/minerMap";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 import { Checkbox } from "../Checkbox";
 
 interface RegisterDeviceTableProps {
-  devices: Device[];
+  devices: DiscoveredMiner[];
   allChecked: boolean;
   onChange: (index: number) => void;
   checkedItems: boolean[];
@@ -62,11 +61,11 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
   }, []);
 
   return (
-    <div style={{ maxHeight: "calc(100% - 5.5rem)" }} className="relative">
-      <div ref={boxRef} className="h-full overflow-auto">
+    <div className="relative">
+      <div ref={boxRef} className="overflow-visible md:overflow-auto">
         {devices && devices.length > 0 ? (
           <>
-            <div className="hidden tablet:block">
+            <div className="hidden md:block">
               <table className="w-full border-collapse border border-border">
                 <thead className="sticky top-0 bg-muted">
                   <tr>
@@ -88,13 +87,13 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                       Mac Address
                     </th>
                     <th className="border-b border-border p-3 text-left font-heading text-xs font-medium capitalize text-foreground">
-                      Miner
+                      Make
                     </th>
                     <th className="border-b border-border p-3 text-left font-heading text-xs font-medium capitalize text-foreground">
-                      ASIC
+                      Model
                     </th>
                     <th className="border-b border-border p-3 text-left font-heading text-xs font-medium capitalize text-foreground">
-                      FW v.
+                      FW
                     </th>
                   </tr>
                 </thead>
@@ -105,7 +104,7 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                         <Checkbox
                           id={device.mac}
                           name={device.mac}
-                          label={device.info.hostname}
+                          label={device.minerData?.hostname ?? device.ip ?? device.mac ?? "—"}
                           onChange={() => onChange(index)}
                           isChecked={checkedItems[index]}
                         />
@@ -117,13 +116,13 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                         {device.mac}
                       </td>
                       <td className="border-t border-border p-3 font-accent text-[13px]">
-                        {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
+                        {device.minerData?.make ?? "—"}
                       </td>
                       <td className="border-t border-border p-3 font-accent text-[13px]">
-                        {device.info.ASICModel}
+                        {device.minerData?.model ?? "—"}
                       </td>
                       <td className="border-t border-border p-3 font-accent text-[13px]">
-                        {device.info.version}
+                        {device.minerData?.fw_ver ?? "—"}
                       </td>
                     </tr>
                   ))}
@@ -131,7 +130,7 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
               </table>
             </div>
 
-            <div className="tablet:hidden border border-border bg-card">
+            <div className="md:hidden border border-border bg-card">
               {devices.map((device, index) => (
                 <details
                   key={`tab${selectedTab}-device-${device.ip}`}
@@ -139,7 +138,7 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                 >
                   <summary className="flex cursor-pointer items-center justify-between gap-3 bg-muted px-4 py-3">
                     <span className="font-body text-sm font-semibold capitalize">
-                      {device.info.hostname}
+                      {device.minerData?.hostname ?? device.ip ?? device.mac ?? "—"}
                     </span>
                     <input
                       type="checkbox"
@@ -153,28 +152,32 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">IP</span>
-                        <span className="font-accent text-sm text-muted-foreground">{device.ip}</span>
+                        <span className="max-w-[65%] break-all text-right font-accent text-sm text-muted-foreground">
+                          {device.ip}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">Mac Address</span>
-                        <span className="font-accent text-sm text-muted-foreground">{device.mac}</span>
-                      </div>
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="font-heading text-sm font-medium capitalize">Miner</span>
-                        <span className="font-accent text-sm text-muted-foreground">
-                          {getMinerName(device.info.boardVersion) || device.info?.deviceModel}
+                        <span className="max-w-[65%] break-all text-right font-accent text-sm text-muted-foreground">
+                          {device.mac}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
-                        <span className="font-heading text-sm font-medium capitalize">ASIC</span>
+                        <span className="font-heading text-sm font-medium capitalize">Make</span>
                         <span className="font-accent text-sm text-muted-foreground">
-                          {device.info.ASICModel}
+                          {device.minerData?.make ?? "—"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
-                        <span className="font-heading text-sm font-medium capitalize">FW v.</span>
+                        <span className="font-heading text-sm font-medium capitalize">Model</span>
                         <span className="font-accent text-sm text-muted-foreground">
-                          {device.info.version}
+                          {device.minerData?.model ?? "—"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="font-heading text-sm font-medium capitalize">FW</span>
+                        <span className="font-accent text-sm text-muted-foreground">
+                          {device.minerData?.fw_ver ?? "—"}
                         </span>
                       </div>
                     </div>

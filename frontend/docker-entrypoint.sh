@@ -46,7 +46,7 @@ install_common_module() {
         echo "Install attempt $i failed, retrying in 2 seconds..."
         sleep 2
         # Clean and retry
-        rm -rf node_modules package-lock.json 2>/dev/null || true
+         rm -rf node_modules 2>/dev/null || true
       fi
     fi
   done
@@ -57,22 +57,54 @@ install_common_module() {
 # Install dependencies in common modules
 install_common_module "/home/node/common/interfaces" "interfaces" || true
 install_common_module "/home/node/common/utils" "utils" || true
+install_common_module "/home/node/common/pyasic-bridge-client" "pyasic-bridge-client" || true
+
+# Build pyasic-bridge-client if it exists
+if [ -d "/home/node/common/pyasic-bridge-client" ]; then
+  echo "Building pyasic-bridge-client..."
+  cd /home/node/common/pyasic-bridge-client
+  npm run build || echo "Warning: Failed to build pyasic-bridge-client"
+  cd /home/node/app
+fi
 
 # Return to the app directory
 cd /home/node/app
 
+deps_hash_file="node_modules/.deps-hash"
+new_deps_hash=""
+
+# If package.json / package-lock.json changed but node_modules volume is reused,
+# dependencies may be missing. Track a simple hash to trigger re-install.
+if [ -f "package.json" ]; then
+  if command -v sha256sum >/dev/null 2>&1; then
+    if [ -f "package-lock.json" ]; then
+      new_deps_hash=$(sha256sum package.json package-lock.json 2>/dev/null | sha256sum | awk '{print $1}')
+    else
+      new_deps_hash=$(sha256sum package.json 2>/dev/null | awk '{print $1}')
+    fi
+  fi
+fi
+
 # Install dependencies if node_modules doesn't exist or if critical dependencies are missing
-if [ ! -d "node_modules" ] || [ ! -f "node_modules/next/package.json" ]; then
+existing_deps_hash=""
+if [ -f "$deps_hash_file" ]; then
+  existing_deps_hash=$(cat "$deps_hash_file" 2>/dev/null || true)
+fi
+
+if [ ! -d "node_modules" ] || [ ! -f "node_modules/next/package.json" ] || [ -n "$new_deps_hash" ] && [ "$new_deps_hash" != "$existing_deps_hash" ]; then
   echo "Installing dependencies in app..."
   # Retry logic
   for i in 1 2 3; do
     if npm install --prefer-offline --no-audit 2>&1; then
+      if [ -n "$new_deps_hash" ]; then
+        echo "$new_deps_hash" > "$deps_hash_file" 2>/dev/null || true
+      fi
       break
     else
       if [ $i -lt 3 ]; then
         echo "Install attempt $i failed, retrying in 2 seconds..."
         sleep 2
-        rm -rf node_modules package-lock.json 2>/dev/null || true
+         rm -rf node_modules 2>/dev/null || true
       else
         echo "Warning: Failed to install app dependencies after 3 attempts"
       fi

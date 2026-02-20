@@ -1,0 +1,154 @@
+name: Pyasic Bridge CI
+
+on:
+  pull_request:
+    branches:
+      - "**"
+    paths:
+      - 'pyasic-bridge/**'
+      - 'common/contracts/**'
+
+# Cancel in-flight runs for the same ref so we don't get duplicate jobs
+concurrency:
+  group: pyasic-bridge-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  validate-contracts:
+    name: Validate Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          # Do not use cache: 'pip' here; it can trigger ELOOP when the cache walks the repo (e.g. common/interfaces symlinks)
+
+      - name: Install dependencies
+        working-directory: pyasic-bridge
+        run: |
+          pip install -r requirements.txt || pip install -r requirements-dev.txt || true
+
+      - name: Validate contracts
+        working-directory: pyasic-bridge
+        run: |
+          python3 scripts/validate_contracts.py
+
+  test:
+    name: Test Pyasic Bridge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          # Do not use cache: 'pip' here; it can trigger ELOOP when the cache walks the repo
+
+      - name: Install dependencies
+        working-directory: pyasic-bridge
+        run: |
+          pip install -r requirements.txt || pip install -r requirements-dev.txt || true
+
+      - name: Run tests
+        working-directory: pyasic-bridge
+        run: |
+          pytest tests/ -v
+
+      - name: Run contract compliance tests
+        working-directory: pyasic-bridge
+        run: |
+          pytest tests/test_contract_compliance.py tests/test_api_contracts.py -v
+
+  validate-generated-client:
+    name: Validate Generated Client
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Python dependencies
+        working-directory: pyasic-bridge
+        run: |
+          pip install -r requirements.txt || pip install -r requirements-dev.txt || true
+
+      - name: Generate TypeScript client
+        working-directory: pyasic-bridge
+        run: |
+          python3 scripts/generate_client.py
+
+      - name: Install Node.js dependencies for client
+        working-directory: common/pyasic-bridge-client
+        run: |
+          npm ci
+
+      - name: Build TypeScript client
+        working-directory: common/pyasic-bridge-client
+        run: |
+          npm run build
+
+  generate-clients:
+    name: Generate Clients (Optional)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          # No cache: 'pip' to avoid ELOOP when cache walks repo
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Python dependencies
+        working-directory: pyasic-bridge
+        run: |
+          pip install -r requirements.txt || pip install -r requirements-dev.txt || true
+
+      - name: Export OpenAPI schema
+        working-directory: pyasic-bridge
+        run: |
+          python3 scripts/export_openapi.py
+
+      - name: Generate TypeScript client
+        working-directory: pyasic-bridge
+        run: |
+          python3 scripts/generate_client.py
+
+      - name: Build TypeScript client
+        working-directory: common/pyasic-bridge-client
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload OpenAPI schema artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pyasic-bridge-openapi
+          path: common/contracts/pyasic-bridge-openapi.json
+          if-no-files-found: warn
