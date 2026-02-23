@@ -30,6 +30,7 @@ export default function DeviceSettingsClient() {
   } = useDisclosure({ defaultIsOpen: false });
 
   const [alert, setAlert] = useState<AlertInterface>();
+  const [alertKey, setAlertKey] = useState(0);
   const [imprintedDevices, setImprintedDevices] = useState<DiscoveredMiner[] | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -50,6 +51,16 @@ export default function DeviceSettingsClient() {
     void fetchImprintedDevices();
   }, [fetchImprintedDevices]);
 
+  const openAlert = useCallback(() => {
+    setAlertKey((k) => k + 1);
+    onOpenAlert();
+  }, [onOpenAlert]);
+
+  const closeAlert = useCallback(() => {
+    onCloseAlert();
+    setAlert(undefined);
+  }, [onCloseAlert]);
+
   const handleRestartAll = useCallback(
     async (e: { preventDefault: () => void }) => {
       e.preventDefault();
@@ -69,14 +80,14 @@ export default function DeviceSettingsClient() {
               "All devices have been restarted successfully. The eventual new settings have been applied, and the miners are back online.",
           });
 
-          onOpenAlert();
+          openAlert();
         } else {
           setAlert({
             status: AlertStatus.WARNING,
             title: "No Devices Available",
             message: "There are no registered devices to restart at this moment.",
           });
-          onOpenAlert();
+          openAlert();
         }
       } catch (error) {
         let errorMessage = "An error occurred while attempting to restart the devices.";
@@ -90,10 +101,10 @@ export default function DeviceSettingsClient() {
           title: "Restart Failed",
           message: `${errorMessage} Please try again or contact support if the issue persists.`,
         });
-        onOpenAlert();
+        openAlert();
       }
     },
-    [imprintedDevices, onCloseModal, onOpenAlert]
+    [imprintedDevices, onCloseModal, openAlert]
   );
 
   const handleSearch = useCallback((e: ChangeEvent<HTMLInputElement>) => {
@@ -137,16 +148,11 @@ export default function DeviceSettingsClient() {
     };
   }, [fetchImprintedDevices, searchQuery]);
 
-  const closeAlert = useCallback(() => {
-    setAlert(undefined);
-    onCloseAlert();
-  }, [onCloseAlert]);
-
   return (
     <div className="flex-1 py-6">
       <div className="mx-auto w-full max-w-[var(--pluto-content-max)] px-4 md:px-8">
         {alert ? (
-          <Alert isOpen={isOpenAlert} onOpen={onOpenAlert} onClose={closeAlert} content={alert} />
+          <Alert key={alertKey} isOpen={isOpenAlert} onOpen={openAlert} onClose={closeAlert} content={alert} />
         ) : null}
 
         <form className="flex flex-col gap-6">
@@ -172,7 +178,7 @@ export default function DeviceSettingsClient() {
                 fetchedDevices={imprintedDevices}
                 setAlert={setAlert}
                 alert={alert}
-                onOpenAlert={onOpenAlert}
+                onOpenAlert={openAlert}
               />
             ) : (
               <p className="text-center text-sm text-muted-foreground">
