@@ -225,7 +225,7 @@ export const listenToDevices = async (
       devices = await findMany<DiscoveredMiner>("pluto_core", "devices:imprinted");
     }
 
-    updateOriginalIpsListeners(devices, traceLogs);
+    await updateOriginalIpsListeners(devices, traceLogs);
 
     return devices;
   } catch (error) {
