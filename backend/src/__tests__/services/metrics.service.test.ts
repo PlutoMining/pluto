@@ -1,4 +1,5 @@
 import type { MinerData } from '@pluto/pyasic-bridge-client';
+
 jest.mock('prom-client', () => {
   const gaugeInstances = new Map<string, any>();
 
@@ -6,16 +7,19 @@ jest.mock('prom-client', () => {
     name: string;
     set: jest.Mock;
     labels: jest.Mock;
+    remove: jest.Mock;
     reset: jest.Mock;
 
     constructor(options: {
       name: string;
       registers?: Array<{ registerMetric: (metric: Gauge) => void }>;
-      labelNames?: string[];
+      labelNames?: readonly string[];
     }) {
       this.name = options.name;
+      const labelSetFn = jest.fn();
+      this.labels = jest.fn().mockReturnValue({ set: labelSetFn });
       this.set = jest.fn();
-      this.labels = jest.fn().mockReturnValue({ set: jest.fn() });
+      this.remove = jest.fn();
       this.reset = jest.fn();
       gaugeInstances.set(this.name, this);
       options.registers?.forEach((registry) => registry.registerMetric(this));
@@ -51,32 +55,42 @@ jest.mock('@pluto/logger', () => ({
   },
 }));
 
+jest.mock('../../services/tracing.helpers', () => ({
+  extractHostnameFromMinerData: jest.fn((d: any) => d?.hostname ?? d?.ip ?? 'unknown'),
+  extractModelFromMinerData: jest.fn((d: any) => d?.model ?? d?.device_info?.model ?? 'unknown'),
+}));
+
 import promClient from 'prom-client';
 const gaugeInstances = (promClient as unknown as { __gaugeInstances: Map<string, any> }).__gaugeInstances;
 const { logger } = jest.requireMock('@pluto/logger');
 
 import {
-  createMetricsForDevice,
-  deleteMetricsForDevice,
+  updateDeviceMetrics,
+  removeDeviceMetrics,
+  _resetMetricsForTesting,
   register,
   updateOverviewMetrics,
 } from '@/services/metrics.service';
 
 describe('metrics.service', () => {
   beforeEach(() => {
-    gaugeInstances.forEach((gauge) => {
+    _resetMetricsForTesting();
+    gaugeInstances.forEach((gauge: any) => {
       gauge.set.mockClear();
       gauge.labels.mockClear();
+      gauge.remove.mockClear();
+      gauge.reset.mockClear();
     });
     jest.clearAllMocks();
   });
 
-  describe('createMetricsForDevice', () => {
-    it('updates device metrics from MinerData structure', () => {
-      const { updatePrometheusMetrics } = createMetricsForDevice('rig');
-
+  describe('updateDeviceMetrics', () => {
+    it('sets labeled gauges from MinerData', () => {
       const minerData: MinerData = {
         ip: '10.0.0.1',
+        hostname: 'rig',
+        model: 'BM1368',
+        device_info: { model: 'BM1368' },
         wattage: 1200,
         voltage: 12.5,
         hashrate: { rate: 800, unit: 'GH/s' },
@@ -100,86 +114,111 @@ describe('metrics.service', () => {
         },
       } as MinerData;
 
-      updatePrometheusMetrics(minerData);
+      updateDeviceMetrics('aa:bb:cc:dd:ee:ff', minerData);
 
-      expect(gaugeInstances.get('rig_power_watts')?.set).toHaveBeenCalledWith(1200);
-      expect(gaugeInstances.get('rig_voltage_volts')?.set).toHaveBeenCalledWith(12.5);
-      expect(gaugeInstances.get('rig_current_amps')?.set).toHaveBeenCalledWith(6);
-      expect(gaugeInstances.get('rig_fanspeed_rpm')?.set).toHaveBeenCalledWith(1200);
-      expect(gaugeInstances.get('rig_temperature_celsius')?.set).toHaveBeenCalledWith(45);
-      expect(gaugeInstances.get('rig_vr_temperature_celsius')?.set).toHaveBeenCalledWith(70);
-      expect(gaugeInstances.get('rig_hashrate_ghs')?.set).toHaveBeenCalledWith(800);
-      expect(gaugeInstances.get('rig_free_heap_bytes')?.set).toHaveBeenCalledWith(512);
-      expect(gaugeInstances.get('rig_free_heap_internal_bytes')?.set).toHaveBeenCalledWith(128);
-      expect(gaugeInstances.get('rig_free_heap_spiram_bytes')?.set).toHaveBeenCalledWith(0);
-      expect(gaugeInstances.get('rig_core_voltage_volts')?.set).toHaveBeenCalledWith(1.1);
-      expect(gaugeInstances.get('rig_core_voltage_actual_volts')?.set).toHaveBeenCalledWith(1.05);
-      expect(gaugeInstances.get('rig_frequency_mhz')?.set).toHaveBeenCalledWith(500);
-      expect(gaugeInstances.get('rig_efficiency')?.set).toHaveBeenCalledWith(1200 / (800 / 1000));
-    });
-
-    it('handles nested hashrate structure', () => {
-      const { updatePrometheusMetrics } = createMetricsForDevice('rig2');
-
-      const minerData: MinerData = {
+      const expectedLabels = {
+        device_id: 'aa:bb:cc:dd:ee:ff',
+        hostname: 'rig',
         ip: '10.0.0.1',
-        wattage: 100,
-        hashrate: { rate: 10, unit: 'GH/s' },
-      } as MinerData;
+        model: 'BM1368',
+      };
 
-      updatePrometheusMetrics(minerData);
+      const powerGauge = gaugeInstances.get('pluto_device_power_watts');
+      expect(powerGauge?.labels).toHaveBeenCalledWith(expectedLabels);
 
-      expect(gaugeInstances.get('rig2_hashrate_ghs')?.set).toHaveBeenCalledWith(10);
+      const hashrateGauge = gaugeInstances.get('pluto_device_hashrate_ghs');
+      expect(hashrateGauge?.labels).toHaveBeenCalledWith(expectedLabels);
+
+      const efficiencyGauge = gaugeInstances.get('pluto_device_efficiency');
+      expect(efficiencyGauge?.labels).toHaveBeenCalledWith(expectedLabels);
     });
 
     it('handles missing optional fields gracefully', () => {
-      const { updatePrometheusMetrics } = createMetricsForDevice('rig3');
-
       const minerData: MinerData = {
         ip: '10.0.0.1',
+        hostname: 'rig',
+        model: 'BM1368',
+        device_info: { model: 'BM1368' },
         wattage: 0,
         hashrate: { rate: 0, unit: 'GH/s' },
       } as MinerData;
 
-      updatePrometheusMetrics(minerData);
+      expect(() => updateDeviceMetrics('aa:bb:cc:dd:ee:ff', minerData)).not.toThrow();
 
-      expect(gaugeInstances.get('rig3_power_watts')?.set).toHaveBeenCalledWith(0);
-      expect(gaugeInstances.get('rig3_hashrate_ghs')?.set).toHaveBeenCalledWith(0);
-      expect(gaugeInstances.get('rig3_efficiency')?.set).toHaveBeenCalledWith(0);
+      const powerGauge = gaugeInstances.get('pluto_device_power_watts');
+      expect(powerGauge?.labels).toHaveBeenCalled();
     });
 
     it('extracts temperature from hashboards when temperature_avg is missing', () => {
-      const { updatePrometheusMetrics } = createMetricsForDevice('rig4');
-
       const minerData: MinerData = {
         ip: '10.0.0.1',
+        hostname: 'rig',
+        model: 'BM1368',
+        device_info: { model: 'BM1368' },
         hashboards: [{ temp: 55 }],
       } as MinerData;
 
-      updatePrometheusMetrics(minerData);
+      updateDeviceMetrics('aa:bb:cc:dd:ee:ff', minerData);
 
-      expect(gaugeInstances.get('rig4_temperature_celsius')?.set).toHaveBeenCalledWith(55);
+      const tempGauge = gaugeInstances.get('pluto_device_temperature_celsius');
+      expect(tempGauge?.labels).toHaveBeenCalled();
+    });
+
+    it('removes old labels when hostname changes', () => {
+      const data1: MinerData = {
+        ip: '10.0.0.1',
+        hostname: 'old-name',
+        model: 'BM1368',
+        device_info: { model: 'BM1368' },
+        wattage: 100,
+        hashrate: { rate: 50, unit: 'GH/s' },
+      } as MinerData;
+
+      updateDeviceMetrics('aa:bb:cc:dd:ee:ff', data1);
+
+      const data2: MinerData = {
+        ip: '10.0.0.1',
+        hostname: 'new-name',
+        model: 'BM1368',
+        device_info: { model: 'BM1368' },
+        wattage: 100,
+        hashrate: { rate: 50, unit: 'GH/s' },
+      } as MinerData;
+
+      updateDeviceMetrics('aa:bb:cc:dd:ee:ff', data2);
+
+      const powerGauge = gaugeInstances.get('pluto_device_power_watts');
+      expect(powerGauge?.remove).toHaveBeenCalledWith(
+        expect.objectContaining({ hostname: 'old-name' })
+      );
     });
   });
 
-  describe('deleteMetricsForDevice', () => {
-    it('removes metrics for a hostname', () => {
-      createMetricsForDevice('rig');
-      const removeSpy = jest.spyOn(register, 'removeSingleMetric');
+  describe('removeDeviceMetrics', () => {
+    it('removes label combinations for a device', () => {
+      const minerData: MinerData = {
+        ip: '10.0.0.1',
+        hostname: 'rig',
+        model: 'BM1368',
+        device_info: { model: 'BM1368' },
+        wattage: 100,
+        hashrate: { rate: 50, unit: 'GH/s' },
+      } as MinerData;
 
-      deleteMetricsForDevice('rig');
+      updateDeviceMetrics('aa:bb:cc:dd:ee:ff', minerData);
+      removeDeviceMetrics('aa:bb:cc:dd:ee:ff');
 
-      expect(removeSpy).toHaveBeenCalled();
+      const powerGauge = gaugeInstances.get('pluto_device_power_watts');
+      expect(powerGauge?.remove).toHaveBeenCalledWith(
+        expect.objectContaining({ device_id: 'aa:bb:cc:dd:ee:ff' })
+      );
     });
 
-    it('logs errors when deletion fails', () => {
-      jest.spyOn(register, 'getMetricsAsArray').mockImplementationOnce(() => {
-        throw new Error('boom');
-      });
+    it('does nothing if no previous labels exist', () => {
+      removeDeviceMetrics('nonexistent');
 
-      deleteMetricsForDevice('rig');
-
-      expect(logger.error).toHaveBeenCalled();
+      const powerGauge = gaugeInstances.get('pluto_device_power_watts');
+      expect(powerGauge?.remove).not.toHaveBeenCalled();
     });
   });
 

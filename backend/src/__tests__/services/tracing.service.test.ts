@@ -32,7 +32,8 @@ function createMockServerIO(server: any, options: any): MockIO {
 // ---------------------------------------------------------------------------
 // Module mocks (hoisted by Jest, factories execute lazily on first require)
 // ---------------------------------------------------------------------------
-const mockUpdatePrometheusMetrics = jest.fn();
+const mockUpdateDeviceMetrics = jest.fn();
+const mockRemoveDeviceMetrics = jest.fn();
 
 jest.mock("socket.io", () => ({
   Server: jest.fn(
@@ -53,7 +54,6 @@ jest.mock("@pluto/utils", () => ({
       for (const item of array) await fn(item);
     }
   ),
-  sanitizeHostname: jest.fn((h: string) => h),
 }));
 
 jest.mock("../../config/environment", () => ({
@@ -70,10 +70,8 @@ jest.mock("../../config/environment", () => ({
 }));
 
 jest.mock("../../services/metrics.service", () => ({
-  createMetricsForDevice: jest.fn(() => ({
-    updatePrometheusMetrics: mockUpdatePrometheusMetrics,
-  })),
-  deleteMetricsForDevice: jest.fn(),
+  updateDeviceMetrics: mockUpdateDeviceMetrics,
+  removeDeviceMetrics: mockRemoveDeviceMetrics,
   updateOverviewMetrics: jest.fn(),
 }));
 
@@ -133,36 +131,28 @@ const makeMinerData = (overrides?: Partial<MinerData>): MinerData =>
 // Tests
 // ---------------------------------------------------------------------------
 describe("tracing.service", () => {
-  // SUT references (loaded once in beforeAll, state reset per test)
   let startIoHandler: typeof import("../../services/tracing.service").startIoHandler;
   let getIoInstance: typeof import("../../services/tracing.service").getIoInstance;
   let updateOriginalIpsListeners: typeof import("../../services/tracing.service").updateOriginalIpsListeners;
   let _resetForTesting: typeof import("../../services/tracing.service")._resetForTesting;
 
-  // Mock references (obtained after SUT loads its mocked dependencies)
   let mockLogger: { debug: jest.Mock; info: jest.Mock; error: jest.Mock };
   let mockUpdateOne: jest.Mock;
-  let mockCreateMetricsForDevice: jest.Mock;
-  let mockDeleteMetricsForDevice: jest.Mock;
   let mockUpdateOverviewMetrics: jest.Mock;
   let mockFetchMinerData: jest.Mock;
   let mockConnectMinerLogsWebSocket: jest.Mock;
   let mockConfig: Record<string, any>;
 
   beforeAll(async () => {
-    // Dynamic import triggers all mock factories (consts above are initialised)
     const mod = await import("../../services/tracing.service");
     startIoHandler = mod.startIoHandler;
     getIoInstance = mod.getIoInstance;
     updateOriginalIpsListeners = mod.updateOriginalIpsListeners;
     _resetForTesting = mod._resetForTesting;
 
-    // Obtain typed references to the mock objects the SUT uses
     mockLogger = (await import("@pluto/logger")).logger as any;
     mockUpdateOne = (await import("@pluto/db")).updateOne as jest.Mock;
     const metrics = await import("../../services/metrics.service");
-    mockCreateMetricsForDevice = metrics.createMetricsForDevice as jest.Mock;
-    mockDeleteMetricsForDevice = metrics.deleteMetricsForDevice as jest.Mock;
     mockUpdateOverviewMetrics = metrics.updateOverviewMetrics as jest.Mock;
     const pyasic = await import("../../services/pyasic-bridge.service");
     mockFetchMinerData = (pyasic.pyasicBridgeService as any).fetchMinerData;
@@ -175,6 +165,8 @@ describe("tracing.service", () => {
     jest.useFakeTimers();
     _resetForTesting();
     mockConfig.deleteDataOnDeviceRemove = false;
+    mockUpdateDeviceMetrics.mockClear();
+    mockRemoveDeviceMetrics.mockClear();
   });
 
   afterEach(() => {
@@ -339,7 +331,7 @@ describe("tracing.service", () => {
       );
     });
 
-    it("deletes metrics when deleteDataOnDeviceRemove is enabled", async () => {
+    it("calls removeDeviceMetrics when deleteDataOnDeviceRemove is enabled", async () => {
       mockConfig.deleteDataOnDeviceRemove = true;
 
       const minerData = makeMinerData();
@@ -350,11 +342,10 @@ describe("tracing.service", () => {
       await updateOriginalIpsListeners([device], false);
       await updateOriginalIpsListeners([], false);
 
-      expect(mockDeleteMetricsForDevice).toHaveBeenCalled();
+      expect(mockRemoveDeviceMetrics).toHaveBeenCalled();
     });
 
-    it("does not delete metrics when deleteDataOnDeviceRemove is disabled", async () => {
-      // mockConfig.deleteDataOnDeviceRemove is already false (from beforeEach)
+    it("does not remove metrics when deleteDataOnDeviceRemove is disabled", async () => {
       const minerData = makeMinerData();
       mockFetchMinerData.mockResolvedValue(minerData);
       mockUpdateOne.mockResolvedValue({ ok: true });
@@ -363,38 +354,13 @@ describe("tracing.service", () => {
       await updateOriginalIpsListeners([device], false);
       await updateOriginalIpsListeners([], false);
 
-      expect(mockDeleteMetricsForDevice).not.toHaveBeenCalled();
+      expect(mockRemoveDeviceMetrics).not.toHaveBeenCalled();
     });
 
-    it("logs rejected promises from startDeviceMonitoring", async () => {
-      mockCreateMetricsForDevice.mockImplementationOnce(() => {
-        throw new Error("invalid metric name");
-      });
-
-      const device = makeDiscoveredMiner();
-      await updateOriginalIpsListeners([device], false);
-
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        "Failed to start device monitoring:",
-        expect.any(Error)
-      );
-    });
-
-    it("skips polling when createMetricsForDevice throws", async () => {
-      mockCreateMetricsForDevice.mockImplementationOnce(() => {
-        throw new Error("invalid metric name");
-      });
-
-      const device = makeDiscoveredMiner();
-      await updateOriginalIpsListeners([device], false);
-
-      expect(mockFetchMinerData).not.toHaveBeenCalled();
-    });
-
-    it("handles errors when deleting metrics", async () => {
+    it("handles errors when removing metrics", async () => {
       mockConfig.deleteDataOnDeviceRemove = true;
-      mockDeleteMetricsForDevice.mockImplementation(() => {
-        throw new Error("delete failed");
+      mockRemoveDeviceMetrics.mockImplementation(() => {
+        throw new Error("remove failed");
       });
 
       const minerData = makeMinerData();
@@ -406,7 +372,7 @@ describe("tracing.service", () => {
       await updateOriginalIpsListeners([], false);
 
       expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to delete Prometheus metrics"),
+        expect.stringContaining("Failed to remove Prometheus metrics"),
         expect.any(Error)
       );
     });
@@ -420,7 +386,7 @@ describe("tracing.service", () => {
       startIoHandler({} as any);
     });
 
-    it("polls system info successfully and updates metrics", async () => {
+    it("polls system info successfully and calls updateDeviceMetrics", async () => {
       const minerData = makeMinerData();
       mockFetchMinerData.mockResolvedValue(minerData);
       mockUpdateOne.mockResolvedValue({ ...makeDiscoveredMiner(), minerData });
@@ -430,7 +396,7 @@ describe("tracing.service", () => {
 
       expect(mockFetchMinerData).toHaveBeenCalledWith(device.ip);
       expect(mockUpdateOne).toHaveBeenCalled();
-      expect(mockUpdatePrometheusMetrics).toHaveBeenCalled();
+      expect(mockUpdateDeviceMetrics).toHaveBeenCalledWith(device.mac, minerData);
       expect(mockUpdateOverviewMetrics).toHaveBeenCalled();
 
       const io = getIoInstance() as unknown as MockIO;
@@ -449,6 +415,19 @@ describe("tracing.service", () => {
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining("Failed to poll miner data"),
         expect.any(Error)
+      );
+    });
+
+    it("calls updateDeviceMetrics with zeroed data on poll error", async () => {
+      mockFetchMinerData.mockRejectedValue(new Error("poll failed"));
+      mockUpdateOne.mockResolvedValue(makeDiscoveredMiner());
+
+      const device = makeDiscoveredMiner();
+      await updateOriginalIpsListeners([device], false);
+
+      expect(mockUpdateDeviceMetrics).toHaveBeenCalledWith(
+        device.mac,
+        expect.objectContaining({ wattage: 0 })
       );
     });
 

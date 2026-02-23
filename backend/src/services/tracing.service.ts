@@ -9,14 +9,14 @@
 import { updateOne } from "@pluto/db";
 import { DiscoveredMiner } from "@pluto/interfaces";
 import { createCustomLogger, logger } from "@pluto/logger";
-import { asyncForEach, sanitizeHostname } from "@pluto/utils";
+import { asyncForEach } from "@pluto/utils";
 import { Server as NetServer } from "http";
 import { Server as ServerIO } from "socket.io";
 import { config } from "../config/environment";
 import { extractHostnameFromMinerData } from "./tracing.helpers";
 import {
-  createMetricsForDevice,
-  deleteMetricsForDevice,
+  updateDeviceMetrics,
+  removeDeviceMetrics,
   updateOverviewMetrics,
 } from "./metrics.service";
 import { pyasicBridgeService } from "./pyasic-bridge.service";
@@ -26,6 +26,7 @@ import type { MinerData } from "@pluto/pyasic-bridge-client";
 const getPollIntervalMs = (): number => config.pollIntervalMs;
 
 interface IpMapEntry {
+  mac: string;
   cleanupWs?: () => void;
   timeout?: NodeJS.Timeout;
   minerData?: MinerData;
@@ -114,7 +115,6 @@ function stopDeviceMonitoring(ip: string): void {
   clearTimeout(entry.timeout);
   entry.cleanupWs?.();
 
-  const hostname = extractHostnameFromMinerData(entry.minerData);
   ioInstance?.emit("device_removed", {
     ipRemoved: ip,
     remainingIps: Object.keys(ipMap).filter((k) => k !== ip),
@@ -122,15 +122,16 @@ function stopDeviceMonitoring(ip: string): void {
 
   if (config.deleteDataOnDeviceRemove) {
     try {
-      deleteMetricsForDevice(sanitizeHostname(hostname));
-      logger.info(`Deleted Prometheus metrics for IP ${ip}`);
+      removeDeviceMetrics(entry.mac);
+      logger.info(`Removed Prometheus metrics for device ${entry.mac} (IP ${ip})`);
     } catch (err) {
-      logger.error(`Failed to delete Prometheus metrics for IP ${ip}:`, err);
+      logger.error(`Failed to remove Prometheus metrics for IP ${ip}:`, err);
     }
   }
 
   delete ipMap[ip];
 }
+
 
 /**
  * Start monitoring a single device: register it, run the first poll,
@@ -140,20 +141,12 @@ async function startDeviceMonitoring(
   discoveredMiner: DiscoveredMiner,
   traceLogs?: boolean
 ): Promise<void> {
-  // Register entry BEFORE any async work so concurrent readers see it
   ipMap[discoveredMiner.ip] = {
+    mac: discoveredMiner.mac,
     minerData: discoveredMiner.minerData,
   };
 
   const hostname = extractHostnameFromMinerData(discoveredMiner.minerData);
-  let updatePrometheusMetrics: ReturnType<typeof createMetricsForDevice>["updatePrometheusMetrics"];
-  try {
-    ({ updatePrometheusMetrics } = createMetricsForDevice(sanitizeHostname(hostname)));
-  } catch (err) {
-    logger.error(`Failed to create Prometheus metrics for ${discoveredMiner.ip} (hostname=${hostname}):`, err);
-    delete ipMap[discoveredMiner.ip];
-    return;
-  }
 
   let retryAttempts = 0;
   const maxRetryAttempts = 5;
@@ -236,7 +229,7 @@ async function startDeviceMonitoring(
       }
 
       ioInstance?.emit("stat_update", { ...updatedDevice, tracing: true });
-      updatePrometheusMetrics(minerData);
+      updateDeviceMetrics(discoveredMiner.mac, minerData);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -263,8 +256,7 @@ async function startDeviceMonitoring(
         ioInstance?.emit("error", { ...discoveredMiner, tracing: false, error: errorMessage });
       }
 
-      // Reset Prometheus metrics so stale values aren't reported for offline devices
-      updatePrometheusMetrics({
+      updateDeviceMetrics(discoveredMiner.mac, {
         ip: discoveredMiner.ip,
         hashrate: { rate: 0, unit: "H/s" },
         wattage: 0,
@@ -281,7 +273,6 @@ async function startDeviceMonitoring(
         `pollSystemInfo from ${discoveredMiner.ip} took ${elapsedTime} ms. Waiting for ${remainingTime} ms before next polling.`
       );
 
-      // Schedule next poll only if device is still being monitored
       if (ipMap[discoveredMiner.ip]) {
         const timeoutId = setTimeout(pollSystemInfo, remainingTime);
         ipMap[discoveredMiner.ip].timeout = timeoutId;
@@ -294,7 +285,6 @@ async function startDeviceMonitoring(
     }
   };
 
-  // Run first poll eagerly so callers can await it
   await pollSystemInfo();
 
   if (traceLogs) {
