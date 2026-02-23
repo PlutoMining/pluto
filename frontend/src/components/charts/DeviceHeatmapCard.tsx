@@ -75,6 +75,7 @@ export function DeviceHeatmapCard({
         const power = getWattage(m);
 
         return {
+          mac: device.mac,
           hostname: getHostname(m),
           online: Boolean(device.tracing),
           hashrate,
@@ -147,8 +148,8 @@ export function DeviceHeatmapCard({
 
             return (
               <NextLink
-                key={item.hostname}
-                href={`/monitoring/${encodeURIComponent(item.hostname)}`}
+                key={item.mac}
+                href={`/monitoring/${encodeURIComponent(item.mac)}`}
                 title={title}
                 className={[
                   "group relative block min-h-[86px] border border-border p-3 transition-colors hover:border-foreground",

@@ -113,7 +113,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
           <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
         </div>
         <NextLink
-          href={`/monitoring/${encodeURIComponent(hostname)}`}
+          href={`/monitoring/${encodeURIComponent(device.mac)}`}
           onClick={(e) => e.stopPropagation()}
           className="text-muted-foreground hover:text-foreground"
           aria-label={`Open ${hostname}`}

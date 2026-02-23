@@ -225,7 +225,7 @@ export default function MonitoringTableClient() {
                       </td>
                       <td className="border-t border-border p-3 text-center">
                         <NextLink
-                          href={`/monitoring/${encodeURIComponent(hostname)}`}
+                          href={`/monitoring/${encodeURIComponent(device.mac)}`}
                           className="inline-flex items-center gap-1 font-accent text-sm font-medium underline"
                         >
                           Dashboard <ArrowLeftSmallIcon color="currentColor" />

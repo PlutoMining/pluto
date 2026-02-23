@@ -99,7 +99,7 @@ describe('MonitoringTableClient', () => {
     expect(await screen.findByText('rig-1')).toBeInTheDocument();
 
     const link = screen.getByRole('link', { name: /Dashboard/i }) as HTMLAnchorElement;
-    expect(link.getAttribute('href')).toBe('/monitoring/rig-1');
+    expect(link.getAttribute('href')).toBe('/monitoring/aa');
   });
 
   it('debounces search and re-fetches devices when query is cleared', async () => {

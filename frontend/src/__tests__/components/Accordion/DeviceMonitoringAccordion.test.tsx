@@ -104,8 +104,8 @@ describe("DeviceMonitoringAccordion", () => {
     expect(screen.getByText("diff:222")).toBeInTheDocument();
 
     const links = Array.from(container.querySelectorAll("a[href]"));
-    expect(links.some((a) => a.getAttribute("href") === "/monitoring/miner-01")).toBe(true);
-    expect(links.some((a) => a.getAttribute("href") === "/monitoring/miner-02")).toBe(true);
+    expect(links.some((a) => a.getAttribute("href") === "/monitoring/aa")).toBe(true);
+    expect(links.some((a) => a.getAttribute("href") === "/monitoring/bb")).toBe(true);
 
     // Covers the NextLink onClick stopPropagation handler.
     const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});

@@ -26,9 +26,7 @@ import {
   type TimeRangeKey,
   type PollingIntervalKey,
 } from "@/lib/prometheus";
-import { sanitizeHostname } from "@pluto/utils";
 import {
-  getHostname,
   getHashrateGhs,
   getBestDifficulty,
   getBestSessionDifficulty,
@@ -93,7 +91,7 @@ export default function MonitoringClient({ id }: { id: string }) {
 
   const refreshMs = useMemo(() => resolvePollingMs(polling, autoRefreshMs), [polling, autoRefreshMs]);
 
-  const host = useMemo(() => sanitizeHostname(id), [id]);
+  const deviceId = id;
 
   const temperatureSeries = useMemo(
     () => [
@@ -250,7 +248,7 @@ export default function MonitoringClient({ id }: { id: string }) {
         const response = await axios.get("/api/devices/imprint");
         const imprintedDevices: DiscoveredMiner[] = response.data.data;
 
-        const found = imprintedDevices?.find((d) => getHostname(d.minerData) === id);
+        const found = imprintedDevices?.find((d) => d.mac === id);
         setDevice(found);
         setDeviceLoadState(found != null ? "ready" : "not-found");
 
@@ -301,17 +299,18 @@ export default function MonitoringClient({ id }: { id: string }) {
       try {
         const { start, end, step } = rangeToQueryParams(rangeSeconds);
 
+        const sel = `{device_id="${deviceId}"}`;
         const queries = {
-          hashrate: `${host}_hashrate_ghs`,
-          power: `${host}_power_watts`,
-          efficiency: `${host}_efficiency`,
-          temp: `${host}_temperature_celsius`,
-          fan: `${host}_fanspeed_rpm`,
-          voltage: `${host}_voltage_volts`,
-          frequency: `${host}_frequency_mhz`,
-          freeHeap: `${host}_free_heap_bytes`,
-          freeHeapInternal: `${host}_free_heap_internal_bytes`,
-          freeHeapSpiram: `${host}_free_heap_spiram_bytes`,
+          hashrate: `pluto_device_hashrate_ghs${sel}`,
+          power: `pluto_device_power_watts${sel}`,
+          efficiency: `pluto_device_efficiency${sel}`,
+          temp: `pluto_device_temperature_celsius${sel}`,
+          fan: `pluto_device_fanspeed_rpm${sel}`,
+          voltage: `pluto_device_voltage_volts${sel}`,
+          frequency: `pluto_device_frequency_mhz${sel}`,
+          freeHeap: `pluto_device_free_heap_bytes${sel}`,
+          freeHeapInternal: `pluto_device_free_heap_internal_bytes${sel}`,
+          freeHeapSpiram: `pluto_device_free_heap_spiram_bytes${sel}`,
         };
 
         const options = { signal: controller.signal };
@@ -399,7 +398,7 @@ export default function MonitoringClient({ id }: { id: string }) {
       if (timer) clearTimeout(timer);
       controller.abort();
     };
-  }, [host, rangeSeconds, refreshMs]);
+  }, [deviceId, rangeSeconds, refreshMs]);
 
   return (
     <div className="flex-1 py-6">

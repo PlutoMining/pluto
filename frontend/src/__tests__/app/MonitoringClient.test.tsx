@@ -125,7 +125,7 @@ describe('MonitoringClient', () => {
     socketProvider.useSocket.mockReturnValueOnce({ isConnected: true, socket });
     axios.get.mockReturnValue(new Promise(() => {}));
 
-    const view = render(<MonitoringClient id="rig-1" />);
+    const view = render(<MonitoringClient id="aa" />);
 
     await flushEffects();
 
@@ -178,7 +178,7 @@ describe('MonitoringClient', () => {
       },
     });
 
-    const view = render(<MonitoringClient id="rig-1" />);
+    const view = render(<MonitoringClient id="aa" />);
 
     await flushEffects();
 
@@ -230,7 +230,7 @@ describe('MonitoringClient', () => {
       },
     });
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     await flushEffects();
     expect(await screen.findByText('Custom')).toBeInTheDocument();
@@ -261,7 +261,7 @@ describe('MonitoringClient', () => {
       },
     });
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     await flushEffects();
 
@@ -291,7 +291,7 @@ describe('MonitoringClient', () => {
       },
     });
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     await flushEffects();
 
@@ -343,7 +343,7 @@ describe('MonitoringClient', () => {
         },
       });
 
-      render(<MonitoringClient id="rig-1" />);
+      render(<MonitoringClient id="aa" />);
 
       await flushEffects();
 
@@ -403,7 +403,7 @@ describe('MonitoringClient', () => {
       },
     });
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     await act(async () => {
       deferred.resolve({ status: 'success', data: { resultType: 'matrix', result: [] } });
@@ -450,7 +450,7 @@ describe('MonitoringClient', () => {
       },
     });
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     // Resolve all query_range calls in one go.
     await act(async () => {
@@ -501,7 +501,7 @@ describe('MonitoringClient', () => {
       new Promise((resolve) => setTimeout(() => resolve({ status: 'success', data: { resultType: 'matrix', result: [] } }), 50))
     );
 
-    const view = render(<MonitoringClient id="rig-1" />);
+    const view = render(<MonitoringClient id="aa" />);
     view.unmount();
 
     await act(async () => {
@@ -538,7 +538,7 @@ describe('MonitoringClient', () => {
 
     prom.promQueryRange.mockRejectedValueOnce(new DOMException('Aborted', 'AbortError'));
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     await act(async () => {
       await Promise.resolve();
@@ -553,7 +553,7 @@ describe('MonitoringClient', () => {
     axios.get.mockRejectedValueOnce(new Error('device-fail'));
     prom.promQueryRange.mockRejectedValueOnce(new Error('prom-fail'));
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     await flushEffects();
 
@@ -611,14 +611,14 @@ describe('MonitoringClient', () => {
 
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    const view = render(<MonitoringClient id="rig-1" />);
+    const view = render(<MonitoringClient id="aa" />);
 
     await act(async () => {
       jest.advanceTimersByTime(1);
       await Promise.resolve();
     });
 
-    view.rerender(<MonitoringClient id="rig-2" />);
+    view.rerender(<MonitoringClient id="bb" />);
 
     await act(async () => {
       jest.advanceTimersByTime(1);

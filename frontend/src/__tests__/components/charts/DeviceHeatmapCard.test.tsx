@@ -91,8 +91,8 @@ describe("DeviceHeatmapCard", () => {
     expect(screen.getByText("offline")).toBeInTheDocument();
     expect(screen.getByText("unknown-temp")).toBeInTheDocument();
 
-    // Hot device should get the destructive ring class.
-    const hotLink = container.querySelector('a[href*="/monitoring/hot"]');
+    // Hot device (mac "bb") should get the destructive ring class.
+    const hotLink = container.querySelector('a[href*="/monitoring/bb"]');
     expect(hotLink?.className).toContain("ring-2");
   });
 });
