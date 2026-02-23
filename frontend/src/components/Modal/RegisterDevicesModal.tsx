@@ -73,6 +73,7 @@ function ModalBodyContent({
 
   useEffect(() => {
     setIpAndMacAddress({ ipAddress: "", macAddress: "" });
+    setErrors({ ipAddress: "", macAddress: "" });
     setDiscoveredDevices(null);
     if (tabIndex === 1) {
       getDiscoverDevices();
@@ -154,9 +155,12 @@ function ModalBodyContent({
 
   const registerDevice = async () => {
     try {
-      await axios.patch(`/api/devices/imprint`, {
-        mac: discoveredDevices?.find((d) => d.ip === ipAndMacAddress.ipAddress)?.mac,
-      });
+      const mac = discoveredDevices?.[0]?.mac;
+      if (!mac) {
+        console.error("Cannot register device: MAC address is missing");
+        return;
+      }
+      await axios.patch(`/api/devices/imprint`, { mac });
       await onDevicesChanged();
       onClose();
     } catch (error) {
