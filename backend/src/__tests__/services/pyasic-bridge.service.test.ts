@@ -61,6 +61,7 @@ jest.mock('@pluto/logger', () => ({
 jest.mock('../../config/environment', () => ({
   config: {
     pyasicBridgeHost: 'http://pyasic-bridge:8000',
+    systemInfoTimeoutMs: 1500,
   },
 }));
 
@@ -102,6 +103,7 @@ describe('pyasic-bridge.service', () => {
         path: { ip: '10.0.0.1' },
         responseStyle: 'data',
         throwOnError: false,
+        signal: expect.any(AbortSignal),
       });
       expect(result).toEqual(minerData);
     });
@@ -112,6 +114,19 @@ describe('pyasic-bridge.service', () => {
       const result = await pyasicBridgeService.fetchMinerData('10.0.0.1');
 
       expect(result).toBeNull();
+    });
+
+    it('returns null and logs timeout when request is aborted', async () => {
+      const abortError = new DOMException('The operation was aborted', 'AbortError');
+      mockedGetMinerData.mockRejectedValue(abortError);
+
+      const result = await pyasicBridgeService.fetchMinerData('10.0.0.1');
+
+      expect(result).toBeNull();
+      const { logger } = jest.requireMock('@pluto/logger');
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('timed out after 1500ms')
+      );
     });
 
     it('returns null when result is invalid', async () => {

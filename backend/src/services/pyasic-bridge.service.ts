@@ -85,6 +85,10 @@ class PyasicBridgeService implements IPyasicBridgeService {
   }
 
   async fetchMinerData(ip: string): Promise<MinerData | null> {
+    const timeoutMs = config.systemInfoTimeoutMs;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
       logger.debug(`Fetching miner data for ${ip} from ${this.baseUrl}`);
       const result = await getMinerDataMinerIpDataGet({
@@ -92,6 +96,7 @@ class PyasicBridgeService implements IPyasicBridgeService {
         path: { ip },
         responseStyle: "data",
         throwOnError: false,
+        signal: controller.signal as AbortSignal,
       });
 
       if (result && typeof result === "object" && "ip" in result) {
@@ -100,11 +105,17 @@ class PyasicBridgeService implements IPyasicBridgeService {
       }
       return null;
     } catch (error) {
-      logger.error(`Failed to fetch miner data for ${ip} via pyasic-bridge:`, error);
-      if (error instanceof Error) {
-        logger.error(`Error details: ${error.message}`);
+      if (error instanceof DOMException && error.name === "AbortError") {
+        logger.error(`Fetch miner data for ${ip} timed out after ${timeoutMs}ms`);
+      } else {
+        logger.error(`Failed to fetch miner data for ${ip} via pyasic-bridge:`, error);
+        if (error instanceof Error) {
+          logger.error(`Error details: ${error.message}`);
+        }
       }
       return null;
+    } finally {
+      clearTimeout(timer);
     }
   }
 
