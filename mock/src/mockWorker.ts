@@ -24,11 +24,12 @@ interface ServerInfo {
   startTime: Date;
 }
 
-const { port, hostname, apiVersion, minerType } = workerData as {
+const { port, hostname, apiVersion, minerType, systemInfoOverrides } = workerData as {
   port: number;
   hostname: string;
   apiVersion: DeviceApiVersion;
   minerType?: string;
+  systemInfoOverrides?: Record<string, unknown>;
 };
 
 const activeServers: ServerInfo[] = [];
@@ -45,12 +46,12 @@ const createMockServer = (
 
   const startTime = new Date();
 
-  // Crea il contesto del miner mock e salvalo nell'app Express
   app.locals.mockContext = createMockMinerContext({
     minerType: (minerTypeFromWorker as any) ?? "axeos",
     hostname,
     startTime,
     apiVersion,
+    systemInfoOverrides,
   });
 
   // Mantieni anche i locals esistenti per compatibilità temporanea

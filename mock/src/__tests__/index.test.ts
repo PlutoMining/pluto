@@ -91,8 +91,8 @@ describe("mock index", () => {
       expect.objectContaining({
         message: "Available servers from listing-server:7000",
         servers: [
-          expect.objectContaining({ hostname: "mockaxe1", port: 9001 }),
-          expect.objectContaining({ hostname: "mockaxe2", port: 9002 }),
+          expect.objectContaining({ hostname: "bitaxeGamma2", port: 9001 }),
+          expect.objectContaining({ hostname: "bitaxeSupra1", port: 9002 }),
         ],
       })
     );
@@ -166,7 +166,7 @@ describe("mock index", () => {
     );
   });
 
-  it("uses alternating API versions", async () => {
+  it("passes device profiles with API versions and overrides to workers", async () => {
     const logger = {
       info: jest.fn(),
       error: jest.fn(),
@@ -200,5 +200,14 @@ describe("mock index", () => {
 
     expect(ctorCalls[0].apiVersion).toBe(DeviceApiVersion.Legacy);
     expect(ctorCalls[1].apiVersion).toBe(DeviceApiVersion.New);
+
+    expect(ctorCalls[0].hostname).toBe("bitaxeGamma2");
+    expect(ctorCalls[0].systemInfoOverrides).toEqual(
+      expect.objectContaining({ ASICModel: "BM1370" })
+    );
+    expect(ctorCalls[1].hostname).toBe("bitaxeSupra1");
+    expect(ctorCalls[1].systemInfoOverrides).toEqual(
+      expect.objectContaining({ ASICModel: "BM1368" })
+    );
   });
 });

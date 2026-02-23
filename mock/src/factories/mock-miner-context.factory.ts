@@ -11,6 +11,7 @@ export interface MockMinerContextFactoryOptions {
   hostname: string;
   startTime: Date;
   apiVersion?: DeviceApiVersion;
+  systemInfoOverrides?: Record<string, unknown>;
 }
 
 /**
@@ -33,6 +34,7 @@ export const createMockMinerContext = (
         strategy,
         hostname: options.hostname,
         startTime: options.startTime,
+        initialSystemInfo: options.systemInfoOverrides,
       });
     }
   }
