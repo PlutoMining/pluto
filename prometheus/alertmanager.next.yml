@@ -1,0 +1,16 @@
+# Alertmanager config for Pluto Next (beta). Backend port 7676.
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: pluto-webhook
+  group_by: [alertname, device_mac]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: pluto-webhook
+    webhook_configs:
+      - url: "http://backend:7676/alerts/alertmanager"
+        send_resolved: true

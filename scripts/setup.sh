@@ -82,14 +82,17 @@ setup_directory() {
 # Setup directories for dev environment (no suffix)
 setup_directory "$PROJECT_ROOT/data/prometheus" 65534 65534 "data/prometheus"
 setup_directory "$PROJECT_ROOT/data/leveldb" 1000 1000 "data/leveldb"
+setup_directory "$PROJECT_ROOT/data/alertmanager" 65534 65534 "data/alertmanager"
 
 # Setup directories for next environment (-next suffix)
 setup_directory "$PROJECT_ROOT/data/prometheus-next" 65534 65534 "data/prometheus-next"
 setup_directory "$PROJECT_ROOT/data/leveldb-next" 1000 1000 "data/leveldb-next"
+setup_directory "$PROJECT_ROOT/data/alertmanager-next" 65534 65534 "data/alertmanager-next"
 
 # Setup directories for release environment (-release suffix)
 setup_directory "$PROJECT_ROOT/data/prometheus-release" 65534 65534 "data/prometheus-release"
 setup_directory "$PROJECT_ROOT/data/leveldb-release" 1000 1000 "data/leveldb-release"
+setup_directory "$PROJECT_ROOT/data/alertmanager-release" 65534 65534 "data/alertmanager-release"
 
 echo ""
 

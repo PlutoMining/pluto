@@ -146,6 +146,8 @@ services:
       - "--storage.tsdb.retention.size=5GB"
     volumes:
       - ./data/prometheus-next:/prometheus
+      - ./prometheus/prometheus.next.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
     # ports:
     #   - "9090:9090"
     pid: host
@@ -157,6 +159,16 @@ services:
       timeout: 5s
       retries: 5
     user: "65534:65534"
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    volumes:
+      - ./prometheus/alertmanager.next.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./data/alertmanager-next:/alertmanager
+    restart: on-failure
 
   pyasic-bridge:
     #build:

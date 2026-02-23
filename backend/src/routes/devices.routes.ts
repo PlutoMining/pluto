@@ -16,6 +16,7 @@ import {
   getImprintedDevices,
   imprintDevice,
   imprintDevices,
+  patchDeviceNotificationSettings,
   patchImprintedDevice,
   patchDeviceSystemInfo,
   putListenDevices,
@@ -29,6 +30,7 @@ router.get("/devices/discovered", getDiscoveredDevices);
 router.get("/devices/discover", discoverDevices);
 router.put("/devices/imprint", imprintDevices);
 router.patch("/devices/imprint", imprintDevice);
+router.patch("/devices/imprint/:id/notification-settings", patchDeviceNotificationSettings);
 router.patch("/devices/imprint/:id", patchImprintedDevice);
 router.delete("/devices/imprint/:id", deleteImprintedDevice);
 router.get("/devices/imprint", getImprintedDevices);

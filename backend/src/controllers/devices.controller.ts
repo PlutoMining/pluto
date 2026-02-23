@@ -6,10 +6,10 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
+import type { DeviceNotificationSettings, DiscoveredMiner } from "@pluto/interfaces";
 import { logger } from "@pluto/logger";
 import { Request, Response } from "express";
 import * as deviceService from "../services/device.service";
-import { DiscoveredMiner } from "@pluto/interfaces";
 import type { MinerConfigModelInput } from "@pluto/pyasic-bridge-client";
 import { pyasicBridgeService } from "../services/pyasic-bridge.service";
 
@@ -145,6 +145,26 @@ export const patchImprintedDevice = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error("Error in patchImprintedDevice request:", error);
     res.status(500).json({ error: "Failed to process the request" });
+  }
+};
+
+export const patchDeviceNotificationSettings = async (req: Request, res: Response) => {
+  const { notificationSettings } = req.body as { notificationSettings: DeviceNotificationSettings };
+
+  try {
+    const data = await deviceService.patchDeviceNotificationSettings(
+      req.params.id,
+      notificationSettings
+    );
+
+    if (data) {
+      res.status(200).json({ message: "Device notification settings updated", data });
+    } else {
+      res.status(404).json({ message: "Device not found" });
+    }
+  } catch (error) {
+    logger.error("Error in patchDeviceNotificationSettings request:", error);
+    res.status(500).json({ error: "Failed to update device notification settings" });
   }
 };
 

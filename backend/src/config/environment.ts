@@ -20,6 +20,8 @@ interface EnvConfig {
   systemInfoTimeoutMs: number;
   /** Interval between backend polls per device (ms). Each poll triggers one pyasic-bridge call, which may issue several HTTP requests to the miner. */
   pollIntervalMs: number;
+  /** Optional shared secret for Alertmanager webhook (Authorization: Bearer <secret>). If set, webhook requests must include it. */
+  alertmanagerWebhookSecret: string | undefined;
 }
 
 const requireEnv = (name: string): string => {
@@ -59,4 +61,5 @@ export const config: EnvConfig = {
   deleteDataOnDeviceRemove: parseBoolean("DELETE_DATA_ON_DEVICE_REMOVE"),
   systemInfoTimeoutMs: parseNumber("SYSTEM_INFO_TIMEOUT_MS", 1500),
   pollIntervalMs: parseNumber("POLL_INTERVAL_MS", 5000),
+  alertmanagerWebhookSecret: process.env.ALERTMANAGER_WEBHOOK_SECRET?.trim() || undefined,
 };

@@ -23,7 +23,7 @@ gallery:
   - https://raw.githubusercontent.com/PlutoMining/pluto/main/images/pluto-next/screenshot_06.png
 path: ""
 defaultPassword: ""
-releaseNotes: >
+releaseNotes: >-
   Version 2.0.0-beta.1
   - New layout
   - New graphs and charts

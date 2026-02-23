@@ -8,6 +8,7 @@
 
 import type { Entity } from "./entity.interface";
 import type { MinerData } from "@pluto/pyasic-bridge-client";
+import type { DeviceNotificationSettings } from "./notifications.interface";
 
 /**
  * Generic discovered miner interface based on pyasic-bridge MinerData structure.
@@ -56,4 +57,10 @@ export interface DiscoveredMiner extends Entity {
    * Set by the backend from in-memory state; not persisted.
    */
   tracing?: boolean;
+
+  /**
+   * Per-device notification settings (alerts, thresholds, offline).
+   * Optional; default disabled when absent.
+   */
+  notificationSettings?: DeviceNotificationSettings;
 }

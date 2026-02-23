@@ -88,6 +88,7 @@ services:
     volumes:
       - ${APP_DATA_DIR}/data/prometheus:/prometheus
       - ${APP_DATA_DIR}/data/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${APP_DATA_DIR}/data/prometheus/rules:/etc/prometheus/rules:ro
     pid: host
     healthcheck:
       test:
@@ -97,6 +98,16 @@ services:
       timeout: 5s
       retries: 5
     user: "65534:65534"
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    volumes:
+      - ${APP_DATA_DIR}/data/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ${APP_DATA_DIR}/data/alertmanager:/alertmanager
+    restart: on-failure
 
   pyasic-bridge:
     image: ghcr.io/plutomining/pluto-pyasic-bridge:1.0.0-beta.2@sha256:02781d7d33cb26937352005dfa6f079508cc9fe0df2482ce04b887608aae712a

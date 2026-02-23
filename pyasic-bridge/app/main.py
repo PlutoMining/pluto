@@ -28,7 +28,12 @@ def _setup_root_logging() -> None:
         _h.setLevel(logging.INFO)
         _h.setFormatter(logging.Formatter("%(levelname)s [%(name)s] %(message)s"))
         _root.addHandler(_h)
+
+    # Application logs (app.*) at INFO, external libraries kept quieter.
     logging.getLogger("app").setLevel(logging.INFO)
+
+    # Reduce noise from HTTP client library in normal operation.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 _setup_root_logging()

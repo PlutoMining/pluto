@@ -143,6 +143,7 @@ services:
     volumes:
       - ./data/prometheus-release:/prometheus
       - ./prometheus/prometheus.release.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules:/etc/prometheus/rules:ro
     # ports:
     #   - "9090:9090"
     pid: host
@@ -154,6 +155,16 @@ services:
       timeout: 5s
       retries: 5
     user: "65534:65534"
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    volumes:
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./data/alertmanager-release:/alertmanager
+    restart: on-failure
 
   pyasic-bridge:
     build:

@@ -358,6 +358,59 @@ describe('device.service', () => {
     });
   });
 
+  describe('patchDeviceNotificationSettings', () => {
+    it('updates only notificationSettings when device exists', async () => {
+      const existing = makeDiscoveredMiner({ mac: 'mac-4' });
+      db.findOne.mockResolvedValue(existing);
+      const notificationSettings = {
+        enabled: true,
+        offline: { enabled: true },
+        thresholds: {},
+      };
+      const updated = { ...existing, notificationSettings };
+      db.updateOne.mockResolvedValue(updated);
+
+      const result = await deviceService.patchDeviceNotificationSettings('mac-4', notificationSettings);
+
+      expect(db.findOne).toHaveBeenCalledWith('pluto_core', 'devices:imprinted', 'mac-4');
+      expect(db.updateOne).toHaveBeenCalledWith(
+        'pluto_core',
+        'devices:imprinted',
+        'mac-4',
+        { notificationSettings }
+      );
+      expect(result).toEqual(updated);
+    });
+
+    it('returns null when device not found', async () => {
+      db.findOne.mockResolvedValue(null);
+
+      const result = await deviceService.patchDeviceNotificationSettings('mac-4', {
+        enabled: false,
+        offline: { enabled: false },
+        thresholds: {},
+      });
+
+      expect(db.updateOne).not.toHaveBeenCalled();
+      expect(result).toBeNull();
+    });
+
+    it('logs and throws on db error', async () => {
+      db.findOne.mockResolvedValue(makeDiscoveredMiner());
+      const error = new Error('db down');
+      db.updateOne.mockRejectedValue(error);
+
+      await expect(
+        deviceService.patchDeviceNotificationSettings('mac-4', {
+          enabled: false,
+          offline: { enabled: false },
+          thresholds: {},
+        })
+      ).rejects.toThrow('db down');
+      expect(logger.error).toHaveBeenCalledWith('Error in patchDeviceNotificationSettings:', error);
+    });
+  });
+
   describe('deleteImprintedDevice', () => {
     it('deletes imprinted device by id', async () => {
       db.deleteOne.mockResolvedValue(null);

@@ -10,7 +10,13 @@ import { useSocket } from "@/providers/SocketProvider";
 import { Modal } from "@/components/ui/modal";
 import { useDisclosure } from "@/hooks/useDisclosure";
 import { cn } from "@/lib/utils";
-import type { DiscoveredMiner, Preset } from "@pluto/interfaces";
+import type {
+  DeviceNotificationSettings,
+  DiscoveredMiner,
+  MetricKey,
+  Preset,
+  ThresholdConfig,
+} from "@pluto/interfaces";
 import type { MinerConfigModelInput } from "@pluto/pyasic-bridge-client";
 import { validateDomain, validateTCPPort } from "@pluto/utils";
 import {
@@ -27,7 +33,7 @@ import {
 } from "@/utils/deviceConfigHelpers";
 import { MinerSettingsFactory, type MinerSettingsModel } from "@/utils/minerSettingsFactory";
 import axios from "axios";
-import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { AlertInterface, AlertStatus } from "../Alert/interfaces";
 import { DeviceStatusBadge } from "../Badge";
 import Button from "../Button/Button";
@@ -500,6 +506,19 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     };
   });
 
+  const defaultNotificationSettings: DeviceNotificationSettings = {
+    enabled: false,
+    offline: { enabled: false },
+    thresholds: {},
+  };
+  const [notificationSettings, setNotificationSettings] = useState<DeviceNotificationSettings>(
+    () => deviceInfo.notificationSettings ?? defaultNotificationSettings
+  );
+  const [notificationSaveStatus, setNotificationSaveStatus] = useState<
+    "idle" | "saving" | "success" | "error"
+  >("idle");
+  const lastNotificationSettingsSyncedMacRef = useRef<string | null>(null);
+
   // Form state for stratum/pool config
   const [stratumFormState, setStratumFormState] = useState<StratumFormState>(() => ({
     stratumURL: getStratumUrl(deviceInfo.minerData),
@@ -557,6 +576,15 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
       // Update miner-specific settings model
       const model = MinerSettingsFactory.createModelForMiner(device);
       setMinerSettingsModel(model);
+
+      // Only sync notification settings when we're showing a different device (MAC changed).
+      // Otherwise socket/parent updates would overwrite the user's unsaved "Enable notifications" checkbox.
+      if (device.mac !== lastNotificationSettingsSyncedMacRef.current) {
+        lastNotificationSettingsSyncedMacRef.current = device.mac;
+        setNotificationSettings(
+          device.notificationSettings ?? defaultNotificationSettings
+        );
+      }
     }
   }, [device]);
 
@@ -1007,6 +1035,57 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     setIsRestartModalOpen(true);
   };
 
+  const METRIC_LABELS: Record<MetricKey, string> = {
+    power_watts: "Power (W)",
+    temperature_celsius: "Temperature (°C)",
+    vr_temperature_celsius: "VR temperature (°C)",
+    hashrate_ghs: "Hashrate (GH/s)",
+    fanspeed_rpm: "Fan speed (RPM)",
+    shares_rejected: "Shares rejected",
+  };
+
+  const handleSaveNotificationSettings = useCallback(async () => {
+    setNotificationSaveStatus("saving");
+    try {
+      const { data } = await axios.patch<{ message: string; data: DiscoveredMiner }>(
+        `/api/devices/imprint/${device.mac}/notification-settings`,
+        { notificationSettings }
+      );
+      if (data.data) {
+        setDevice((prev) => ({ ...prev, notificationSettings: data.data!.notificationSettings }));
+        setNotificationSaveStatus("success");
+        setAlert({
+          status: AlertStatus.SUCCESS,
+          title: "Notifications saved",
+          message: "Device notification settings have been saved.",
+        });
+        onOpenAlert();
+      }
+    } catch {
+      setNotificationSaveStatus("error");
+      setAlert({
+        status: AlertStatus.ERROR,
+        title: "Save failed",
+        message: "Failed to save device notification settings.",
+      });
+      onOpenAlert();
+    }
+  }, [device.mac, notificationSettings, setAlert, onOpenAlert]);
+
+  const updateNotificationSetting = useCallback(
+    <K extends keyof DeviceNotificationSettings>(key: K, value: DeviceNotificationSettings[K]) => {
+      setNotificationSettings((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
+
+  const updateThreshold = useCallback((metric: MetricKey, config: ThresholdConfig) => {
+    setNotificationSettings((prev) => ({
+      ...prev,
+      thresholds: { ...prev.thresholds, [metric]: config },
+    }));
+  }, []);
+
   return (
     <>
       <summary className="flex cursor-pointer items-center justify-between gap-4 bg-card px-4 py-3 hover:bg-muted">
@@ -1092,7 +1171,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
           <div className="flex flex-col gap-4">
             <p className="font-heading text-sm font-bold uppercase">Fan settings</p>
-            <div className="grid grid-cols-1 gap-4 tablet:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
               <Select
                 id={`${device.mac}-fanMode`}
                 label="Fan Mode"
@@ -1201,7 +1280,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                   <p className="font-heading text-sm font-bold uppercase">Hardware settings</p>
                   <div className="flex flex-col gap-4">
                     {/* Row 1: selects */}
-                    <div className="grid grid-cols-1 gap-4 tablet:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                       {renderField("frequency")}
                       {renderField("core_voltage")}
                       {renderField("rotation")}
@@ -1209,7 +1288,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                     </div>
 
                     {/* Row 2: checkboxes + stats */}
-                    <div className="grid grid-cols-1 gap-4 tablet:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                       {renderField("overheat_mode")}
                       {renderField("overclock_enabled")}
                       {renderField("invertscreen")}
@@ -1224,7 +1303,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
             return (
               <div className="flex flex-col gap-4">
                 <p className="font-heading text-sm font-bold uppercase">Hardware settings</p>
-                <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                   {extraConfigFields.map((fieldName) => renderField(fieldName))}
                 </div>
               </div>
@@ -1368,6 +1447,119 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <p className="font-heading text-sm font-bold uppercase">Notifications</p>
+            <p className="text-sm text-muted-foreground">
+              Enable alerts for this device (offline and threshold alerts use global ntfy settings).
+            </p>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={notificationSettings.enabled}
+                onChange={(e) =>
+                  updateNotificationSetting("enabled", e.target.checked)
+                }
+                className="h-4 w-4 rounded border border-input accent-primary"
+              />
+              <span className="text-sm">Enable notifications for this device</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={notificationSettings.offline?.enabled ?? false}
+                onChange={(e) =>
+                  updateNotificationSetting("offline", {
+                    ...notificationSettings.offline,
+                    enabled: e.target.checked,
+                  })
+                }
+                className="h-4 w-4 rounded border border-input accent-primary"
+              />
+              <span className="text-sm">Alert when device goes offline</span>
+            </label>
+            <div>
+              <p className="mb-2 text-sm font-medium">Thresholds</p>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {(Object.keys(METRIC_LABELS) as MetricKey[]).map((metric) => {
+                  const th = notificationSettings.thresholds?.[metric] ?? {
+                    enabled: false,
+                    min: undefined,
+                    max: undefined,
+                  };
+                  return (
+                    <div
+                      key={metric}
+                      className="flex flex-col gap-2 rounded border border-border p-3"
+                    >
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={th.enabled}
+                          onChange={(e) =>
+                            updateThreshold(metric, {
+                              ...th,
+                              enabled: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4 rounded border border-input accent-primary"
+                        />
+                        <span className="text-sm">{METRIC_LABELS[metric]}</span>
+                      </label>
+                      {th.enabled && (
+                        <div className="flex gap-2">
+                          <Input
+                            name={`${device.mac}-${metric}-min`}
+                            id={`${device.mac}-${metric}-min`}
+                            label="Min"
+                            type="number"
+                            value={th.min ?? ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              const n = v === "" ? undefined : parseFloat(v);
+                              updateThreshold(metric, {
+                                ...th,
+                                min: Number.isFinite(n) ? n : undefined,
+                              });
+                            }}
+                            placeholder="—"
+                          />
+                          <Input
+                            name={`${device.mac}-${metric}-max`}
+                            id={`${device.mac}-${metric}-max`}
+                            label="Max"
+                            type="number"
+                            value={th.max ?? ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              const n = v === "" ? undefined : parseFloat(v);
+                              updateThreshold(metric, {
+                                ...th,
+                                max: Number.isFinite(n) ? n : undefined,
+                              });
+                            }}
+                            placeholder="—"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <Button
+              variant="outlined"
+              label={
+                notificationSaveStatus === "saving"
+                  ? "Saving…"
+                  : notificationSaveStatus === "success"
+                    ? "Saved"
+                    : "Save notification settings"
+              }
+              onClick={handleSaveNotificationSettings}
+              disabled={notificationSaveStatus === "saving"}
+            />
           </div>
 
           <div>

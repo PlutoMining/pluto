@@ -15,8 +15,10 @@ import { Server as ServerIO } from "socket.io";
 import { config } from "../config/environment";
 import { extractHostnameFromMinerData } from "./tracing.helpers";
 import {
+  clearLabelBasedMetricsForDevice,
   createMetricsForDevice,
   deleteMetricsForDevice,
+  updateLabelBasedMetrics,
   updateOverviewMetrics,
 } from "./metrics.service";
 import { pyasicBridgeService } from "./pyasic-bridge.service";
@@ -30,6 +32,7 @@ interface IpMapEntry {
   timeout?: NodeJS.Timeout;
   minerData?: MinerData;
   tracing?: boolean;
+  mac?: string;
 }
 
 let isListeningLogs = false;
@@ -115,13 +118,17 @@ function stopDeviceMonitoring(ip: string): void {
     remainingIps: Object.keys(ipMap).filter((k) => k !== ip),
   });
 
+  const sanitizedHostname = sanitizeHostname(hostname);
   if (config.deleteDataOnDeviceRemove) {
     try {
-      deleteMetricsForDevice(sanitizeHostname(hostname));
+      deleteMetricsForDevice(sanitizedHostname);
       logger.info(`Deleted Prometheus metrics for IP ${ip}`);
     } catch (err) {
       logger.error(`Failed to delete Prometheus metrics for IP ${ip}:`, err);
     }
+  }
+  if (entry.mac) {
+    clearLabelBasedMetricsForDevice(entry.mac, sanitizedHostname);
   }
 
   delete ipMap[ip];
@@ -138,6 +145,7 @@ async function startDeviceMonitoring(
   // Register entry BEFORE any async work so concurrent readers see it
   ipMap[discoveredMiner.ip] = {
     minerData: discoveredMiner.minerData,
+    mac: discoveredMiner.mac,
   };
 
   const hostname = extractHostnameFromMinerData(discoveredMiner.minerData);
@@ -209,13 +217,11 @@ async function startDeviceMonitoring(
         throw new Error("Failed to fetch miner data");
       }
 
-      const updatedMiner: DiscoveredMiner = { ...discoveredMiner, minerData };
-
       const updatedDevice = await updateOne<DiscoveredMiner>(
         "pluto_core",
         "devices:imprinted",
         discoveredMiner.mac,
-        updatedMiner
+        { minerData, tracing: true }
       );
 
       if (ipMap[discoveredMiner.ip]) {
@@ -225,6 +231,13 @@ async function startDeviceMonitoring(
 
       ioInstance?.emit("stat_update", { ...updatedDevice, tracing: true });
       updatePrometheusMetrics(minerData);
+      const hostname = sanitizeHostname(extractHostnameFromMinerData(minerData));
+      updateLabelBasedMetrics(
+        discoveredMiner.mac,
+        hostname,
+        minerData,
+        updatedDevice.notificationSettings
+      );
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -240,12 +253,16 @@ async function startDeviceMonitoring(
           "pluto_core",
           "devices:imprinted",
           discoveredMiner.mac,
-          { ...discoveredMiner }
+          { tracing: false }
         );
 
         const payload = { ...updatedDevice, tracing: false };
         ioInstance?.emit("stat_update", payload);
         ioInstance?.emit("error", { ...payload, error: errorMessage });
+        const hostnameOffline = sanitizeHostname(
+          extractHostnameFromMinerData(discoveredMiner.minerData)
+        );
+        clearLabelBasedMetricsForDevice(discoveredMiner.mac, hostnameOffline);
       } catch (dbError) {
         logger.error(`Failed to persist offline state for ${discoveredMiner.ip}:`, dbError);
         ioInstance?.emit("error", { ...discoveredMiner, tracing: false, error: errorMessage });

@@ -7,6 +7,11 @@
 */
 
 import React from "react";
+<<<<<<< Updated upstream
+=======
+import { keyframes } from "@emotion/react";
+import { Flex, Box, usePrefersReducedMotion, useToken } from "@chakra-ui/react";
+>>>>>>> Stashed changes
 
 export const CircularProgressWithDots = () => {
   return (

@@ -55,12 +55,15 @@ import promClient from 'prom-client';
 const gaugeInstances = (promClient as unknown as { __gaugeInstances: Map<string, any> }).__gaugeInstances;
 const { logger } = jest.requireMock('@pluto/logger');
 
+import type { DeviceNotificationSettings } from "@pluto/interfaces";
 import {
+  clearLabelBasedMetricsForDevice,
   createMetricsForDevice,
   deleteMetricsForDevice,
   register,
+  updateLabelBasedMetrics,
   updateOverviewMetrics,
-} from '@/services/metrics.service';
+} from "@/services/metrics.service";
 
 describe('metrics.service', () => {
   beforeEach(() => {
@@ -306,6 +309,82 @@ describe('metrics.service', () => {
 
       const acceptedGauge = gaugeInstances.get('shares_by_pool_accepted');
       expect(acceptedGauge?.labels).toHaveBeenCalledWith('unknown:0');
+    });
+  });
+
+  describe("updateLabelBasedMetrics", () => {
+    it("sets online and notifications_enabled and metric values", () => {
+      const minerData: MinerData = {
+        ip: "10.0.0.1",
+        wattage: 100,
+        hashrate: { rate: 50, unit: "GH/s" },
+        temperature_avg: 55,
+      } as MinerData;
+      const notificationSettings: DeviceNotificationSettings = {
+        enabled: true,
+        offline: { enabled: true },
+        thresholds: {},
+      };
+
+      updateLabelBasedMetrics("aa:bb:cc", "rig1", minerData, notificationSettings);
+
+      const onlineGauge = gaugeInstances.get("pluto_device_online");
+      expect(onlineGauge?.labels).toHaveBeenCalledWith("aa:bb:cc", "rig1");
+      expect(onlineGauge?.labels().set).toHaveBeenCalledWith(1);
+
+      const enabledGauge = gaugeInstances.get("pluto_device_notifications_enabled");
+      expect(enabledGauge?.labels).toHaveBeenCalledWith("aa:bb:cc", "rig1");
+      expect(enabledGauge?.labels().set).toHaveBeenCalledWith(1);
+
+      const metricGauge = gaugeInstances.get("pluto_device_metric");
+      expect(metricGauge?.labels).toHaveBeenCalledWith("aa:bb:cc", "rig1", "power_watts");
+      expect(metricGauge?.labels).toHaveBeenCalledWith("aa:bb:cc", "rig1", "temperature_celsius");
+      expect(metricGauge?.labels).toHaveBeenCalledWith("aa:bb:cc", "rig1", "hashrate_ghs");
+    });
+
+    it("sets notifications_enabled to 0 when disabled", () => {
+      const minerData = { ip: "10.0.0.1" } as MinerData;
+
+      updateLabelBasedMetrics("mac", "host", minerData, { enabled: false, offline: { enabled: false }, thresholds: {} });
+
+      const enabledGauge = gaugeInstances.get("pluto_device_notifications_enabled");
+      expect(enabledGauge?.labels().set).toHaveBeenCalledWith(0);
+    });
+
+    it("sets threshold min/max when configured", () => {
+      const minerData = { ip: "10.0.0.1" } as MinerData;
+      const notificationSettings: DeviceNotificationSettings = {
+        enabled: true,
+        offline: { enabled: false },
+        thresholds: {
+          temperature_celsius: { enabled: true, min: 0, max: 80 },
+        },
+      };
+
+      updateLabelBasedMetrics("mac", "host", minerData, notificationSettings);
+
+      const minGauge = gaugeInstances.get("pluto_threshold_min");
+      const maxGauge = gaugeInstances.get("pluto_threshold_max");
+      expect(minGauge?.labels).toHaveBeenCalledWith("mac", "host", "temperature_celsius");
+      expect(maxGauge?.labels).toHaveBeenCalledWith("mac", "host", "temperature_celsius");
+      expect(minGauge?.labels().set).toHaveBeenCalledWith(0);
+      expect(maxGauge?.labels().set).toHaveBeenCalledWith(80);
+    });
+  });
+
+  describe("clearLabelBasedMetricsForDevice", () => {
+    it("sets online and notifications and metrics to 0", () => {
+      clearLabelBasedMetricsForDevice("aa:bb", "hostname");
+
+      const onlineGauge = gaugeInstances.get("pluto_device_online");
+      expect(onlineGauge?.labels).toHaveBeenCalledWith("aa:bb", "hostname");
+      expect(onlineGauge?.labels().set).toHaveBeenCalledWith(0);
+
+      const enabledGauge = gaugeInstances.get("pluto_device_notifications_enabled");
+      expect(enabledGauge?.labels().set).toHaveBeenCalledWith(0);
+
+      const metricGauge = gaugeInstances.get("pluto_device_metric");
+      expect(metricGauge?.labels).toHaveBeenCalledWith("aa:bb", "hostname", "power_watts");
     });
   });
 });

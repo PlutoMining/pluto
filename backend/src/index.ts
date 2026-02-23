@@ -13,6 +13,8 @@ import { config } from "./config/environment";
 import metricsRoutes from "./routes/metrics.routes";
 import devicesRoutes from "./routes/devices.routes";
 import presetsRoutes from "./routes/presets.routes";
+import notificationsRoutes from "./routes/notifications.routes";
+import alertsRoutes from "./routes/alerts.routes";
 import socketRoutes from "./routes/socket.routes";
 import prometheusRoutes from "./routes/prometheus.routes";
 import { listenToDevices } from "./services/device.service";
@@ -33,6 +35,8 @@ export function createBackendServer() {
   app.use(prometheusRoutes);
   app.use(devicesRoutes);
   app.use(presetsRoutes);
+  app.use(notificationsRoutes);
+  app.use(alertsRoutes);
   app.use(socketRoutes);
 
   return { app, server };

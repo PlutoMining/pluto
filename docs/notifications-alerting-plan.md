@@ -1,39 +1,39 @@
 # Notifications + Alerting (Prometheus + Alertmanager + Pluto)
 
-## Obiettivo
+## Objective
 
-- Configurare notifiche per-device con soglie su metriche (Device Settings).
-- Configurare canale notifiche globale via ntfy (Settings).
-- Usare Prometheus + Alertmanager per lo stato degli alert (firing/resolved).
-- Usare Pluto backend come dispatcher dei canali (ntfy oggi, estendibile domani).
+- Configure per-device notifications with metric thresholds (Device Settings).
+- Configure global notification channel via ntfy (Settings).
+- Use Prometheus + Alertmanager for alert state (firing/resolved).
+- Use Pluto backend as channel dispatcher (ntfy today, extensible later).
 
-## Architettura (high level)
+## Architecture (high level)
 
 1. Pluto backend:
-   - Polling dispositivi (gia' esistente).
-   - Espone `/metrics` (gia' esistente).
-   - Espone anche metriche label-based per-device e metriche di soglia (nuove).
-   - Riceve webhook da Alertmanager e inoltra ai canali (nuovo).
+   - Device polling (already in place).
+   - Exposes `/metrics` (already in place).
+   - Also exposes label-based per-device metrics and threshold metrics (new).
+   - Receives webhook from Alertmanager and forwards to channels (new).
 2. Prometheus:
-   - Scrape `backend:/metrics`.
-   - Carica regole alert statiche.
-   - Invia gli alert ad Alertmanager.
+   - Scrapes `backend:/metrics`.
+   - Loads static alert rules.
+   - Sends alerts to Alertmanager.
 3. Alertmanager:
-   - Raggruppa/dedup/silence/repeat.
-   - Invia webhook a Pluto backend.
+   - Groups/dedup/silence/repeat.
+   - Sends webhook to Pluto backend.
 4. Ntfy:
-   - Pluto backend pubblica su `${serverUrl}/${topic}`.
+   - Pluto backend publishes to `${serverUrl}/${topic}`.
 
-## Principi chiave
+## Key principles
 
-- Soglie per-device NON generano regole dinamiche:
-  - le soglie sono metriche (`pluto_threshold_*`) e PromQL fa join su label.
-- I segreti dei canali (password/token) restano in Pluto (DB/env), non in Alertmanager/Prometheus.
-- UI predisposta per piu' provider, ma implementiamo solo `ntfy`.
+- Per-device thresholds do **not** generate dynamic rules:
+  - thresholds are metrics (`pluto_threshold_*`) and PromQL joins on labels.
+- Channel secrets (password/token) stay in Pluto (DB/env), not in Alertmanager/Prometheus.
+- UI is prepared for multiple providers, but only `ntfy` is implemented.
 
-## Modello dati (common/interfaces)
+## Data model (common/interfaces)
 
-Aggiungere `common/interfaces/notifications.interface.ts` ed esportarlo da `common/interfaces/index.ts`.
+Add `common/interfaces/notifications.interface.ts` and export it from `common/interfaces/index.ts`.
 
 ### Global settings
 
@@ -41,7 +41,7 @@ Aggiungere `common/interfaces/notifications.interface.ts` ed esportarlo da `comm
   - `enabled: boolean`
   - `channels: NotificationChannel[]`
 
-- `NotificationChannel` (union, estendibile):
+- `NotificationChannel` (union, extensible):
   - `{ type: "ntfy"; enabled: boolean; config: NtfyConfig }`
   - (future) `{ type: "telegram" | "discord" | ... }` placeholder
 
@@ -55,7 +55,7 @@ Aggiungere `common/interfaces/notifications.interface.ts` ed esportarlo da `comm
 
 ### Per-device
 
-Estendere `Device` in `common/interfaces/device-info.interface.ts` con:
+Extend `Device` in `common/interfaces/device-info.interface.ts` with:
 
 - `notificationSettings?: DeviceNotificationSettings`
 
@@ -69,87 +69,106 @@ Estendere `Device` in `common/interfaces/device-info.interface.ts` con:
   - `min?: number`
   - `max?: number`
 
-- `MetricKey` (string union o enum):
-  - esempio: `"power_watts" | "temperature_celsius" | "vr_temperature_celsius" | "hashrate_ghs" | "fanspeed_rpm" | "shares_rejected"`
+- `MetricKey` (string union or enum):
+  - e.g. `"power_watts" | "temperature_celsius" | "vr_temperature_celsius" | "hashrate_ghs" | "fanspeed_rpm" | "shares_rejected"`
 
-Compatibilita': tutto opzionale; default disabilitato.
+Compatibility: all optional; default disabled.
 
-## Persistenza (LevelDB)
+## Persistence (LevelDB)
 
 - Global:
   - key: `settings:notifications` (db `pluto_core`)
 - Per-device:
-  - campo `notificationSettings` dentro record `devices:imprinted:<mac>`.
+  - field `notificationSettings` inside record `devices:imprinted:<mac>`.
 
-Nota: `@pluto/db updateOne()` fa shallow-merge; evitare update con oggetti completi stantii.
+Note: `@pluto/db updateOne()` does shallow-merge; avoid updates with full stale objects.
 
 ## Backend: API
 
-### Settings globali notifiche
+### Global notification settings
 
 - `GET /settings/notifications`
-  - ritorna `NotificationSettings`
-  - NON ritorna `password/token` in chiaro (solo `hasPassword/hasToken`)
+  - returns `NotificationSettings`
+  - does **not** return `password/token` in plain text (only `hasPassword/hasToken`)
 - `PUT /settings/notifications`
-  - salva settings
-  - merge credenziali: se `password/token` non presenti, mantenere quelle esistenti
+  - saves settings
+  - merges credentials: if `password/token` not provided, keep existing ones
 - `POST /settings/notifications/test`
-  - invia test su canali abilitati
+  - sends test to enabled channels
 
 ### Device notification settings
 
 - `PATCH /devices/imprint/:id/notification-settings`
-  - aggiorna solo `notificationSettings` del device
-  - non tocca `info`/system
+  - updates only the device's `notificationSettings`
+  - does not touch `info`/system
 
-### Webhook Alertmanager
+### Alertmanager webhook
 
 - `POST /alerts/alertmanager`
-  - riceve payload firing/resolved
-  - formatta messaggio
-  - invia via ntfy (e in futuro altri canali)
+  - receives firing/resolved payload
+  - formats message
+  - sends via ntfy (and future channels)
 
-Sicurezza consigliata:
+Recommended security:
 
-- shared secret via header `Authorization: Bearer ...` (configurato in Alertmanager e backend env)
+- shared secret via header `Authorization: Bearer ...` (configured in Alertmanager and backend env)
+
+### Alertmanager: routes and contracts
+
+**Does Alertmanager expose routes?** Yes. Prometheus Alertmanager exposes an HTTP API (v2) with a published [OpenAPI spec](https://github.com/prometheus/alertmanager/blob/main/api/v2/openapi.yaml):
+
+- **Management**: `GET /-/healthy`, `GET /-/ready`, `POST /-/reload`
+- **API v2** (base path `/api/v2/`): `GET /status`, `GET /receivers`, `GET/POST /alerts`, `GET /alerts/groups`, `GET/POST /silences`, `GET/DELETE /silence/{silenceID}`
+
+**Contracts (like pyasic-bridge)?** Two directions:
+
+1. **Inbound (Alertmanager → Pluto)**  
+   Alertmanager sends a webhook to our `POST /alerts/alertmanager`. The request body is the [Alertmanager webhook payload](https://prometheus.io/docs/alerting/latest/configuration/#webhook_config) (list of alerts with status, labels, annotations). We should define **inbound types** (e.g. in `common/interfaces` or `backend` types) for this payload so the backend parses and validates it in a typed way. No separate client package: we own the endpoint and only need the request body shape.
+
+2. **Outbound (Pluto → Alertmanager)**  
+   If we add features that **call** Alertmanager (e.g. list active alerts, list/create/delete silences, show status in the UI), we can introduce an **Alertmanager client** with explicit contracts:
+   - **Option A**: Add `common/alertmanager-client` generated from the official Alertmanager OpenAPI (similar to `common/pyasic-bridge-client` from pyasic-bridge’s OpenAPI). Gives typed `getAlerts()`, `getSilences()`, `postSilences()`, etc.
+   - **Option B**: Use the OpenAPI spec only for reference and hand-write a thin client and types for the subset of endpoints we need.
+
+Recommendation: define **inbound webhook types** as part of the notifications work (so the alertmanager webhook handler is typed and testable). Add an **outbound client** only when we implement features that call Alertmanager (e.g. alerts/silences UI or API).
 
 ## Backend: ntfy sender
 
-- `POST ${serverUrl}/${topic}` body: testo
-- Headers: `Title`, `Priority`, `Tags` (opzionali)
+- `POST ${serverUrl}/${topic}` body: text
+- Headers: `Title`, `Priority`, `Tags` (optional)
 - Auth:
   - basic: `Authorization: Basic ...`
   - token: `Authorization: Bearer ...`
-- Mai loggare credenziali.
-- Redaction: estendere `backend/src/utils/redact-secrets.ts` per rimuovere campi credenziali.
+- Never log credentials.
+- Redaction: extend `backend/src/utils/redact-secrets.ts` to strip credential fields.
 
-## Fix necessario: evitare clobber delle impostazioni device
+## Required fix: avoid clobbering device settings
 
-Problema:
+Problem:
 
-- `backend/src/services/tracing.service.ts` fa `updateOne(..., extendedDevice)` e puo' sovrascrivere campi configurati dall'utente.
+- `backend/src/services/tracing.service.ts` does `updateOne(..., extendedDevice)` and can overwrite user-configured fields.
 
 Fix:
 
-- nel polling success aggiornare solo:
+- on successful polling, update only:
   - `{ tracing: true, info: normalizedInfo }`
-- nel polling failure (gia' presente):
+- on polling failure (already present):
   - `{ tracing: false }`
 
-Questo evita di sovrascrivere `notificationSettings` (e future impostazioni).
+This prevents overwriting `notificationSettings` (and future settings).
 
-## Metriche Prometheus (label-based + threshold)
+## Prometheus metrics (label-based + threshold)
 
-Mantenere le metriche esistenti `${hostname}_*` per compat.
+Keep existing `${hostname}_*` metrics for compatibility.
 
-Aggiungere nuove metriche (in `backend/src/services/metrics.service.ts`):
+Add new metrics (in `backend/src/services/metrics.service.ts`):
 
-### Stato/valori
+### State/values
 
 - `pluto_device_online{device_mac, device_hostname} = 0|1`
 - `pluto_device_metric{device_mac, device_hostname, metric} = number`
 
-Mappatura consigliata da `DeviceInfo`:
+Suggested mapping from `DeviceInfo`:
 
 - `power_watts` -> `info.power`
 - `temperature_celsius` -> `info.temp`
@@ -158,24 +177,24 @@ Mappatura consigliata da `DeviceInfo`:
 - `fanspeed_rpm` -> `info.fanSpeedRpm ?? info.fanrpm ?? info.fanspeed`
 - `shares_rejected` -> `info.sharesRejected`
 
-### Gating notifiche
+### Notification gating
 
 - `pluto_device_notifications_enabled{device_mac, device_hostname} = 0|1`
 
-### Soglie
+### Thresholds
 
-- `pluto_threshold_max{device_mac, device_hostname, metric} = number` (solo se enabled+max)
-- `pluto_threshold_min{device_mac, device_hostname, metric} = number` (solo se enabled+min)
+- `pluto_threshold_max{device_mac, device_hostname, metric} = number` (only if enabled+max)
+- `pluto_threshold_min{device_mac, device_hostname, metric} = number` (only if enabled+min)
 
-Quando una soglia viene rimossa/disabilitata:
+When a threshold is removed/disabled:
 
-- rimuovere la serie label (preferito), oppure impostarla a 0 e aggiungere una label `enabled` (alternativa).
+- remove the label series (preferred), or set it to 0 and add an `enabled` label (alternative).
 
-## Prometheus rules (statiche)
+## Prometheus rules (static)
 
-Nuovo file: `prometheus/rules/pluto-device-alerts.yml` e copia in umbrel data.
+New file: `prometheus/rules/pluto-device-alerts.yml` and copy into umbrel data.
 
-Pattern PromQL (esempi):
+PromQL patterns (examples):
 
 - Offline (gating `notifications_enabled`):
   - `pluto_device_online == 0 AND on(device_mac) pluto_device_notifications_enabled == 1`
@@ -191,11 +210,11 @@ Pattern PromQL (esempi):
 
 `for:`:
 
-- v1: usare `for:` globale per ciascun alert (es. 2m). Non per-device.
+- v1: use a global `for:` per alert (e.g. 2m). Not per-device.
 
 ## Alertmanager
 
-Aggiungere servizio `alertmanager` (prom/alertmanager) in:
+Add `alertmanager` service (prom/alertmanager) in:
 
 - `docker-compose.dev.local.yml`
 - `docker-compose.next.local.yml`
@@ -204,23 +223,23 @@ Aggiungere servizio `alertmanager` (prom/alertmanager) in:
 
 Config `alertmanager.yml`:
 
-- receiver webhook verso backend:
+- receiver webhook to backend:
   - `url: http://backend:<port>/alerts/alertmanager`
-  - dove `<port>` e' 7776 (dev/stable) o 7676 (next)
+  - where `<port>` is 7776 (dev/stable) or 7676 (next)
 - grouping:
   - `group_by: [alertname, device_mac]`
   - `group_wait`, `group_interval`, `repeat_interval`
 
 ## Prometheus config update
 
-Aggiornare:
+Update:
 
 - `prometheus/prometheus.yml`
 - `prometheus/prometheus.next.yml`
 - `prometheus/prometheus.release.yml`
 - `umbrel-apps/pluto*/data/prometheus/prometheus.yml`
 
-Aggiungere:
+Add:
 
 - `rule_files: ["/etc/prometheus/rules/*.yml"]`
 - `alerting.alertmanagers` -> `alertmanager:9093`
@@ -233,48 +252,48 @@ Aggiungere:
 
 File: `frontend/src/app/(static)/settings/SettingsClient.tsx`
 
-- Sezione "Notifications"
-- Provider selector (solo ntfy attivo, altri placeholder)
-- Form ntfy: enable, serverUrl, topic, auth type, username/password o token
-- Pulsanti: Save (PUT), Test (POST)
+- "Notifications" section
+- Provider selector (only ntfy active, others placeholder)
+- Ntfy form: enable, serverUrl, topic, auth type, username/password or token
+- Buttons: Save (PUT), Test (POST)
 
 ### Device Settings (per-device thresholds)
 
-File: `frontend/src/components/Accordion/DeviceSettingsAccordion.tsx` (dentro AccordionItem)
+File: `frontend/src/components/Accordion/DeviceSettingsAccordion.tsx` (inside AccordionItem)
 
-- Sezione "Notifications":
-  - toggle enable per-device
-  - toggle offline
-  - controlli soglia per metriche (min/max) + enable per metrica
+- "Notifications" section:
+  - per-device enable toggle
+  - offline toggle
+  - threshold controls per metric (min/max) + enable per metric
   - Save notifications (PATCH device notification-settings)
 
-## Test
+## Tests
 
 Backend:
 
-- test per settings notifications (no secrets in GET, merge in PUT)
-- test webhook alertmanager -> ntfy sender (mock HTTP)
-- test endpoint device notification-settings
-- estendere test `metrics.service` per nuove metriche label-based e soglie
+- tests for notification settings (no secrets in GET, merge in PUT)
+- test Alertmanager webhook -> ntfy sender (mock HTTP)
+- test device notification-settings endpoint
+- extend `metrics.service` tests for new label-based metrics and thresholds
 
 Frontend:
 
-- estendere `SettingsClient.test.tsx` per sezione Notifications
-- test minimo di salvataggio notification settings in `DeviceSettingsAccordion`
+- extend `SettingsClient.test.tsx` for Notifications section
+- minimal test for saving notification settings in `DeviceSettingsAccordion`
 
-## Rollout / sequencing (ordine consigliato)
+## Rollout / sequencing (recommended order)
 
-1. Tipi `common/interfaces`
-2. Backend: settings notifications + ntfy sender + redaction
-3. Backend: endpoint device notification-settings
-4. Fix polling `tracing.service` (update minimale)
-5. Metriche label-based + soglie
+1. `common/interfaces` types
+2. Backend: notification settings + ntfy sender + redaction
+3. Backend: device notification-settings endpoint
+4. Fix polling in `tracing.service` (minimal update)
+5. Label-based metrics + thresholds
 6. Prometheus rules + Alertmanager service/config (dev + umbrel)
 7. Frontend UI (settings + per-device)
-8. Test + smoke test su `make up`
+8. Tests + smoke test on `make up`
 
-## Note / scelte v1
+## Notes / v1 choices
 
-- Topic ntfy unico globale.
-- `for:` degli alert: globale nelle regole (non per-device) per ridurre complessita'.
-- Segreti canali in Pluto (DB), Alertmanager solo webhook.
+- Single global ntfy topic.
+- Alert `for:` global in rules (not per-device) to reduce complexity.
+- Channel secrets in Pluto (DB); Alertmanager only for webhook.

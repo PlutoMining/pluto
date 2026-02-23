@@ -503,4 +503,48 @@ describe("DeviceSettingsAccordion actions", () => {
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
+
+  it("saves device notification settings via PATCH when Save notification settings is clicked", async () => {
+    const device = makeDiscoveredMiner("aa", "miner-01");
+    axiosMock.patch.mockResolvedValue({
+      data: {
+        data: { ...device, notificationSettings: { enabled: true, offline: { enabled: false }, thresholds: {} } },
+      },
+    });
+
+    const { container } = render(
+      <DeviceSettingsAccordion
+        fetchedDevices={[device]}
+        alert={undefined}
+        setAlert={jest.fn() as any}
+        onOpenAlert={jest.fn()}
+      />
+    );
+
+    await waitFor(() => expect((global as any).fetch).toHaveBeenCalledWith("/api/presets"));
+
+    const details = container.querySelector("details") as HTMLDetailsElement;
+    await act(async () => {
+      details.open = true;
+      fireEvent(details, new Event("toggle"));
+    });
+
+    const saveNotifButton = within(details).getByRole("button", {
+      name: "Save notification settings",
+    });
+    fireEvent.click(saveNotifButton);
+
+    await waitFor(() => {
+      expect(axiosMock.patch).toHaveBeenCalledWith(
+        "/api/devices/imprint/aa/notification-settings",
+        expect.objectContaining({
+          notificationSettings: expect.objectContaining({
+            enabled: expect.any(Boolean),
+            offline: expect.any(Object),
+            thresholds: expect.any(Object),
+          }),
+        })
+      );
+    });
+  });
 });

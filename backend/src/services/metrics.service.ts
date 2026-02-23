@@ -6,6 +6,7 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
+import type { DeviceNotificationSettings, MetricKey } from "@pluto/interfaces";
 import type { MinerData } from "@pluto/pyasic-bridge-client";
 import { logger } from "@pluto/logger";
 import client from "prom-client";
@@ -239,6 +240,158 @@ export const deleteMetricsForDevice = (hostname: string) => {
     logger.error(`Error deleting Prometheus metrics for device ${hostname}:`, error);
   }
 };
+
+// ----------- LABEL-BASED METRICS (for alerting) -----------
+
+const plutoDeviceOnlineGauge = new client.Gauge({
+  name: "pluto_device_online",
+  help: "Device online status (1 = online, 0 = offline)",
+  labelNames: ["device_mac", "device_hostname"],
+  registers: [globalRegister],
+});
+
+const plutoDeviceMetricGauge = new client.Gauge({
+  name: "pluto_device_metric",
+  help: "Per-device metric value for alerting",
+  labelNames: ["device_mac", "device_hostname", "metric"],
+  registers: [globalRegister],
+});
+
+const plutoDeviceNotificationsEnabledGauge = new client.Gauge({
+  name: "pluto_device_notifications_enabled",
+  help: "Whether notifications are enabled for this device (1 = yes, 0 = no)",
+  labelNames: ["device_mac", "device_hostname"],
+  registers: [globalRegister],
+});
+
+const plutoThresholdMinGauge = new client.Gauge({
+  name: "pluto_threshold_min",
+  help: "Minimum threshold for metric (alert when value < min)",
+  labelNames: ["device_mac", "device_hostname", "metric"],
+  registers: [globalRegister],
+});
+
+const plutoThresholdMaxGauge = new client.Gauge({
+  name: "pluto_threshold_max",
+  help: "Maximum threshold for metric (alert when value > max)",
+  labelNames: ["device_mac", "device_hostname", "metric"],
+  registers: [globalRegister],
+});
+
+function getMetricValueFromMinerData(minerData: MinerData, metric: MetricKey): number | null {
+  const hashrate =
+    typeof minerData.hashrate === "object" && minerData.hashrate !== null && "rate" in minerData.hashrate
+      ? (minerData.hashrate as { rate?: number }).rate ?? null
+      : null;
+  const fanSpeed =
+    minerData.fans && minerData.fans.length > 0 && typeof minerData.fans[0] === "object" && minerData.fans[0] !== null && "speed" in minerData.fans[0]
+      ? (minerData.fans[0] as { speed?: number }).speed ?? null
+      : null;
+  const temp =
+    minerData.temperature_avg ??
+    (minerData.hashboards?.[0] && typeof minerData.hashboards[0] === "object" && minerData.hashboards[0] !== null && "temp" in minerData.hashboards[0]
+      ? (minerData.hashboards[0] as { temp?: number }).temp ?? null
+      : null);
+  const vrTemp =
+    (minerData.hashboards?.[0] && typeof minerData.hashboards[0] === "object" && minerData.hashboards[0] !== null && "chip_temp" in minerData.hashboards[0]
+      ? (minerData.hashboards[0] as { chip_temp?: number }).chip_temp ?? null
+      : null) ?? readExtraConfigNumber(minerData.config?.extra_config, "vr_temp");
+
+  switch (metric) {
+    case "power_watts":
+      return minerData.wattage ?? null;
+    case "temperature_celsius":
+      return temp;
+    case "vr_temperature_celsius":
+      return vrTemp;
+    case "hashrate_ghs":
+      return hashrate;
+    case "fanspeed_rpm":
+      return fanSpeed;
+    case "shares_rejected":
+      return minerData.shares_rejected ?? null;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Update label-based metrics for one device. Call from tracing after successful poll.
+ */
+export function updateLabelBasedMetrics(
+  deviceMac: string,
+  deviceHostname: string,
+  minerData: MinerData,
+  notificationSettings?: DeviceNotificationSettings | null
+): void {
+  plutoDeviceOnlineGauge.labels(deviceMac, deviceHostname).set(1);
+  plutoDeviceNotificationsEnabledGauge
+    .labels(deviceMac, deviceHostname)
+    .set(notificationSettings?.enabled ? 1 : 0);
+
+  const metrics: MetricKey[] = [
+    "power_watts",
+    "temperature_celsius",
+    "vr_temperature_celsius",
+    "hashrate_ghs",
+    "fanspeed_rpm",
+    "shares_rejected",
+  ];
+  for (const metric of metrics) {
+    const value = getMetricValueFromMinerData(minerData, metric);
+    if (value !== null && Number.isFinite(value)) {
+      plutoDeviceMetricGauge.labels(deviceMac, deviceHostname, metric).set(value);
+    }
+  }
+
+  const thresholds = notificationSettings?.thresholds;
+  if (thresholds) {
+    for (const metric of metrics) {
+      const tc = thresholds[metric];
+      if (tc?.enabled) {
+        if (tc.min !== undefined && Number.isFinite(tc.min)) {
+          plutoThresholdMinGauge.labels(deviceMac, deviceHostname, metric).set(tc.min);
+        }
+        if (tc.max !== undefined && Number.isFinite(tc.max)) {
+          plutoThresholdMaxGauge.labels(deviceMac, deviceHostname, metric).set(tc.max);
+        }
+      } else {
+        plutoThresholdMinGauge.labels(deviceMac, deviceHostname, metric).set(0);
+        plutoThresholdMaxGauge.labels(deviceMac, deviceHostname, metric).set(0);
+      }
+    }
+  } else {
+    for (const metric of metrics) {
+      plutoThresholdMinGauge.labels(deviceMac, deviceHostname, metric).set(0);
+      plutoThresholdMaxGauge.labels(deviceMac, deviceHostname, metric).set(0);
+    }
+  }
+}
+
+/**
+ * Clear label-based metrics when device is removed or offline. Sets online to 0.
+ */
+export function clearLabelBasedMetricsForDevice(deviceMac: string, deviceHostname: string): void {
+  try {
+    plutoDeviceOnlineGauge.labels(deviceMac, deviceHostname).set(0);
+    plutoDeviceNotificationsEnabledGauge.labels(deviceMac, deviceHostname).set(0);
+    const metrics: MetricKey[] = [
+      "power_watts",
+      "temperature_celsius",
+      "vr_temperature_celsius",
+      "hashrate_ghs",
+      "fanspeed_rpm",
+      "shares_rejected",
+    ];
+    for (const metric of metrics) {
+      plutoDeviceMetricGauge.labels(deviceMac, deviceHostname, metric).set(0);
+      plutoThresholdMinGauge.labels(deviceMac, deviceHostname, metric).set(0);
+      plutoThresholdMaxGauge.labels(deviceMac, deviceHostname, metric).set(0);
+    }
+  } catch (error) {
+    logger.error(`Error clearing label-based metrics for ${deviceHostname}:`, error);
+  }
+}
 
 // Esporta il registro globale per esporre le metriche
 export { globalRegister as register };

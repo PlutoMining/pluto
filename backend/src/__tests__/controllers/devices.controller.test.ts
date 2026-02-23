@@ -11,6 +11,7 @@ jest.mock('@/services/device.service', () => ({
   getImprintedDevice: jest.fn(),
   getDevicesByPresetId: jest.fn(),
   patchImprintedDevice: jest.fn(),
+  patchDeviceNotificationSettings: jest.fn(),
   deleteImprintedDevice: jest.fn(),
   listenToDevices: jest.fn(),
 }));
@@ -271,6 +272,61 @@ describe('devices.controller', () => {
       deviceService.patchImprintedDevice.mockRejectedValue(new Error('fail'));
 
       await deviceController.patchImprintedDevice(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+  });
+
+  describe('patchDeviceNotificationSettings', () => {
+    it('returns 200 and data when device is updated', async () => {
+      const notificationSettings = {
+        enabled: true,
+        offline: { enabled: true },
+        thresholds: { temperature_celsius: { enabled: true, max: 80 } },
+      };
+      const req = {
+        params: { id: 'aa:bb:cc' },
+        body: { notificationSettings },
+      } as unknown as Request;
+      const res = createMockResponse();
+      const device = makeDiscoveredMiner({ mac: 'aa:bb:cc', notificationSettings });
+      deviceService.patchDeviceNotificationSettings.mockResolvedValue(device);
+
+      await deviceController.patchDeviceNotificationSettings(req, res as unknown as Response);
+
+      expect(deviceService.patchDeviceNotificationSettings).toHaveBeenCalledWith(
+        'aa:bb:cc',
+        notificationSettings
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Device notification settings updated',
+        data: device,
+      });
+    });
+
+    it('returns 404 when device not found', async () => {
+      const req = {
+        params: { id: 'unknown' },
+        body: { notificationSettings: { enabled: false, offline: { enabled: false }, thresholds: {} } },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.patchDeviceNotificationSettings.mockResolvedValue(null);
+
+      await deviceController.patchDeviceNotificationSettings(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    it('returns 500 on service error', async () => {
+      const req = {
+        params: { id: 'aa' },
+        body: { notificationSettings: { enabled: false, offline: { enabled: false }, thresholds: {} } },
+      } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.patchDeviceNotificationSettings.mockRejectedValue(new Error('db error'));
+
+      await deviceController.patchDeviceNotificationSettings(req, res as unknown as Response);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });

@@ -1,0 +1,49 @@
+# Pluto device alerts. Use label-based metrics from backend.
+# Requires Prometheus to scrape backend /metrics and to have rule_files + alerting.alertmanagers configured.
+
+groups:
+  - name: pluto-device-alerts
+    interval: 30s
+    rules:
+      - alert: DeviceOffline
+        expr: |
+          pluto_device_online == 0
+          and on(device_mac) pluto_device_notifications_enabled == 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Device {{ $labels.device_hostname }} is offline"
+          description: "Device {{ $labels.device_hostname }} ({{ $labels.device_mac }}) has been offline for more than 2 minutes."
+
+      - alert: DeviceTemperatureHigh
+        expr: |
+          (
+            pluto_device_metric{metric="temperature_celsius"}
+            > on(device_mac, metric) pluto_threshold_max{metric="temperature_celsius"}
+          )
+          and on(device_mac) pluto_device_online == 1
+          and on(device_mac) pluto_device_notifications_enabled == 1
+          and on(device_mac, metric) pluto_threshold_max{metric="temperature_celsius"} > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Device {{ $labels.device_hostname }} temperature high"
+          description: "Temperature {{ $value }}°C exceeds threshold for {{ $labels.device_hostname }}."
+
+      - alert: DeviceHashrateLow
+        expr: |
+          (
+            pluto_device_metric{metric="hashrate_ghs"}
+            < on(device_mac, metric) pluto_threshold_min{metric="hashrate_ghs"}
+          )
+          and on(device_mac) pluto_device_online == 1
+          and on(device_mac) pluto_device_notifications_enabled == 1
+          and on(device_mac, metric) pluto_threshold_min{metric="hashrate_ghs"} > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Device {{ $labels.device_hostname }} hashrate low"
+          description: "Hashrate {{ $value }} GH/s is below threshold for {{ $labels.device_hostname }}."

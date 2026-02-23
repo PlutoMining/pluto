@@ -7,7 +7,7 @@
 */
 
 import { deleteOne, findMany, findOne, insertOne, updateOne } from "@pluto/db";
-import { DiscoveredMiner } from "@pluto/interfaces";
+import type { DeviceNotificationSettings, DiscoveredMiner } from "@pluto/interfaces";
 import { logger } from "@pluto/logger";
 import axios from "axios";
 import { config } from "../config/environment";
@@ -200,6 +200,23 @@ export const patchImprintedDevice = async (
     return device;
   } catch (error) {
     logger.error("Error in patchImprintedDevice:", error);
+    throw error;
+  }
+};
+
+export const patchDeviceNotificationSettings = async (
+  id: string,
+  notificationSettings: DeviceNotificationSettings
+): Promise<DiscoveredMiner | null> => {
+  try {
+    const existing = await findOne<DiscoveredMiner>("pluto_core", "devices:imprinted", id);
+    if (!existing) return null;
+    const device = await updateOne<DiscoveredMiner>("pluto_core", "devices:imprinted", id, {
+      notificationSettings,
+    });
+    return device;
+  } catch (error) {
+    logger.error("Error in patchDeviceNotificationSettings:", error);
     throw error;
   }
 };

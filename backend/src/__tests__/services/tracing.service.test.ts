@@ -75,6 +75,8 @@ jest.mock("../../services/metrics.service", () => ({
   })),
   deleteMetricsForDevice: jest.fn(),
   updateOverviewMetrics: jest.fn(),
+  updateLabelBasedMetrics: jest.fn(),
+  clearLabelBasedMetricsForDevice: jest.fn(),
 }));
 
 jest.mock("../../services/pyasic-bridge.service", () => ({
@@ -403,6 +405,12 @@ describe("tracing.service", () => {
 
       expect(mockFetchMinerData).toHaveBeenCalledWith(device.ip);
       expect(mockUpdateOne).toHaveBeenCalled();
+      expect(mockUpdateOne).toHaveBeenCalledWith(
+        "pluto_core",
+        "devices:imprinted",
+        device.mac,
+        { minerData, tracing: true }
+      );
       expect(mockUpdatePrometheusMetrics).toHaveBeenCalled();
       expect(mockUpdateOverviewMetrics).toHaveBeenCalled();
 
@@ -417,6 +425,12 @@ describe("tracing.service", () => {
       const device = makeDiscoveredMiner();
       await updateOriginalIpsListeners([device], false);
 
+      expect(mockUpdateOne).toHaveBeenCalledWith(
+        "pluto_core",
+        "devices:imprinted",
+        device.mac,
+        { tracing: false }
+      );
       const io = getIoInstance() as unknown as MockIO;
       expect(io.emitted.some((evt) => evt.event === "error")).toBe(true);
       expect(mockLogger.error).toHaveBeenCalledWith(

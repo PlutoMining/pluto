@@ -8,12 +8,11 @@ export const redactSecrets = (value: unknown): void => {
   }
 
   if (value && typeof value === "object") {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore - dynamic property access based on runtime keys
-    delete value.stratumPassword;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore - dynamic property access based on runtime keys
-    delete value.wifiPassword;
+    const obj = value as Record<string, unknown>;
+    delete obj.stratumPassword;
+    delete obj.wifiPassword;
+    delete obj.password;
+    delete obj.token;
 
     Object.values(value).forEach((nested) => {
       if (typeof nested === "object" && nested !== null) {
