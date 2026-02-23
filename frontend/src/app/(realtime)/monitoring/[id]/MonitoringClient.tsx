@@ -91,7 +91,13 @@ export default function MonitoringClient({ id }: { id: string }) {
 
   const refreshMs = useMemo(() => resolvePollingMs(polling, autoRefreshMs), [polling, autoRefreshMs]);
 
-  const deviceId = id;
+  const deviceId = useMemo(() => {
+    try {
+      return decodeURIComponent(id);
+    } catch {
+      return id;
+    }
+  }, [id]);
 
   const temperatureSeries = useMemo(
     () => [
@@ -248,7 +254,7 @@ export default function MonitoringClient({ id }: { id: string }) {
         const response = await axios.get("/api/devices/imprint");
         const imprintedDevices: DiscoveredMiner[] = response.data.data;
 
-        const found = imprintedDevices?.find((d) => d.mac === id);
+        const found = imprintedDevices?.find((d) => d.mac === deviceId);
         setDevice(found);
         setDeviceLoadState(found != null ? "ready" : "not-found");
 
@@ -269,7 +275,7 @@ export default function MonitoringClient({ id }: { id: string }) {
     };
 
     fetchDevice();
-  }, [id]);
+  }, [deviceId]);
 
   const { isConnected, socket } = useSocket();
 
