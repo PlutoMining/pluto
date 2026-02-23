@@ -29,12 +29,14 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
+import { PageTitleProvider, usePageTitle } from "@/providers/PageTitleProvider";
 import { AppSidebar } from "./AppSidebar";
 import { getPageTitle } from "./nav";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+function AppShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
-  const title = getPageTitle(pathname);
+  const { customTitle } = usePageTitle();
+  const title = customTitle ?? getPageTitle(pathname);
 
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
 
@@ -118,5 +120,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-1 flex-col">{children}</div>
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <PageTitleProvider>
+      <AppShellInner>{children}</AppShellInner>
+    </PageTitleProvider>
   );
 }

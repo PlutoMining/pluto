@@ -14,6 +14,7 @@ import { MultiLineChartCard } from "@/components/charts/MultiLineChartCard";
 import { ChartsToolbar } from "@/components/charts/ChartsToolbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
+import { usePageTitle } from "@/providers/PageTitleProvider";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatDifficulty } from "@/utils/formatDifficulty";
 import { formatDetailedTime, formatTime } from "@/utils/formatTime";
@@ -98,6 +99,22 @@ export default function MonitoringClient({ id }: { id: string }) {
       return id;
     }
   }, [id]);
+
+  const { setCustomTitle } = usePageTitle();
+
+  useEffect(() => {
+    if (!device) return;
+    const m = device.minerData;
+    const parts: string[] = [];
+    const hostname = m?.hostname;
+    const model = m?.model ?? m?.device_info?.model;
+    if (hostname) parts.push(hostname);
+    if (model) parts.push(model);
+    const label = parts.length > 0 ? parts.join(" - ") : device.ip;
+    setCustomTitle(`${label} (${device.mac}) Dashboard`);
+
+    return () => setCustomTitle(null);
+  }, [device, setCustomTitle]);
 
   const temperatureSeries = useMemo(
     () => [
