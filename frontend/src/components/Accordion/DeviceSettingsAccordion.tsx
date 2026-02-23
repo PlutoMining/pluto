@@ -1092,7 +1092,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
           <div className="flex flex-col gap-4">
             <p className="font-heading text-sm font-bold uppercase">Fan settings</p>
-            <div className="grid grid-cols-1 gap-4 tablet:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
               <Select
                 id={`${device.mac}-fanMode`}
                 label="Fan Mode"
@@ -1201,7 +1201,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                   <p className="font-heading text-sm font-bold uppercase">Hardware settings</p>
                   <div className="flex flex-col gap-4">
                     {/* Row 1: selects */}
-                    <div className="grid grid-cols-1 gap-4 tablet:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                       {renderField("frequency")}
                       {renderField("core_voltage")}
                       {renderField("rotation")}
@@ -1209,7 +1209,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                     </div>
 
                     {/* Row 2: checkboxes + stats */}
-                    <div className="grid grid-cols-1 gap-4 tablet:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                       {renderField("overheat_mode")}
                       {renderField("overclock_enabled")}
                       {renderField("invertscreen")}
