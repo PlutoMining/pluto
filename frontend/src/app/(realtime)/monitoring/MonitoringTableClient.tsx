@@ -15,7 +15,6 @@ import { useSocket } from "@/providers/SocketProvider";
 import { formatDifficulty } from "@/utils/formatDifficulty";
 import { formatDetailedTime, formatTime } from "@/utils/formatTime";
 import {
-  getHostname,
   getHashrateGhs,
   getBestDifficulty,
   getBestSessionDifficulty,
@@ -185,7 +184,7 @@ export default function MonitoringTableClient() {
                   {registeredDevices.map((device) => {
                     const m = device.minerData;
                     const currentDiff = getBestSessionDifficulty(m);
-                    const hostname = getHostname(m);
+                    const hostname = m?.hostname || m?.ip || device.ip || device.mac;
                     const power = getWattage(m);
                     const temp = getTemperatureAvg(m);
 

@@ -8,7 +8,6 @@ import { computeLinearBreakpoints, PLUTO_HEAT, steppedColor } from "@/components
 import { formatDifficulty } from "@/utils/formatDifficulty";
 import { formatDetailedTime } from "@/utils/formatTime";
 import {
-  getHostname,
   getHashrateGhs,
   getUptime,
   getBestDifficulty,
@@ -64,8 +63,6 @@ export function DeviceHeatmapCard({
 }) {
   const items = React.useMemo(() => {
     return [...devices]
-      .filter((d) => getHostname(d?.minerData) !== "unknown")
-      .sort((a, b) => getHostname(a.minerData).localeCompare(getHostname(b.minerData)))
       .map((device) => {
         const m = device.minerData;
         const hashrate = getHashrateGhs(m);
@@ -73,10 +70,11 @@ export function DeviceHeatmapCard({
         const effectiveTemp = getEffectiveTempForHeatmap(m);
         const chipTemp = getMaxChipTempFromHashboards(m);
         const power = getWattage(m);
+        const hostname = m?.hostname || m?.ip || device.ip || device.mac;
 
         return {
           mac: device.mac,
-          hostname: getHostname(m),
+          hostname,
           online: Boolean(device.tracing),
           hashrate,
           effectiveTemp,
@@ -86,7 +84,8 @@ export function DeviceHeatmapCard({
           bestDiff: getBestDifficulty(m),
           currentDiff,
         };
-      });
+      })
+      .sort((a, b) => a.hostname.localeCompare(b.hostname));
   }, [devices]);
 
   return (

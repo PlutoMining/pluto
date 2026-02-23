@@ -10,7 +10,6 @@ import { useSocket } from "@/providers/SocketProvider";
 import { formatDetailedTime } from "@/utils/formatTime";
 import { formatDifficulty } from "@/utils/formatDifficulty";
 import {
-  getHostname,
   getHashrateGhs,
   getBestDifficulty,
   getBestSessionDifficulty,
@@ -100,7 +99,7 @@ export const DeviceMonitoringAccordion: React.FC<DeviceMonitoringAccordionProps>
 
 const AccordionItem: React.FC<AccordionItemProps> = ({ device }) => {
   const m = device.minerData;
-  const hostname = getHostname(m);
+  const hostname = m?.hostname || m?.ip || device.ip || device.mac;
   const power = getWattage(m);
   const temp = getTemperatureAvg(m);
 
