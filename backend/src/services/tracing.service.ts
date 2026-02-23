@@ -94,7 +94,12 @@ export async function updateOriginalIpsListeners(
     }
   }
 
-  await Promise.allSettled(startPromises);
+  const results = await Promise.allSettled(startPromises);
+  for (const result of results) {
+    if (result.status === "rejected") {
+      logger.error("Failed to start device monitoring:", result.reason);
+    }
+  }
 }
 
 /**
@@ -141,7 +146,14 @@ async function startDeviceMonitoring(
   };
 
   const hostname = extractHostnameFromMinerData(discoveredMiner.minerData);
-  const { updatePrometheusMetrics } = createMetricsForDevice(sanitizeHostname(hostname));
+  let updatePrometheusMetrics: ReturnType<typeof createMetricsForDevice>["updatePrometheusMetrics"];
+  try {
+    ({ updatePrometheusMetrics } = createMetricsForDevice(sanitizeHostname(hostname)));
+  } catch (err) {
+    logger.error(`Failed to create Prometheus metrics for ${discoveredMiner.ip} (hostname=${hostname}):`, err);
+    delete ipMap[discoveredMiner.ip];
+    return;
+  }
 
   let retryAttempts = 0;
   const maxRetryAttempts = 5;

@@ -142,6 +142,7 @@ describe("tracing.service", () => {
   // Mock references (obtained after SUT loads its mocked dependencies)
   let mockLogger: { debug: jest.Mock; info: jest.Mock; error: jest.Mock };
   let mockUpdateOne: jest.Mock;
+  let mockCreateMetricsForDevice: jest.Mock;
   let mockDeleteMetricsForDevice: jest.Mock;
   let mockUpdateOverviewMetrics: jest.Mock;
   let mockFetchMinerData: jest.Mock;
@@ -160,6 +161,7 @@ describe("tracing.service", () => {
     mockLogger = (await import("@pluto/logger")).logger as any;
     mockUpdateOne = (await import("@pluto/db")).updateOne as jest.Mock;
     const metrics = await import("../../services/metrics.service");
+    mockCreateMetricsForDevice = metrics.createMetricsForDevice as jest.Mock;
     mockDeleteMetricsForDevice = metrics.deleteMetricsForDevice as jest.Mock;
     mockUpdateOverviewMetrics = metrics.updateOverviewMetrics as jest.Mock;
     const pyasic = await import("../../services/pyasic-bridge.service");
@@ -362,6 +364,31 @@ describe("tracing.service", () => {
       await updateOriginalIpsListeners([], false);
 
       expect(mockDeleteMetricsForDevice).not.toHaveBeenCalled();
+    });
+
+    it("logs rejected promises from startDeviceMonitoring", async () => {
+      mockCreateMetricsForDevice.mockImplementationOnce(() => {
+        throw new Error("invalid metric name");
+      });
+
+      const device = makeDiscoveredMiner();
+      await updateOriginalIpsListeners([device], false);
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "Failed to start device monitoring:",
+        expect.any(Error)
+      );
+    });
+
+    it("skips polling when createMetricsForDevice throws", async () => {
+      mockCreateMetricsForDevice.mockImplementationOnce(() => {
+        throw new Error("invalid metric name");
+      });
+
+      const device = makeDiscoveredMiner();
+      await updateOriginalIpsListeners([device], false);
+
+      expect(mockFetchMinerData).not.toHaveBeenCalled();
     });
 
     it("handles errors when deleting metrics", async () => {
