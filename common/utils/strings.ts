@@ -7,10 +7,5 @@
 */
 
 export function sanitizeHostname(hostname: string) {
-  let sanitized = hostname.replace(/[^a-zA-Z0-9_]/g, "__");
-  // Prometheus metric names must start with [a-zA-Z_], not a digit.
-  if (/^\d/.test(sanitized)) {
-    sanitized = `miner_${sanitized}`;
-  }
-  return sanitized;
+  return hostname.replace(/[^a-zA-Z0-9_]/g, "__");
 }

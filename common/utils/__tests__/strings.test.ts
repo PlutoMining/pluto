@@ -9,19 +9,15 @@ describe('sanitizeHostname', () => {
     expect(sanitizeHostname('my_host01')).toBe('my_host01');
   });
 
-  it('prefixes with miner_ when hostname starts with a digit', () => {
-    expect(sanitizeHostname('192.168.6.7')).toBe('miner_192__168__6__7');
+  it('replaces dots and colons in IP addresses', () => {
+    expect(sanitizeHostname('192.168.6.7')).toBe('192__168__6__7');
   });
 
-  it('does not prefix when hostname starts with a letter', () => {
+  it('does not alter a simple alphanumeric hostname', () => {
     expect(sanitizeHostname('bitaxeGamma2')).toBe('bitaxeGamma2');
   });
 
-  it('prefixes an all-numeric hostname', () => {
-    expect(sanitizeHostname('12345')).toBe('miner_12345');
-  });
-
-  it('does not prefix when hostname starts with underscore', () => {
+  it('leaves underscores untouched', () => {
     expect(sanitizeHostname('_private')).toBe('_private');
   });
 });
