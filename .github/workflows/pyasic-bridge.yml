@@ -9,10 +9,6 @@ on:
       - 'common/contracts/**'
 
 # Cancel in-flight runs for the same ref so we don't get duplicate jobs
-concurrency:
-  group: pyasic-bridge-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
   actions: write
