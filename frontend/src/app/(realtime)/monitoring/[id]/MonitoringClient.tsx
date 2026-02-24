@@ -250,9 +250,12 @@ export default function MonitoringClient({ id }: { id: string }) {
     (m.best_difficulty != null || m.best_session_difficulty != null);
   const hasUptime = m != null && m.uptime != null;
   const hasEfficiency =
-    (getWattage(m) != null && typeof m?.hashrate?.rate === "number" && Number.isFinite(m.hashrate.rate)) ||
-    (typeof m?.efficiency?.rate === "number" && Number.isFinite(m.efficiency.rate)) ||
-    (typeof m?.efficiency_fract === "number" && Number.isFinite(m.efficiency_fract));
+    efficiency.length > 0 &&
+    (
+      (getWattage(m) != null && typeof m?.hashrate?.rate === "number" && Number.isFinite(m.hashrate.rate)) ||
+      (typeof m?.efficiency?.rate === "number" && Number.isFinite(m.efficiency.rate)) ||
+      (typeof m?.efficiency_fract === "number" && Number.isFinite(m.efficiency_fract))
+    );
   const hasFan =
     (m?.fans?.length ?? 0) > 0 &&
     typeof m?.fans?.[0]?.speed === "number" &&
@@ -608,36 +611,27 @@ export default function MonitoringClient({ id }: { id: string }) {
         {hasPower && (
           <LineChartCard title="Power" points={power} unit="W" curve="step" />
         )}
-      </div>
-
-      <div className="mt-3 grid gap-4 md:mt-4 md:grid-cols-2">
         {hasEfficiency && (
           <LineChartCard title="Efficiency" points={efficiency} unit="J/TH" />
         )}
         {hasTemps && (
           <MultiLineChartCard title="Temperatures" series={temperatureSeries} unit="°C" valueDigits={1} />
         )}
-      </div>
-
-      <div className="mt-3 grid gap-4 md:mt-4 md:grid-cols-2">
         {hasFan && (
           <LineChartCard title="Fan speed" points={fan} unit="RPM" />
         )}
         {hasVoltage && (
           <MultiLineChartCard title="Voltages" series={voltageSeries} unit="V" valueDigits={3} yDomain={[0, 6]} />
         )}
-      </div>
-
-      <div className="mt-3 grid gap-4 md:mt-4 md:grid-cols-2">
         {hasFrequency && (
           <LineChartCard title="Frequency" points={frequency} unit="MHz" curve="step" />
         )}
         {hasFreeHeap && (
           <MultiLineChartCard
-          title="Free heap"
-          unit="MB"
-          valueDigits={2}
-          series={heapSeries}
+            title="Free heap"
+            unit="MB"
+            valueDigits={2}
+            series={heapSeries}
           />
         )}
       </div>
