@@ -441,7 +441,7 @@ export const lookupMultipleDiscoveredDevices = async ({
 
       // Matching per Hostnames
       if (hostnames && hostnames.length > 0) {
-        const hostname = discoveredMiner.minerData.hostname ?? discoveredMiner.ip;
+        const hostname = discoveredMiner.minerData?.hostname ?? discoveredMiner.ip;
         if (!matchWithPartial(hostname, hostnames, partialMatch.hostnames || "both")) {
           return false;
         }
