@@ -23,6 +23,7 @@ import {
   getWattage,
   getSharesAccepted,
   getSharesRejected,
+  getModel,
 } from "@/utils/minerDataHelpers";
 import type { DiscoveredMiner } from "@pluto/interfaces";
 import axios from "axios";
@@ -150,6 +151,9 @@ export default function MonitoringTableClient() {
                     <th className="border-b border-border p-3 text-left font-accent text-xs font-normal uppercase text-muted-foreground">
                       Name
                     </th>
+                    <th className="border-b border-border p-3 text-left font-accent text-xs font-normal uppercase text-muted-foreground">
+                      Model
+                    </th>
                     <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
                       Hashrate
                     </th>
@@ -161,9 +165,6 @@ export default function MonitoringTableClient() {
                     </th>
                     <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
                       Temp
-                    </th>
-                    <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
-                      VR Temp
                     </th>
                     <th className="border-b border-border p-3 text-center font-accent text-xs font-normal uppercase text-muted-foreground">
                       Current difficulty
@@ -192,6 +193,9 @@ export default function MonitoringTableClient() {
                     <tr key={device.mac} className="bg-card">
                       <td className="border-t border-border p-3 text-left font-accent text-sm font-normal">
                         {hostname}
+                      </td>
+                      <td className="border-t border-border p-3 text-left font-accent text-sm font-normal text-muted-foreground">
+                        {getModel(m)}
                       </td>
                       <td className="border-t border-border p-3 text-center font-accent text-sm font-normal">
                         {getHashrateGhs(m).toFixed(2)} GH/s
