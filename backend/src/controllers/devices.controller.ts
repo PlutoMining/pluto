@@ -326,9 +326,9 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
     const updatedDevice: DiscoveredMiner = {
       ...device,
       minerData: {
-        ...device.minerData,
+        ...(device.minerData ?? ({} as DiscoveredMiner["minerData"])),
         config: {
-          ...device.minerData.config,
+          ...(device.minerData?.config ?? {}),
           ...configPatch,
         },
       },

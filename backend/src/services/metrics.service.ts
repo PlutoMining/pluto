@@ -48,6 +48,7 @@ export interface DeviceLabels {
   hostname: string;
   ip: string;
   model: string;
+  [key: string]: string;
 }
 
 const DEVICE_LABEL_NAMES = ["device_id", "hostname", "ip", "model"] as const;
