@@ -4,6 +4,7 @@ import { DeviceApiVersion } from "@/types/axeos.types";
 
 import {
   getSystemInfo,
+  getRoot,
   patchSystemInfo,
   restartSystem,
 } from "@/controllers/system.controller";
@@ -107,6 +108,45 @@ describe("system.controller", () => {
         expect.objectContaining({ error: "Failed to retrieve system info" })
       );
     });
+
+    it("delegates to context.getSystemInfo() when context is present", async () => {
+      const mockContext = {
+        getSystemInfo: jest.fn().mockReturnValue({ fromContext: true }),
+      };
+      const req = {
+        app: {
+          locals: { mockContext },
+        },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await getSystemInfo(req, res);
+
+      expect(mockContext.getSystemInfo).toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith({ fromContext: true });
+    });
+
+    it("returns 500 with non-Error thrown value when context throws", async () => {
+      const mockContext = {
+        getSystemInfo: jest.fn().mockImplementation(() => {
+          // eslint-disable-next-line @typescript-eslint/only-throw-error
+          throw "string error";
+        }),
+      };
+      const req = {
+        app: {
+          locals: { mockContext },
+        },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await getSystemInfo(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ details: "string error" })
+      );
+    });
   });
 
   describe("patchSystemInfo", () => {
@@ -155,6 +195,56 @@ describe("system.controller", () => {
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: "Failed to update system info" });
+    });
+
+    it("delegates to context.patchSystemInfo() when context is present", async () => {
+      const mockContext = {
+        patchSystemInfo: jest.fn(),
+      };
+      const req = {
+        body: { hashRate: 500 },
+        app: {
+          locals: { mockContext },
+        },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await patchSystemInfo(req, res);
+
+      expect(mockContext.patchSystemInfo).toHaveBeenCalledWith({ hashRate: 500 });
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: "System info updated successfully" });
+    });
+  });
+
+  describe("getRoot", () => {
+    it("returns HTML from context.getRootHtml()", async () => {
+      const mockContext = {
+        getRootHtml: jest.fn().mockReturnValue("<html>miner</html>"),
+      };
+      const req = {
+        app: { locals: { mockContext } },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await getRoot(req, res);
+
+      expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "text/html");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith("<html>miner</html>");
+    });
+
+    it("returns empty string when context is absent", async () => {
+      const req = {
+        app: { locals: {} },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await getRoot(req, res);
+
+      expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "text/html");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith("");
     });
   });
 
