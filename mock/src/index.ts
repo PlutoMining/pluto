@@ -32,26 +32,87 @@ interface DeviceProfile {
 }
 
 const deviceProfiles: DeviceProfile[] = [
-  // 1 – Named Bitaxe Gamma, fully populated (common case)
+  // 1 – Fully populated Gamma (common healthy miner)
   { hostname: "bitaxeGamma2", apiVersion: DeviceApiVersion.Legacy, overrides: { ASICModel: "BM1370", boardVersion: "601" } },
-  // 2 – Named Supra with new API
+  // 2 – Fully populated Supra, new API
   { hostname: "bitaxeSupra1", apiVersion: DeviceApiVersion.New, overrides: { ASICModel: "BM1368", boardVersion: "401" } },
   // 3 – No hostname (firmware doesn't report one), has model
   { hostname: "", apiVersion: DeviceApiVersion.Legacy, overrides: { ASICModel: "BM1366", boardVersion: "201" } },
   // 4 – No hostname, new API, has model
   { hostname: "", apiVersion: DeviceApiVersion.New, overrides: { ASICModel: "BM1397", boardVersion: "101" } },
-  // 5 – Has hostname, missing ASICModel (unknown ASIC)
-  { hostname: "miner-rack-01", apiVersion: DeviceApiVersion.Legacy, overrides: { ASICModel: "" } },
-  // 6 – No hostname AND no ASICModel (bare device with minimal firmware)
-  { hostname: "", apiVersion: DeviceApiVersion.New, overrides: { ASICModel: "" } },
-  // 7 – Named Ultra
-  { hostname: "officeUltra", apiVersion: DeviceApiVersion.Legacy, overrides: { ASICModel: "BM1366", boardVersion: "201" } },
-  // 8 – Named Max, new API
-  { hostname: "bitaxeMax1", apiVersion: DeviceApiVersion.New, overrides: { ASICModel: "BM1397", boardVersion: "101" } },
-  // 9 – No hostname, Gamma
-  { hostname: "", apiVersion: DeviceApiVersion.Legacy, overrides: { ASICModel: "BM1370", boardVersion: "601" } },
-  // 10 – Named device, fully populated
-  { hostname: "garageRig", apiVersion: DeviceApiVersion.New, overrides: { ASICModel: "BM1368", boardVersion: "401" } },
+  // 5 – Fresh out of box: has hostname, unknown ASIC, pool not configured yet,
+  //     but sensors and hashrate work fine (device is physically running)
+  { hostname: "miner-rack-01", apiVersion: DeviceApiVersion.Legacy, overrides: {
+    ASICModel: "",
+    stratumURL: "",
+    stratumPort: 0,
+    stratumUser: "",
+    fallbackStratumURL: "",
+    fallbackStratumPort: 0,
+    fallbackStratumUser: "",
+    hashRate: 0,
+    sharesAccepted: 0,
+    sharesRejected: 0,
+    bestDiff: 0,
+    bestSessionDiff: 0,
+  }},
+  // 6 – Flaky hardware: temp sensor works but voltage/current read failed,
+  //     hashing fine, no hostname reported by firmware
+  { hostname: "", apiVersion: DeviceApiVersion.New, overrides: {
+    ASICModel: "BM1366",
+    boardVersion: "201",
+    voltage: null,
+    current: null,
+    vrTemp: null,
+  }},
+  // 7 – Just rebooted: genuinely zero hashrate/shares (not mining yet),
+  //     but difficulty sub-call failed (null). Sensors report normally.
+  { hostname: "officeUltra", apiVersion: DeviceApiVersion.Legacy, overrides: {
+    ASICModel: "BM1366",
+    boardVersion: "201",
+    hashRate: 0,
+    hashRate_1m: 0,
+    hashRate_10m: 0,
+    hashRate_1h: 0,
+    sharesAccepted: 0,
+    sharesRejected: 0,
+    bestDiff: null,
+    bestSessionDiff: null,
+    networkDifficulty: null,
+  }},
+  // 8 – Older firmware: version strings missing (null), wifi RSSI flaky (null),
+  //     but device is hashing and reporting data fine otherwise
+  { hostname: "bitaxeMax1", apiVersion: DeviceApiVersion.New, overrides: {
+    ASICModel: "BM1397",
+    boardVersion: "101",
+    version: null,
+    axeOSVersion: null,
+    idfVersion: null,
+    wifiRSSI: null,
+  }},
+  // 9 – Network-challenged: no hostname, MAC readable but wifi details failed,
+  //     pool configured and hashing, but network difficulty unavailable
+  { hostname: "", apiVersion: DeviceApiVersion.Legacy, overrides: {
+    ASICModel: "BM1370",
+    boardVersion: "601",
+    ssid: null,
+    wifiStatus: null,
+    wifiRSSI: null,
+    ipv6: "",
+    networkDifficulty: null,
+    blockHeight: null,
+    poolDifficulty: 0,
+  }},
+  // 10 – Mostly healthy but power data partially failed: power null but
+  //      voltage/current report fine; fallback pool not configured
+  { hostname: "garageRig", apiVersion: DeviceApiVersion.New, overrides: {
+    ASICModel: "BM1368",
+    boardVersion: "401",
+    power: null,
+    fallbackStratumURL: "",
+    fallbackStratumPort: 0,
+    fallbackStratumUser: "",
+  }},
 ];
 
 const activeServers: ServerInfo[] = [];
