@@ -489,7 +489,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
   });
 
   const [fanModeState, setFanModeState] = useState<FanModeFormState>(() => {
-    const fanMode = (deviceInfo.minerData as any)?.config?.fan_mode as
+    const fanMode = deviceInfo.minerData?.config?.fan_mode as
       | { mode?: string; speed?: number; minimum_fans?: number }
       | undefined;
     return {
@@ -544,7 +544,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         workerName: hostname,
       });
 
-      const fanMode = (device.minerData as any)?.config?.fan_mode as
+      const fanMode = device.minerData?.config?.fan_mode as
         | { mode?: string; speed?: number; minimum_fans?: number }
         | undefined;
       setFanModeState({
@@ -596,7 +596,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         } else {
           // Build from form state using miner-specific model
           // minerSettingsModel is always defined (default model for unknown types)
-          const existingExtraConfig = device.minerData.config?.extra_config as
+          const existingExtraConfig = device.minerData?.config?.extra_config as
             | Record<string, unknown>
             | null
             | undefined;
