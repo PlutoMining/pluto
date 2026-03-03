@@ -14,6 +14,7 @@ import { MultiLineChartCard } from "@/components/charts/MultiLineChartCard";
 import { ChartsToolbar } from "@/components/charts/ChartsToolbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircularProgressWithDots } from "@/components/ProgressBar/CircularProgressWithDots";
+import { VendorStatCards, VendorCharts } from "@/components/VendorDetailPanel";
 import { usePageTitle } from "@/providers/PageTitleProvider";
 import { useSocket } from "@/providers/SocketProvider";
 import { formatDifficulty } from "@/utils/formatDifficulty";
@@ -36,10 +37,7 @@ import {
   getWattage,
   getSharesAccepted,
   getSharesRejected,
-  getExtraConfigFrequency,
-  getExtraConfigFreeHeapBytes,
   getMaxChipTempFromHashboards,
-  getExtraConfigCoreVoltageVolts,
 } from "@/utils/minerDataHelpers";
 import type { DiscoveredMiner, Preset } from "@pluto/interfaces";
 import axios from "axios";
@@ -50,12 +48,6 @@ function formatNumber(value: number | undefined, digits = 2) {
   return value.toFixed(digits);
 }
 
-function bytesToMb(value: number | undefined) {
-  if (value === undefined || value === null) return undefined;
-  if (!Number.isFinite(value)) return undefined;
-  return value / (1024 * 1024);
-}
-
 type DeviceLoadState = "loading" | "ready" | "not-found";
 
 export default function MonitoringClient({ id }: { id: string }) {
@@ -64,7 +56,6 @@ export default function MonitoringClient({ id }: { id: string }) {
   const [preset, setPreset] = useState<Partial<Preset> | undefined>(undefined);
 
   const [range, setRange] = useState<TimeRangeKey>("1h");
-
   const [polling, setPolling] = useState<PollingIntervalKey>("auto");
 
   const [hashrate, setHashrate] = useState<Array<{ t: number; v: number }>>([]);
@@ -73,10 +64,6 @@ export default function MonitoringClient({ id }: { id: string }) {
   const [temp, setTemp] = useState<Array<{ t: number; v: number }>>([]);
   const [fan, setFan] = useState<Array<{ t: number; v: number }>>([]);
   const [voltage, setVoltage] = useState<Array<{ t: number; v: number }>>([]);
-  const [frequency, setFrequency] = useState<Array<{ t: number; v: number }>>([]);
-  const [freeHeapMb, setFreeHeapMb] = useState<Array<{ t: number; v: number }>>([]);
-  const [freeHeapInternalMb, setFreeHeapInternalMb] = useState<Array<{ t: number; v: number }>>([]);
-  const [freeHeapSpiramMb, setFreeHeapSpiramMb] = useState<Array<{ t: number; v: number }>>([]);
 
   const rangeSeconds = useMemo(
     () => TIME_RANGES.find((r) => r.key === range)?.seconds ?? 3600,
@@ -107,7 +94,7 @@ export default function MonitoringClient({ id }: { id: string }) {
     const m = device.minerData;
     const parts: string[] = [];
     const hostname = m?.hostname;
-    const model = m?.model ?? m?.device_info?.model;
+    const model = m?.deviceInfo?.model;
     if (hostname) parts.push(hostname);
     if (model) parts.push(model);
     const label = parts.length > 0 ? parts.join(" - ") : device.ip;
@@ -116,6 +103,8 @@ export default function MonitoringClient({ id }: { id: string }) {
     return () => setCustomTitle(null);
   }, [device, setCustomTitle]);
 
+  const m = device?.minerData;
+
   const temperatureSeries = useMemo(
     () => [
       { key: "temp", label: "ASIC", color: "hsl(var(--chart-2))", points: temp },
@@ -123,24 +112,17 @@ export default function MonitoringClient({ id }: { id: string }) {
     [temp]
   );
 
-  const m = device?.minerData;
-
-  const coreVoltageConfig = useMemo(() => getExtraConfigCoreVoltageVolts(m), [m]);
-
   const voltageSeries = useMemo(() => {
     const series: Array<{
       key: string;
       label: string;
       color: string;
       points: Array<{ t: number; v: number }>;
-      strokeDasharray?: string;
-      strokeLinecap?: "butt" | "round" | "square";
-      strokeOpacity?: number;
       renderOrder?: number;
     }> = [];
 
-    const hasVoltage = voltage.some((p) => p.v != null && Number.isFinite(p.v));
-    if (hasVoltage) {
+    const hasVoltageData = voltage.some((p) => p.v != null && Number.isFinite(p.v));
+    if (hasVoltageData) {
       series.push({
         key: "voltage",
         label: "Input",
@@ -150,111 +132,26 @@ export default function MonitoringClient({ id }: { id: string }) {
       });
     }
 
-    if (coreVoltageConfig != null && hasVoltage) {
-      const corePoints = voltage.map((p) => ({ t: p.t, v: coreVoltageConfig }));
-      series.push({
-        key: "coreConfig",
-        label: "Core (actual)",
-        color: "hsl(var(--chart-2))",
-        points: corePoints,
-        strokeOpacity: 1,
-        renderOrder: 1,
-      });
-    }
-
     return series;
-  }, [voltage, coreVoltageConfig]);
-
-  const psramAvailable = useMemo(
-    () => Number((m as Record<string, unknown>)?.isPSRAMAvailable) === 1,
-    [m]
-  );
-
-  const heapSeries = useMemo(() => {
-    const series: Array<{
-      key: string;
-      label: string;
-      color: string;
-      points: Array<{ t: number; v: number }>;
-      strokeWidth?: number;
-      strokeDasharray?: string;
-      strokeLinecap?: "butt" | "round" | "square";
-      renderOrder?: number;
-    }> = [
-      {
-        key: "total",
-        label: "Total",
-        color: "hsl(var(--chart-1))",
-        points: freeHeapMb,
-        strokeWidth: 2,
-        renderOrder: 0,
-      },
-    ];
-
-    if (psramAvailable && freeHeapSpiramMb.length > 0) {
-      series.push({
-        key: "psram",
-        label: "PSRAM",
-        color: "hsl(var(--chart-2))",
-        points: freeHeapSpiramMb,
-        strokeDasharray: "5 7",
-        strokeLinecap: "butt" as const,
-        strokeWidth: 2,
-        renderOrder: 1,
-      });
-    }
-
-    if (psramAvailable && freeHeapInternalMb.length > 0) {
-      series.push({
-        key: "internal",
-        label: "Internal",
-        color: "hsl(var(--chart-5))",
-        points: freeHeapInternalMb,
-        strokeDasharray: "2 4",
-        strokeLinecap: "butt" as const,
-        strokeWidth: 2,
-        renderOrder: 2,
-      });
-    }
-
-    return series;
-  }, [freeHeapInternalMb, freeHeapMb, freeHeapSpiramMb, psramAvailable]);
-
-  const freeHeapFromExtraConfigMb = useMemo(
-    () => bytesToMb(getExtraConfigFreeHeapBytes(m)),
-    [m]
-  );
-  const freeHeapInternalCurrentMb = useMemo(
-    () => bytesToMb((m as Record<string, unknown>)?.freeHeapInternal as number | undefined),
-    [m]
-  );
-  const freeHeapSpiramCurrentMb = useMemo(
-    () => bytesToMb((m as Record<string, unknown>)?.freeHeapSpiram as number | undefined),
-    [m]
-  );
+  }, [voltage]);
 
   const hasHashrate = m != null && m.hashrate?.rate != null;
   const hasShares =
-    m != null && (m.shares_accepted != null || m.shares_rejected != null);
+    m != null && (m.sharesAccepted != null || m.sharesRejected != null);
   const hasPower = getWattage(m) != null;
-  const hasFrequency = getExtraConfigFrequency(m) != null;
+  const chipTemp = getMaxChipTempFromHashboards(m);
   const hasTemps =
     getTemperatureAvg(m) != null ||
-    getMaxChipTempFromHashboards(m) != null;
-  const hasFreeHeap =
-    getExtraConfigFreeHeapBytes(m) != null ||
-    freeHeapInternalCurrentMb != null ||
-    freeHeapSpiramCurrentMb != null;
+    chipTemp != null;
   const hasDifficulty =
     m != null &&
-    (m.best_difficulty != null || m.best_session_difficulty != null);
+    (m.bestDifficulty != null || m.bestSessionDifficulty != null);
   const hasUptime = m != null && m.uptime != null;
   const hasEfficiency =
     efficiency.length > 0 &&
     (
       (getWattage(m) != null && typeof m?.hashrate?.rate === "number" && Number.isFinite(m.hashrate.rate)) ||
-      (typeof m?.efficiency?.rate === "number" && Number.isFinite(m.efficiency.rate)) ||
-      (typeof m?.efficiency_fract === "number" && Number.isFinite(m.efficiency_fract))
+      (typeof m?.efficiency?.rate === "number" && Number.isFinite(m.efficiency.rate))
     );
   const hasFan =
     (m?.fans?.length ?? 0) > 0 &&
@@ -264,8 +161,8 @@ export default function MonitoringClient({ id }: { id: string }) {
     (typeof m?.voltage === "number" && Number.isFinite(m.voltage)) ||
     (m?.hashboards?.[0] != null &&
       typeof (m.hashboards[0] as { voltage?: number }).voltage === "number" &&
-      Number.isFinite((m.hashboards[0] as { voltage?: number }).voltage)) ||
-    getExtraConfigCoreVoltageVolts(m) != null;
+      Number.isFinite((m.hashboards[0] as { voltage?: number }).voltage));
+
 
   useEffect(() => {
     const fetchDevice = async () => {
@@ -333,36 +230,17 @@ export default function MonitoringClient({ id }: { id: string }) {
           temp: `pluto_device_temperature_celsius${sel}`,
           fan: `pluto_device_fanspeed_rpm${sel}`,
           voltage: `pluto_device_voltage_volts${sel}`,
-          frequency: `pluto_device_frequency_mhz${sel}`,
-          freeHeap: `pluto_device_free_heap_bytes${sel}`,
-          freeHeapInternal: `pluto_device_free_heap_internal_bytes${sel}`,
-          freeHeapSpiram: `pluto_device_free_heap_spiram_bytes${sel}`,
         };
 
         const options = { signal: controller.signal };
 
-        const [
-          hashrateRes,
-          powerRes,
-          effRes,
-          tempRes,
-          fanRes,
-          voltRes,
-          freqRes,
-          freeHeapRes,
-          freeHeapInternalRes,
-          freeHeapSpiramRes,
-        ] = await Promise.all([
+        const [hashrateRes, powerRes, effRes, tempRes, fanRes, voltRes] = await Promise.all([
           promQueryRange(queries.hashrate, start, end, step, options),
           promQueryRange(queries.power, start, end, step, options),
           promQueryRange(queries.efficiency, start, end, step, options),
           promQueryRange(queries.temp, start, end, step, options),
           promQueryRange(queries.fan, start, end, step, options),
           promQueryRange(queries.voltage, start, end, step, options),
-          promQueryRange(queries.frequency, start, end, step, options),
-          promQueryRange(queries.freeHeap, start, end, step, options),
-          promQueryRange(queries.freeHeapInternal, start, end, step, options),
-          promQueryRange(queries.freeHeapSpiram, start, end, step, options),
         ]);
 
         if (cancelled || controller.signal.aborted) return;
@@ -373,31 +251,6 @@ export default function MonitoringClient({ id }: { id: string }) {
         setTemp(matrixToSeries((tempRes as any).data.result)[0]?.points ?? []);
         setFan(matrixToSeries((fanRes as any).data.result)[0]?.points ?? []);
         setVoltage(matrixToSeries((voltRes as any).data.result)[0]?.points ?? []);
-        setFrequency(matrixToSeries((freqRes as any).data.result)[0]?.points ?? []);
-
-        const freeHeapPoints = matrixToSeries((freeHeapRes as any).data.result)[0]?.points ?? [];
-        setFreeHeapMb(
-          freeHeapPoints.map((p) => ({
-            t: p.t,
-            v: p.v / (1024 * 1024),
-          }))
-        );
-
-        const freeHeapInternalPoints = matrixToSeries((freeHeapInternalRes as any).data.result)[0]?.points ?? [];
-        setFreeHeapInternalMb(
-          freeHeapInternalPoints.map((p) => ({
-            t: p.t,
-            v: p.v / (1024 * 1024),
-          }))
-        );
-
-        const freeHeapSpiramPoints = matrixToSeries((freeHeapSpiramRes as any).data.result)[0]?.points ?? [];
-        setFreeHeapSpiramMb(
-          freeHeapSpiramPoints.map((p) => ({
-            t: p.t,
-            v: p.v / (1024 * 1024),
-          }))
-        );
       } catch (error: any) {
         if (controller.signal.aborted) return;
         if (error?.name === "AbortError") return;
@@ -474,6 +327,7 @@ export default function MonitoringClient({ id }: { id: string }) {
         )}
       </div>
 
+      {/* Common stats grid */}
       <div className="mt-3 grid grid-cols-2 gap-4 md:mt-4 md:grid-cols-4 xl:grid-cols-4">
         {hasHashrate && (
           <Card className="rounded-none">
@@ -510,54 +364,22 @@ export default function MonitoringClient({ id }: { id: string }) {
             </CardContent>
           </Card>
         )}
-        {hasFrequency && (
-          <Card className="rounded-none">
-            <CardHeader>
-              <CardTitle>Frequency</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-accent text-xl text-foreground">
-                {formatNumber(getExtraConfigFrequency(m), 0)} MHz
-              </p>
-            </CardContent>
-          </Card>
-        )}
         {hasTemps && (
           <Card className="rounded-none">
             <CardHeader className="flex flex-row items-center justify-between gap-3">
               <CardTitle>Temperatures</CardTitle>
               <span className="ml-auto whitespace-nowrap font-accent text-xs text-muted-foreground">
-                ASIC | Chip
+                ASIC{chipTemp != null ? " | Chip" : ""}
               </span>
             </CardHeader>
             <CardContent>
               <p className="font-accent text-xl text-foreground">
                 {formatNumber(getTemperatureAvg(m), 1)}°C
-                <span className="text-muted-foreground"> | </span>
-                {formatNumber(getMaxChipTempFromHashboards(m), 1)}°C
-              </p>
-            </CardContent>
-          </Card>
-        )}
-        {hasFreeHeap && (
-          <Card className="rounded-none">
-            <CardHeader className="flex flex-row items-center justify-between gap-3">
-              <CardTitle>Free heap</CardTitle>
-              <span className="ml-auto whitespace-nowrap font-accent text-xs text-muted-foreground">
-                {psramAvailable ? "Internal | PSRAM" : "Internal"}
-              </span>
-            </CardHeader>
-            <CardContent>
-              <p className="font-accent text-xl text-foreground">
-                {freeHeapFromExtraConfigMb != null ? (
-                  <>{formatNumber(freeHeapFromExtraConfigMb, 2)} MB</>
-                ) : psramAvailable ? (
+                {chipTemp != null && (
                   <>
-                    {formatNumber(freeHeapInternalCurrentMb, 2)} MB <span className="text-muted-foreground">|</span>{" "}
-                    {formatNumber(freeHeapSpiramCurrentMb, 2)} MB
+                    <span className="text-muted-foreground"> | </span>
+                    {formatNumber(chipTemp, 1)}°C
                   </>
-                ) : (
-                  <>{formatNumber(freeHeapInternalCurrentMb, 2)} MB</>
                 )}
               </p>
             </CardContent>
@@ -595,6 +417,13 @@ export default function MonitoringClient({ id }: { id: string }) {
         )}
       </div>
 
+      {/* Vendor-specific stat cards */}
+      {device != null && (
+        <div className="mt-3 grid grid-cols-2 gap-4 md:mt-4 md:grid-cols-4 xl:grid-cols-4">
+          <VendorStatCards device={device} />
+        </div>
+      )}
+
       <ChartsToolbar
         className="mt-3 md:mt-4"
         range={range}
@@ -604,6 +433,7 @@ export default function MonitoringClient({ id }: { id: string }) {
         autoRefreshMs={autoRefreshMs}
       />
 
+      {/* Common charts */}
       <div className="mt-3 grid gap-4 md:mt-4 md:grid-cols-2">
         {hasHashrate && (
           <LineChartCard title="Hashrate" points={hashrate} unit="GH/s" />
@@ -623,15 +453,14 @@ export default function MonitoringClient({ id }: { id: string }) {
         {hasVoltage && (
           <MultiLineChartCard title="Voltages" series={voltageSeries} unit="V" valueDigits={3} yDomain={[0, 6]} />
         )}
-        {hasFrequency && (
-          <LineChartCard title="Frequency" points={frequency} unit="MHz" curve="step" />
-        )}
-        {hasFreeHeap && (
-          <MultiLineChartCard
-            title="Free heap"
-            unit="MB"
-            valueDigits={2}
-            series={heapSeries}
+        {/* Vendor-specific charts */}
+        {device != null && (
+          <VendorCharts
+            device={device}
+            deviceId={deviceId}
+            range={range}
+            polling={polling}
+            autoRefreshMs={autoRefreshMs}
           />
         )}
       </div>

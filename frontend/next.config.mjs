@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@pluto/pyasic-bridge-client'],
+  transpilePackages: ["@pluto/interfaces"],
   webpack: (config, { isServer }) => {
     // Ensure webpack resolves symlinked packages correctly
     config.resolve.symlinks = true;

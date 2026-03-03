@@ -116,13 +116,13 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                         {device.mac}
                       </td>
                       <td className="border-t border-border p-3 font-accent text-[13px]">
-                        {device.minerData?.make ?? "—"}
+                        {device.minerData?.deviceInfo?.make ?? "—"}
                       </td>
                       <td className="border-t border-border p-3 font-accent text-[13px]">
-                        {device.minerData?.model ?? "—"}
+                        {device.minerData?.deviceInfo?.model ?? "—"}
                       </td>
                       <td className="border-t border-border p-3 font-accent text-[13px]">
-                        {device.minerData?.fw_ver ?? "—"}
+                        {device.minerData?.fwVer ?? "—"}
                       </td>
                     </tr>
                   ))}
@@ -165,19 +165,19 @@ export const RegisterDeviceTable: React.FC<RegisterDeviceTableProps> = ({
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">Make</span>
                         <span className="font-accent text-sm text-muted-foreground">
-                          {device.minerData?.make ?? "—"}
+                          {device.minerData?.deviceInfo?.make ?? "—"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">Model</span>
                         <span className="font-accent text-sm text-muted-foreground">
-                          {device.minerData?.model ?? "—"}
+                          {device.minerData?.deviceInfo?.model ?? "—"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
                         <span className="font-heading text-sm font-medium capitalize">FW</span>
                         <span className="font-accent text-sm text-muted-foreground">
-                          {device.minerData?.fw_ver ?? "—"}
+                          {device.minerData?.fwVer ?? "—"}
                         </span>
                       </div>
                     </div>

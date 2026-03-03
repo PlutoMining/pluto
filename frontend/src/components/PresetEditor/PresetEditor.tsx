@@ -13,7 +13,7 @@ import Button from "@/components/Button/Button";
 import { Input } from "@/components/Input/Input";
 import { useDisclosure } from "@/hooks/useDisclosure";
 import type { Preset } from "@pluto/interfaces";
-import type { MinerConfigModelInput } from "@pluto/pyasic-bridge-client";
+import type { MinerConfig } from "@pluto/interfaces";
 import { validateDomain } from "@pluto/utils";
 import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
@@ -64,7 +64,7 @@ interface PresetFormErrors {
   poolPassword: string;
 }
 
-function formToConfig(form: PresetFormState): MinerConfigModelInput {
+function formToConfig(form: PresetFormState): MinerConfig {
   return {
     pools: {
       groups: [
@@ -82,7 +82,7 @@ function formToConfig(form: PresetFormState): MinerConfigModelInput {
   };
 }
 
-function configToForm(config?: MinerConfigModelInput): Pick<PresetFormState, "poolUrl" | "poolUser" | "poolPassword"> {
+function configToForm(config?: MinerConfig): Pick<PresetFormState, "poolUrl" | "poolUser" | "poolPassword"> {
   const pool = config?.pools?.groups?.[0]?.pools?.[0];
   return {
     poolUrl: pool?.url ?? "",

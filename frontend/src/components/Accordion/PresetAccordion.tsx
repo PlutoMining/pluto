@@ -7,7 +7,7 @@
 */
 
 import { Preset } from "@pluto/interfaces";
-import type { MinerConfigModelInput } from "@pluto/pyasic-bridge-client";
+import type { MinerConfig } from "@pluto/interfaces";
 import { parseStratumUrl } from "@/utils/deviceConfigHelpers";
 import { MouseEvent, useMemo } from "react";
 import { HostnameBadge } from "../Badge";
@@ -32,7 +32,7 @@ export const PresetAccordion: React.FC<PresetProps> = ({
   isDuplicateDisabled,
 }) => {
   const { displayUrl, displayPort, displayUser } = useMemo(() => {
-    const config = preset.configuration as MinerConfigModelInput;
+    const config = preset.configuration as MinerConfig;
     const poolConfig = config.pools?.groups?.[0]?.pools?.[0];
 
     const url = poolConfig?.url || "";

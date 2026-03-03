@@ -49,7 +49,7 @@ describe("PresetAccordion", () => {
     const preset = {
       uuid: "p2",
       name: "Preset with devices",
-      // Use pyasic-style MinerConfigModelInput pool config; the component only
+      // Use MinerConfig pool config; the component only
       // cares that a pool entry exists, not about the exact values.
       configuration: {
         pools: {
@@ -66,7 +66,7 @@ describe("PresetAccordion", () => {
           ],
         },
       },
-      // Associated devices now follow the DiscoveredMiner shape (pyasic MinerData).
+      // Associated devices follow the DiscoveredMiner shape.
       associatedDevices: [
         {
           mac: "aa",

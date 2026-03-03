@@ -10,31 +10,24 @@ import React, { useCallback } from "react";
 import { Checkbox } from "@/components/Checkbox/Checkbox";
 import { Input } from "@/components/Input/Input";
 import { Select } from "@/components/Select/Select";
-import {
-  getEnumOptionsFromPropSchema,
-  getFieldWidgetType,
-} from "@/utils/schemaFormHelpers";
+import type { ConfigField } from "@pluto/interfaces";
 
-export interface ExtraConfigFieldRendererProps {
-  fieldName: string;
-  fieldSchema: Record<string, unknown>;
+export interface VendorConfigFieldRendererProps {
+  field: ConfigField;
   value: unknown;
   onChange: (name: string, value: unknown) => void;
   deviceMac: string;
   error?: string;
 }
 
-export const ExtraConfigFieldRenderer: React.FC<ExtraConfigFieldRendererProps> = ({
-  fieldName,
-  fieldSchema,
+export const VendorConfigFieldRenderer: React.FC<VendorConfigFieldRendererProps> = ({
+  field,
   value,
   onChange,
   deviceMac,
   error,
 }) => {
-  const id = `${deviceMac}-${fieldName}`;
-  const label = (fieldSchema.title as string) || fieldName;
-  const widgetType = getFieldWidgetType(fieldSchema);
+  const id = `${deviceMac}-${field.name}`;
 
   const handleChange = useCallback(
     (name: string, nextValue: unknown) => {
@@ -43,61 +36,65 @@ export const ExtraConfigFieldRenderer: React.FC<ExtraConfigFieldRendererProps> =
     [onChange]
   );
 
-  if (widgetType === "select") {
-    const optionValues = getEnumOptionsFromPropSchema(fieldSchema);
+  if (field.type === "select") {
+    const optionValues = field.options.map((o) => ({
+      label: o.label,
+      value: o.value,
+    }));
     const strValue =
       value !== undefined && value !== null ? String(value) : "";
     return (
       <Select
         id={id}
-        label={label}
-        name={fieldName}
+        label={field.label}
+        name={field.name}
         value={strValue}
         optionValues={optionValues}
         allowCustom={false}
         onChange={(e) => {
           const raw = e.target.value;
-          const n = /^-?\d+$/.test(raw) ? parseInt(raw, 10) : raw;
-          handleChange(fieldName, n);
+          const n = /^-?\d+(\.\d+)?$/.test(raw) ? Number(raw) : raw;
+          handleChange(field.name, n);
         }}
       />
     );
   }
 
-  if (widgetType === "checkbox") {
+  if (field.type === "checkbox") {
     const checked = value === 1 || value === true;
     return (
       <Checkbox
         id={id}
-        name={fieldName}
-        label={label}
+        name={field.name}
+        label={field.label}
         isChecked={checked}
         onChange={(e) => {
-          handleChange(fieldName, e.target.checked ? 1 : 0);
+          handleChange(field.name, e.target.checked ? 1 : 0);
         }}
       />
     );
   }
 
-  if (widgetType === "number") {
+  if (field.type === "number") {
     const numValue =
       value !== undefined && value !== null ? String(value) : "";
     return (
       <Input
         id={id}
-        name={fieldName}
-        label={label}
+        name={field.name}
+        label={field.label}
         type="number"
         defaultValue={numValue}
         error={error}
+        rightAddon={field.unit}
         onChange={(e) => {
           const raw = e.target.value;
           if (raw === "") {
-            handleChange(fieldName, undefined);
+            handleChange(field.name, undefined);
             return;
           }
-          const n = parseInt(raw, 10);
-          handleChange(fieldName, Number.isFinite(n) ? n : undefined);
+          const n = Number(raw);
+          handleChange(field.name, Number.isFinite(n) ? n : undefined);
         }}
       />
     );
@@ -109,12 +106,12 @@ export const ExtraConfigFieldRenderer: React.FC<ExtraConfigFieldRendererProps> =
   return (
     <Input
       id={id}
-      name={fieldName}
-      label={label}
+      name={field.name}
+      label={field.label}
       type="text"
       defaultValue={strValue}
       error={error}
-      onChange={(e) => handleChange(fieldName, e.target.value || undefined)}
+      onChange={(e) => handleChange(field.name, e.target.value || undefined)}
     />
   );
 };

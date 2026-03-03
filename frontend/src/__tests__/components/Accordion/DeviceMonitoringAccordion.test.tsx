@@ -44,12 +44,12 @@ describe("DeviceMonitoringAccordion", () => {
         minerData: {
           hostname: "miner-01",
           hashrate: { rate: 100.1234 },
-          shares_accepted: 10,
-          shares_rejected: 2,
+          sharesAccepted: 10,
+          sharesRejected: 2,
           wattage: 1200,
-          temperature_avg: null, // -> "N/A °C"
-          best_session_difficulty: 111,
-          best_difficulty: 999,
+          temperatureAvg: null, // -> "N/A °C"
+          bestSessionDifficulty: 111,
+          bestDifficulty: 999,
           uptime: 600,
         },
       },
@@ -59,12 +59,12 @@ describe("DeviceMonitoringAccordion", () => {
         minerData: {
           hostname: "miner-02",
           hashrate: { rate: 50 },
-          shares_accepted: 1,
-          shares_rejected: 5,
+          sharesAccepted: 1,
+          sharesRejected: 5,
           wattage: 500,
-          temperature_avg: 42.5,
-          best_session_difficulty: 222,
-          best_difficulty: 333,
+          temperatureAvg: 42.5,
+          bestSessionDifficulty: 222,
+          bestDifficulty: 333,
           uptime: 1200,
         },
       },
@@ -74,12 +74,12 @@ describe("DeviceMonitoringAccordion", () => {
         minerData: {
           hostname: "miner-03",
           hashrate: { rate: 1 },
-          shares_accepted: 0,
-          shares_rejected: 0,
+          sharesAccepted: 0,
+          sharesRejected: 0,
           wattage: 123,
-          temperature_avg: 42,
-          best_session_difficulty: 0,
-          best_difficulty: 0,
+          temperatureAvg: 42,
+          bestSessionDifficulty: 0,
+          bestDifficulty: 0,
           uptime: 60,
         },
       },
@@ -99,7 +99,7 @@ describe("DeviceMonitoringAccordion", () => {
     expect(screen.getByText("10")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
 
-    // Current and best difficulty use MinerData best_session_difficulty / best_difficulty.
+    // Current and best difficulty use MinerData bestSessionDifficulty / bestDifficulty.
     expect(screen.getByText("diff:111")).toBeInTheDocument();
     expect(screen.getByText("diff:222")).toBeInTheDocument();
 
@@ -123,12 +123,12 @@ describe("DeviceMonitoringAccordion", () => {
         minerData: {
           hostname: "miner-01",
           hashrate: { rate: 1 },
-          shares_accepted: 1,
-          shares_rejected: 0,
+          sharesAccepted: 1,
+          sharesRejected: 0,
           wattage: 100,
-          temperature_avg: 40,
-          best_session_difficulty: 111,
-          best_difficulty: 222,
+          temperatureAvg: 40,
+          bestSessionDifficulty: 111,
+          bestDifficulty: 222,
           uptime: 600,
         },
       },

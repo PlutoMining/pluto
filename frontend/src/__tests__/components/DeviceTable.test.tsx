@@ -26,8 +26,8 @@ describe("DeviceTable", () => {
         tracing: true,
         minerData: {
           hostname: "miner-01",
-          model: "Model-A",
-          fw_ver: "v1",
+          deviceInfo: { model: "Model-A" },
+          fwVer: "v1",
           uptime: 600,
         },
       },
@@ -38,8 +38,8 @@ describe("DeviceTable", () => {
         tracing: false,
         minerData: {
           hostname: "miner-02",
-          model: "Model-B",
-          fw_ver: "v2",
+          deviceInfo: { model: "Model-B" },
+          fwVer: "v2",
           uptime: 1200,
         },
       },

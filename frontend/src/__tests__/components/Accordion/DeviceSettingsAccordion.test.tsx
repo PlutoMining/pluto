@@ -4,75 +4,6 @@ import type { DiscoveredMiner } from "@pluto/interfaces";
 
 import { DeviceSettingsAccordion } from "@/components/Accordion";
 
-// Use a test-only stub for ExtraConfigSchemas so tests don't depend on the
-// generated client or Python tooling. This mirrors the Bitaxe schema fields
-// we care about for Hardware settings.
-jest.mock("@pluto/pyasic-bridge-client", () => ({
-  ExtraConfigSchemas: {
-    bitaxe: {
-      properties: {
-        frequency: {
-          anyOf: [
-            { type: "integer", enum: [400, 490, 525, 550, 600, 625] },
-            { type: "null" },
-          ],
-        },
-        core_voltage: {
-          anyOf: [
-            { type: "integer", enum: [1000, 1060, 1100, 1150, 1200, 1250] },
-            { type: "null" },
-          ],
-        },
-        rotation: {
-          anyOf: [
-            { type: "integer", enum: [0, 90, 180, 270] },
-            { type: "null" },
-          ],
-        },
-        invertscreen: {
-          anyOf: [
-            { type: "integer", enum: [0, 1] },
-            { type: "null" },
-          ],
-        },
-        display_timeout: {
-          anyOf: [
-            { type: "integer", enum: [-1, 1, 2, 5, 15, 30, 60, 120, 240, 480] },
-            { type: "null" },
-          ],
-        },
-        overheat_mode: {
-          anyOf: [
-            { type: "integer", enum: [0, 1] },
-            { type: "null" },
-          ],
-        },
-        overclock_enabled: {
-          anyOf: [
-            { type: "integer", enum: [0, 1] },
-            { type: "null" },
-          ],
-        },
-        stats_frequency: {
-          anyOf: [{ type: "integer" }, { type: "null" }],
-        },
-        min_fan_speed: {
-          anyOf: [{ type: "integer" }, { type: "null" }],
-        },
-      },
-    },
-    espminer: {
-      properties: {
-        frequency: {
-          anyOf: [
-            { type: "integer", enum: [400, 490, 525, 550, 600, 625] },
-            { type: "null" },
-          ],
-        },
-      },
-    },
-  },
-}));
 
 jest.mock("@/providers/SocketProvider", () => ({
   useSocket: () => ({
@@ -85,69 +16,117 @@ const makeDiscoveredMiner = (mac: string, hostname: string): DiscoveredMiner => 
   mac,
   ip: mac === "aa" ? "10.0.0.1" : "10.0.0.2",
   type: "Bitaxe",
+  supportLevel: "native",
   tracing: true,
   presetUuid: null,
   minerData: {
     ip: mac === "aa" ? "10.0.0.1" : "10.0.0.2",
     hostname,
-    device_info: {
+    fans: [],
+    hashboards: [],
+    deviceInfo: {
       model: "BM1397",
     },
-    config: {
-      pools: {
-        groups: [
+    pools: {
+      groups: [
+        {
+          pools: [
+            {
+              url: "stratum+tcp://pool.example.com:3333",
+              user: "user.worker",
+              password: "pass",
+            },
+          ],
+        },
+      ],
+    },
+    bitaxe: {
+      frequency: 100,
+      coreVoltage: 900,
+      fanspeed: 50,
+      autofanspeed: 1,
+      invertscreen: 0,
+    },
+  } as any,
+});
+
+const defaultConfigForm = {
+  schema: {
+    sections: [
+      {
+        key: "hardware",
+        label: "Hardware Settings",
+        columns: 4,
+        fields: [
           {
-            pools: [
-              {
-                url: "stratum+tcp://pool.example.com:3333",
-                user: "user.worker",
-                password: "pass",
-              },
-            ],
+            name: "frequency",
+            label: "Frequency",
+            type: "select",
+            options: [{ label: "490 MHz", value: 490 }],
+          },
+          {
+            name: "coreVoltage",
+            label: "Core Voltage",
+            type: "number",
+          },
+          {
+            name: "invertscreen",
+            label: "Invert Screen",
+            type: "checkbox",
           },
         ],
       },
-      extra_config: {
-        frequency: 100,
-        core_voltage: 900,
-        fanspeed: 50,
-        autofanspeed: 1,
-        flipscreen: 0,
-        invertfanpolarity: 0,
-      },
-    },
+    ],
   },
-});
+  values: { frequency: 490, coreVoltage: 900, invertscreen: 0 },
+};
 
-describe("DeviceSettingsAccordion", () => {
-  beforeEach(() => {
-    (global as any).fetch = jest.fn(async () => ({
-      ok: true,
-      json: async () => ({
-        data: [
-          {
-            uuid: "preset-1",
-            name: "Preset 1",
-            configuration: {
-              pools: {
-                groups: [
-                  {
-                    pools: [
+function createFetchMock(options?: {
+  presets?: { data: unknown[] };
+  configForm?: { schema: { sections: unknown[] }; values: Record<string, unknown> };
+}) {
+  return jest.fn(async (url: string) => {
+    if (url === "/api/presets") {
+      return {
+        ok: true,
+        json: async () =>
+          options?.presets ?? {
+            data: [
+              {
+                uuid: "preset-1",
+                name: "Preset 1",
+                configuration: {
+                  pools: {
+                    groups: [
                       {
-                        url: "stratum+tcp://pool.example.com:3333",
-                        user: "user",
-                        password: "",
+                        pools: [
+                          {
+                            url: "stratum+tcp://pool.example.com:3333",
+                            user: "user",
+                            password: "",
+                          },
+                        ],
                       },
                     ],
                   },
-                ],
+                },
+                associatedDevices: [],
               },
-            },
-            associatedDevices: [],
+            ],
           },
-        ],
-      }),
-    }));
+      };
+    }
+    if (url.match(/^\/api\/devices\/[^/]+\/config\/form$/)) {
+      const cf = options?.configForm ?? defaultConfigForm;
+      return { ok: true, json: async () => cf };
+    }
+    return { ok: false };
+  });
+}
+
+describe("DeviceSettingsAccordion", () => {
+  beforeEach(() => {
+    (global as any).fetch = createFetchMock();
   });
 
   it("enables bulk actions only when multiple devices are selected", async () => {
@@ -253,25 +232,29 @@ describe("DeviceSettingsAccordion", () => {
 
     // Wait for Hardware settings fields to render after opening accordion
     await waitFor(() => {
-      expect(container.querySelector("select#aa-frequency")).not.toBeNull();
+      expect(container.querySelector("#aa-frequency")).not.toBeNull();
     });
 
-    const frequencyField = container.querySelector("select#aa-frequency");
-    const coreVoltageField = container.querySelector("select#aa-core_voltage");
+    const frequencyField = container.querySelector("#aa-frequency");
+    const coreVoltageField = container.querySelector("#aa-coreVoltage");
 
     expect(frequencyField).not.toBeNull();
     expect(coreVoltageField).not.toBeNull();
   });
 
-  it("does not render Hardware settings section for default miner type", async () => {
+  it("does not render Hardware settings section when config form returns empty schema", async () => {
+    (global as any).fetch = createFetchMock({
+      configForm: { schema: { sections: [] }, values: {} },
+    });
+
     const antminer: DiscoveredMiner = {
       ...makeDiscoveredMiner("aa", "miner-01"),
       type: "Antminer S19",
       minerData: {
         ...makeDiscoveredMiner("aa", "miner-01").minerData,
-        device_info: { model: "S19" },
+        deviceInfo: { model: "S19" },
       },
-    };
+    } as any;
     const { container } = render(
       <DeviceSettingsAccordion
         fetchedDevices={[antminer]}
@@ -288,8 +271,14 @@ describe("DeviceSettingsAccordion", () => {
       fireEvent(details, new Event("toggle"));
     });
 
-    // For non-Bitaxe miners, the Bitaxe-specific selects should not be rendered.
-    expect(container.querySelector("select#aa-frequency")).toBeNull();
-    expect(container.querySelector("select#aa-core_voltage")).toBeNull();
+    await waitFor(() => {
+      expect((global as any).fetch).toHaveBeenCalledWith(
+        expect.stringMatching(/\/api\/devices\/aa\/config\/form$/)
+      );
+    });
+    await waitFor(() => {
+      expect(container.querySelector("#aa-frequency")).toBeNull();
+      expect(container.querySelector("#aa-coreVoltage")).toBeNull();
+    });
   });
 });

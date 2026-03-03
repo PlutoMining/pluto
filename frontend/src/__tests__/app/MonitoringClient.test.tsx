@@ -165,13 +165,13 @@ describe('MonitoringClient', () => {
             minerData: {
               hostname: 'rig-1',
               hashrate: { rate: 10 },
-              shares_accepted: 1,
-              shares_rejected: 2,
-              best_difficulty: '1',
-              best_session_difficulty: '1',
+              sharesAccepted: 1,
+              sharesRejected: 2,
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
               uptime: 60,
               wattage: 100,
-              temperature_avg: 50,
+              temperatureAvg: 50,
             },
           },
         ],
@@ -220,10 +220,10 @@ describe('MonitoringClient', () => {
             presetUuid: 'p1',
             minerData: {
               hostname: 'rig-1',
-              best_difficulty: '1',
-              best_session_difficulty: '1',
-              shares_accepted: 0,
-              shares_rejected: 0,
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              sharesAccepted: 0,
+              sharesRejected: 0,
             },
           },
         ],
@@ -249,12 +249,12 @@ describe('MonitoringClient', () => {
             minerData: {
               hostname: 'rig-1',
               hashrate: { rate: Number.NaN },
-              shares_accepted: 0,
-              shares_rejected: 0,
-              best_difficulty: '1',
-              best_session_difficulty: '1',
+              sharesAccepted: 0,
+              sharesRejected: 0,
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
               wattage: Number.POSITIVE_INFINITY,
-              temperature_avg: Number.NaN,
+              temperatureAvg: Number.NaN,
             },
           },
         ],
@@ -283,8 +283,8 @@ describe('MonitoringClient', () => {
             minerData: {
               hostname: 'rig-1',
               hashrate: { rate: 1 },
-              shares_accepted: 0,
-              shares_rejected: 0,
+              sharesAccepted: 0,
+              sharesRejected: 0,
             },
           },
         ],
@@ -313,7 +313,7 @@ describe('MonitoringClient', () => {
     expect(screen.getByRole('button', { name: 'Auto (5m)' })).toBeInTheDocument();
   });
 
-  it('renders PSRAM heap values and skips polling when hidden', async () => {
+  it('skips Prometheus polling when document is hidden and resumes when visible', async () => {
     const originalVisibilityState = document.visibilityState;
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
 
@@ -330,13 +330,10 @@ describe('MonitoringClient', () => {
               minerData: {
                 hostname: 'rig-1',
                 hashrate: { rate: 10 },
-                shares_accepted: 0,
-                shares_rejected: 0,
-                best_difficulty: '1',
-                best_session_difficulty: '1',
-                isPSRAMAvailable: 1,
-                freeHeapInternal: Number.POSITIVE_INFINITY,
-                freeHeapSpiram: 2 * 1024 * 1024,
+                sharesAccepted: 0,
+                sharesRejected: 0,
+                bestDifficulty: '1',
+                bestSessionDifficulty: '1',
               },
             },
           ],
@@ -348,14 +345,6 @@ describe('MonitoringClient', () => {
       await flushEffects();
 
       expect(await screen.findByText('online')).toBeInTheDocument();
-      expect(screen.getByText('Internal | PSRAM')).toBeInTheDocument();
-
-      const heapValue = screen.getByText((content, element) => {
-        return element?.tagName === 'P' && content.includes('2.00') && content.includes('MB');
-      });
-      expect(heapValue).toHaveTextContent(/-\s*MB/);
-      expect(heapValue).toHaveTextContent(/2\.00\s*MB/);
-
       expect(prom.promQueryRange).not.toHaveBeenCalled();
 
       // Restore visibility and let the polling loop run once.
@@ -391,10 +380,10 @@ describe('MonitoringClient', () => {
             presetUuid: null,
             minerData: {
               hostname: 'rig-1',
-              best_difficulty: '1',
-              best_session_difficulty: '1',
-              shares_accepted: 0,
-              shares_rejected: 0,
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              sharesAccepted: 0,
+              sharesRejected: 0,
               hashrate: { rate: 1 },
               wattage: 1,
             },
@@ -435,15 +424,12 @@ describe('MonitoringClient', () => {
             presetUuid: null,
             minerData: {
               hostname: 'rig-1',
-              best_difficulty: '1',
-              best_session_difficulty: '1',
-              shares_accepted: 0,
-              shares_rejected: 0,
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              sharesAccepted: 0,
+              sharesRejected: 0,
               hashrate: { rate: 1 },
               wattage: 1,
-              isPSRAMAvailable: 1,
-              freeHeapInternal: 1024 * 1024,
-              freeHeapSpiram: 2 * 1024 * 1024,
             },
           },
         ],
@@ -464,14 +450,6 @@ describe('MonitoringClient', () => {
       expect(charts.length).toBeGreaterThan(0);
       expect(Math.max(...charts.map((c) => Number(c.getAttribute('data-points') ?? '0')))).toBeGreaterThan(0);
     });
-
-    await waitFor(() => {
-      const heapChart = screen
-        .getAllByTestId('multi-line')
-        .find((el) => el.getAttribute('data-title') === 'Free heap');
-      expect(heapChart).toBeTruthy();
-      expect(heapChart).toHaveAttribute('data-series', '3');
-    });
   });
 
   it('skips setting state when unmounted before Prometheus resolves', async () => {
@@ -486,10 +464,10 @@ describe('MonitoringClient', () => {
             presetUuid: null,
             minerData: {
               hostname: 'rig-1',
-              best_difficulty: '1',
-              best_session_difficulty: '1',
-              shares_accepted: 0,
-              shares_rejected: 0,
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              sharesAccepted: 0,
+              sharesRejected: 0,
             },
           },
         ],
@@ -526,10 +504,10 @@ describe('MonitoringClient', () => {
             presetUuid: null,
             minerData: {
               hostname: 'rig-1',
-              best_difficulty: '1',
-              best_session_difficulty: '1',
-              shares_accepted: 0,
-              shares_rejected: 0,
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              sharesAccepted: 0,
+              sharesRejected: 0,
             },
           },
         ],
@@ -599,10 +577,10 @@ describe('MonitoringClient', () => {
             presetUuid: null,
             minerData: {
               hostname: 'rig-1',
-              best_difficulty: '1',
-              best_session_difficulty: '1',
-              shares_accepted: 0,
-              shares_rejected: 0,
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              sharesAccepted: 0,
+              sharesRejected: 0,
             },
           },
         ],

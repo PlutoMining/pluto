@@ -9,32 +9,33 @@ const buildDiscoveredMiner = (overrides: Partial<DiscoveredMiner> = {}): Discove
     mac: "aa:bb:cc:dd:ee:ff",
     ip: "192.168.0.10",
     type: "Bitaxe",
+    supportLevel: "native",
     tracing: true,
     presetUuid: null,
     minerData: {
       ip: "192.168.0.10",
       hostname: "miner-01",
-      device_info: {
+      fans: [],
+      hashboards: [],
+      deviceInfo: {
         model: "BM1397",
       },
-      config: {
-        pools: {
-          groups: [
-            {
-              pools: [
-                {
-                  url: "stratum+tcp://pool.example.com:3333",
-                  user: "user",
-                  password: "",
-                },
-              ],
-            },
-          ],
-        },
+      pools: {
+        groups: [
+          {
+            pools: [
+              {
+                url: "stratum+tcp://pool.example.com:3333",
+                user: "user",
+                password: "",
+              },
+            ],
+          },
+        ],
       },
     },
     ...overrides,
-  };
+  } as any;
 };
 
 const buildPreset = (uuid: string, name: string): Preset => {

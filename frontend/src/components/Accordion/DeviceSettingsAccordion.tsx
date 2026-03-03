@@ -10,8 +10,8 @@ import { useSocket } from "@/providers/SocketProvider";
 import { Modal } from "@/components/ui/modal";
 import { useDisclosure } from "@/hooks/useDisclosure";
 import { cn } from "@/lib/utils";
-import type { DiscoveredMiner, Preset } from "@pluto/interfaces";
-import type { MinerConfigModelInput } from "@pluto/pyasic-bridge-client";
+import type { DiscoveredMiner, Preset, ConfigFormSchema } from "@pluto/interfaces";
+import type { MinerConfig } from "@pluto/interfaces";
 import { validateDomain, validateTCPPort } from "@pluto/utils";
 import {
   getHostname,
@@ -21,11 +21,9 @@ import {
   getStratumPassword,
 } from "@/utils/minerDataHelpers";
 import {
-  buildMinerConfigFromFormWithModel,
   parseStratumUrl,
   type StratumFormState,
 } from "@/utils/deviceConfigHelpers";
-import { MinerSettingsFactory, type MinerSettingsModel } from "@/utils/minerSettingsFactory";
 import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { AlertInterface, AlertStatus } from "../Alert/interfaces";
@@ -40,8 +38,7 @@ import { RestartModal } from "../Modal/RestartModal";
 import { RadioButtonValues } from "../Modal/SaveAndRestartModal";
 import { SelectPresetModal } from "../Modal/SelectPresetModal";
 import { RadioButton } from "../RadioButton";
-import { ExtraConfigFieldRenderer } from "@/components/ExtraConfigFields";
-import { getOrderedExtraConfigFields } from "@/utils/schemaFormHelpers";
+import { VendorConfigFieldRenderer } from "@/components/VendorConfigFields";
 import { Select } from "../Select/Select";
 
 interface DeviceSettingsAccordionProps {
@@ -70,12 +67,6 @@ interface StratumUser {
   workerName: string;
   stratumUser: string;
 }
-
-type FanModeFormState = {
-  mode: string;
-  speed?: number;
-  minimum_fans?: number;
-};
 
 export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = ({
   fetchedDevices,
@@ -144,8 +135,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
       e.preventDefault();
       onCloseModal();
 
-      // setCheckedFetchedItems([]);
-
       const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
 
       try {
@@ -202,7 +191,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
       return;
     }
 
-    const handleSavePreset = (mac: string, config: MinerConfigModelInput) =>
+    const handleSavePreset = (mac: string, config: MinerConfig) =>
       axios.patch<{ message: string; data: DiscoveredMiner }>(`/api/devices/${mac}/system`, config);
 
     const handleChangesOnImprintedDevices = (mac: string, d: DiscoveredMiner) =>
@@ -220,15 +209,12 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
             if (isChecked) {
               acc.push(
                 (async () => {
-                  // Build MinerConfigModelInput from preset, merging with worker name
-                  const presetConfig = preset.configuration as MinerConfigModelInput;
+                  const presetConfig = preset.configuration as MinerConfig;
                   const poolConfig = presetConfig.pools?.groups?.[0]?.pools?.[0];
-                  
-                  // Get worker name from device hostname
+
                   const workerName = getHostname(device.minerData);
-                  
-                  // Build config with worker name appended to user
-                  const config: MinerConfigModelInput = {
+
+                  const config: MinerConfig = {
                     pools: {
                       groups: [
                         {
@@ -278,7 +264,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
         title: "Save Successful",
         message: "All the selected devices have been successfully saved.",
       });
-      onOpenAlert(); // Aprire l'alert per mostrare il messaggio di successo
+      onOpenAlert();
     } catch (error) {
       let errorMessage = "An error occurred while saving devices.";
 
@@ -291,27 +277,23 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
         title: "Save Failed",
         message: `${errorMessage} Please try again.`,
       });
-      onOpenAlert(); // Aprire l'alert per mostrare il messaggio di errore
+      onOpenAlert();
     }
   };
 
   const handleCheckboxChange = useCallback((mac: string, isChecked: boolean) => {
     setCheckedFetchedItems((prevItems) => {
-      // Controlla se l'elemento con il MAC esiste già
       const existingItem = prevItems.find((item) => item.mac === mac);
 
       if (existingItem) {
-        // Se esiste, aggiorna il valore
         return prevItems.map((item) => (item.mac === mac ? { ...item, value: isChecked } : item));
       } else {
-        // Se non esiste, aggiungi un nuovo elemento
         return [...prevItems, { mac, value: isChecked }];
       }
     });
 
-    // Chiudi l'accordion se la checkbox è selezionata
     if (isChecked) {
-      setOpenMacs([]); // Chiude l'accordion
+      setOpenMacs([]);
     }
   }, []);
   const selectedCount = checkedFetchedItems.filter((d) => d.value === true).length;
@@ -472,7 +454,6 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     stratumPort: "",
     stratumUser: "",
     stratumPassword: "",
-    fanspeed: "",
   });
 
   const [isSaveAndRestartModalOpen, setIsSaveAndRestartModalOpen] = useState(false);
@@ -488,19 +469,6 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     stratumUser: "",
   });
 
-  const [fanModeState, setFanModeState] = useState<FanModeFormState>(() => {
-    const fanMode = deviceInfo.minerData?.config?.fan_mode as
-      | { mode?: string; speed?: number; minimum_fans?: number }
-      | undefined;
-    return {
-      mode: fanMode?.mode ?? "normal",
-      speed: typeof fanMode?.speed === "number" ? fanMode.speed : undefined,
-      minimum_fans:
-        typeof fanMode?.minimum_fans === "number" ? fanMode.minimum_fans : undefined,
-    };
-  });
-
-  // Form state for stratum/pool config
   const [stratumFormState, setStratumFormState] = useState<StratumFormState>(() => ({
     stratumURL: getStratumUrl(deviceInfo.minerData),
     stratumPort: getStratumPort(deviceInfo.minerData),
@@ -509,17 +477,36 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     workerName: getHostname(deviceInfo.minerData),
   }));
 
-  // Miner-specific settings model (always returns a model, uses default for unknown types)
-  const [minerSettingsModel, setMinerSettingsModel] = useState<MinerSettingsModel>(() =>
-    MinerSettingsFactory.createModelForMiner(deviceInfo)
-  );
+  // Schema-driven vendor config
+  const [configSchema, setConfigSchema] = useState<ConfigFormSchema | null>(null);
+  const [vendorValues, setVendorValues] = useState<Record<string, unknown>>({});
+  const [schemaLoaded, setSchemaLoaded] = useState(false);
 
   const { isConnected, socket } = useSocket();
+
+  // Fetch config form schema when accordion opens
+  useEffect(() => {
+    if (isAccordionOpen && !schemaLoaded) {
+      fetch(`/api/devices/${device.mac}/config/form`)
+        .then((r) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
+        .then((data: { schema: ConfigFormSchema; values: Record<string, unknown> }) => {
+          setConfigSchema(data.schema);
+          setVendorValues(data.values);
+          setSchemaLoaded(true);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch config form:", err);
+          setSchemaLoaded(true);
+        });
+    }
+  }, [isAccordionOpen, schemaLoaded, device.mac]);
 
   useEffect(() => {
     if (presets && deviceInfo) {
       let foundPreset = presets.find((p) => p.uuid === deviceInfo?.presetUuid);
-
       setSelectedPreset(foundPreset || presets[0]);
     }
   }, [presets, deviceInfo]);
@@ -528,14 +515,12 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     if (device) {
       const currentDeviceStratumUser = getStratumUser(device.minerData);
       const hostname = getHostname(device.minerData);
-      
-      // Worker name defaults to hostname if not found in stratumUser
+
       setStratumUser({
         workerName: hostname,
         stratumUser: currentDeviceStratumUser,
       });
 
-      // Update form state from device.minerData
       setStratumFormState({
         stratumURL: getStratumUrl(device.minerData),
         stratumPort: getStratumPort(device.minerData),
@@ -543,35 +528,40 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         stratumPassword: getStratumPassword(device.minerData),
         workerName: hostname,
       });
-
-      const fanMode = device.minerData?.config?.fan_mode as
-        | { mode?: string; speed?: number; minimum_fans?: number }
-        | undefined;
-      setFanModeState({
-        mode: fanMode?.mode ?? "normal",
-        speed: typeof fanMode?.speed === "number" ? fanMode.speed : undefined,
-        minimum_fans:
-          typeof fanMode?.minimum_fans === "number" ? fanMode.minimum_fans : undefined,
-      });
-
-      // Update miner-specific settings model
-      const model = MinerSettingsFactory.createModelForMiner(device);
-      setMinerSettingsModel(model);
     }
   }, [device]);
+
+  const buildPoolsConfig = useCallback(() => {
+    const url = stratumFormState.stratumURL;
+    const port = stratumFormState.stratumPort;
+    const poolUrl = port ? `${url}:${port}` : url;
+    return {
+      groups: [
+        {
+          quota: 1,
+          pools: [
+            {
+              url: poolUrl || "",
+              user: stratumFormState.workerName
+                ? `${stratumFormState.stratumUser}.${stratumFormState.workerName}`
+                : stratumFormState.stratumUser,
+              password: stratumFormState.stratumPassword || "",
+            },
+          ],
+        },
+      ],
+    };
+  }, [stratumFormState]);
 
   const handleSaveOrSaveAndRestartDeviceSettings = useCallback(
     async (shouldRestart: boolean) => {
       try {
-        // Build MinerConfigModelInput from form state
-        let config: MinerConfigModelInput;
+        let config: MinerConfig;
 
         if (selectedPreset && isPresetRadioButtonSelected) {
-          // Use preset configuration, merge with worker name and miner-specific extra_config
-          const presetConfig = selectedPreset.configuration as MinerConfigModelInput;
+          const presetConfig = selectedPreset.configuration as MinerConfig;
           const poolConfig = presetConfig.pools?.groups?.[0]?.pools?.[0];
-          const modelExtraConfig = minerSettingsModel.toExtraConfig();
-          
+
           config = {
             pools: {
               groups: [
@@ -587,35 +577,15 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                 },
               ],
             },
-            // Merge extra_config from preset and miner-specific model
-            extra_config: {
-              ...presetConfig.extra_config,
-              ...modelExtraConfig,
-            },
+            vendorConfig: Object.keys(vendorValues).length > 0 ? { ...vendorValues } : undefined,
           };
         } else {
-          // Build from form state using miner-specific model
-          // minerSettingsModel is always defined (default model for unknown types)
-          const existingExtraConfig = device.minerData?.config?.extra_config as
-            | Record<string, unknown>
-            | null
-            | undefined;
-          config = buildMinerConfigFromFormWithModel(stratumFormState, minerSettingsModel, existingExtraConfig);
+          config = {
+            pools: buildPoolsConfig(),
+            vendorConfig: Object.keys(vendorValues).length > 0 ? { ...vendorValues } : undefined,
+          };
         }
 
-        // Attach fan_mode from form state (if a mode is selected)
-        if (fanModeState.mode) {
-          const fanMode: any = { mode: fanModeState.mode };
-          if (fanModeState.mode === "manual" && typeof fanModeState.speed === "number") {
-            fanMode.speed = fanModeState.speed;
-          }
-          if (typeof fanModeState.minimum_fans === "number") {
-            fanMode.minimum_fans = fanModeState.minimum_fans;
-          }
-          config.fan_mode = fanMode;
-        }
-
-        // Send MinerConfigModelInput to backend
         const {
           data: { data: updatedDestDevice },
         } = await axios.patch<{ message: string; data: DiscoveredMiner }>(
@@ -623,7 +593,6 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
           config
         );
 
-        // Update device with presetUuid if preset was selected
         const updatedDeviceWithPreset: DiscoveredMiner = {
           ...updatedDestDevice,
           presetUuid: selectedPreset && isPresetRadioButtonSelected ? selectedPreset.uuid : device.presetUuid,
@@ -648,7 +617,6 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
           });
           onOpenAlert();
 
-          // Se il salvataggio è andato a buon fine e serve il restart, esegui subito il restart
           if (shouldRestart) {
             handleRestartDevice(true);
           }
@@ -668,7 +636,6 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         onOpenAlert();
       }
     },
-    // handleRestartDevice is defined later but is stable (useCallback)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       device,
@@ -677,14 +644,10 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
       setAlert,
       isPresetRadioButtonSelected,
       stratumFormState,
-      minerSettingsModel,
-      fanModeState,
+      vendorValues,
+      buildPoolsConfig,
     ]
   );
-
-  const validatePercentage = (value: string) => {
-    return parseInt(value) <= 100 && parseInt(value) >= 0;
-  };
 
   const validateFieldByName = useCallback((name: string, value: string) => {
     switch (name) {
@@ -695,10 +658,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
       }
       case "stratumUser":
-        // return validateBitcoinAddress(value);
         return !value.includes(".");
-      case "fanspeed":
-        return validatePercentage(value);
       case "workerName": {
         const regex = /^[a-zA-Z0-9]+$/;
         return regex.test(value);
@@ -731,23 +691,15 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
       validateField(name, value);
 
-      const isCheckbox = type === "checkbox";
-
       const numericFields = new Set([
         "stratumPort",
-        "fanspeed",
-        "autoscreenoff",
-        "overheat_temp",
       ]);
 
       const nextValue = (() => {
-        if (isCheckbox) {
+        if (type === "checkbox") {
           return (e.target as HTMLInputElement).checked ? 1 : 0;
         }
 
-        // Keep string fields as strings. The previous implementation used
-        // `parseInt(value) || value`, which turns IPs like "192.168.0.252" into
-        // the number 192 (because parseInt stops at the first dot).
         if (!numericFields.has(name)) {
           return value;
         }
@@ -757,24 +709,19 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         return Number.isNaN(parsed) ? value : parsed;
       })();
 
-      // Update form state based on field name
       if (name === "stratumURL" || name === "stratumPort" || name === "stratumPassword") {
         setStratumFormState((prev) => ({
           ...prev,
           [name]: nextValue,
         }));
-      } else if (minerSettingsModel.getExtraConfigFields().includes(name)) {
-        minerSettingsModel.updateField(name, typeof nextValue === "number" ? nextValue : nextValue);
-        setMinerSettingsModel({ ...minerSettingsModel });
       } else if (name === "hostname") {
-        // Hostname is stored in minerData, but we can update it in form state for workerName
         setStratumFormState((prev) => ({
           ...prev,
           workerName: typeof nextValue === "string" ? nextValue : prev.workerName,
         }));
       }
     },
-    [validateField, minerSettingsModel]
+    [validateField]
   );
 
   const handleChangeOnStratumUser = useCallback(
@@ -806,12 +753,11 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     [validateField]
   );
 
-  const handleExtraConfigChange = useCallback(
+  const handleVendorConfigChange = useCallback(
     (fieldName: string, value: unknown) => {
-      minerSettingsModel.updateField(fieldName, value);
-      setMinerSettingsModel({ ...minerSettingsModel });
+      setVendorValues((prev) => ({ ...prev, [fieldName]: value }));
     },
-    [minerSettingsModel]
+    []
   );
 
   const handleRadioButtonChange = (value: string) => {
@@ -828,10 +774,9 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     }
 
     if (value === RadioButtonStatus.PRESET && selectedPreset) {
-      const presetConfig = selectedPreset.configuration as MinerConfigModelInput;
+      const presetConfig = selectedPreset.configuration as MinerConfig;
       const poolConfig = presetConfig.pools?.groups?.[0]?.pools?.[0];
-      
-      // Update form state with preset values
+
       if (poolConfig) {
         const parsedUrl = parseStratumUrl(poolConfig.url || "");
         setStratumFormState((prev) => ({
@@ -895,10 +840,9 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
       if (preset) {
         setSelectedPreset(preset);
 
-        const presetConfig = preset.configuration as MinerConfigModelInput;
+        const presetConfig = preset.configuration as MinerConfig;
         const poolConfig = presetConfig.pools?.groups?.[0]?.pools?.[0];
-        
-        // Update form state with preset values
+
         if (poolConfig) {
           const parsedUrl = parseStratumUrl(poolConfig.url || "");
           setStratumFormState((prev) => ({
@@ -923,14 +867,10 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     const listener = (e: DiscoveredMiner) => {
       setDevice((prevDevice) => {
         if (!prevDevice || prevDevice.mac !== e.mac) return prevDevice;
-        // Solo aggiorna i dati se l'accordion è aperto
         if (isAccordionOpen) {
-          return { ...prevDevice, tracing: e.tracing }; // Esegui solo l'aggiornamento della proprietà di interesse
+          return { ...prevDevice, tracing: e.tracing };
         }
-        // Update device with new minerData, but preserve dropdown options state
-        return {
-          ...e,
-        };
+        return { ...e };
       });
     };
 
@@ -945,45 +885,17 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     }
   }, [isAccordionOpen, isConnected, socket]);
 
-  const hasEmptyFields = useCallback((obj: any): boolean => {
-    for (const key in obj) {
-      if (typeof obj[key] === "object" && obj[key] !== null) {
-        if (hasEmptyFields(obj[key])) return true; // Ricorsione per oggetti annidati
-      } else if (obj[key] === "") {
-        return true;
-      }
-    }
-    return false;
-  }, []);
-
-  const hasErrorFields = useCallback(
-    (obj: Record<string, string>): boolean => {
-      for (const [key, value] of Object.entries(obj)) {
-        if (value === "") continue;
-
-        const formState = minerSettingsModel.getFormState();
-        if (key === "fanspeed" && (formState as any).autofanspeed !== 0) {
-          continue;
-        }
-
-        return true;
-      }
-
-      return false;
-    },
-    [minerSettingsModel]
-  );
-
   const isDeviceValid = useCallback(() => {
-    // Check if form state has empty required fields
     const hasEmptyStratumFields =
       !stratumFormState.stratumURL ||
       !stratumFormState.stratumUser;
-    return hasEmptyStratumFields || hasErrorFields(deviceError);
-  }, [stratumFormState, deviceError, hasErrorFields]);
+
+    const hasErrors = Object.values(deviceError).some((v) => v !== "");
+
+    return hasEmptyStratumFields || hasErrors;
+  }, [stratumFormState, deviceError]);
 
   const handleSaveAndRestartModalClose = async (value: string) => {
-    // Funzione di callback per gestire il valore restituito dalla modale
     if (value !== "") {
       const shouldRestart = value === RadioButtonValues.SAVE_AND_RESTART ? true : false;
       await handleSaveOrSaveAndRestartDeviceSettings(shouldRestart);
@@ -993,7 +905,6 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
   const handleRestartModalClose = useCallback(
     async (value: boolean) => {
-      // Funzione di callback per gestire il valore restituito dalla modale
       if (value) {
         handleRestartDevice(false);
       }
@@ -1066,18 +977,10 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
       <div className="border-t border-border bg-card p-4">
         <div className="flex flex-col gap-6">
+          {/* General (always shown) */}
           <div className="flex flex-col gap-4">
             <p className="font-heading text-sm font-bold uppercase">General</p>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Input
-                label="Hostname"
-                name="hostname"
-                id={`${device.mac}-hostname`}
-                placeholder="hostname"
-                defaultValue={getHostname(device.minerData)}
-                onChange={handleChange}
-                error={deviceError.hostname}
-              />
               <Input
                 label="Worker Name"
                 name="workerName"
@@ -1090,147 +993,31 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <p className="font-heading text-sm font-bold uppercase">Fan settings</p>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-              <Select
-                id={`${device.mac}-fanMode`}
-                label="Fan Mode"
-                name="fanMode"
-                value={fanModeState.mode}
-                optionValues={[
-                  { value: "normal", label: "Normal" },
-                  { value: "manual", label: "Manual" },
-                  { value: "immersion", label: "Immersion" },
-                ]}
-                onChange={(e) => {
-                  const mode = e.target.value;
-                  setFanModeState((prev) => ({
-                    ...prev,
-                    mode,
-                  }));
+          {/* Schema-driven vendor sections */}
+          {configSchema?.sections.map((section) => (
+            <div key={section.key} className="flex flex-col gap-4">
+              <p className="font-heading text-sm font-bold uppercase">{section.label}</p>
+              <div
+                className="grid grid-cols-1 gap-4"
+                style={{
+                  gridTemplateColumns: `repeat(${section.columns ?? 4}, minmax(0, 1fr))`,
                 }}
-              />
-              <Input
-                label="Fan Speed (%)"
-                name="fanSpeed"
-                id={`${device.mac}-fanSpeed`}
-                type="number"
-                value={fanModeState.speed ?? ""}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  const n = parseInt(raw, 10);
-                  setFanModeState((prev) => ({
-                    ...prev,
-                    speed: Number.isFinite(n) ? n : undefined,
-                  }));
-                }}
-                isDisabled={fanModeState.mode !== "manual"}
-                rightAddon="%"
-              />
-              <Input
-                label="Minimum Fans"
-                name="minFans"
-                id={`${device.mac}-minFans`}
-                type="number"
-                value={fanModeState.minimum_fans ?? ""}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  const n = parseInt(raw, 10);
-                  setFanModeState((prev) => ({
-                    ...prev,
-                    minimum_fans: Number.isFinite(n) ? n : undefined,
-                  }));
-                }}
-              />
-              {(() => {
-                const formState = minerSettingsModel.getFormState() as Record<string, unknown>;
-                const hasMinFanSpeed = formState.min_fan_speed !== undefined;
-                const schemaProps = (minerSettingsModel.jsonSchema?.properties || {}) as Record<
-                  string,
-                  Record<string, unknown>
-                >;
-                if (!hasMinFanSpeed || !schemaProps.min_fan_speed) return null;
-                return (
-                  <ExtraConfigFieldRenderer
-                    fieldName="min_fan_speed"
-                    fieldSchema={schemaProps.min_fan_speed}
-                    value={formState.min_fan_speed}
-                    onChange={handleExtraConfigChange}
+              >
+                {section.fields.map((field) => (
+                  <VendorConfigFieldRenderer
+                    key={field.name}
+                    field={field}
+                    value={vendorValues[field.name]}
+                    onChange={handleVendorConfigChange}
                     deviceMac={device.mac}
-                    error={deviceError.min_fan_speed}
+                    error={deviceError[field.name]}
                   />
-                );
-              })()}
-            </div>
-          </div>
-
-          {(() => {
-            const minerType = MinerSettingsFactory.normalizeMinerType(device);
-            const extraConfigFields = getOrderedExtraConfigFields(
-              (minerSettingsModel.jsonSchema || {}) as Record<string, unknown>,
-              minerType
-            );
-            if (extraConfigFields.length === 0) return null;
-            const formState = minerSettingsModel.getFormState() as Record<string, unknown>;
-            const schemaProps = (minerSettingsModel.jsonSchema?.properties || {}) as Record<
-              string,
-              Record<string, unknown>
-            >;
-
-            const renderField = (fieldName: string) => {
-              if (!schemaProps[fieldName]) return null;
-              return (
-                <ExtraConfigFieldRenderer
-                  key={fieldName}
-                  fieldName={fieldName}
-                  fieldSchema={schemaProps[fieldName]}
-                  value={formState[fieldName]}
-                  onChange={handleExtraConfigChange}
-                  deviceMac={device.mac}
-                  error={deviceError[fieldName]}
-                />
-              );
-            };
-
-            const isBitaxeLike = MinerSettingsFactory.isBitaxe(minerType);
-
-            if (isBitaxeLike) {
-              return (
-                <div className="flex flex-col gap-4">
-                  <p className="font-heading text-sm font-bold uppercase">Hardware settings</p>
-                  <div className="flex flex-col gap-4">
-                    {/* Row 1: selects */}
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                      {renderField("frequency")}
-                      {renderField("core_voltage")}
-                      {renderField("rotation")}
-                      {renderField("display_timeout")}
-                    </div>
-
-                    {/* Row 2: checkboxes + stats */}
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                      {renderField("overheat_mode")}
-                      {renderField("overclock_enabled")}
-                      {renderField("invertscreen")}
-                      {renderField("stats_frequency")}
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            // Generic layout for other miner types: multi-column grid
-            return (
-              <div className="flex flex-col gap-4">
-                <p className="font-heading text-sm font-bold uppercase">Hardware settings</p>
-                <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
-                  {extraConfigFields.map((fieldName) => renderField(fieldName))}
-                </div>
+                ))}
               </div>
-            );
-          })()}
+            </div>
+          ))}
 
+          {/* Pool settings */}
           <div className="flex flex-col gap-4">
             <p className="font-heading text-sm font-bold uppercase">Pool settings</p>
 
@@ -1278,7 +1065,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                           name="stratumURL"
                           id={`${selectedPreset.uuid}-stratumUrl`}
                           defaultValue={
-                            (selectedPreset.configuration as MinerConfigModelInput).pools?.groups?.[0]?.pools?.[0]
+                            (selectedPreset.configuration as MinerConfig).pools?.groups?.[0]?.pools?.[0]
                               ?.url || ""
                           }
                         />
@@ -1292,7 +1079,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                           id={`${selectedPreset.uuid}-stratumPort`}
                           defaultValue={
                             getStratumPort({
-                              config: { pools: (selectedPreset.configuration as MinerConfigModelInput).pools },
+                              pools: (selectedPreset.configuration as MinerConfig).pools,
                             } as any) || undefined
                           }
                         />
@@ -1305,7 +1092,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                           name="stratumUser"
                           id={`${selectedPreset.uuid}-stratumUser`}
                           defaultValue={
-                            (selectedPreset.configuration as MinerConfigModelInput).pools?.groups?.[0]?.pools?.[0]
+                            (selectedPreset.configuration as MinerConfig).pools?.groups?.[0]?.pools?.[0]
                               ?.user || ""
                           }
                           rightAddon={`.${stratumFormState.workerName}`}

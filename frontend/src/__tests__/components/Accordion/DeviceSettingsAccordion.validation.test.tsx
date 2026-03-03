@@ -11,73 +11,121 @@ jest.mock("@/providers/SocketProvider", () => ({
   }),
 }));
 
+const defaultConfigForm = {
+  schema: {
+    sections: [
+      {
+        key: "hardware",
+        label: "Hardware Settings",
+        columns: 4,
+        fields: [
+          {
+            name: "frequency",
+            label: "Frequency",
+            type: "select",
+            options: [{ label: "490 MHz", value: 490 }],
+          },
+          {
+            name: "coreVoltage",
+            label: "Core Voltage",
+            type: "number",
+          },
+          {
+            name: "invertscreen",
+            label: "Invert Screen",
+            type: "checkbox",
+          },
+        ],
+      },
+    ],
+  },
+  values: { frequency: 490, coreVoltage: 900, invertscreen: 0 },
+};
+
+function createFetchMock(options?: {
+  presets?: { data: unknown[] };
+  configForm?: { schema: { sections: unknown[] }; values: Record<string, unknown> };
+}) {
+  return jest.fn(async (url: string) => {
+    if (url === "/api/presets") {
+      return {
+        ok: true,
+        json: async () =>
+          options?.presets ?? {
+            data: [
+              {
+                uuid: "preset-1",
+                name: "Preset 1",
+                configuration: {
+                  pools: {
+                    groups: [
+                      {
+                        pools: [
+                          {
+                            url: "stratum+tcp://pool.example.com:3333",
+                            user: "user",
+                            password: "",
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+                associatedDevices: [],
+              },
+            ],
+          },
+      };
+    }
+    if (url.match(/^\/api\/devices\/[^/]+\/config\/form$/)) {
+      const cf = options?.configForm ?? defaultConfigForm;
+      return { ok: true, json: async () => cf };
+    }
+    return { ok: false };
+  });
+}
+
 const makeDiscoveredMiner = (): DiscoveredMiner => ({
   mac: "aa",
   ip: "10.0.0.1",
   type: "Bitaxe",
+  supportLevel: "native",
   tracing: true,
   presetUuid: null,
   minerData: {
     ip: "10.0.0.1",
     hostname: "miner-01",
-    device_info: {
+    fans: [],
+    hashboards: [],
+    deviceInfo: {
       model: "BM1397",
     },
-    config: {
-      pools: {
-        groups: [
-          {
-            pools: [
-              {
-                url: "stratum+tcp://pool.example.com:3333",
-                user: "user.worker",
-                password: "pass",
-              },
-            ],
-          },
-        ],
-      },
-      extra_config: {
-        frequency: 100,
-        core_voltage: 900,
-        fanspeed: 50,
-        autofanspeed: 1,
-        flipscreen: 0,
-        invertfanpolarity: 0,
-      },
+    pools: {
+      groups: [
+        {
+          pools: [
+            {
+              url: "stratum+tcp://pool.example.com:3333",
+              user: "user.worker",
+              password: "pass",
+            },
+          ],
+        },
+      ],
     },
-  },
+    bitaxe: {
+      frequency: 100,
+      coreVoltage: 900,
+      fanspeed: 50,
+      autofanspeed: 1,
+      invertscreen: 0,
+    },
+  } as any,
 });
 
 describe("DeviceSettingsAccordion validation", () => {
   beforeEach(() => {
-    (global as any).fetch = jest.fn(async () => ({
-      ok: true,
-      json: async () => ({
-        data: [
-          {
-            uuid: "preset-1",
-            name: "Preset 1",
-            configuration: {
-              pools: {
-                groups: [
-                  {
-                    pools: [
-                      {
-                        url: "stratum+tcp://pool.example.com:3333",
-                        user: "user",
-                        password: "",
-                      },
-                    ],
-                  },
-                ],
-              },
-            },
-            associatedDevices: [],
-          },
-        ],
-      }),
-    }));
+    (global as any).fetch = createFetchMock();
   });
 
   async function openFirstDetails(container: HTMLElement) {
@@ -189,8 +237,8 @@ describe("DeviceSettingsAccordion validation", () => {
   it("disables Save when a required device field is empty", async () => {
     const device = makeDiscoveredMiner();
     // Clear stratumURL which is a required field
-    if (device.minerData.config?.pools?.groups?.[0]?.pools?.[0]) {
-      device.minerData.config.pools.groups[0].pools[0].url = "";
+    if (device.minerData.pools?.groups?.[0]?.pools?.[0]) {
+      device.minerData.pools.groups[0].pools[0].url = "";
     }
 
     const { container } = render(

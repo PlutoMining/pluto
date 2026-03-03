@@ -18,7 +18,6 @@
   "dependencies": {
     "@network-utils/arp-lookup": "^2.1.0",
     "@pluto/interfaces": "file:../common/interfaces",
-    "@pluto/pyasic-bridge-client": "file:../common/pyasic-bridge-client",
     "@pluto/utils": "file:../common/utils",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-collapsible": "^1.1.12",

@@ -7,6 +7,11 @@ import { DeviceSettingsAccordion } from "@/components/Accordion";
 
 jest.mock("axios");
 
+jest.mock("@pluto/utils", () => ({
+  validateDomain: jest.fn(() => true),
+  validateTCPPort: jest.fn(() => true),
+}));
+
 jest.mock("@/providers/SocketProvider", () => ({
   useSocket: () => ({
     isConnected: false,
@@ -20,42 +25,116 @@ const axiosMock = axios as unknown as {
   isAxiosError: jest.Mock;
 };
 
+const defaultConfigForm = {
+  schema: {
+    sections: [
+      {
+        key: "hardware",
+        label: "Hardware Settings",
+        columns: 4,
+        fields: [
+          {
+            name: "frequency",
+            label: "Frequency",
+            type: "select",
+            options: [{ label: "490 MHz", value: 490 }],
+          },
+          {
+            name: "coreVoltage",
+            label: "Core Voltage",
+            type: "number",
+          },
+          {
+            name: "invertscreen",
+            label: "Invert Screen",
+            type: "checkbox",
+          },
+        ],
+      },
+    ],
+  },
+  values: { frequency: 490, coreVoltage: 900, invertscreen: 0 },
+};
+
+function createFetchMock(options?: {
+  presets?: { data: unknown[] };
+  configForm?: { schema: { sections: unknown[] }; values: Record<string, unknown> };
+}) {
+  return jest.fn(async (url: string) => {
+    if (url === "/api/presets") {
+      return {
+        ok: true,
+        json: async () =>
+          options?.presets ?? {
+            data: [
+              {
+                uuid: "preset-1",
+                name: "Preset 1",
+                configuration: {
+                  pools: {
+                    groups: [
+                      {
+                        pools: [
+                          {
+                            url: "stratum+tcp://pool.example.com:3333",
+                            user: "user",
+                            password: "",
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+                associatedDevices: [],
+              },
+            ],
+          },
+      };
+    }
+    if (url.match(/^\/api\/devices\/[^/]+\/config\/form$/)) {
+      const cf = options?.configForm ?? defaultConfigForm;
+      return { ok: true, json: async () => cf };
+    }
+    return { ok: false };
+  });
+}
+
 const makeDiscoveredMiner = (mac: string, hostname: string): DiscoveredMiner => ({
   mac,
   ip: "10.0.0.1",
   type: "Bitaxe",
+  supportLevel: "native",
   tracing: true,
   presetUuid: null,
   minerData: {
     ip: "10.0.0.1",
     hostname,
-    device_info: {
+    fans: [],
+    hashboards: [],
+    deviceInfo: {
       model: "BM1397",
     },
-    config: {
-      pools: {
-        groups: [
-          {
-            pools: [
-              {
-                url: "stratum+tcp://pool.example.com:3333",
-                user: "user.worker",
-                password: "pass",
-              },
-            ],
-          },
-        ],
-      },
-      extra_config: {
-        frequency: 100,
-        core_voltage: 900,
-        fanspeed: 50,
-        autofanspeed: 1,
-        flipscreen: 0,
-        invertfanpolarity: 0,
-      },
+    pools: {
+      groups: [
+        {
+          pools: [
+            {
+              url: "stratum+tcp://pool.example.com:3333",
+              user: "user.worker",
+              password: "pass",
+            },
+          ],
+        },
+      ],
     },
-  },
+    bitaxe: {
+      frequency: 100,
+      coreVoltage: 900,
+      fanspeed: 50,
+      autofanspeed: 1,
+      invertscreen: 0,
+    },
+  } as any,
 });
 
 describe("DeviceSettingsAccordion actions", () => {
@@ -66,41 +145,12 @@ describe("DeviceSettingsAccordion actions", () => {
     axiosMock.patch = jest.fn();
     axiosMock.isAxiosError = jest.fn(() => false);
 
-    (global as any).fetch = jest.fn(async () => ({
-      ok: true,
-      json: async () => ({
-        data: [
-          {
-            uuid: "preset-1",
-            name: "Preset 1",
-            configuration: {
-              pools: {
-                groups: [
-                  {
-                    pools: [
-                      {
-                        url: "stratum+tcp://pool.example.com:3333",
-                        user: "user",
-                        password: "",
-                      },
-                    ],
-                  },
-                ],
-              },
-            },
-            associatedDevices: [],
-          },
-        ],
-      }),
-    }));
+    (global as any).fetch = createFetchMock();
   });
 
   it("keeps stratumURL as a string when saving an IP address", async () => {
     // Ensure we are in custom mode without presets so the save payload uses the edited form state.
-    (global as any).fetch = jest.fn(async () => ({
-      ok: true,
-      json: async () => ({ data: [] }),
-    }));
+    (global as any).fetch = createFetchMock({ presets: { data: [] } });
 
     const device = makeDiscoveredMiner("aa", "miner-01");
     axiosMock.patch
@@ -124,10 +174,18 @@ describe("DeviceSettingsAccordion actions", () => {
       fireEvent(details, new Event("toggle"));
     });
 
-    const stratumUrl = details.querySelector("input#aa-stratumUrl") as HTMLInputElement;
-    fireEvent.change(stratumUrl, { target: { value: "192.168.0.252" } });
+    await waitFor(() => {
+      expect(details.querySelector("input#aa-stratumUrl")).not.toBeNull();
+    });
 
-    fireEvent.click(within(details).getByRole("button", { name: "Save" }));
+    const stratumUrl = details.querySelector("input#aa-stratumUrl") as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(stratumUrl, { target: { value: "192.168.0.252" } });
+    });
+
+    const saveButton = within(details).getByRole("button", { name: "Save" });
+    await waitFor(() => expect(saveButton).not.toBeDisabled());
+    fireEvent.click(saveButton);
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "Confirm" }));
 
@@ -336,8 +394,8 @@ describe("DeviceSettingsAccordion actions", () => {
 
   it("uses the selected preset values when saving device settings", async () => {
     const device = makeDiscoveredMiner("aa", "miner-01");
-    if (device.minerData.config?.pools?.groups?.[0]?.pools?.[0]) {
-      device.minerData.config.pools.groups[0].pools[0].user = "other.worker";
+    if (device.minerData.pools?.groups?.[0]?.pools?.[0]) {
+      device.minerData.pools.groups[0].pools[0].user = "other.worker";
     }
     axiosMock.patch
       .mockResolvedValueOnce({ data: { data: device } })

@@ -7,75 +7,6 @@ import { DeviceSettingsAccordion } from "@/components/Accordion";
 
 jest.mock("axios");
 
-// Test-only stub for ExtraConfigSchemas so these coverage tests don't depend on
-// the generated client or Python tooling. This matches the Bitaxe fields used
-// by the Hardware settings section.
-jest.mock("@pluto/pyasic-bridge-client", () => ({
-  ExtraConfigSchemas: {
-    bitaxe: {
-      properties: {
-        frequency: {
-          anyOf: [
-            { type: "integer", enum: [400, 490, 525, 550, 600, 625] },
-            { type: "null" },
-          ],
-        },
-        core_voltage: {
-          anyOf: [
-            { type: "integer", enum: [1000, 1060, 1100, 1150, 1200, 1250] },
-            { type: "null" },
-          ],
-        },
-        rotation: {
-          anyOf: [
-            { type: "integer", enum: [0, 90, 180, 270] },
-            { type: "null" },
-          ],
-        },
-        invertscreen: {
-          anyOf: [
-            { type: "integer", enum: [0, 1] },
-            { type: "null" },
-          ],
-        },
-        display_timeout: {
-          anyOf: [
-            { type: "integer", enum: [-1, 1, 2, 5, 15, 30, 60, 120, 240, 480] },
-            { type: "null" },
-          ],
-        },
-        overheat_mode: {
-          anyOf: [
-            { type: "integer", enum: [0, 1] },
-            { type: "null" },
-          ],
-        },
-        overclock_enabled: {
-          anyOf: [
-            { type: "integer", enum: [0, 1] },
-            { type: "null" },
-          ],
-        },
-        stats_frequency: {
-          anyOf: [{ type: "integer" }, { type: "null" }],
-        },
-        min_fan_speed: {
-          anyOf: [{ type: "integer" }, { type: "null" }],
-        },
-      },
-    },
-    espminer: {
-      properties: {
-        frequency: {
-          anyOf: [
-            { type: "integer", enum: [400, 490, 525, 550, 600, 625] },
-            { type: "null" },
-          ],
-        },
-      },
-    },
-  },
-}));
 
 jest.mock("@/providers/SocketProvider", () => ({
   useSocket: () => ({
@@ -90,42 +21,93 @@ const axiosMock = axios as unknown as {
   isAxiosError: jest.Mock;
 };
 
+const defaultConfigForm = {
+  schema: {
+    sections: [
+      {
+        key: "hardware",
+        label: "Hardware Settings",
+        columns: 4,
+        fields: [
+          {
+            name: "frequency",
+            label: "Frequency",
+            type: "select",
+            options: [{ label: "490 MHz", value: 490 }],
+          },
+          {
+            name: "coreVoltage",
+            label: "Core Voltage",
+            type: "number",
+          },
+          {
+            name: "invertscreen",
+            label: "Invert Screen",
+            type: "checkbox",
+          },
+        ],
+      },
+    ],
+  },
+  values: { frequency: 490, coreVoltage: 900, invertscreen: 0 },
+};
+
+function createFetchMock(options?: {
+  presets?: { data: unknown[] };
+  configForm?: { schema: { sections: unknown[] }; values: Record<string, unknown> };
+}) {
+  return jest.fn(async (url: string) => {
+    if (url === "/api/presets") {
+      return {
+        ok: true,
+        json: async () =>
+          options?.presets ?? { data: [] },
+      };
+    }
+    if (url.match(/^\/api\/devices\/[^/]+\/config\/form$/)) {
+      const cf = options?.configForm ?? defaultConfigForm;
+      return { ok: true, json: async () => cf };
+    }
+    return { ok: false };
+  });
+}
+
 const makeDiscoveredMiner = (mac: string, hostname: string): DiscoveredMiner => ({
   mac,
   ip: "10.0.0.1",
   type: "Bitaxe",
+  supportLevel: "native",
   tracing: true,
   presetUuid: null,
   minerData: {
     ip: "10.0.0.1",
     hostname,
-    device_info: {
+    fans: [],
+    hashboards: [],
+    deviceInfo: {
       model: "BM1397",
     },
-    config: {
-      pools: {
-        groups: [
-          {
-            pools: [
-              {
-                url: "stratum+tcp://pool.example.com:3333",
-                user: "user.worker",
-                password: "pass",
-              },
-            ],
-          },
-        ],
-      },
-      extra_config: {
-        frequency: 100,
-        core_voltage: 900,
-        fanspeed: 50,
-        autofanspeed: 1,
-        flipscreen: 0,
-        invertfanpolarity: 0,
-      },
+    pools: {
+      groups: [
+        {
+          pools: [
+            {
+              url: "stratum+tcp://pool.example.com:3333",
+              user: "user.worker",
+              password: "pass",
+            },
+          ],
+        },
+      ],
     },
-  },
+    bitaxe: {
+      frequency: 100,
+      coreVoltage: 900,
+      fanspeed: 50,
+      autofanspeed: 1,
+      invertscreen: 0,
+    },
+  } as any,
 });
 
 async function openFirstDetails(container: HTMLElement) {
@@ -147,10 +129,7 @@ describe("DeviceSettingsAccordion additional coverage", () => {
     axiosMock.post = jest.fn();
     axiosMock.isAxiosError = jest.fn(() => false);
 
-    (global as any).fetch = jest.fn(async () => ({
-      ok: true,
-      json: async () => ({ data: [] }),
-    }));
+    (global as any).fetch = createFetchMock({ presets: { data: [] } });
   });
 
   it("updates existing checked item and renders X/Y selected", async () => {
@@ -368,9 +347,7 @@ describe("DeviceSettingsAccordion additional coverage", () => {
     // Verify password is correctly stored as string and checkbox mapping.
     expect(firstPayload.pools?.groups?.[0]?.pools?.[0]?.password).toBe("1234");
     expect(typeof firstPayload.pools?.groups?.[0]?.pools?.[0]?.password).toBe("string");
-    expect(firstPayload.extra_config?.invertscreen).toBe(0);
-    // Note: URL may still contain original port if URL field already had port,
-    // but port parsing (stripping non-digits) is verified by the form handling
+    expect(firstPayload.vendorConfig?.invertscreen).toBe(0);
   });
 
   it("surfaces axios response message when saving device settings fails", async () => {
@@ -463,8 +440,8 @@ describe("DeviceSettingsAccordion additional coverage", () => {
 
   it("parses stratumUser without a dot and falls back to hostname", async () => {
     const device = makeDiscoveredMiner("aa", "miner-01");
-    if (device.minerData.config?.pools?.groups?.[0]?.pools?.[0]) {
-      device.minerData.config.pools.groups[0].pools[0].user = "wallet";
+    if (device.minerData.pools?.groups?.[0]?.pools?.[0]) {
+      device.minerData.pools.groups[0].pools[0].user = "wallet";
     }
 
     const { container } = render(
@@ -482,8 +459,8 @@ describe("DeviceSettingsAccordion additional coverage", () => {
 
   it("parses stratumUser ending with a dot and falls back to hostname", async () => {
     const device = makeDiscoveredMiner("aa", "miner-01");
-    if (device.minerData.config?.pools?.groups?.[0]?.pools?.[0]) {
-      device.minerData.config.pools.groups[0].pools[0].user = "wallet.";
+    if (device.minerData.pools?.groups?.[0]?.pools?.[0]) {
+      device.minerData.pools.groups[0].pools[0].user = "wallet.";
     }
 
     const { container } = render(
@@ -500,9 +477,8 @@ describe("DeviceSettingsAccordion additional coverage", () => {
   });
 
   it("clears presetUuid when switching to custom mode and re-running custom is a no-op", async () => {
-    (global as any).fetch = jest.fn(async () => ({
-      ok: true,
-      json: async () => ({
+    (global as any).fetch = createFetchMock({
+      presets: {
         data: [
           {
             uuid: "preset-1",
@@ -525,8 +501,8 @@ describe("DeviceSettingsAccordion additional coverage", () => {
             associatedDevices: [],
           },
         ],
-      }),
-    }));
+      },
+    });
 
     const device = makeDiscoveredMiner("aa", "miner-01");
     device.presetUuid = "preset-1";
@@ -597,12 +573,13 @@ describe("DeviceSettingsAccordion additional coverage", () => {
     await waitFor(() => expect((global as any).fetch).toHaveBeenCalledWith("/api/presets"));
     const details = await openFirstDetails(container);
 
-    const hostname = details.querySelector("input#aa-hostname") as HTMLInputElement;
-    expect(hostname).not.toBeNull();
+    const workerName = details.querySelector("input#aa-workerName") as HTMLInputElement;
+    expect(workerName).not.toBeNull();
 
     // Simulate a change for an unknown field name to hit the switch default branch.
-    hostname.name = "unknownField";
-    fireEvent.change(hostname, { target: { value: "miner-01" } });
+    fireEvent.change(workerName, {
+      target: { name: "unknownField", value: "miner-01", type: "text" },
+    });
 
     expect(screen.queryByText("unknownField is not correct.")).toBeNull();
   });
