@@ -1,27 +1,45 @@
-/**
- * Copyright (C) 2024 Alberto Gangarossa.
- * Pluto is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License
- * as published by the Free Software Foundation, version 3.
- * See <https://www.gnu.org/licenses/>.
- */
-
 import { createMockMinerContext, DEFAULT_MINER_TYPE } from "@/factories/mock-miner-context.factory";
 import { DeviceApiVersion } from "@/types/axeos.types";
 
 describe("createMockMinerContext", () => {
-  it("creates a context with default miner type and legacy API version", () => {
+  it("defaults to generic miner type", () => {
     const startTime = new Date("2024-01-01T00:00:00Z");
 
     const ctx = createMockMinerContext({
-      // intentionally omit minerType and apiVersion to exercise defaults
-      hostname: "mockaxe1",
+      hostname: "mock-miner-1",
       startTime,
     });
 
-    expect(ctx.getHostname()).toBe("mockaxe1");
-    expect(ctx.getMinerType()).toBe(DEFAULT_MINER_TYPE);
+    expect(ctx.getHostname()).toBe("mock-miner-1");
+    expect(ctx.getMinerType()).toBe("generic");
+    expect(ctx.getApiVersion()).toBe("generic");
+    expect(DEFAULT_MINER_TYPE).toBe("generic");
+  });
+
+  it("creates axeos context when minerType is axeos", () => {
+    const startTime = new Date("2024-01-01T00:00:00Z");
+
+    const ctx = createMockMinerContext({
+      minerType: "axeos",
+      hostname: "bitaxe1",
+      startTime,
+      apiVersion: DeviceApiVersion.Legacy,
+    });
+
+    expect(ctx.getMinerType()).toBe("axeos");
+    expect(ctx.getApiVersion()).toBe(DeviceApiVersion.Legacy);
+  });
+
+  it("defaults AxeOS apiVersion to Legacy when not provided", () => {
+    const startTime = new Date("2024-01-01T00:00:00Z");
+
+    const ctx = createMockMinerContext({
+      minerType: "axeos",
+      hostname: "bitaxe2",
+      startTime,
+    });
+
+    expect(ctx.getMinerType()).toBe("axeos");
     expect(ctx.getApiVersion()).toBe(DeviceApiVersion.Legacy);
   });
 });
-

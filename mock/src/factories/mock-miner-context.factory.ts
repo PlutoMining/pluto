@@ -1,10 +1,11 @@
 import { MockMinerContext } from "../contexts/mock-miner-context";
+import { GenericMockMinerStrategy } from "../strategies/generic-mock-miner-strategy";
 import { AxeosMockMinerStrategy } from "../strategies/axeos-mock-miner-strategy";
 import { DeviceApiVersion } from "../types/axeos.types";
 
-export type SupportedMinerType = "axeos";
+export type SupportedMinerType = "generic" | "axeos";
 
-export const DEFAULT_MINER_TYPE: SupportedMinerType = "axeos";
+export const DEFAULT_MINER_TYPE: SupportedMinerType = "generic";
 
 export interface MockMinerContextFactoryOptions {
   minerType?: SupportedMinerType;
@@ -24,12 +25,21 @@ export const createMockMinerContext = (
   const minerType = options.minerType ?? DEFAULT_MINER_TYPE;
 
   switch (minerType) {
-    case "axeos":
-    default: {
+    case "axeos": {
       const strategy = new AxeosMockMinerStrategy(
         options.apiVersion ?? DeviceApiVersion.Legacy
       );
+      return new MockMinerContext({
+        strategy,
+        hostname: options.hostname,
+        startTime: options.startTime,
+        initialSystemInfo: options.systemInfoOverrides,
+      });
+    }
 
+    case "generic":
+    default: {
+      const strategy = new GenericMockMinerStrategy();
       return new MockMinerContext({
         strategy,
         hostname: options.hostname,
@@ -39,4 +49,3 @@ export const createMockMinerContext = (
     }
   }
 };
-

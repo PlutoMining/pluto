@@ -1,5 +1,3 @@
-import { DeviceApiVersion } from "@/types/axeos.types";
-
 const flushMicrotasks = async () => {
   await Promise.resolve();
   await Promise.resolve();
@@ -81,7 +79,6 @@ describe("mock index", () => {
 
     expect(logger.info).toHaveBeenCalledWith("All mock servers started successfully");
 
-    // Validate listing route.
     const listingApp = apps[0];
     const handler = listingApp._routes["/servers"];
     const res = { json: jest.fn() };
@@ -91,8 +88,8 @@ describe("mock index", () => {
       expect.objectContaining({
         message: "Available servers from listing-server:7000",
         servers: [
-          expect.objectContaining({ hostname: "bitaxeGamma2", port: 9001 }),
-          expect.objectContaining({ hostname: "bitaxeSupra1", port: 9002 }),
+          expect.objectContaining({ hostname: "antminer-s19-pro-01", port: 9001 }),
+          expect.objectContaining({ hostname: "whatsminer-m30s-01", port: 9002 }),
         ],
       })
     );
@@ -166,7 +163,7 @@ describe("mock index", () => {
     );
   });
 
-  it("passes device profiles with API versions and overrides to workers", async () => {
+  it("passes generic profiles with overrides to workers", async () => {
     const logger = {
       info: jest.fn(),
       error: jest.fn(),
@@ -198,23 +195,20 @@ describe("mock index", () => {
     await import("../index");
     await flushMicrotasks();
 
-    expect(ctorCalls[0].apiVersion).toBe(DeviceApiVersion.Legacy);
-    expect(ctorCalls[1].apiVersion).toBe(DeviceApiVersion.New);
-
-    expect(ctorCalls[0].hostname).toBe("bitaxeGamma2");
+    expect(ctorCalls[0].minerType).toBe("generic");
+    expect(ctorCalls[0].hostname).toBe("antminer-s19-pro-01");
     expect(ctorCalls[0].systemInfoOverrides).toEqual(
-      expect.objectContaining({ ASICModel: "BM1370" })
+      expect.objectContaining({ make: "Bitmain", model: "Antminer S19 Pro" })
     );
-    expect(ctorCalls[1].hostname).toBe("bitaxeSupra1");
+    expect(ctorCalls[1].minerType).toBe("generic");
+    expect(ctorCalls[1].hostname).toBe("whatsminer-m30s-01");
     expect(ctorCalls[1].systemInfoOverrides).toEqual(
-      expect.objectContaining({ ASICModel: "BM1368" })
+      expect.objectContaining({ make: "MicroBT", model: "Whatsminer M30S++" })
     );
   });
 
-  it("uses fallback hostname and empty hostnameOverride for profiles with no hostname", async () => {
-    // Use 3 ports so we reach profile index 2 (hostname: ""), which exercises
-    // the `hostname || \`mockaxe${i+1}\`` and `hostnameOverride = {}` branches.
-    process.env.PORTS = "9001,9002,9003";
+  it("uses fallback hostname for profiles with empty hostname", async () => {
+    process.env.PORTS = "9001,9002,9003,9004,9005";
 
     const logger = { info: jest.fn(), error: jest.fn() };
     jest.doMock("@pluto/logger", () => ({ logger }));
@@ -244,10 +238,9 @@ describe("mock index", () => {
     await import("../index");
     await flushMicrotasks();
 
-    // Profile index 2 has hostname: "" → fallback to "mockaxe3"
-    expect(ctorCalls[2].hostname).toBe("mockaxe3");
-    // Empty-hostname profile injects { hostname: "" } into overrides
-    expect(ctorCalls[2].systemInfoOverrides).toEqual(
+    // Profile index 4 has hostname: "" → fallback to "mock-miner-5"
+    expect(ctorCalls[4].hostname).toBe("mock-miner-5");
+    expect(ctorCalls[4].systemInfoOverrides).toEqual(
       expect.objectContaining({ hostname: "" })
     );
     // Profile index 0 has a real hostname → no hostname override injected
@@ -255,8 +248,6 @@ describe("mock index", () => {
   });
 
   it("listing server filters out its own port from the server list", async () => {
-    // Use the listing port as one of the mock server ports so the filter
-    // actually removes an entry, exercising the !== branch.
     process.env.LISTING_PORT = "9001";
     process.env.PORTS = "9001,9002";
 
@@ -298,10 +289,7 @@ describe("mock index", () => {
     handler({}, res);
 
     const { servers } = res.json.mock.calls[0][0];
-    // Port 9001 is the listing port itself — it must be filtered out
     expect(servers.every((s: any) => s.port !== 9001)).toBe(true);
-    // Port 9002 should still be present
     expect(servers.some((s: any) => s.port === 9002)).toBe(true);
   });
-
 });
