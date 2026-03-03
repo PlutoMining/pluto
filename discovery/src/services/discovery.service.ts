@@ -7,14 +7,14 @@
 */
 
 import { findMany, findOne, insertOne, updateOne } from "@pluto/db";
-import { DiscoveredMiner } from "@pluto/interfaces";
+import type { DiscoveredMiner, MinerData } from "@pluto/interfaces";
 import { logger } from "@pluto/logger";
-import axios from "axios";
 import { config } from "../config/environment";
 import { ArpScanResult, arpScan, getActiveNetworkInterfaces } from "./arpScanWrapper";
 import { ConcurrencyLimiter } from "./concurrency-limiter.service";
 import { DeviceConverterService } from "./device-converter.service";
 import { MinerValidationService } from "./miner-validation.service";
+import { nativeMinerDetector } from "./native-detector.service";
 import { UtilsService } from "./utils.service";
 
 interface DiscoveryOptions {
@@ -57,22 +57,37 @@ async function discoverSingleIp(
   ip: string,
   mac?: string
 ): Promise<DiscoveredMiner[]> {
-  logger.info(
-    `Bypassing ARP discovery and directly validating IP via pyasic-bridge: ${ip}`
-  );
+  logger.info(`[discovery] ${ip}: trying native driver first`);
+  const nativeResult = await nativeMinerDetector.detect(ip);
+  if (nativeResult) {
+    const deviceMac = mac || nativeResult.mac || "unknown";
+    const discoveredMiner = DeviceConverterService.createDiscoveredMiner(
+      ip,
+      deviceMac,
+      null,
+      null,
+      nativeResult.minerData,
+      "native"
+    );
+    logger.info(
+      `[discovery] ${ip}: discovered via native driver (${nativeResult.type}), supportLevel=native`
+    );
+    await storeDiscoveredMiner(discoveredMiner);
+    return [discoveredMiner];
+  }
 
+  logger.info(`[discovery] ${ip}: no native match, falling back to pyasic-bridge (generic)`);
   const validationResult = await MinerValidationService.validateSingleIp(ip);
 
   if (!validationResult || !validationResult.is_miner) {
     logger.info(
-      `Device ${ip} is not a valid miner according to pyasic-bridge${
+      `[discovery] ${ip}: not a miner (pyasic-bridge)${
         validationResult?.error ? `: ${validationResult.error}` : ""
       }`
     );
     return [];
   }
 
-  // Fetch miner data to enrich device info
   const minerData = await MinerValidationService.fetchMinerData(ip);
   const deviceMac = mac || minerData?.mac || "unknown";
 
@@ -81,11 +96,12 @@ async function discoverSingleIp(
     deviceMac,
     validationResult,
     null,
-    minerData
+    minerData,
+    "generic"
   );
 
   logger.info(
-    `Discovered miner ${ip} (${validationResult.model || "unknown model"}) validated and added to the list.`
+    `[discovery] ${ip}: discovered via pyasic-bridge (generic), model=${validationResult.model ?? "unknown"}, supportLevel=generic`
   );
 
   await storeDiscoveredMiner(discoveredMiner);
@@ -93,44 +109,170 @@ async function discoverSingleIp(
 }
 
 /**
- * Retrieves mock devices from the mock discovery service.
+ * Maps raw mock `/api/system/info` data to canonical MinerData.
  */
-async function getMockDevices(): Promise<ArpScanResult[]> {
+function mapMockInfoToMinerData(ip: string, raw: Record<string, unknown>): MinerData {
+  return {
+    ip,
+    mac: raw.mac as string | undefined,
+    hostname: raw.hostname as string | undefined,
+    deviceInfo:
+      raw.make || raw.model || raw.firmware || raw.algo
+        ? {
+            make: (raw.make as string) ?? undefined,
+            model: (raw.model as string) ?? undefined,
+            firmware: (raw.firmware as string) ?? undefined,
+            algo: (raw.algo as string) ?? undefined,
+          }
+        : undefined,
+    serialNumber: (raw.serial_number as string) ?? undefined,
+    hashrate: raw.hashrate != null ? { rate: raw.hashrate as number } : undefined,
+    expectedHashrate: raw.expected_hashrate != null ? { rate: raw.expected_hashrate as number } : undefined,
+    wattage: (raw.wattage as number) ?? undefined,
+    wattageLimit: (raw.wattage_limit as number) ?? undefined,
+    voltage: (raw.voltage as number) ?? undefined,
+    temperatureAvg: (raw.temperature_avg as number) ?? undefined,
+    envTemp: (raw.env_temp as number) ?? undefined,
+    sharesAccepted: (raw.shares_accepted as number) ?? undefined,
+    sharesRejected: (raw.shares_rejected as number) ?? undefined,
+    bestDifficulty: (raw.best_difficulty as string) ?? undefined,
+    bestSessionDifficulty: (raw.best_session_difficulty as string) ?? undefined,
+    networkDifficulty: (raw.network_difficulty as number) ?? undefined,
+    fans: Array.isArray(raw.fans)
+      ? (raw.fans as { speed?: number }[]).map((f) => ({ speed: f.speed ?? undefined }))
+      : undefined,
+    hashboards: Array.isArray(raw.hashboards)
+      ? (raw.hashboards as Record<string, unknown>[]).map((h) => ({
+          slot: (h.slot as number) ?? undefined,
+          hashrate: h.hashrate != null ? { rate: h.hashrate as number } : undefined,
+          temp: (h.temp as number) ?? undefined,
+          chipTemp: (h.chip_temp as number) ?? undefined,
+          chips: (h.chips as number) ?? undefined,
+          expectedChips: (h.expected_chips as number) ?? undefined,
+          active: (h.active as boolean) ?? undefined,
+          voltage: (h.voltage as number) ?? undefined,
+        }))
+      : undefined,
+    totalChips: (raw.total_chips as number) ?? undefined,
+    expectedChips: (raw.expected_chips as number) ?? undefined,
+    expectedHashboards: (raw.expected_hashboards as number) ?? undefined,
+    expectedFans: (raw.expected_fans as number) ?? undefined,
+    isMining: (raw.is_mining as boolean) ?? undefined,
+    uptime: (raw.uptime as number) ?? undefined,
+    nominal: (raw.nominal as boolean) ?? undefined,
+    efficiency: raw.efficiency != null ? { rate: raw.efficiency as number } : undefined,
+    pools:
+      raw.pool_url
+        ? {
+            groups: [
+              {
+                pools: [{ url: raw.pool_url as string, user: (raw.pool_user as string) ?? undefined }],
+              },
+            ],
+          }
+        : undefined,
+    fwVer: (raw.fw_ver as string) ?? undefined,
+    apiVer: (raw.api_ver as string) ?? undefined,
+    datetime: (raw.datetime as string) ?? undefined,
+    timestamp: (raw.timestamp as number) ?? undefined,
+  };
+}
+
+/**
+ * Discovers mock devices by fetching their data directly from the mock
+ * HTTP API, bypassing pyasic-bridge validation entirely.
+ *
+ * Mock miners don't speak a real miner protocol, so pyasic cannot
+ * validate them. Instead we hit each mock's `/api/system/info` endpoint
+ * and map the response into a DiscoveredMiner.
+ */
+async function discoverMockDevices(): Promise<DiscoveredMiner[]> {
   try {
-    logger.info(`Fetching mock devices from ${config.mockDiscoveryHost}/servers`);
-    const response = await axios.get(`${config.mockDiscoveryHost}/servers`, {
-      timeout: 5000,
+    logger.info(`Fetching mock device list from ${config.mockDiscoveryHost}/servers`);
+    const res = await fetch(`${config.mockDiscoveryHost}/servers`, {
+      signal: AbortSignal.timeout(5000),
     });
-    
-    if (!response.data || !Array.isArray(response.data.servers)) {
+
+    if (!res.ok) {
+      throw new Error(`Mock discovery service returned ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (!data || !Array.isArray(data.servers)) {
       logger.warn("Mock discovery service returned invalid response format");
-      throw new Error("No mock servers found");
+      return [];
     }
 
-    logger.info(`Mock servers retrieved: ${response.data.servers.length} found.`);
+    logger.info(`Mock servers retrieved: ${data.servers.length} found.`);
 
-    return response.data.servers.map((server: any, index: number) => ({
-      // Use MOCK_DEVICE_HOST for device IPs (allows Docker containers to reach mock devices)
-      // If MOCK_DEVICE_HOST is set, use it; otherwise extract from mockDiscoveryHost
-      ip: config.mockDeviceHost
-        ? `${config.mockDeviceHost}:${server.port}`
-        : config.mockDiscoveryHost.replace(/https?:\/\/(.+)(:.+)$/, `$1:${server.port}`),
-      // Deterministic MAC based on port so it stays stable across restarts/removals.
-      // This avoids generating a different MAC when the /servers ordering changes.
-      mac:
-        UtilsService.mockMacFromPort(server.port) ??
-        `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`,
-      type: "unknown",
-    }));
+    // Discovery runs with host networking, so it fetches mock data via the
+    // listing host (localhost).  The stored IP may differ (e.g. host.docker.internal)
+    // so that the backend (bridge network) can reach the mock later.
+    const fetchHost = config.mockDiscoveryHost.replace(/^https?:\/\//, "").replace(/:\d+$/, "");
+
+    // Phase 1: Fetch data from all mocks in parallel (HTTP is safe to parallelize)
+    const fetchResults = await Promise.allSettled(
+      data.servers.map(async (server: any, index: number) => {
+        const fetchIp = `${fetchHost}:${server.port}`;
+
+        const storageIp = config.mockDeviceHost
+          ? `${config.mockDeviceHost}:${server.port}`
+          : fetchIp;
+
+        const mac =
+          UtilsService.mockMacFromPort(server.port) ??
+          `ff:ff:ff:ff:ff:${(index + 1).toString(16).padStart(2, "0")}`;
+
+        const infoUrl = `http://${fetchIp}/api/system/info`;
+        const infoRes = await fetch(infoUrl, { signal: AbortSignal.timeout(3000) });
+        if (!infoRes.ok) {
+          logger.warn(`Mock device ${fetchIp} returned ${infoRes.status} from /api/system/info`);
+          return null;
+        }
+
+        const raw: Record<string, unknown> = await infoRes.json();
+        const minerData = mapMockInfoToMinerData(storageIp, raw);
+
+        const discoveredMiner = DeviceConverterService.createDiscoveredMiner(
+          storageIp,
+          mac,
+          null,
+          null,
+          minerData,
+          "generic"
+        );
+
+        logger.info(
+          `[discovery] ${storageIp}: mock device discovered directly (fetched via ${fetchIp}), model=${minerData.deviceInfo?.model ?? "unknown"}, supportLevel=generic`
+        );
+        return discoveredMiner;
+      })
+    );
+
+    // Phase 2: Store results sequentially (LevelDB doesn't handle concurrent writes)
+    const miners: DiscoveredMiner[] = [];
+    for (const r of fetchResults) {
+      if (r.status === "fulfilled" && r.value) {
+        try {
+          await storeDiscoveredMiner(r.value);
+          miners.push(r.value);
+        } catch (err) {
+          logger.warn(`Failed to store mock device ${r.value.ip}:`, err instanceof Error ? err.message : err);
+          miners.push(r.value);
+        }
+      } else if (r.status === "rejected") {
+        logger.warn(`Failed to fetch mock device data:`, r.reason);
+      }
+    }
+
+    logger.info(`Mock device discovery complete: ${miners.length} device(s) discovered.`);
+    return miners;
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      logger.error(
-        `Failed to fetch mock devices from ${config.mockDiscoveryHost}: ${error.message} (${error.code || "unknown"})`
-      );
-    } else {
-      logger.error(`Error fetching mock devices:`, error);
-    }
-    throw error;
+    logger.error(
+      `Error discovering mock devices:`,
+      error instanceof Error ? error.message : error
+    );
+    return [];
   }
 }
 
@@ -142,48 +284,89 @@ async function validateChunk(
   ipToArpDevice: Map<string, ArpScanResult>
 ): Promise<DiscoveredMiner[]> {
   const chunkMiners: DiscoveredMiner[] = [];
+  const remainingIps: string[] = [];
 
-  logger.info(`Validating chunk of ${chunk.length} IPs: ${chunk.join(", ")}`);
+  logger.info(`[discovery] Chunk: ${chunk.length} IPs (${chunk.join(", ")})`);
 
+  logger.info(`[discovery] Phase 1: trying native driver for ${chunk.length} IP(s) in parallel`);
+  const nativeResults = await Promise.allSettled(
+    chunk.map(async (ip) => {
+      const arpDevice = ipToArpDevice.get(ip);
+      if (!arpDevice) {
+        logger.warn(`No ARP device found for IP: ${ip}`);
+        return { ip, arpDevice: null, nativeResult: null };
+      }
+      const nativeResult = await nativeMinerDetector.detect(ip);
+      return { ip, arpDevice, nativeResult };
+    })
+  );
+
+  for (const settled of nativeResults) {
+    if (settled.status !== "fulfilled") continue;
+    const { ip, arpDevice, nativeResult } = settled.value;
+    if (!arpDevice) continue;
+
+    if (nativeResult) {
+      const storageIp = arpDevice.ip;
+      const discoveredMiner = DeviceConverterService.createDiscoveredMiner(
+        storageIp,
+        nativeResult.mac || arpDevice.mac,
+        null,
+        arpDevice,
+        nativeResult.minerData,
+        "native"
+      );
+      chunkMiners.push(discoveredMiner);
+      logger.info(
+        `[discovery] ${storageIp}: discovered via native driver (${nativeResult.type}), supportLevel=native`
+      );
+      await storeDiscoveredMiner(discoveredMiner);
+    } else {
+      remainingIps.push(ip);
+    }
+  }
+
+  // Phase 2: Fallback remaining IPs to pyasic-bridge batch validation
+  if (remainingIps.length === 0) {
+    logger.info(`[discovery] Phase 2: skipped (all IPs matched native)`);
+    return chunkMiners;
+  }
+
+  logger.info(
+    `[discovery] Phase 2: ${remainingIps.length} IP(s) did not match native, validating via pyasic-bridge (generic): ${remainingIps.join(", ")}`
+  );
   try {
-    const validationResults = await MinerValidationService.validateBatch(chunk);
+    const validationResults = await MinerValidationService.validateBatch(remainingIps);
     logger.info(`Received validation results for chunk: ${validationResults.length} results`);
 
-    // Process validation results
     for (const result of validationResults) {
-    if (!result.is_miner) {
-      logger.debug(
-        `Device ${result.ip} is not a supported miner: ${result.error || "unknown reason"}`
+      if (!result.is_miner) {
+        logger.debug(`Device ${result.ip} is not a supported miner: ${result.error || "unknown reason"}`);
+        continue;
+      }
+
+      const arpDevice = ipToArpDevice.get(result.ip);
+      if (!arpDevice) {
+        logger.warn(`No ARP device found for validated IP: ${result.ip}`);
+        continue;
+      }
+
+      const storageIp = arpDevice.ip;
+      const minerData = await MinerValidationService.fetchMinerData(result.ip);
+
+      const discoveredMiner = DeviceConverterService.createDiscoveredMiner(
+        storageIp,
+        arpDevice.mac,
+        result,
+        arpDevice,
+        minerData,
+        "generic"
       );
-      continue;
-    }
 
-    const arpDevice = ipToArpDevice.get(result.ip);
-    if (!arpDevice) {
-      logger.warn(`No ARP device found for validated IP: ${result.ip}`);
-      continue;
-    }
-
-    const storageIp = arpDevice.ip; // Keep original IP (host.docker.internal for mock devices) for storage
-
-    // Fetch full miner data
-    const minerData = await MinerValidationService.fetchMinerData(result.ip);
-
-    // Create DiscoveredMiner from validation result and miner data
-    const discoveredMiner = DeviceConverterService.createDiscoveredMiner(
-      storageIp,
-      arpDevice.mac,
-      result,
-      arpDevice,
-      minerData
-    );
-
-    chunkMiners.push(discoveredMiner);
-    logger.info(
-      `Discovered miner ${storageIp} (${result.model || "unknown model"}) validated and added to the list.`
-    );
-
-      // Store in database immediately (progressive storage)
+      chunkMiners.push(discoveredMiner);
+      logger.info(
+        `[discovery] ${storageIp}: discovered via pyasic-bridge (generic), model=${result.model ?? "unknown"}, supportLevel=generic`
+      );
       await storeDiscoveredMiner(discoveredMiner);
     }
 
@@ -193,7 +376,6 @@ async function validateChunk(
     if (error instanceof Error) {
       logger.error(`Chunk error details: ${error.message} (${error.name})`);
     }
-    // Return partial results even if some devices failed
     return chunkMiners;
   }
 }
@@ -291,21 +473,6 @@ export async function discoverDevices(options?: DiscoveryOptions): Promise<Disco
       );
     }
 
-    // Add mock devices if enabled
-    if (config.detectMockDevices) {
-      try {
-        const mockDevices = await getMockDevices();
-        arpTable = arpTable.concat(mockDevices);
-        logger.info(`Mock devices added to the ARP table. Total devices: ${arpTable.length}`);
-      } catch (error) {
-        logger.warn(
-          `Failed to fetch mock devices, continuing without them:`,
-          error instanceof Error ? error.message : String(error)
-        );
-        // Continue discovery without mock devices
-      }
-    }
-
     // Apply IP filter if specified
     let filteredArpTable = arpTable;
     if (options?.ip && options.partialMatch) {
@@ -316,26 +483,30 @@ export async function discoverDevices(options?: DiscoveryOptions): Promise<Disco
 
     const validDevices = filteredArpTable.filter((device: ArpScanResult) => device.ip);
 
-    if (validDevices.length === 0) {
+    if (validDevices.length === 0 && !config.detectMockDevices) {
       logger.info(
         options?.ip ? `No devices found with IP: ${options.ip}` : "No valid devices found."
       );
       return [];
     }
 
-    // Detect mock devices based on MAC prefix (ff:ff:ff:ff:*)
-    const mockDevices = validDevices.filter((device) =>
-      UtilsService.isMockDevice(device.mac)
-    );
-    if (mockDevices.length > 0) {
-      logger.info(
-        `Detected ${mockDevices.length} mock device(s) based on MAC prefix; including them in validation.`
-      );
-    }
-
-    // Process all devices (real + mock) with chunking and concurrency control via pyasic-bridge
-    logger.info(`Processing ${validDevices.length} device(s) for validation`);
+    // Process real devices with chunking and concurrency control
+    logger.info(`Processing ${validDevices.length} real device(s) for validation`);
     const discoveredMiners = await processNonMockDevices(validDevices);
+
+    // Discover mock devices separately (bypass pyasic-bridge validation)
+    if (config.detectMockDevices) {
+      try {
+        const mockMiners = await discoverMockDevices();
+        discoveredMiners.push(...mockMiners);
+        logger.info(`Total devices after mock discovery: ${discoveredMiners.length}`);
+      } catch (error) {
+        logger.warn(
+          `Failed to discover mock devices, continuing without them:`,
+          error instanceof Error ? error.message : String(error)
+        );
+      }
+    }
 
     // If a MAC filter was provided (without a direct IP lookup), filter the final results by MAC.
     if (options?.mac) {

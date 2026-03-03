@@ -26,7 +26,7 @@ export async function startServer(opts?: { port?: number }) {
   const port = opts?.port ?? config.port;
   const app = createDiscoveryApp();
 
-  const server = app.listen(port);
+  const server = app.listen(port, "0.0.0.0");
 
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);

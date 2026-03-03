@@ -7,132 +7,149 @@
 */
 
 import { logger } from "@pluto/logger";
-import {
-  validateMinersMinersValidatePost,
-  getMinerDataMinerIpDataGet,
-  type ValidateRequest,
-  type ValidateResponse,
-  type MinerData,
-} from "@pluto/pyasic-bridge-client";
+import type { MinerData, PbMinerData, PbValidationResult } from "@pluto/interfaces";
 import { config } from "../config/environment";
 
+export type MinerValidationResult = PbValidationResult;
+
+/* ----- Service ---------------------------------------------------------- */
+
 /**
- * Service for validating miners using pyasic-bridge TypeScript client.
- * 
- * Handles communication with pyasic-bridge service to validate
- * whether devices are supported miners and fetch miner data.
+ * Validates miners using pyasic-bridge REST API (direct HTTP).
  */
 export class MinerValidationService {
-  /**
-   * Validate a single IP address.
-   * 
-   * @param ip - IP address to validate
-   * @returns Validation result or null if validation fails
-   */
-  static async validateSingleIp(ip: string): Promise<ValidateResponse[0] | null> {
+  static async validateSingleIp(ip: string): Promise<MinerValidationResult | null> {
     try {
       logger.info(`Validating single IP ${ip} via pyasic-bridge at ${config.pyasicBridgeHost}`);
-      const result = await validateMinersMinersValidatePost({
-        baseUrl: config.pyasicBridgeHost,
-        body: { ips: [ip] } satisfies ValidateRequest,
-        responseStyle: "data",
-        throwOnError: true,
+      const res = await fetch(`${config.pyasicBridgeHost}/miners/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ips: [ip] }),
+        signal: AbortSignal.timeout(config.pyasicValidationTimeout + 5000),
       });
-
-      // When responseStyle is "data", result should be ValidateResponse directly
-      const response = Array.isArray(result) ? result : (result as any).data || result;
-      return response[0] || null;
+      if (!res.ok) return null;
+      const data: MinerValidationResult[] = await res.json();
+      return data?.[0] ?? null;
     } catch (error) {
-      logger.error(`Failed to validate IP ${ip} via pyasic-bridge at ${config.pyasicBridgeHost}:`, error);
-      if (error instanceof Error) {
-        logger.error(`Error details: ${error.message} (${error.name})`);
-      }
+      logger.error(`Failed to validate IP ${ip} via pyasic-bridge:`, error);
       return null;
     }
   }
 
-  /**
-   * Validate multiple IP addresses in a batch.
-   * 
-   * @param ips - Array of IP addresses to validate
-   * @returns Array of validation results
-   */
-  static async validateBatch(ips: string[]): Promise<ValidateResponse> {
-    if (ips.length === 0) {
-      return [];
-    }
+  static async validateBatch(ips: string[]): Promise<MinerValidationResult[]> {
+    if (ips.length === 0) return [];
 
     try {
-      logger.info(
-        `Validating batch of ${ips.length} IPs via pyasic-bridge at ${config.pyasicBridgeHost}...`
-      );
-      
-      // Calculate timeout: base timeout + (timeout per IP * number of IPs), with a max of 30 seconds
+      logger.info(`Validating batch of ${ips.length} IPs via pyasic-bridge at ${config.pyasicBridgeHost}...`);
+
       const chunkTimeout = Math.min(
-        config.pyasicValidationTimeout + (config.pyasicValidationTimeout * ips.length),
+        config.pyasicValidationTimeout + config.pyasicValidationTimeout * ips.length,
         30000
       );
 
-      logger.debug(`Using timeout: ${chunkTimeout}ms for batch of ${ips.length} IPs`);
-
-      const result = await validateMinersMinersValidatePost({
-        baseUrl: config.pyasicBridgeHost,
-        body: { ips } satisfies ValidateRequest,
-        responseStyle: "data",
-        throwOnError: true,
+      const res = await fetch(`${config.pyasicBridgeHost}/miners/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ips }),
+        signal: AbortSignal.timeout(chunkTimeout),
       });
-
-      // When responseStyle is "data", result should be ValidateResponse directly
-      const response = Array.isArray(result) ? result : (result as any).data || result;
-      const validatedCount = response.filter((r: ValidateResponse[0]) => r.is_miner).length;
-      logger.info(
-        `Validation complete: ${validatedCount} of ${ips.length} IPs are valid miners`
-      );
-
-      return response as ValidateResponse;
-    } catch (error) {
-      logger.error(
-        `Error validating batch via pyasic-bridge at ${config.pyasicBridgeHost}:`,
-        error
-      );
-      if (error instanceof Error) {
-        logger.error(`Error message: ${error.message}`);
-        logger.error(`Error name: ${error.name}`);
-        if ("code" in error) {
-          logger.error(`Error code: ${error.code}`);
-        }
+      if (!res.ok) {
+        logger.error(`pyasic-bridge validation returned ${res.status}`);
+        return [];
       }
-      // Return empty results on error
+      const data: MinerValidationResult[] = await res.json();
+
+      const validatedCount = data.filter((r) => r.is_miner).length;
+      logger.info(`Validation complete: ${validatedCount} of ${ips.length} IPs are valid miners`);
+
+      return data;
+    } catch (error) {
+      logger.error(`Error validating batch via pyasic-bridge:`, error);
       return [];
     }
   }
 
-  /**
-   * Fetch full miner data for a validated IP.
-   * 
-   * @param ip - IP address of the validated miner
-   * @returns Miner data object or null if fetch fails
-   */
   static async fetchMinerData(ip: string): Promise<MinerData | null> {
     try {
       logger.debug(`Fetching miner data for ${ip} from ${config.pyasicBridgeHost}`);
-      const result = await getMinerDataMinerIpDataGet({
-        baseUrl: config.pyasicBridgeHost,
-        path: { ip },
-        responseStyle: "data",
-        throwOnError: false, // Don't throw, return null on error
+      const res = await fetch(`${config.pyasicBridgeHost}/miner/${ip}/data`, {
+        signal: AbortSignal.timeout(5000),
       });
+      if (!res.ok) return null;
+      const raw: PbMinerData = await res.json();
 
-      if (result && typeof result === "object" && "ip" in result) {
-        logger.debug(`Successfully fetched miner data for ${ip}`);
-        return result as MinerData;
-      }
-      return null;
+      if (!raw || !raw.ip) return null;
+
+      const minerData: MinerData = {
+        ip: raw.ip,
+        mac: raw.mac ?? undefined,
+        hostname: raw.hostname ?? undefined,
+        deviceInfo: raw.device_info
+          ? {
+              make: raw.device_info.make ?? undefined,
+              model: raw.device_info.model ?? undefined,
+              firmware: raw.device_info.firmware ?? undefined,
+              algo: raw.device_info.algo ?? undefined,
+            }
+          : undefined,
+        serialNumber: raw.serial_number ?? undefined,
+        hashrate: raw.hashrate
+          ? { rate: raw.hashrate.rate ?? undefined, unit: raw.hashrate.unit ?? undefined }
+          : undefined,
+        expectedHashrate: raw.expected_hashrate
+          ? { rate: raw.expected_hashrate.rate ?? undefined, unit: raw.expected_hashrate.unit ?? undefined }
+          : undefined,
+        wattage: raw.wattage ?? undefined,
+        wattageLimit: raw.wattage_limit ?? undefined,
+        voltage: raw.voltage ?? undefined,
+        temperatureAvg: raw.temperature_avg ?? undefined,
+        envTemp: raw.env_temp ?? undefined,
+        sharesAccepted: raw.shares_accepted ?? undefined,
+        sharesRejected: raw.shares_rejected ?? undefined,
+        bestDifficulty: raw.best_difficulty ?? undefined,
+        bestSessionDifficulty: raw.best_session_difficulty ?? undefined,
+        networkDifficulty: raw.network_difficulty ?? undefined,
+        fans: (raw.fans ?? []).map((f) => ({ speed: f.speed ?? undefined })),
+        hashboards: (raw.hashboards ?? []).map((h) => ({
+          slot: h.slot ?? undefined,
+          temp: h.temp ?? undefined,
+          chipTemp: h.chip_temp ?? undefined,
+          chips: h.chips ?? undefined,
+          expectedChips: h.expected_chips ?? undefined,
+          serialNumber: h.serial_number ?? undefined,
+          missing: h.missing ?? undefined,
+          active: h.active ?? undefined,
+          voltage: h.voltage ?? undefined,
+        })),
+        totalChips: raw.total_chips ?? undefined,
+        expectedChips: raw.expected_chips ?? undefined,
+        expectedHashboards: raw.expected_hashboards ?? undefined,
+        expectedFans: raw.expected_fans ?? undefined,
+        isMining: raw.is_mining ?? undefined,
+        uptime: raw.uptime ?? undefined,
+        nominal: raw.nominal ?? undefined,
+        fwVer: raw.fw_ver ?? undefined,
+        apiVer: raw.api_ver ?? undefined,
+        datetime: raw.datetime ?? undefined,
+        timestamp: raw.timestamp ?? undefined,
+        pools: raw.config?.pools
+          ? {
+              groups: (raw.config.pools.groups ?? []).map((g) => ({
+                pools: (g.pools ?? []).map((p) => ({
+                  url: p.url ?? undefined,
+                  user: p.user ?? undefined,
+                  password: p.password ?? undefined,
+                })),
+                quota: g.quota ?? undefined,
+              })),
+            }
+          : undefined,
+      };
+
+      logger.debug(`Successfully fetched miner data for ${ip}`);
+      return minerData;
     } catch (error) {
       logger.warn(`Could not fetch miner data for ${ip} via pyasic-bridge:`, error);
-      if (error instanceof Error) {
-        logger.warn(`Error details: ${error.message}`);
-      }
       return null;
     }
   }

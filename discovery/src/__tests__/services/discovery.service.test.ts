@@ -1,6 +1,16 @@
-import axios from 'axios';
 import { discoverDevices, lookupDiscoveredDevice, lookupMultipleDiscoveredDevices } from '@/services/discovery.service';
-import type { MinerData, MinerValidationResult } from '@pluto/pyasic-bridge-client';
+import { UtilsService } from '@/services/utils.service';
+import type { MinerData } from '@pluto/interfaces';
+import type { MinerValidationResult } from '../../services/miner-validation.service';
+
+jest.mock('@pluto/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
 
 jest.mock('@pluto/db', () => ({
   findOne: jest.fn(),
@@ -8,8 +18,6 @@ jest.mock('@pluto/db', () => ({
   insertOne: jest.fn(),
   updateOne: jest.fn(),
 }));
-
-jest.mock('axios');
 
 jest.mock('@/services/arpScanWrapper', () => ({
   getActiveNetworkInterfaces: jest.fn(),
@@ -21,6 +29,12 @@ jest.mock('@/services/miner-validation.service', () => ({
     validateSingleIp: jest.fn(),
     validateBatch: jest.fn(),
     fetchMinerData: jest.fn(),
+  },
+}));
+
+jest.mock('@/services/native-detector.service', () => ({
+  nativeMinerDetector: {
+    detect: jest.fn(),
   },
 }));
 
@@ -37,28 +51,21 @@ jest.mock('@/config/environment', () => ({
 }));
 
 const { findOne, findMany, insertOne, updateOne } = jest.requireMock('@pluto/db');
-const axiosModule = jest.requireMock('axios');
-class MockAxiosError extends Error {
-  code?: string;
-  constructor(message: string, code?: string) {
-    super(message);
-    this.code = code;
-  }
-}
-axiosModule.AxiosError = MockAxiosError;
-axiosModule.isAxiosError = jest.fn((error: any) => {
-  return error instanceof MockAxiosError || (error && typeof error.code === 'string');
-});
+const { logger } = jest.requireMock('@pluto/logger');
+const mockFetch = jest.fn();
+global.fetch = mockFetch;
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
 const { getActiveNetworkInterfaces, arpScan } = jest.requireMock('@/services/arpScanWrapper');
 const { MinerValidationService } = jest.requireMock('@/services/miner-validation.service');
+const { nativeMinerDetector } = jest.requireMock('@/services/native-detector.service');
 const { config } = jest.requireMock('@/config/environment');
 
 describe('discovery.service helpers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedAxios.get.mockReset();
+    mockFetch.mockReset();
+    nativeMinerDetector.detect.mockReset();
+    nativeMinerDetector.detect.mockResolvedValue(null);
 
     // Reset shared config mutable object between tests
     config.detectMockDevices = false;
@@ -230,6 +237,49 @@ describe('discovery.service helpers', () => {
   });
 
   describe('discoverDevices', () => {
+    it('discovers via native driver when nativeMinerDetector matches (single IP)', async () => {
+      const nativeResult = {
+        type: 'Bitaxe v2',
+        model: 'Bitaxe v2',
+        mac: 'aa:bb:cc:dd:ee:ff',
+        supportLevel: 'native' as const,
+        minerData: {
+          ip: '1.2.3.4',
+          mac: 'aa:bb:cc:dd:ee:ff',
+          hostname: 'bitaxe-1',
+          deviceInfo: { make: 'Bitaxe', model: 'Bitaxe v2', firmware: '1.0', algo: 'SHA256' },
+          fans: [],
+          hashboards: [],
+        },
+      };
+
+      nativeMinerDetector.detect.mockResolvedValue(nativeResult);
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices({ ip: '1.2.3.4' });
+
+      expect(nativeMinerDetector.detect).toHaveBeenCalledWith('1.2.3.4');
+      expect(MinerValidationService.validateSingleIp).not.toHaveBeenCalled();
+      expect(insertOne).toHaveBeenCalledWith(
+        'pluto_discovery',
+        'devices:discovered',
+        'aa:bb:cc:dd:ee:ff',
+        expect.objectContaining({
+          ip: '1.2.3.4',
+          mac: 'aa:bb:cc:dd:ee:ff',
+          type: 'Bitaxe v2',
+          supportLevel: 'native',
+          minerData: expect.objectContaining({
+            ip: '1.2.3.4',
+            hostname: 'bitaxe-1',
+            deviceInfo: expect.objectContaining({ model: 'Bitaxe v2' }),
+          }),
+        })
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0].supportLevel).toBe('native');
+    });
+
     it('short-circuits to direct ip lookup and stores device', async () => {
       const validationResult: MinerValidationResult = {
         ip: '1.2.3.4',
@@ -239,9 +289,10 @@ describe('discovery.service helpers', () => {
       const minerData: MinerData = {
         ip: '1.2.3.4',
         mac: 'aa:bb',
-        model: 'TestModel',
         hostname: 'test-miner',
-        device_info: { model: 'TestModel' },
+        deviceInfo: { model: 'TestModel' },
+        fans: [],
+        hashboards: [],
       };
 
       MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
@@ -278,9 +329,10 @@ describe('discovery.service helpers', () => {
       };
       const minerData: MinerData = {
         ip: '1.2.3.4',
-        model: 'TestModel',
         hostname: 'test-miner',
-        device_info: { model: 'TestModel' },
+        deviceInfo: { model: 'TestModel' },
+        fans: [],
+        hashboards: [],
       };
 
       MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
@@ -309,9 +361,10 @@ describe('discovery.service helpers', () => {
       };
       const minerData: MinerData = {
         ip: '1.2.3.4',
-        model: 'TestModel',
         hostname: 'test-miner',
-        device_info: { model: 'TestModel' },
+        deviceInfo: { model: 'TestModel' },
+        fans: [],
+        hashboards: [],
       };
 
       MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
@@ -341,9 +394,10 @@ describe('discovery.service helpers', () => {
       const minerData: MinerData = {
         ip: '1.2.3.4',
         mac: 'aa:bb',
-        model: 'TestModel',
         hostname: 'test-miner',
-        device_info: { model: 'TestModel' },
+        deviceInfo: { model: 'TestModel' },
+        fans: [],
+        hashboards: [],
       };
 
       MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
@@ -390,6 +444,19 @@ describe('discovery.service helpers', () => {
       expect(MinerValidationService.fetchMinerData).not.toHaveBeenCalled();
     });
 
+    it('handles non-miner validation result without error message', async () => {
+      const validationResult: MinerValidationResult = {
+        ip: '9.9.9.9',
+        is_miner: false,
+      };
+
+      MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
+
+      const result = await discoverDevices({ ip: '9.9.9.9' });
+
+      expect(result).toEqual([]);
+    });
+
     it('handles validation service errors during direct ip lookup', async () => {
       MinerValidationService.validateSingleIp.mockRejectedValue(new Error('validation error'));
 
@@ -417,16 +484,18 @@ describe('discovery.service helpers', () => {
       const minerDataA: MinerData = {
         ip: '10.0.0.1',
         mac: 'aa:bb:cc',
-        model: 'ModelA',
         hostname: 'miner-a',
-        device_info: { model: 'ModelA' },
+        deviceInfo: { model: 'ModelA' },
+        fans: [],
+        hashboards: [],
       };
       const minerDataB: MinerData = {
         ip: '10.0.0.2',
         mac: 'dd:ee:ff',
-        model: 'ModelB',
         hostname: 'miner-b',
-        device_info: { model: 'ModelB' },
+        deviceInfo: { model: 'ModelB' },
+        fans: [],
+        hashboards: [],
       };
 
       MinerValidationService.validateBatch.mockResolvedValue(validationResults);
@@ -502,9 +571,10 @@ describe('discovery.service helpers', () => {
       };
       const minerData: MinerData = {
         ip: '7.7.7.7',
-        model: 'ModelX',
         hostname: 'miner-x',
-        device_info: { model: 'ModelX' },
+        deviceInfo: { model: 'ModelX' },
+        fans: [],
+        hashboards: [],
       };
 
       MinerValidationService.validateSingleIp.mockResolvedValue(validationResult);
@@ -522,12 +592,380 @@ describe('discovery.service helpers', () => {
       getActiveNetworkInterfaces.mockResolvedValue([]);
       arpScan.mockResolvedValue([]);
 
-      mockedAxios.get.mockResolvedValueOnce({ data: {} });
+      // discoverMockDevices fetches /servers, gets no servers array
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({}),
+      });
 
       const result = await discoverDevices();
 
       expect(result).toEqual([]);
+
+      config.detectMockDevices = false;
     });
+
+    it('returns empty array when mock discovery /servers returns non-ok', async () => {
+      config.detectMockDevices = true;
+
+      getActiveNetworkInterfaces.mockResolvedValue([]);
+      arpScan.mockResolvedValue([]);
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      });
+
+      const result = await discoverDevices();
+
+      expect(result).toEqual([]);
+      config.detectMockDevices = false;
+    });
+
+    it('skips mock device when /api/system/info returns non-ok', async () => {
+      config.detectMockDevices = true;
+
+      getActiveNetworkInterfaces.mockResolvedValue([]);
+      arpScan.mockResolvedValue([]);
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ servers: [{ port: 9001 }, { port: 9002 }] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            ip: 'mock:9001',
+            hostname: 'mock-1',
+            make: 'Bitmain',
+            model: 'S19',
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+        });
+
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].minerData.deviceInfo?.model).toBe('S19');
+      config.detectMockDevices = false;
+    });
+
+    it('still includes mock device when storeDiscoveredMiner throws (continues with miner)', async () => {
+      config.detectMockDevices = true;
+
+      getActiveNetworkInterfaces.mockResolvedValue([]);
+      arpScan.mockResolvedValue([]);
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ servers: [{ port: 9001 }] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            ip: 'mock:9001',
+            hostname: 'mock-1',
+            make: 'Bitmain',
+            model: 'S19',
+          }),
+        });
+
+      insertOne.mockRejectedValueOnce(new Error('db write failed'));
+
+      const result = await discoverDevices();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].ip).toContain('9001');
+      config.detectMockDevices = false;
+    });
+
+    it('handles rejected promise when fetching mock device data', async () => {
+      config.detectMockDevices = true;
+
+      getActiveNetworkInterfaces.mockResolvedValue([]);
+      arpScan.mockResolvedValue([]);
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ servers: [{ port: 9001 }, { port: 9002 }] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            ip: 'mock:9001',
+            hostname: 'mock-1',
+            make: 'Bitmain',
+            model: 'S19',
+          }),
+        })
+        .mockRejectedValueOnce(new Error('fetch failed'));
+
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices();
+
+      expect(result).toHaveLength(1);
+      config.detectMockDevices = false;
+    });
+
+    it('discovers via native driver during ARP scan when nativeMinerDetector matches', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      const nativeResult = {
+        type: 'Bitaxe v2',
+        model: 'Bitaxe v2',
+        mac: 'aa:bb:cc',
+        supportLevel: 'native' as const,
+        minerData: {
+          ip: '10.0.0.1',
+          mac: 'aa:bb:cc',
+          hostname: 'bitaxe',
+          deviceInfo: { make: 'Bitaxe', model: 'Bitaxe v2', firmware: '1.0', algo: 'SHA256' },
+          fans: [],
+          hashboards: [],
+        },
+      };
+
+      nativeMinerDetector.detect.mockResolvedValue(nativeResult);
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices();
+
+      expect(MinerValidationService.validateBatch).not.toHaveBeenCalled();
+      expect(result).toHaveLength(1);
+      expect(result[0].supportLevel).toBe('native');
+      expect(result[0].type).toBe('Bitaxe v2');
+    });
+
+    it('skips pyasic-bridge when all IPs in chunk match native', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([
+        { ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' },
+        { ip: '10.0.0.2', mac: 'dd:ee:ff', type: 'miner' },
+      ]);
+
+      const nativeResult1 = {
+        type: 'Bitaxe',
+        model: 'Bitaxe',
+        mac: 'aa:bb:cc',
+        supportLevel: 'native' as const,
+        minerData: {
+          ip: '10.0.0.1',
+          mac: 'aa:bb:cc',
+          hostname: 'bitaxe',
+          deviceInfo: { make: 'Bitaxe', model: 'Bitaxe' },
+          fans: [],
+          hashboards: [],
+        },
+      };
+      const nativeResult2 = {
+        type: 'Bitaxe',
+        model: 'Bitaxe',
+        mac: 'dd:ee:ff',
+        supportLevel: 'native' as const,
+        minerData: {
+          ip: '10.0.0.2',
+          mac: 'dd:ee:ff',
+          hostname: 'bitaxe2',
+          deviceInfo: { make: 'Bitaxe', model: 'Bitaxe' },
+          fans: [],
+          hashboards: [],
+        },
+      };
+
+      nativeMinerDetector.detect
+        .mockResolvedValueOnce(nativeResult1)
+        .mockResolvedValueOnce(nativeResult2);
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices();
+
+      expect(MinerValidationService.validateBatch).not.toHaveBeenCalled();
+      expect(result).toHaveLength(2);
+    });
+
+    it('logs warn when chunk contains IP not in ARP map (no ARP device found)', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      const chunkArraySpy = jest.spyOn(UtilsService, 'chunkArray').mockImplementationOnce((arr, size) => {
+        const a = arr as string[];
+        const realChunks: string[][] = [];
+        for (let i = 0; i < a.length; i += size) {
+          realChunks.push(a.slice(i, i + size));
+        }
+        if (realChunks.length > 0) {
+          realChunks[0] = [...realChunks[0], '192.168.99.99'];
+        }
+        return realChunks;
+      });
+
+      nativeMinerDetector.detect.mockResolvedValue(null);
+      MinerValidationService.validateBatch.mockResolvedValue([
+        { ip: '10.0.0.1', is_miner: true, model: 'A' },
+      ]);
+      MinerValidationService.fetchMinerData.mockResolvedValue({
+        ip: '10.0.0.1',
+        mac: 'aa:bb:cc',
+        hostname: 'miner',
+        deviceInfo: { model: 'A' },
+        fans: [],
+        hashboards: [],
+      });
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices();
+
+      expect(logger.warn).toHaveBeenCalledWith('No ARP device found for IP: 192.168.99.99');
+      expect(result).toHaveLength(1);
+      chunkArraySpy.mockRestore();
+    });
+
+    it('skips validated IP when no ARP device found for that IP', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      nativeMinerDetector.detect.mockResolvedValue(null);
+
+      MinerValidationService.validateBatch.mockResolvedValue([
+        { ip: '10.0.0.1', is_miner: true, model: 'ModelA' },
+        { ip: '192.168.99.99', is_miner: true, model: 'ModelB' },
+      ]);
+
+      MinerValidationService.fetchMinerData.mockResolvedValue({
+        ip: '10.0.0.1',
+        mac: 'aa:bb:cc',
+        hostname: 'miner-a',
+        deviceInfo: { model: 'ModelA' },
+        fans: [],
+        hashboards: [],
+      });
+
+      insertOne.mockResolvedValue(undefined);
+
+      const result = await discoverDevices();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].ip).toBe('10.0.0.1');
+    });
+
+    it('continues when chunk validation fails (storeDiscoveredMiner throws)', async () => {
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([
+        { ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' },
+        { ip: '10.0.0.2', mac: 'dd:ee:ff', type: 'miner' },
+      ]);
+
+      config.pyasicValidationBatchSize = 1;
+      const nativeResult = {
+        type: 'Bitaxe',
+        model: 'Bitaxe',
+        mac: 'aa:bb:cc',
+        supportLevel: 'native' as const,
+        minerData: {
+          ip: '10.0.0.1',
+          mac: 'aa:bb:cc',
+          hostname: 'bitaxe',
+          deviceInfo: { make: 'Bitaxe', model: 'Bitaxe' },
+          fans: [],
+          hashboards: [],
+        },
+      };
+
+      nativeMinerDetector.detect
+        .mockResolvedValueOnce(nativeResult)
+        .mockResolvedValueOnce(null);
+
+      MinerValidationService.validateBatch.mockResolvedValue([
+        { ip: '10.0.0.2', is_miner: true, model: 'B' },
+      ]);
+      MinerValidationService.fetchMinerData.mockResolvedValue({
+        ip: '10.0.0.2',
+        mac: 'dd:ee:ff',
+        hostname: 'miner',
+        deviceInfo: { model: 'B' },
+        fans: [],
+        hashboards: [],
+      });
+
+      insertOne
+        .mockRejectedValueOnce(new Error('db error'))
+        .mockResolvedValueOnce(undefined);
+
+      const result = await discoverDevices();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].ip).toBe('10.0.0.2');
+      config.pyasicValidationBatchSize = 10;
+    });
+
+    it('continues when discoverMockDevices throws', async () => {
+      config.detectMockDevices = true;
+
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      nativeMinerDetector.detect.mockResolvedValue(null);
+      MinerValidationService.validateBatch.mockResolvedValue([
+        { ip: '10.0.0.1', is_miner: true, model: 'A' },
+      ]);
+      MinerValidationService.fetchMinerData.mockResolvedValue({
+        ip: '10.0.0.1',
+        mac: 'aa:bb:cc',
+        hostname: 'miner',
+        deviceInfo: { model: 'A' },
+        fans: [],
+        hashboards: [],
+      });
+      insertOne.mockResolvedValue(undefined);
+
+      mockFetch.mockRejectedValueOnce(new Error('mock discovery failed'));
+
+      const result = await discoverDevices();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].ip).toBe('10.0.0.1');
+      config.detectMockDevices = false;
+    });
+
+    it('continues when discoverMockDevices throws a non-Error value', async () => {
+      config.detectMockDevices = true;
+
+      getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
+      arpScan.mockResolvedValue([{ ip: '10.0.0.1', mac: 'aa:bb:cc', type: 'miner' }]);
+
+      nativeMinerDetector.detect.mockResolvedValue(null);
+      MinerValidationService.validateBatch.mockResolvedValue([
+        { ip: '10.0.0.1', is_miner: true, model: 'A' },
+      ]);
+      MinerValidationService.fetchMinerData.mockResolvedValue({
+        ip: '10.0.0.1',
+        mac: 'aa:bb:cc',
+        hostname: 'miner',
+        deviceInfo: { model: 'A' },
+        fans: [],
+        hashboards: [],
+      });
+      insertOne.mockResolvedValue(undefined);
+
+      // Throw a non-Error value to cover the String(error) branch
+      mockFetch.mockRejectedValueOnce('string error');
+
+      const result = await discoverDevices();
+
+      expect(result).toHaveLength(1);
+      config.detectMockDevices = false;
+    });
+
 
     it('filters arp scan results by partial ip match', async () => {
       getActiveNetworkInterfaces.mockResolvedValue(['eth0']);
@@ -544,9 +982,10 @@ describe('discovery.service helpers', () => {
       const minerData: MinerData = {
         ip: '10.0.0.1',
         mac: 'aa:bb:cc',
-        model: 'ModelA',
         hostname: 'miner-a',
-        device_info: { model: 'ModelA' },
+        deviceInfo: { model: 'ModelA' },
+        fans: [],
+        hashboards: [],
       };
 
       MinerValidationService.validateBatch.mockResolvedValue([validationResult]);
@@ -581,9 +1020,10 @@ describe('discovery.service helpers', () => {
       const minerData: MinerData = {
         ip: '10.0.0.1',
         mac: 'aa:bb:cc',
-        model: 'ModelA',
         hostname: 'miner-a',
-        device_info: { model: 'ModelA' },
+        deviceInfo: { model: 'ModelA' },
+        fans: [],
+        hashboards: [],
       };
 
       MinerValidationService.validateBatch.mockResolvedValue([validationResult]);
@@ -629,16 +1069,18 @@ describe('discovery.service helpers', () => {
       const minerDataA: MinerData = {
         ip: '10.0.0.1',
         mac: 'aa:bb:cc',
-        model: 'ModelA',
         hostname: 'miner-a',
-        device_info: { model: 'ModelA' },
+        deviceInfo: { model: 'ModelA' },
+        fans: [],
+        hashboards: [],
       };
       const minerDataB: MinerData = {
         ip: '10.0.0.2',
         mac: 'dd:ee:ff',
-        model: 'ModelB',
         hostname: 'miner-b',
-        device_info: { model: 'ModelB' },
+        deviceInfo: { model: 'ModelB' },
+        fans: [],
+        hashboards: [],
       };
 
       MinerValidationService.validateBatch.mockResolvedValue(validationResults);
@@ -677,7 +1119,7 @@ describe('discovery.service helpers', () => {
       expect(result).toEqual([]);
     });
 
-    it('includes mock devices in validation when detection is enabled', async () => {
+    it('discovers mock devices directly, bypassing pyasic-bridge validation', async () => {
       config.detectMockDevices = true;
       config.mockDiscoveryHost = 'http://mock-host:7000';
       config.mockDeviceHost = 'host.docker.internal';
@@ -686,33 +1128,41 @@ describe('discovery.service helpers', () => {
       getActiveNetworkInterfaces.mockResolvedValue([]);
       arpScan.mockResolvedValue([]);
 
-      // Mock discovery service returns one mock server
-      mockedAxios.get.mockResolvedValueOnce({ data: { servers: [{ port: 9001 }] } });
-
-      // validateBatch will be called with the mock device IP
       const mockIp = 'host.docker.internal:9001';
-      const validationResult: MinerValidationResult = {
-        ip: mockIp,
-        is_miner: true,
-        model: 'MockModel',
-      };
-      const minerData: MinerData = {
-        ip: mockIp,
-        mac: 'ff:ff:ff:ff:23:29',
-        model: 'MockModel',
-        hostname: 'mockaxe1',
-        device_info: { model: 'MockModel' } as any,
-      };
 
-      MinerValidationService.validateBatch.mockResolvedValue([validationResult]);
-      MinerValidationService.fetchMinerData.mockResolvedValue(minerData);
+      // First fetch: listing server /servers
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ servers: [{ port: 9001 }] }),
+      });
+
+      // Second fetch: mock device /api/system/info
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          ip: mockIp,
+          mac: 'ff:ff:ff:ff:23:29',
+          hostname: 'mock-miner-1',
+          make: 'Bitmain',
+          model: 'Antminer S19 Pro',
+          hashrate: 100000,
+          is_mining: true,
+          uptime: 3600,
+          fans: [{ speed: 5000 }],
+          hashboards: [{ slot: 0, hashrate: 33000, temp: 65, active: true }],
+        }),
+      });
+
       insertOne.mockResolvedValue(undefined);
 
       const result = await discoverDevices();
 
       expect(result).toHaveLength(1);
       expect(result[0].ip).toBe(mockIp);
-      expect(MinerValidationService.validateBatch).toHaveBeenCalledWith([mockIp]);
+      expect(result[0].supportLevel).toBe('generic');
+      expect(result[0].minerData.deviceInfo?.model).toBe('Antminer S19 Pro');
+      // pyasic-bridge should NOT be called for mock devices
+      expect(MinerValidationService.validateBatch).not.toHaveBeenCalled();
 
       config.detectMockDevices = false;
       config.mockDeviceHost = undefined;
