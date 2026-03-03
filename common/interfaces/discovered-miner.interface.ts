@@ -1,59 +1,42 @@
 /**
- * Copyright (C) 2024 Alberto Gangarossa.
- * Pluto is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License
- * as published by the Free Software Foundation, version 3.
- * See <https://www.gnu.org/licenses/>.
-*/
+ * A miner discovered on the LAN and stored in the discovery/imprinted database.
+ */
 
 import type { Entity } from "./entity.interface";
-import type { MinerData } from "@pluto/pyasic-bridge-client";
+import type { MinerData } from "./miner-data.interface";
 
-/**
- * Generic discovered miner interface based on pyasic-bridge MinerData structure.
- * 
- * This interface is device-agnostic and works with any miner type supported by pyasic-bridge.
- * It uses the normalized MinerData structure from pyasic-bridge, which is designed to work
- * across different miner manufacturers and models.
- * 
- * This is the primary format used by the discovery service for storing and returning miner data.
- * All discovered miners are stored in this format in the discovery database.
- */
+export type SupportLevel = "native" | "generic";
+
+export interface DetectionResult {
+  type: string;
+  model: string;
+  mac?: string;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
 export interface DiscoveredMiner extends Entity {
-  /**
-   * IP address of the miner
-   */
   ip: string;
-
-  /**
-   * MAC address of the miner (if available)
-   */
   mac: string;
 
-  /**
-   * Device type/model identifier (e.g., "Bitaxe", "Antminer S19", "AvalonMiner 1246")
-   */
+  /** Device type/model identifier (e.g. "Bitaxe 601", "Antminer S19") */
   type: string;
 
-  /**
-   * Full miner data from pyasic-bridge.
-   * This contains all normalized miner information in a device-agnostic format.
-   */
+  /** Whether this miner has a native driver or uses the pyasic-bridge fallback. */
+  supportLevel: SupportLevel;
+
+  /** Full miner data from the last poll. */
   minerData: MinerData;
 
-  /**
-   * Storage IP address (may differ from minerData.ip for mock devices or Docker networking)
-   */
+  /** Storage IP (may differ from minerData.ip for mock devices / Docker networking). */
   storageIp?: string;
 
-  /**
-   * UUID of the preset currently assigned to this miner (if any).
-   */
+  /** UUID of the preset currently assigned to this miner. */
   presetUuid?: string | null;
 
-  /**
-   * Whether the backend is currently polling this miner successfully (online).
-   * Set by the backend from in-memory state; not persisted.
-   */
+  /** Whether the backend is currently polling this miner successfully (online). */
   tracing?: boolean;
 }
