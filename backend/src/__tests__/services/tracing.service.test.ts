@@ -1,5 +1,4 @@
-import type { DiscoveredMiner } from "@pluto/interfaces";
-import type { MinerData } from "@pluto/pyasic-bridge-client";
+import type { DiscoveredMiner, MinerData } from "@pluto/interfaces";
 
 // ---------------------------------------------------------------------------
 // Mock helpers (function declarations are hoisted, so they're available
@@ -75,10 +74,21 @@ jest.mock("../../services/metrics.service", () => ({
   updateOverviewMetrics: jest.fn(),
 }));
 
-jest.mock("../../services/pyasic-bridge.service", () => ({
-  pyasicBridgeService: {
-    fetchMinerData: jest.fn(),
-    connectMinerLogsWebSocket: jest.fn(),
+const mockFetchData = jest.fn();
+const mockConnectLogs = jest.fn();
+const mockDriver = {
+  driverName: "mock",
+  supportLevel: "generic" as const,
+  fetchData: mockFetchData,
+  connectLogs: mockConnectLogs,
+  getConfigSchema: () => ({ sections: [] }),
+  getEditableValues: () => ({}),
+};
+
+jest.mock("../../drivers", () => ({
+  driverFactory: {
+    getDriver: jest.fn(() => mockDriver),
+    getDriverForDevice: jest.fn(() => mockDriver),
   },
 }));
 
@@ -91,38 +101,46 @@ const makeDiscoveredMiner = (
   ip: "10.0.0.1",
   mac: "aa:bb:cc:dd:ee:ff",
   type: "mock",
+  supportLevel: "generic",
   minerData: {
     ip: "10.0.0.1",
     hostname: "miner-1",
-    model: "BM1368",
-    device_info: { model: "BM1368" },
-    hashrate: { rate: 100, unit: "GH/s" },
+    deviceInfo: { model: "BM1368" },
+    hashrate: { rate: 100, unit: { suffix: "GH/s" } },
     wattage: 50,
     voltage: 12.5,
-    shares_accepted: 100,
-    shares_rejected: 5,
+    sharesAccepted: 100,
+    sharesRejected: 5,
     uptime: 3600,
     fans: [{ speed: 3000 }],
-    temperature_avg: 65,
+    temperatureAvg: 65,
     hashboards: [],
-  } as MinerData,
+  },
   ...overrides,
 });
+
+/** Miner with stale/absent hashrate — forces an immediate first poll. */
+const makeStaleMiner = (
+  overrides?: Partial<DiscoveredMiner>
+): DiscoveredMiner =>
+  makeDiscoveredMiner({
+    minerData: { ip: "10.0.0.1" },
+    ...overrides,
+  });
 
 const makeMinerData = (overrides?: Partial<MinerData>): MinerData =>
   ({
     ip: "10.0.0.1",
     hostname: "miner-1",
-    model: "BM1368",
-    device_info: { model: "BM1368" },
-    hashrate: { rate: 100, unit: "GH/s" },
+    deviceInfo: { model: "BM1368" },
+    hashrate: { rate: 100, unit: { suffix: "GH/s" } },
     wattage: 50,
     voltage: 12.5,
-    shares_accepted: 100,
-    shares_rejected: 5,
+    sharesAccepted: 100,
+    sharesRejected: 5,
     uptime: 3600,
     fans: [{ speed: 3000 }],
-    temperature_avg: 65,
+    temperatureAvg: 65,
     hashboards: [],
     ...overrides,
   }) as MinerData;
@@ -134,13 +152,12 @@ describe("tracing.service", () => {
   let startIoHandler: typeof import("../../services/tracing.service").startIoHandler;
   let getIoInstance: typeof import("../../services/tracing.service").getIoInstance;
   let updateOriginalIpsListeners: typeof import("../../services/tracing.service").updateOriginalIpsListeners;
+  let getTracingByIp: typeof import("../../services/tracing.service").getTracingByIp;
   let _resetForTesting: typeof import("../../services/tracing.service")._resetForTesting;
 
   let mockLogger: { debug: jest.Mock; info: jest.Mock; error: jest.Mock };
   let mockUpdateOne: jest.Mock;
   let mockUpdateOverviewMetrics: jest.Mock;
-  let mockFetchMinerData: jest.Mock;
-  let mockConnectMinerLogsWebSocket: jest.Mock;
   let mockConfig: Record<string, any>;
 
   beforeAll(async () => {
@@ -148,16 +165,13 @@ describe("tracing.service", () => {
     startIoHandler = mod.startIoHandler;
     getIoInstance = mod.getIoInstance;
     updateOriginalIpsListeners = mod.updateOriginalIpsListeners;
+    getTracingByIp = mod.getTracingByIp;
     _resetForTesting = mod._resetForTesting;
 
     mockLogger = (await import("@pluto/logger")).logger as any;
     mockUpdateOne = (await import("@pluto/db")).updateOne as jest.Mock;
     const metrics = await import("../../services/metrics.service");
     mockUpdateOverviewMetrics = metrics.updateOverviewMetrics as jest.Mock;
-    const pyasic = await import("../../services/pyasic-bridge.service");
-    mockFetchMinerData = (pyasic.pyasicBridgeService as any).fetchMinerData;
-    mockConnectMinerLogsWebSocket = (pyasic.pyasicBridgeService as any)
-      .connectMinerLogsWebSocket;
     mockConfig = (await import("../../config/environment")).config as any;
   });
 
@@ -165,6 +179,8 @@ describe("tracing.service", () => {
     jest.useFakeTimers();
     _resetForTesting();
     mockConfig.deleteDataOnDeviceRemove = false;
+    mockFetchData.mockReset();
+    mockConnectLogs.mockReset();
     mockUpdateDeviceMetrics.mockClear();
     mockRemoveDeviceMetrics.mockClear();
   });
@@ -268,23 +284,41 @@ describe("tracing.service", () => {
       startIoHandler({} as any);
     });
 
-    it("adds new devices and starts monitoring", async () => {
-      const minerData = makeMinerData();
-      mockFetchMinerData.mockResolvedValue(minerData);
-      mockUpdateOne.mockResolvedValue({ ok: true });
-
-      const device = makeDiscoveredMiner({ minerData });
+    it("adds new devices and starts monitoring (fresh data skips first poll)", async () => {
+      const device = makeDiscoveredMiner();
       await updateOriginalIpsListeners([device], false);
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         `Adding new IP to the listening pool: ${device.ip}`
       );
-      expect(mockFetchMinerData).toHaveBeenCalledWith(device.ip);
+      // Fresh data (hashrate > 0) means first poll is skipped
+      expect(mockFetchData).not.toHaveBeenCalled();
+
+      const io = getIoInstance() as unknown as MockIO;
+      expect(io.emitted.some((evt) => evt.event === "stat_update")).toBe(true);
+      expect(mockUpdateDeviceMetrics).toHaveBeenCalledWith(
+        device.mac,
+        device.minerData
+      );
+    });
+
+    it("adds new devices and polls immediately when data is stale", async () => {
+      const minerData = makeMinerData();
+      mockFetchData.mockResolvedValue(minerData);
+      mockUpdateOne.mockResolvedValue({ ok: true });
+
+      const device = makeStaleMiner();
+      await updateOriginalIpsListeners([device], false);
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Adding new IP to the listening pool: ${device.ip}`
+      );
+      expect(mockFetchData).toHaveBeenCalledWith(device.ip);
     });
 
     it("does not add device if already being monitored", async () => {
       const minerData = makeMinerData();
-      mockFetchMinerData.mockResolvedValue(minerData);
+      mockFetchData.mockResolvedValue(minerData);
       mockUpdateOne.mockResolvedValue({ ok: true });
 
       const device = makeDiscoveredMiner({ minerData });
@@ -298,7 +332,7 @@ describe("tracing.service", () => {
 
     it("removes devices that are no longer present", async () => {
       const minerData = makeMinerData();
-      mockFetchMinerData.mockResolvedValue(minerData);
+      mockFetchData.mockResolvedValue(minerData);
       mockUpdateOne.mockResolvedValue({ ok: true });
 
       const device = makeDiscoveredMiner({ minerData });
@@ -315,15 +349,15 @@ describe("tracing.service", () => {
     });
 
     it("connects WebSocket when traceLogs is true", async () => {
-      mockConnectMinerLogsWebSocket.mockResolvedValue(jest.fn());
+      mockConnectLogs.mockResolvedValue(jest.fn());
       const minerData = makeMinerData();
-      mockFetchMinerData.mockResolvedValue(minerData);
+      mockFetchData.mockResolvedValue(minerData);
       mockUpdateOne.mockResolvedValue({ ok: true });
 
       const device = makeDiscoveredMiner({ minerData });
       await updateOriginalIpsListeners([device], true);
 
-      expect(mockConnectMinerLogsWebSocket).toHaveBeenCalledWith(
+      expect(mockConnectLogs).toHaveBeenCalledWith(
         device.ip,
         expect.any(Function),
         expect.any(Function),
@@ -331,11 +365,119 @@ describe("tracing.service", () => {
       );
     });
 
+    it("invokes onMessage callback and emits logs_update when isListeningLogs is true", async () => {
+      const device = makeDiscoveredMiner();
+      let capturedOnMessage: ((msg: string) => void) | undefined;
+      mockConnectLogs.mockImplementation(async (ip, onMessage, _onError, _onClose) => {
+        capturedOnMessage = onMessage;
+        return () => {};
+      });
+
+      await updateOriginalIpsListeners([device], true);
+
+      const io = getIoInstance() as unknown as MockIO;
+      const socket = { on: jest.fn((event: string, handler: () => void) => { if (event === "enableLogsListening") handler(); }) };
+      io.handlers.connection(socket);
+
+      capturedOnMessage!("test log line");
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        expect.stringContaining("Received log message for IP 10.0.0.1")
+      );
+      expect(io.emitted).toContainEqual(
+        expect.objectContaining({ event: "logs_update", payload: expect.objectContaining({ logMessage: "test log line" }) })
+      );
+    });
+
+    it("invokes onError callback and triggers attemptReconnect", async () => {
+      const device = makeDiscoveredMiner();
+      let capturedOnError: ((err: Error) => void) | undefined;
+      mockConnectLogs.mockImplementation(async (ip, onMessage, onError) => {
+        capturedOnError = onError;
+        return () => {};
+      });
+
+      await updateOriginalIpsListeners([device], true);
+      expect(capturedOnError).toBeDefined();
+      capturedOnError!(new Error("ws error"));
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining("WebSocket error for IP"),
+        expect.any(Error)
+      );
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        expect.stringContaining("Attempting to reconnect WebSocket")
+      );
+    });
+
+    it("invokes onClose callback and triggers attemptReconnect", async () => {
+      const device = makeDiscoveredMiner();
+      let capturedOnClose: (() => void) | undefined;
+      mockConnectLogs.mockImplementation(async (ip, onMessage, onError, onClose) => {
+        capturedOnClose = onClose;
+        return () => {};
+      });
+
+      await updateOriginalIpsListeners([device], true);
+      capturedOnClose!();
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        expect.stringContaining("WebSocket closed for IP")
+      );
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        expect.stringContaining("Attempting to reconnect WebSocket")
+      );
+    });
+
+    it("handles connectLogs throw and triggers attemptReconnect", async () => {
+      const device = makeDiscoveredMiner();
+      mockConnectLogs.mockRejectedValue(new Error("connect failed"));
+
+      await updateOriginalIpsListeners([device], true);
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to connect WebSocket for IP"),
+        expect.any(Error)
+      );
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        expect.stringContaining("Attempting to reconnect WebSocket")
+      );
+    });
+
+    it("exhausts max retry attempts and logs error", async () => {
+      const device = makeDiscoveredMiner();
+      mockConnectLogs.mockRejectedValue(new Error("connect failed"));
+
+      await updateOriginalIpsListeners([device], true);
+
+      await updateOriginalIpsListeners([], false);
+
+      for (let i = 0; i < 6; i++) {
+        await jest.runAllTimersAsync();
+      }
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining("Max retry attempts reached for IP")
+      );
+    });
+
+    it("logs when Promise.allSettled has rejected startDeviceMonitoring", async () => {
+      const { driverFactory } = await import("../../drivers");
+      (driverFactory.getDriverForDevice as jest.Mock).mockImplementationOnce(() => {
+        throw new Error("no driver");
+      });
+
+      const device = makeDiscoveredMiner();
+      await updateOriginalIpsListeners([device], false);
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "Failed to start device monitoring:",
+        expect.any(Error)
+      );
+    });
+
     it("calls removeDeviceMetrics when deleteDataOnDeviceRemove is enabled", async () => {
       mockConfig.deleteDataOnDeviceRemove = true;
 
       const minerData = makeMinerData();
-      mockFetchMinerData.mockResolvedValue(minerData);
+      mockFetchData.mockResolvedValue(minerData);
       mockUpdateOne.mockResolvedValue({ ok: true });
 
       const device = makeDiscoveredMiner({ minerData });
@@ -347,7 +489,7 @@ describe("tracing.service", () => {
 
     it("does not remove metrics when deleteDataOnDeviceRemove is disabled", async () => {
       const minerData = makeMinerData();
-      mockFetchMinerData.mockResolvedValue(minerData);
+      mockFetchData.mockResolvedValue(minerData);
       mockUpdateOne.mockResolvedValue({ ok: true });
 
       const device = makeDiscoveredMiner({ minerData });
@@ -364,7 +506,7 @@ describe("tracing.service", () => {
       });
 
       const minerData = makeMinerData();
-      mockFetchMinerData.mockResolvedValue(minerData);
+      mockFetchData.mockResolvedValue(minerData);
       mockUpdateOne.mockResolvedValue({ ok: true });
 
       const device = makeDiscoveredMiner({ minerData });
@@ -388,13 +530,13 @@ describe("tracing.service", () => {
 
     it("polls system info successfully and calls updateDeviceMetrics", async () => {
       const minerData = makeMinerData();
-      mockFetchMinerData.mockResolvedValue(minerData);
-      mockUpdateOne.mockResolvedValue({ ...makeDiscoveredMiner(), minerData });
+      mockFetchData.mockResolvedValue(minerData);
+      mockUpdateOne.mockResolvedValue({ ...makeStaleMiner(), minerData });
 
-      const device = makeDiscoveredMiner({ minerData });
+      const device = makeStaleMiner();
       await updateOriginalIpsListeners([device], false);
 
-      expect(mockFetchMinerData).toHaveBeenCalledWith(device.ip);
+      expect(mockFetchData).toHaveBeenCalledWith(device.ip);
       expect(mockUpdateOne).toHaveBeenCalled();
       expect(mockUpdateDeviceMetrics).toHaveBeenCalledWith(device.mac, minerData);
       expect(mockUpdateOverviewMetrics).toHaveBeenCalled();
@@ -404,10 +546,10 @@ describe("tracing.service", () => {
     });
 
     it("handles polling errors and emits error event", async () => {
-      mockFetchMinerData.mockRejectedValue(new Error("poll failed"));
-      mockUpdateOne.mockResolvedValue(makeDiscoveredMiner());
+      mockFetchData.mockRejectedValue(new Error("poll failed"));
+      mockUpdateOne.mockResolvedValue(makeStaleMiner());
 
-      const device = makeDiscoveredMiner();
+      const device = makeStaleMiner();
       await updateOriginalIpsListeners([device], false);
 
       const io = getIoInstance() as unknown as MockIO;
@@ -418,24 +560,24 @@ describe("tracing.service", () => {
       );
     });
 
-    it("calls updateDeviceMetrics with zeroed data on poll error", async () => {
-      mockFetchMinerData.mockRejectedValue(new Error("poll failed"));
-      mockUpdateOne.mockResolvedValue(makeDiscoveredMiner());
+    it("calls updateDeviceMetrics with minimal data on poll error", async () => {
+      mockFetchData.mockRejectedValue(new Error("poll failed"));
+      mockUpdateOne.mockResolvedValue(makeStaleMiner());
 
-      const device = makeDiscoveredMiner();
+      const device = makeStaleMiner();
       await updateOriginalIpsListeners([device], false);
 
       expect(mockUpdateDeviceMetrics).toHaveBeenCalledWith(
         device.mac,
-        expect.objectContaining({ wattage: 0 })
+        expect.objectContaining({ ip: device.ip, fans: [], hashboards: [] })
       );
     });
 
     it("handles null miner data", async () => {
-      mockFetchMinerData.mockResolvedValue(null);
-      mockUpdateOne.mockResolvedValue(makeDiscoveredMiner());
+      mockFetchData.mockResolvedValue(null);
+      mockUpdateOne.mockResolvedValue(makeStaleMiner());
 
-      const device = makeDiscoveredMiner();
+      const device = makeStaleMiner();
       await updateOriginalIpsListeners([device], false);
 
       const io = getIoInstance() as unknown as MockIO;
@@ -443,10 +585,10 @@ describe("tracing.service", () => {
     });
 
     it("handles database errors when persisting offline state", async () => {
-      mockFetchMinerData.mockRejectedValue(new Error("poll failed"));
+      mockFetchData.mockRejectedValue(new Error("poll failed"));
       mockUpdateOne.mockRejectedValue(new Error("db error"));
 
-      const device = makeDiscoveredMiner();
+      const device = makeStaleMiner();
       await updateOriginalIpsListeners([device], false);
 
       expect(mockLogger.error).toHaveBeenCalledWith(
@@ -456,16 +598,52 @@ describe("tracing.service", () => {
     });
 
     it("stringifies non-Error polling failures", async () => {
-      mockFetchMinerData.mockRejectedValue("string error");
-      mockUpdateOne.mockResolvedValue(makeDiscoveredMiner());
+      mockFetchData.mockRejectedValue("string error");
+      mockUpdateOne.mockResolvedValue(makeStaleMiner());
 
-      const device = makeDiscoveredMiner();
+      const device = makeStaleMiner();
       await updateOriginalIpsListeners([device], false);
 
       const io = getIoInstance() as unknown as MockIO;
       const errorEvent = io.emitted.find((evt) => evt.event === "error");
       expect(errorEvent).toBeDefined();
       expect(errorEvent?.payload.error).toBe("string error");
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // getTracingByIp
+  // -----------------------------------------------------------------------
+  describe("getTracingByIp", () => {
+    beforeEach(() => {
+      startIoHandler({} as any);
+    });
+
+    it("returns empty object when no devices monitored", () => {
+      expect(getTracingByIp()).toEqual({});
+    });
+
+    it("returns tracing state per device after successful poll", async () => {
+      const minerData = makeMinerData();
+      mockFetchData.mockResolvedValue(minerData);
+      mockUpdateOne.mockResolvedValue({ ...makeStaleMiner(), minerData });
+
+      const device = makeStaleMiner();
+      await updateOriginalIpsListeners([device], false);
+
+      const tracing = getTracingByIp();
+      expect(tracing).toEqual({ [device.ip]: true });
+    });
+
+    it("returns tracing false for device that failed poll", async () => {
+      mockFetchData.mockRejectedValue(new Error("poll failed"));
+      mockUpdateOne.mockResolvedValue(makeStaleMiner());
+
+      const device = makeStaleMiner();
+      await updateOriginalIpsListeners([device], false);
+
+      const tracing = getTracingByIp();
+      expect(tracing).toEqual({ [device.ip]: false });
     });
   });
 

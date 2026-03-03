@@ -1,4 +1,4 @@
-import type { MinerData } from '@pluto/pyasic-bridge-client';
+import type { MinerData } from '@pluto/interfaces';
 
 jest.mock('prom-client', () => {
   const gaugeInstances = new Map<string, any>();
@@ -57,18 +57,18 @@ jest.mock('@pluto/logger', () => ({
 
 jest.mock('../../services/tracing.helpers', () => ({
   extractHostnameFromMinerData: jest.fn((d: any) => d?.hostname ?? d?.ip ?? 'unknown'),
-  extractModelFromMinerData: jest.fn((d: any) => d?.model ?? d?.device_info?.model ?? 'unknown'),
+  extractModelFromMinerData: jest.fn((d: any) => d?.deviceInfo?.model ?? 'unknown'),
 }));
 
 import promClient from 'prom-client';
 const gaugeInstances = (promClient as unknown as { __gaugeInstances: Map<string, any> }).__gaugeInstances;
-const { logger } = jest.requireMock('@pluto/logger');
+const { logger: _logger } = jest.requireMock('@pluto/logger');
 
 import {
   updateDeviceMetrics,
   removeDeviceMetrics,
   _resetMetricsForTesting,
-  register,
+  register as _register,
   updateOverviewMetrics,
 } from '@/services/metrics.service';
 
@@ -86,33 +86,30 @@ describe('metrics.service', () => {
 
   describe('updateDeviceMetrics', () => {
     it('sets labeled gauges from MinerData', () => {
-      const minerData: MinerData = {
+      const minerData = {
         ip: '10.0.0.1',
         hostname: 'rig',
-        model: 'BM1368',
-        device_info: { model: 'BM1368' },
+        deviceInfo: { model: 'BM1368' },
         wattage: 1200,
         voltage: 12.5,
-        hashrate: { rate: 800, unit: 'GH/s' },
-        shares_accepted: 10,
-        shares_rejected: 1,
+        hashrate: { rate: 800, unit: { suffix: 'GH/s' } },
+        sharesAccepted: 10,
+        sharesRejected: 1,
         uptime: 3600,
         fans: [{ speed: 1200 }],
-        temperature_avg: 45,
+        temperatureAvg: 45,
         hashboards: [],
-        config: {
-          extra_config: {
-            current: 6000,
-            core_voltage: 1100,
-            core_voltage_actual: 1050,
-            frequency: 500,
-            free_heap: 512,
-            free_heap_internal: 128,
-            free_heap_spiram: 0,
-            vr_temp: 70,
-          },
+        bitaxe: {
+          current: 6000,
+          coreVoltage: 1100,
+          coreVoltageActual: 1050,
+          frequency: 500,
+          freeHeap: 512,
+          freeHeapInternal: 128,
+          freeHeapSpiram: 0,
+          vrTemp: 70,
         },
-      } as MinerData;
+      } as unknown as MinerData;
 
       updateDeviceMetrics('aa:bb:cc:dd:ee:ff', minerData);
 
@@ -137,10 +134,11 @@ describe('metrics.service', () => {
       const minerData: MinerData = {
         ip: '10.0.0.1',
         hostname: 'rig',
-        model: 'BM1368',
-        device_info: { model: 'BM1368' },
+        deviceInfo: { model: 'BM1368' },
         wattage: 0,
-        hashrate: { rate: 0, unit: 'GH/s' },
+        hashrate: { rate: 0, unit: { suffix: 'GH/s' } },
+        fans: [],
+        hashboards: [],
       } as MinerData;
 
       expect(() => updateDeviceMetrics('aa:bb:cc:dd:ee:ff', minerData)).not.toThrow();
@@ -149,12 +147,12 @@ describe('metrics.service', () => {
       expect(powerGauge?.labels).toHaveBeenCalled();
     });
 
-    it('extracts temperature from hashboards when temperature_avg is missing', () => {
+    it('extracts temperature from hashboards when temperatureAvg is missing', () => {
       const minerData: MinerData = {
         ip: '10.0.0.1',
         hostname: 'rig',
-        model: 'BM1368',
-        device_info: { model: 'BM1368' },
+        deviceInfo: { model: 'BM1368' },
+        fans: [],
         hashboards: [{ temp: 55 }],
       } as MinerData;
 
@@ -168,10 +166,11 @@ describe('metrics.service', () => {
       const data1: MinerData = {
         ip: '10.0.0.1',
         hostname: 'old-name',
-        model: 'BM1368',
-        device_info: { model: 'BM1368' },
+        deviceInfo: { model: 'BM1368' },
         wattage: 100,
-        hashrate: { rate: 50, unit: 'GH/s' },
+        hashrate: { rate: 50, unit: { suffix: 'GH/s' } },
+        fans: [],
+        hashboards: [],
       } as MinerData;
 
       updateDeviceMetrics('aa:bb:cc:dd:ee:ff', data1);
@@ -179,10 +178,11 @@ describe('metrics.service', () => {
       const data2: MinerData = {
         ip: '10.0.0.1',
         hostname: 'new-name',
-        model: 'BM1368',
-        device_info: { model: 'BM1368' },
+        deviceInfo: { model: 'BM1368' },
         wattage: 100,
-        hashrate: { rate: 50, unit: 'GH/s' },
+        hashrate: { rate: 50, unit: { suffix: 'GH/s' } },
+        fans: [],
+        hashboards: [],
       } as MinerData;
 
       updateDeviceMetrics('aa:bb:cc:dd:ee:ff', data2);
@@ -199,10 +199,11 @@ describe('metrics.service', () => {
       const minerData: MinerData = {
         ip: '10.0.0.1',
         hostname: 'rig',
-        model: 'BM1368',
-        device_info: { model: 'BM1368' },
+        deviceInfo: { model: 'BM1368' },
         wattage: 100,
-        hashrate: { rate: 50, unit: 'GH/s' },
+        hashrate: { rate: 50, unit: { suffix: 'GH/s' } },
+        fans: [],
+        hashboards: [],
       } as MinerData;
 
       updateDeviceMetrics('aa:bb:cc:dd:ee:ff', minerData);
@@ -228,35 +229,35 @@ describe('metrics.service', () => {
         {
           ip: '10.0.0.1',
           wattage: 100,
-          hashrate: { rate: 50, unit: 'GH/s' },
-          shares_accepted: 5,
-          shares_rejected: 1,
-          fw_ver: '1.0.0',
-          config: {
-            pools: {
-              groups: [
-                {
-                  pools: [{ url: 'stratum+tcp://mine.ocean.xyz:3334' }],
-                },
-              ],
-            },
+          hashrate: { rate: 50, unit: { suffix: 'GH/s' } },
+          sharesAccepted: 5,
+          sharesRejected: 1,
+          fwVer: '1.0.0',
+          fans: [],
+          hashboards: [],
+          pools: {
+            groups: [
+              {
+                pools: [{ url: 'stratum+tcp://mine.ocean.xyz:3334' }],
+              },
+            ],
           },
         } as MinerData,
         {
           ip: '10.0.0.2',
           wattage: 0,
-          hashrate: { rate: 25, unit: 'GH/s' },
-          shares_accepted: 3,
-          shares_rejected: 2,
-          fw_ver: 'custom',
-          config: {
-            pools: {
-              groups: [
-                {
-                  pools: [{ url: 'stratum+tcp://custom:1234' }],
-                },
-              ],
-            },
+          hashrate: { rate: 25, unit: { suffix: 'GH/s' } },
+          sharesAccepted: 3,
+          sharesRejected: 2,
+          fwVer: 'custom',
+          fans: [],
+          hashboards: [],
+          pools: {
+            groups: [
+              {
+                pools: [{ url: 'stratum+tcp://custom:1234' }],
+              },
+            ],
           },
         } as MinerData,
       ];
@@ -294,8 +295,9 @@ describe('metrics.service', () => {
         {
           ip: '10.0.0.1',
           wattage: 50,
-          hashrate: null,
-        } as MinerData,
+          fans: [],
+          hashboards: [],
+        },
       ];
 
       updateOverviewMetrics(minerDataArray);
@@ -304,22 +306,22 @@ describe('metrics.service', () => {
       expect(gaugeInstances.get('total_efficiency')?.set).toHaveBeenCalledWith(0);
     });
 
-    it('extracts pool info from config structure', () => {
+    it('extracts pool info from pools structure', () => {
       const minerDataArray: MinerData[] = [
         {
           ip: '10.0.0.1',
           wattage: 100,
-          hashrate: { rate: 50, unit: 'GH/s' },
-          shares_accepted: 1,
-          shares_rejected: 0,
-          config: {
-            pools: {
-              groups: [
-                {
-                  pools: [{ url: 'stratum+tcp://192.168.78.28:2018' }],
-                },
-              ],
-            },
+          hashrate: { rate: 50, unit: { suffix: 'GH/s' } },
+          sharesAccepted: 1,
+          sharesRejected: 0,
+          fans: [],
+          hashboards: [],
+          pools: {
+            groups: [
+              {
+                pools: [{ url: 'stratum+tcp://192.168.78.28:2018' }],
+              },
+            ],
           },
         } as MinerData,
       ];
@@ -335,9 +337,11 @@ describe('metrics.service', () => {
         {
           ip: '10.0.0.1',
           wattage: 100,
-          hashrate: { rate: 50, unit: 'GH/s' },
-          shares_accepted: 1,
-          shares_rejected: 0,
+          hashrate: { rate: 50, unit: { suffix: 'GH/s' } },
+          sharesAccepted: 1,
+          sharesRejected: 0,
+          fans: [],
+          hashboards: [],
         } as MinerData,
       ];
 

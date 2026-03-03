@@ -10,6 +10,8 @@ module.exports = {
     '!<rootDir>/src/**/*.d.ts',
     '!<rootDir>/src/**/*.test.ts',
     '!<rootDir>/src/**/*.spec.ts',
+    '!<rootDir>/src/drivers/index.ts',
+    '!<rootDir>/src/routes/*.ts',
   ],
   moduleNameMapper: {
     ...baseConfig.moduleNameMapper,

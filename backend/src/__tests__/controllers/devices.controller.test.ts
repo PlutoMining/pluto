@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
-import type { DiscoveredMiner } from '@pluto/interfaces';
-import type { MinerData } from '@pluto/pyasic-bridge-client';
+import type { ConfigFormSchema, DiscoveredMiner, MinerData } from '@pluto/interfaces';
 import * as deviceController from '@/controllers/devices.controller';
 
 jest.mock('@/services/device.service', () => ({
@@ -14,11 +13,22 @@ jest.mock('@/services/device.service', () => ({
   deleteImprintedDevice: jest.fn(),
   listenToDevices: jest.fn(),
 }));
-jest.mock('@/services/pyasic-bridge.service', () => ({
-  pyasicBridgeService: {
-    restartMiner: jest.fn(),
-    updateMinerConfig: jest.fn(),
-    validateMinerConfig: jest.fn(),
+const mockRestart = jest.fn();
+const mockUpdateConfig = jest.fn();
+const mockValidateConfig = jest.fn();
+const mockGetConfigSchema = jest.fn(() => ({ sections: [] } as ConfigFormSchema));
+const mockGetEditableValues = jest.fn(() => ({}));
+const mockDriver = {
+  restart: mockRestart,
+  updateConfig: mockUpdateConfig,
+  validateConfig: mockValidateConfig,
+  getConfigSchema: mockGetConfigSchema,
+  getEditableValues: mockGetEditableValues,
+};
+jest.mock('../../drivers', () => ({
+  driverFactory: {
+    getDriver: jest.fn(() => mockDriver),
+    getDriverForDevice: jest.fn(() => mockDriver),
   },
 }));
 jest.mock('@pluto/logger', () => ({
@@ -29,7 +39,6 @@ jest.mock('@pluto/logger', () => ({
 }));
 
 const deviceService = jest.requireMock('@/services/device.service');
-const pyasicBridgeService = jest.requireMock('@/services/pyasic-bridge.service');
 
 const createMockResponse = () => ({
   status: jest.fn().mockReturnThis(),
@@ -40,10 +49,13 @@ const makeDiscoveredMiner = (overrides?: Partial<DiscoveredMiner & { presetUuid?
   ip: '10.0.0.1',
   mac: 'aa:bb:cc:dd:ee:ff',
   type: 'mock',
+  supportLevel: 'generic',
   minerData: {
     ip: '10.0.0.1',
     hostname: 'miner-1',
-    model: 'BM1368',
+    deviceInfo: { model: 'BM1368' },
+    fans: [],
+    hashboards: [],
   } as MinerData,
   ...overrides,
 } as DiscoveredMiner & { presetUuid?: string });
@@ -344,16 +356,16 @@ describe('devices.controller', () => {
   });
 
   describe('restartDevice', () => {
-    it('restarts by ip via pyasic-bridge', async () => {
+    it('restarts by ip via driver', async () => {
       const req = { params: { id: 'mac' } } as unknown as Request;
       const res = createMockResponse();
       const device = makeDiscoveredMiner({ mac: 'mac', ip: '10.0.0.2' });
       deviceService.getImprintedDevices.mockResolvedValue([device]);
-      pyasicBridgeService.pyasicBridgeService.restartMiner.mockResolvedValue(undefined);
+      mockRestart.mockResolvedValue(undefined);
 
       await deviceController.restartDevice(req, res as unknown as Response);
 
-      expect(pyasicBridgeService.pyasicBridgeService.restartMiner).toHaveBeenCalledWith('10.0.0.2');
+      expect(mockRestart).toHaveBeenCalledWith('10.0.0.2');
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         message: 'Device restarted successfully',
@@ -382,12 +394,12 @@ describe('devices.controller', () => {
       expect(res.json).toHaveBeenCalledWith({ error: 'Device IP not available' });
     });
 
-    it('handles pyasic-bridge errors', async () => {
+    it('handles driver errors', async () => {
       const req = { params: { id: 'mac' } } as unknown as Request;
       const res = createMockResponse();
       const device = makeDiscoveredMiner({ mac: 'mac', ip: '10.0.0.2' });
       deviceService.getImprintedDevices.mockResolvedValue([device]);
-      pyasicBridgeService.pyasicBridgeService.restartMiner.mockRejectedValue(new Error('network error'));
+      mockRestart.mockRejectedValue(new Error('network error'));
 
       await deviceController.restartDevice(req, res as unknown as Response);
 
@@ -400,7 +412,7 @@ describe('devices.controller', () => {
   });
 
   describe('patchDeviceSystemInfo', () => {
-    it('updates config via pyasic-bridge', async () => {
+    it('updates config via driver', async () => {
       const req = {
         params: { id: 'mac' },
         body: { pools: { groups: [{ pools: [{ url: 'stratum+tcp://pool.com:3333' }] }] } },
@@ -408,12 +420,12 @@ describe('devices.controller', () => {
       const res = createMockResponse();
       const device = makeDiscoveredMiner({ mac: 'mac', ip: '10.0.0.3' });
       deviceService.getImprintedDevices.mockResolvedValue([device]);
-      pyasicBridgeService.pyasicBridgeService.updateMinerConfig.mockResolvedValue(undefined);
+      mockUpdateConfig.mockResolvedValue(undefined);
       deviceService.patchImprintedDevice.mockResolvedValue(device);
 
       await deviceController.patchDeviceSystemInfo(req, res as unknown as Response);
 
-      expect(pyasicBridgeService.pyasicBridgeService.updateMinerConfig).toHaveBeenCalledWith(
+      expect(mockUpdateConfig).toHaveBeenCalledWith(
         '10.0.0.3',
         expect.objectContaining({
           pools: { groups: [{ pools: [{ url: 'stratum+tcp://pool.com:3333' }] }] },
@@ -456,12 +468,12 @@ describe('devices.controller', () => {
       expect(res.json).toHaveBeenCalledWith({ error: 'Invalid config payload' });
     });
 
-    it('handles pyasic-bridge errors', async () => {
+    it('handles driver errors', async () => {
       const req = { params: { id: 'mac' }, body: { pools: {} } } as unknown as Request;
       const res = createMockResponse();
       const device = makeDiscoveredMiner({ mac: 'mac', ip: '10.0.0.3' });
       deviceService.getImprintedDevices.mockResolvedValue([device]);
-      pyasicBridgeService.pyasicBridgeService.updateMinerConfig.mockRejectedValue(
+      mockUpdateConfig.mockRejectedValue(
         new Error('config update failed')
       );
 
@@ -482,7 +494,7 @@ describe('devices.controller', () => {
       const res = createMockResponse();
       const device = makeDiscoveredMiner({ mac: 'mac', ip: '10.0.0.3' });
       deviceService.getImprintedDevices.mockResolvedValue([device]);
-      pyasicBridgeService.pyasicBridgeService.updateMinerConfig.mockResolvedValue(undefined);
+      mockUpdateConfig.mockResolvedValue(undefined);
       const updatedDevice = makeDiscoveredMiner({ mac: 'mac', ip: '10.0.0.3' });
       deviceService.patchImprintedDevice.mockResolvedValue(updatedDevice);
 
@@ -494,23 +506,23 @@ describe('devices.controller', () => {
   });
 
   describe('validateDeviceSystemInfo', () => {
-    it('validates config via pyasic-bridge', async () => {
+    it('validates config via driver', async () => {
       const req = {
         params: { id: 'mac' },
-        body: { extra_config: { frequency: 525, core_voltage: 1100 } },
+        body: { vendorConfig: { frequency: 525, coreVoltage: 1100 } },
       } as unknown as Request;
       const res = createMockResponse();
       const device = makeDiscoveredMiner({ mac: 'mac', ip: '10.0.0.3' });
       deviceService.getImprintedDevices.mockResolvedValue([device]);
       const validationResult = { valid: true, errors: [] };
-      pyasicBridgeService.pyasicBridgeService.validateMinerConfig.mockResolvedValue(validationResult);
+      mockValidateConfig.mockResolvedValue(validationResult);
 
       await deviceController.validateDeviceSystemInfo(req, res as unknown as Response);
 
-      expect(pyasicBridgeService.pyasicBridgeService.validateMinerConfig).toHaveBeenCalledWith(
+      expect(mockValidateConfig).toHaveBeenCalledWith(
         '10.0.0.3',
         expect.objectContaining({
-          extra_config: { frequency: 525, core_voltage: 1100 },
+          vendorConfig: { frequency: 525, coreVoltage: 1100 },
         })
       );
       expect(res.status).toHaveBeenCalledWith(200);
@@ -520,7 +532,7 @@ describe('devices.controller', () => {
     it('returns validation errors when config is invalid', async () => {
       const req = {
         params: { id: 'mac' },
-        body: { extra_config: { frequency: 999 } },
+        body: { vendorConfig: { frequency: 999 } },
       } as unknown as Request;
       const res = createMockResponse();
       const device = makeDiscoveredMiner({ mac: 'mac', ip: '10.0.0.3' });
@@ -529,7 +541,7 @@ describe('devices.controller', () => {
         valid: false,
         errors: ['Invalid frequency 999 for Bitaxe miner. Accepted values are: [400, 490, 525, 550, 600, 625]'],
       };
-      pyasicBridgeService.pyasicBridgeService.validateMinerConfig.mockResolvedValue(validationResult);
+      mockValidateConfig.mockResolvedValue(validationResult);
 
       await deviceController.validateDeviceSystemInfo(req, res as unknown as Response);
 
@@ -572,11 +584,11 @@ describe('devices.controller', () => {
     });
 
     it('handles validation errors with 400 status', async () => {
-      const req = { params: { id: 'mac' }, body: { extra_config: {} } } as unknown as Request;
+      const req = { params: { id: 'mac' }, body: { vendorConfig: {} } } as unknown as Request;
       const res = createMockResponse();
       const device = makeDiscoveredMiner({ mac: 'mac', ip: '10.0.0.3' });
       deviceService.getImprintedDevices.mockResolvedValue([device]);
-      pyasicBridgeService.pyasicBridgeService.validateMinerConfig.mockRejectedValue(
+      mockValidateConfig.mockRejectedValue(
         new Error('validation failed: Invalid frequency')
       );
 
@@ -589,12 +601,12 @@ describe('devices.controller', () => {
       });
     });
 
-    it('handles pyasic-bridge errors', async () => {
-      const req = { params: { id: 'mac' }, body: { extra_config: {} } } as unknown as Request;
+    it('handles driver errors', async () => {
+      const req = { params: { id: 'mac' }, body: { vendorConfig: {} } } as unknown as Request;
       const res = createMockResponse();
       const device = makeDiscoveredMiner({ mac: 'mac', ip: '10.0.0.3' });
       deviceService.getImprintedDevices.mockResolvedValue([device]);
-      pyasicBridgeService.pyasicBridgeService.validateMinerConfig.mockRejectedValue(
+      mockValidateConfig.mockRejectedValue(
         new Error('network error')
       );
 
@@ -604,6 +616,63 @@ describe('devices.controller', () => {
       expect(res.json).toHaveBeenCalledWith({
         error: 'Failed to validate device system info',
         details: 'network error',
+      });
+    });
+  });
+
+  describe('getDeviceConfigForm', () => {
+    it('returns schema and values from driver', async () => {
+      const req = { params: { id: 'mac' } } as unknown as Request;
+      const res = createMockResponse();
+      const device = makeDiscoveredMiner({ mac: 'mac', ip: '10.0.0.3' });
+      deviceService.getImprintedDevices.mockResolvedValue([device]);
+      const mockSchema: ConfigFormSchema = {
+        sections: [
+          {
+            key: 'general',
+            label: 'General',
+            fields: [{ name: 'frequency', label: 'Frequency', type: 'number' as const }],
+          },
+        ],
+      };
+      const mockValues = { frequency: 525 };
+      (mockGetConfigSchema as jest.Mock).mockReturnValue(mockSchema);
+      mockGetEditableValues.mockReturnValue(mockValues);
+
+      await deviceController.getDeviceConfigForm(req, res as unknown as Response);
+
+      expect(mockGetConfigSchema).toHaveBeenCalled();
+      expect(mockGetEditableValues).toHaveBeenCalledWith(device.minerData);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ schema: mockSchema, values: mockValues });
+    });
+
+    it('returns 404 when device not found', async () => {
+      const req = { params: { id: 'unknown' } } as unknown as Request;
+      const res = createMockResponse();
+      deviceService.getImprintedDevices.mockResolvedValue([]);
+
+      await deviceController.getDeviceConfigForm(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Device not found' });
+    });
+
+    it('handles driver errors', async () => {
+      const req = { params: { id: 'mac' } } as unknown as Request;
+      const res = createMockResponse();
+      const device = makeDiscoveredMiner({ mac: 'mac', ip: '10.0.0.3' });
+      deviceService.getImprintedDevices.mockResolvedValue([device]);
+      mockGetConfigSchema.mockImplementation(() => {
+        throw new Error('schema error');
+      });
+
+      await deviceController.getDeviceConfigForm(req, res as unknown as Response);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Failed to get device config form',
+        details: 'schema error',
       });
     });
   });

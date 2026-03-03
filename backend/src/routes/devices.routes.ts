@@ -10,6 +10,7 @@ import { Router } from "express";
 import {
   deleteImprintedDevice,
   discoverDevices,
+  getDeviceConfigForm,
   getDevicesByPresetId,
   getDiscoveredDevices,
   getImprintedDevice,
@@ -35,6 +36,7 @@ router.get("/devices/imprint", getImprintedDevices);
 router.get("/devices/imprint/:id", getImprintedDevice);
 router.get("/devices/presets/:presetId", getDevicesByPresetId);
 router.put("/devices/listen", putListenDevices);
+router.get("/devices/:id/config/form", getDeviceConfigForm);
 router.post("/devices/:id/system/restart", restartDevice);
 router.post("/devices/:id/system/validate", validateDeviceSystemInfo);
 router.patch("/devices/:id/system", patchDeviceSystemInfo);

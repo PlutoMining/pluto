@@ -6,20 +6,10 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import type { MinerData } from "@pluto/pyasic-bridge-client";
+import type { MinerData } from "@pluto/interfaces";
 import { logger } from "@pluto/logger";
 import client from "prom-client";
 import { extractHostnameFromMinerData, extractModelFromMinerData } from "./tracing.helpers";
-
-/** Read a numeric field from extra_config. Standard is snake_case (same as MinerData). */
-function readExtraConfigNumber(
-  extraConfig: unknown,
-  key: string
-): number | null {
-  if (extraConfig == null || typeof extraConfig !== "object" || Array.isArray(extraConfig)) return null;
-  const v = (extraConfig as Record<string, unknown>)[key];
-  return typeof v === "number" && Number.isFinite(v) ? v : null;
-}
 
 /**
  * Normalize to SI units (volts or amps) from raw device value.
@@ -216,39 +206,32 @@ export function updateDeviceMetrics(deviceId: string, data: Partial<MinerData>):
     gauge.labels(labels).set(value);
   };
 
-  const hashrate =
-    (typeof data.hashrate === "object" && data.hashrate !== null && "rate" in data.hashrate
-      ? (data.hashrate as { rate?: number }).rate
-      : null) ?? 0;
+  const hashrate = data.hashrate?.rate ?? 0;
 
-  const fanSpeed = data.fans && data.fans.length > 0 && typeof data.fans[0] === "object" && data.fans[0] !== null && "speed" in data.fans[0]
-    ? (data.fans[0] as { speed?: number }).speed
-    : null;
+  const fanSpeed =
+    data.fans && data.fans.length > 0 ? data.fans[0].speed : null;
 
-  const temp = data.temperature_avg ??
-    (data.hashboards && data.hashboards.length > 0 && typeof data.hashboards[0] === "object" && data.hashboards[0] !== null && "temp" in data.hashboards[0]
-      ? (data.hashboards[0] as { temp?: number }).temp
+  const temp =
+    data.temperatureAvg ??
+    (data.hashboards && data.hashboards.length > 0
+      ? data.hashboards[0].temp
       : null);
 
   const voltage =
     data.voltage ??
-    (data.hashboards && data.hashboards.length > 0 && typeof data.hashboards[0] === "object" && data.hashboards[0] !== null && "voltage" in data.hashboards[0]
-      ? (data.hashboards[0] as { voltage?: number }).voltage
+    (data.hashboards && data.hashboards.length > 0
+      ? data.hashboards[0].voltage
       : null);
 
-  const vrTemp =
-    (data.hashboards && data.hashboards.length > 0 && typeof data.hashboards[0] === "object" && data.hashboards[0] !== null && "chip_temp" in data.hashboards[0]
-      ? (data.hashboards[0] as { chip_temp?: number }).chip_temp
-      : null) ??
-    readExtraConfigNumber(data.config?.extra_config, "vr_temp");
-
-  const current = readExtraConfigNumber(data.config?.extra_config, "current");
-  const coreVoltage = readExtraConfigNumber(data.config?.extra_config, "core_voltage");
-  const coreVoltageActual = readExtraConfigNumber(data.config?.extra_config, "core_voltage_actual");
-  const frequency = readExtraConfigNumber(data.config?.extra_config, "frequency");
-  const freeHeap = readExtraConfigNumber(data.config?.extra_config, "free_heap");
-  const freeHeapInternal = readExtraConfigNumber(data.config?.extra_config, "free_heap_internal");
-  const freeHeapSpiram = readExtraConfigNumber(data.config?.extra_config, "free_heap_spiram");
+  // Bitaxe-specific fields (typed, no extra_config casting)
+  const vrTemp = data.bitaxe?.vrTemp ?? null;
+  const current = data.bitaxe?.current ?? null;
+  const coreVoltage = data.bitaxe?.coreVoltage ?? null;
+  const coreVoltageActual = data.bitaxe?.coreVoltageActual ?? null;
+  const frequency = data.bitaxe?.frequency ?? null;
+  const freeHeap = data.bitaxe?.freeHeap ?? null;
+  const freeHeapInternal = data.bitaxe?.freeHeapInternal ?? null;
+  const freeHeapSpiram = data.bitaxe?.freeHeapSpiram ?? null;
 
   setGauge(powerGauge, data.wattage);
   setGauge(voltageGauge, toSiVoltsOrAmps(voltage));
@@ -257,8 +240,8 @@ export function updateDeviceMetrics(deviceId: string, data: Partial<MinerData>):
   setGauge(tempGauge, temp);
   setGauge(vrTempGauge, vrTemp);
   setGauge(hashRateGauge, hashrate);
-  setGauge(sharesAcceptedGauge, data.shares_accepted);
-  setGauge(sharesRejectedGauge, data.shares_rejected);
+  setGauge(sharesAcceptedGauge, data.sharesAccepted);
+  setGauge(sharesRejectedGauge, data.sharesRejected);
   setGauge(uptimeGauge, data.uptime);
   setGauge(freeHeapGauge, freeHeap);
   setGauge(freeHeapInternalGauge, freeHeapInternal);
@@ -402,19 +385,14 @@ function normalizePoolKey(stratumURL: unknown, stratumPort: unknown) {
 
 function extractHashrate(minerData: MinerData | null | undefined): number {
   if (!minerData) return 0;
-  if (typeof minerData.hashrate === "object" && minerData.hashrate !== null && "rate" in minerData.hashrate) {
-    return (minerData.hashrate as { rate?: number }).rate ?? 0;
-  }
-  return 0;
+  return minerData.hashrate?.rate ?? 0;
 }
 
 function extractPoolInfo(minerData: MinerData | null | undefined): { url: string | null; port: number | null } {
-  if (!minerData?.config?.pools?.groups?.[0]?.pools?.[0]) {
-    return { url: null, port: null };
-  }
-  const pool = minerData.config.pools.groups[0].pools[0];
-  const url = typeof pool === "object" && pool !== null && "url" in pool ? (pool.url as string | null) : null;
+  const pool = minerData?.pools?.groups?.[0]?.pools?.[0];
+  if (!pool) return { url: null, port: null };
 
+  const url = pool.url ?? null;
   let port: number | null = null;
   if (url) {
     const match = url.match(/:(\d+)/);
@@ -451,7 +429,7 @@ export const updateOverviewMetrics = (devicesData: MinerData[]) => {
   firmwareVersionGauge.reset();
 
   const firmwareCount = devicesData.reduce((acc: { [version: string]: number }, minerData) => {
-    const version = minerData.fw_ver ?? minerData.firmware ?? "unknown";
+    const version = minerData.fwVer ?? "unknown";
     acc[version] = (acc[version] || 0) + 1;
     return acc;
   }, {});
@@ -468,8 +446,8 @@ export const updateOverviewMetrics = (devicesData: MinerData[]) => {
       const { url, port } = extractPoolInfo(minerData);
       const poolKey = normalizePoolKey(url, port);
       const pool = poolMap.get(poolKey) || poolKey;
-      acc.accepted[pool] = (acc.accepted[pool] || 0) + (minerData.shares_accepted ?? 0);
-      acc.rejected[pool] = (acc.rejected[pool] || 0) + (minerData.shares_rejected ?? 0);
+      acc.accepted[pool] = (acc.accepted[pool] || 0) + (minerData.sharesAccepted ?? 0);
+      acc.rejected[pool] = (acc.rejected[pool] || 0) + (minerData.sharesRejected ?? 0);
       return acc;
     },
     { accepted: {}, rejected: {} }

@@ -7,7 +7,7 @@
 */
 
 import { updateOne } from "@pluto/db";
-import { DiscoveredMiner } from "@pluto/interfaces";
+import type { DiscoveredMiner, MinerData } from "@pluto/interfaces";
 import { createCustomLogger, logger } from "@pluto/logger";
 import { asyncForEach } from "@pluto/utils";
 import { Server as NetServer } from "http";
@@ -19,14 +19,14 @@ import {
   removeDeviceMetrics,
   updateOverviewMetrics,
 } from "./metrics.service";
-import { pyasicBridgeService } from "./pyasic-bridge.service";
-import type { MinerData } from "@pluto/pyasic-bridge-client";
+import { driverFactory } from "../drivers";
 
-/** Interval between polls per device. Each poll = one request backend→pyasic-bridge; pyasic then issues several HTTP requests to the miner (e.g. /, /api/system/info, /api/system/asic). */
+/** Interval between polls per device. Each poll = one request backend→driver; native drivers talk directly to the miner, pyasic-bridge driver proxies through pyasic. */
 const getPollIntervalMs = (): number => config.pollIntervalMs;
 
 interface IpMapEntry {
   mac: string;
+  type: string;
   cleanupWs?: () => void;
   timeout?: NodeJS.Timeout;
   minerData?: MinerData;
@@ -141,8 +141,11 @@ async function startDeviceMonitoring(
   discoveredMiner: DiscoveredMiner,
   traceLogs?: boolean
 ): Promise<void> {
+  const driver = driverFactory.getDriverForDevice(discoveredMiner.type, discoveredMiner.mac);
+
   ipMap[discoveredMiner.ip] = {
     mac: discoveredMiner.mac,
+    type: discoveredMiner.type,
     minerData: discoveredMiner.minerData,
   };
 
@@ -152,8 +155,9 @@ async function startDeviceMonitoring(
   const maxRetryAttempts = 5;
 
   const connectWebSocket = async (): Promise<void> => {
+    if (!driver.connectLogs) return;
     try {
-      const cleanup = await pyasicBridgeService.connectMinerLogsWebSocket(
+      const cleanup = await driver.connectLogs(
         discoveredMiner.ip,
         (messageString: string) => {
           logger.debug(
@@ -207,8 +211,8 @@ async function startDeviceMonitoring(
     const startTime = Date.now();
 
     try {
-      logger.debug(`Polling system info from ${discoveredMiner.ip} via pyasic-bridge`);
-      const minerData = await pyasicBridgeService.fetchMinerData(discoveredMiner.ip);
+      logger.debug(`Polling system info from ${discoveredMiner.ip} via ${driver.driverName} driver`);
+      const minerData = await driver.fetchData(discoveredMiner.ip);
 
       if (!minerData) {
         throw new Error("Failed to fetch miner data");
@@ -258,13 +262,9 @@ async function startDeviceMonitoring(
 
       updateDeviceMetrics(discoveredMiner.mac, {
         ip: discoveredMiner.ip,
-        hashrate: { rate: 0, unit: "H/s" },
-        wattage: 0,
-        voltage: 0,
         fans: [],
-        temperature: 0,
         hashboards: [],
-      } as unknown as MinerData);
+      });
     } finally {
       const elapsedTime = Date.now() - startTime;
       const remainingTime = Math.max(getPollIntervalMs() - elapsedTime, 0);
@@ -285,7 +285,24 @@ async function startDeviceMonitoring(
     }
   };
 
-  await pollSystemInfo();
+  const freshData = discoveredMiner.minerData;
+  const isFresh = freshData && (freshData.hashrate?.rate ?? 0) > 0;
+
+  if (isFresh) {
+    logger.debug(`${discoveredMiner.ip}: discovery data is fresh, emitting initial stat_update`);
+    ioInstance?.emit("stat_update", { ...discoveredMiner, tracing: true });
+    updateDeviceMetrics(discoveredMiner.mac, freshData);
+    if (ipMap[discoveredMiner.ip]) {
+      ipMap[discoveredMiner.ip].tracing = true;
+    }
+
+    const timeoutId = setTimeout(pollSystemInfo, getPollIntervalMs());
+    if (ipMap[discoveredMiner.ip]) {
+      ipMap[discoveredMiner.ip].timeout = timeoutId;
+    }
+  } else {
+    await pollSystemInfo();
+  }
 
   if (traceLogs) {
     void connectWebSocket();

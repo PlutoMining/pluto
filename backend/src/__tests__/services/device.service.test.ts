@@ -1,5 +1,4 @@
-import type { DiscoveredMiner } from '@pluto/interfaces';
-import type { MinerData } from '@pluto/pyasic-bridge-client';
+import type { DiscoveredMiner, MinerData } from '@pluto/interfaces';
 import axios from 'axios';
 import * as deviceService from '@/services/device.service';
 
@@ -34,10 +33,13 @@ const makeDiscoveredMiner = (overrides?: Partial<DiscoveredMiner & { presetUuid?
   ip: '10.0.0.1',
   mac: 'aa:bb:cc:dd:ee:ff',
   type: 'mock',
+  supportLevel: 'generic',
   minerData: {
     ip: '10.0.0.1',
     hostname: 'miner-1',
-    model: 'BM1368',
+    deviceInfo: { model: 'BM1368' },
+    fans: [],
+    hashboards: [],
   } as MinerData,
   ...overrides,
 } as DiscoveredMiner & { presetUuid?: string });
@@ -45,6 +47,7 @@ const makeDiscoveredMiner = (overrides?: Partial<DiscoveredMiner & { presetUuid?
 describe('device.service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    tracing.getTracingByIp.mockReturnValue({});
   });
 
   describe('discoverDevices', () => {
@@ -254,6 +257,15 @@ describe('device.service', () => {
       expect(predicate(makeDiscoveredMiner({ ip: '10.0.0.1:4028' }))).toBe(true);
     });
 
+    it('matches full ip when ip equals query exactly', async () => {
+      db.findMany.mockResolvedValue([]);
+
+      await deviceService.getImprintedDevices({ q: '10.0.0.1' });
+
+      const predicate = db.findMany.mock.calls[0][2];
+      expect(predicate(makeDiscoveredMiner({ ip: '10.0.0.1' }))).toBe(true);
+    });
+
     it('logs and throws on db error', async () => {
       const error = new Error('db down');
       db.findMany.mockRejectedValue(error);
@@ -279,12 +291,12 @@ describe('device.service', () => {
 
       const predicate = db.findMany.mock.calls[0][2];
       const minerWithHostname = makeDiscoveredMiner({
-        minerData: { ip: '10.0.0.1', hostname: 'miner-s19-01' } as MinerData,
+        minerData: { ip: '10.0.0.1', hostname: 'miner-s19-01', fans: [], hashboards: [] } as MinerData,
       });
       expect(predicate(minerWithHostname)).toBe(true);
       const minerWithoutMatch = makeDiscoveredMiner({
         mac: 'xx:yy:zz:aa:bb:cc',
-        minerData: { ip: '10.0.0.2', hostname: 'other-miner' } as MinerData,
+        minerData: { ip: '10.0.0.2', hostname: 'other-miner', fans: [], hashboards: [] } as MinerData,
       });
       expect(predicate(minerWithoutMatch)).toBe(false);
 
@@ -294,9 +306,45 @@ describe('device.service', () => {
       expect(predicate2(makeDiscoveredMiner({ mac: 'aa:bb:cc:dd:ee:ff' }))).toBe(true);
       const minerWithDifferentMac = makeDiscoveredMiner({
         mac: 'xx:yy:zz:11:22:33',
-        minerData: { ip: '10.0.0.1', hostname: 'miner-s19-01' } as MinerData,
+        minerData: { ip: '10.0.0.1', hostname: 'miner-s19-01', fans: [], hashboards: [] } as MinerData,
       });
       expect(predicate2(minerWithDifferentMac)).toBe(false);
+    });
+
+    it('handles devices with null/undefined ip, mac, hostname in predicate', async () => {
+      db.findMany.mockResolvedValue([]);
+
+      await deviceService.getImprintedDevices({ q: '10.0' });
+
+      const predicate = db.findMany.mock.calls[0][2];
+      const minerWithNullHostname = makeDiscoveredMiner({
+        ip: '10.0.0.1',
+        minerData: { ip: '10.0.0.1', hostname: undefined, fans: [], hashboards: [] } as MinerData,
+      });
+      expect(predicate(minerWithNullHostname)).toBe(true);
+      const minerWithNullMac = makeDiscoveredMiner({ mac: undefined });
+      expect(() => predicate(minerWithNullMac)).not.toThrow();
+    });
+
+    it('returns devices with tracing from getTracingByIp', async () => {
+      const devices = [makeDiscoveredMiner({ ip: '10.0.0.1' })];
+      db.findMany.mockResolvedValue(devices);
+      tracing.getTracingByIp.mockReturnValue({ '10.0.0.1': true });
+
+      const result = await deviceService.getImprintedDevices();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].tracing).toBe(true);
+    });
+
+    it('returns devices with tracing false when not in getTracingByIp', async () => {
+      const devices = [makeDiscoveredMiner({ ip: '10.0.0.99' })];
+      db.findMany.mockResolvedValue(devices);
+
+      const result = await deviceService.getImprintedDevices();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].tracing).toBe(false);
     });
   });
 
@@ -307,6 +355,12 @@ describe('device.service', () => {
 
       await expect(deviceService.getImprintedDevice('mac-3')).resolves.toEqual({ ...device, tracing: false });
       expect(db.findOne).toHaveBeenCalledWith('pluto_core', 'devices:imprinted', 'mac-3');
+    });
+
+    it('returns null when device not found', async () => {
+      db.findOne.mockResolvedValue(null);
+
+      await expect(deviceService.getImprintedDevice('unknown-mac')).resolves.toBeNull();
     });
 
     it('logs and throws on db error', async () => {
@@ -328,6 +382,17 @@ describe('device.service', () => {
       expect(predicate(makeDiscoveredMiner({ presetUuid: 'preset-1' }))).toBe(true);
       expect(predicate(makeDiscoveredMiner({ presetUuid: 'preset-2' }))).toBe(false);
       expect(predicate(makeDiscoveredMiner({}))).toBe(false);
+    });
+
+    it('returns devices with tracing when preset matches', async () => {
+      const devices = [makeDiscoveredMiner({ presetUuid: 'preset-1', ip: '10.0.0.1' })];
+      db.findMany.mockResolvedValue(devices);
+      tracing.getTracingByIp.mockReturnValue({ '10.0.0.1': true });
+
+      const result = await deviceService.getDevicesByPresetId('preset-1');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].tracing).toBe(true);
     });
 
     it('logs and throws on db error', async () => {

@@ -9,9 +9,8 @@
 import { logger } from "@pluto/logger";
 import { Request, Response } from "express";
 import * as deviceService from "../services/device.service";
-import { DiscoveredMiner } from "@pluto/interfaces";
-import type { MinerConfigModelInput } from "@pluto/pyasic-bridge-client";
-import { pyasicBridgeService } from "../services/pyasic-bridge.service";
+import type { DiscoveredMiner, MinerConfig } from "@pluto/interfaces";
+import { driverFactory } from "../drivers";
 
 export const discoverDevices = async (req: Request, res: Response) => {
   try {
@@ -28,19 +27,16 @@ export const discoverDevices = async (req: Request, res: Response) => {
 
 export const getDiscoveredDevices = async (req: Request, res: Response) => {
   try {
-    // Estrai i parametri di query dalla richiesta
     const macs = req.query.macs ? (req.query.macs as string).split(",") : [];
     const ips = req.query.ips ? (req.query.ips as string).split(",") : [];
     const hostnames = req.query.hostnames ? (req.query.hostnames as string).split(",") : [];
 
-    // Estrai i parametri di matching parziale dalla query, con valore di default 'both'
     const partialMatch = {
       macs: (req.query.partialMacs as "left" | "right" | "both" | "none") || "both",
       ips: (req.query.partialIps as "left" | "right" | "both" | "none") || "both",
       hostnames: (req.query.partialHostnames as "left" | "right" | "both" | "none") || "both",
     };
 
-    // Chiamata al servizio per cercare i dispositivi scoperti
     const data = await deviceService.lookupMultipleDiscoveredDevices({
       macs,
       ips,
@@ -48,7 +44,6 @@ export const getDiscoveredDevices = async (req: Request, res: Response) => {
       partialMatch,
     });
 
-    // Invia la risposta con i dati dei dispositivi
     res.status(200).json(data);
   } catch (error) {
     logger.error("Error in getDiscoveredDevices request:", error);
@@ -182,24 +177,20 @@ export const restartDevice = async (req: Request, res: Response) => {
   try {
     const { id }: { id: string } = req.params as any;
 
-    // Ottieni la lista dei dispositivi e trova il dispositivo corrispondente al MAC
     const devices = await deviceService.getImprintedDevices();
-
     const device = devices.find((d) => id === d.mac);
 
     if (!device) {
       return res.status(404).json({ error: "Device not found" });
     }
 
-    // Ottieni l'indirizzo IP del dispositivo
     const deviceIp = device.ip;
-
     if (!deviceIp) {
       return res.status(400).json({ error: "Device IP not available" });
     }
 
-    // Use pyasic-bridge service to restart the miner
-    await pyasicBridgeService.restartMiner(deviceIp);
+    const driver = driverFactory.getDriverForDevice(device.type, device.mac);
+    await driver.restart(deviceIp);
 
     res.status(200).json({ message: "Device restarted successfully", data: device });
   } catch (error) {
@@ -225,9 +216,7 @@ export const validateDeviceSystemInfo = async (req: Request, res: Response) => {
       bodyKeys: Object.keys(req.body || {}),
     });
 
-    // Ottieni la lista dei dispositivi e trova il dispositivo corrispondente al MAC
     const devices = await deviceService.getImprintedDevices();
-
     const device = devices.find((d) => id === d.mac);
 
     if (!device) {
@@ -235,35 +224,31 @@ export const validateDeviceSystemInfo = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Device not found" });
     }
 
-    // Ottieni l'indirizzo IP del dispositivo
     const deviceIp = device.ip;
-
     if (!deviceIp) {
       logger.error("Device IP not available", { mac: id });
       return res.status(400).json({ error: "Device IP not available" });
     }
 
-    // Extract MinerConfigModelInput from request body
-    const configPatch: MinerConfigModelInput = req.body as MinerConfigModelInput;
+    const configPatch: MinerConfig = req.body as MinerConfig;
 
     if (!configPatch || typeof configPatch !== "object") {
       return res.status(400).json({ error: "Invalid config payload" });
     }
 
-    logger.info("Validating config for miner via pyasic-bridge", {
+    logger.info("Validating config for miner via driver", {
       ip: deviceIp,
       configKeys: Object.keys(configPatch),
     });
 
-    // Use pyasic-bridge service to validate miner config
-    const validationResult = await pyasicBridgeService.validateMinerConfig(deviceIp, configPatch);
+    const driver = driverFactory.getDriverForDevice(device.type, device.mac);
+    const validationResult = await driver.validateConfig(deviceIp, configPatch);
 
     res.status(200).json(validationResult);
   } catch (error) {
     logger.error("Error in validateDeviceSystemInfo request:", error);
 
     if (error instanceof Error) {
-      // If validation fails with structured errors, return them
       if (error.message.includes("validation")) {
         return res.status(400).json({
           valid: false,
@@ -289,9 +274,7 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
       bodyKeys: Object.keys(req.body || {}),
     });
 
-    // Ottieni la lista dei dispositivi e trova il dispositivo corrispondente al MAC
     const devices = await deviceService.getImprintedDevices();
-
     const device = devices.find((d) => id === d.mac);
 
     if (!device) {
@@ -299,38 +282,30 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Device not found" });
     }
 
-    // Ottieni l'indirizzo IP del dispositivo
     const deviceIp = device.ip;
-
     if (!deviceIp) {
       logger.error("Device IP not available", { mac: id });
       return res.status(400).json({ error: "Device IP not available" });
     }
 
-    // Extract MinerConfigModelInput from request body
-    const configPatch: MinerConfigModelInput = req.body as MinerConfigModelInput;
+    const configPatch: MinerConfig = req.body as MinerConfig;
 
     if (!configPatch || typeof configPatch !== "object") {
       return res.status(400).json({ error: "Invalid config payload" });
     }
 
-    logger.info("Sending config update to miner via pyasic-bridge", {
+    logger.info("Sending config update to miner via driver", {
       ip: deviceIp,
       configKeys: Object.keys(configPatch),
     });
 
-    // Use pyasic-bridge service to update miner config
-    await pyasicBridgeService.updateMinerConfig(deviceIp, configPatch);
+    const driver = driverFactory.getDriverForDevice(device.type, device.mac);
+    await driver.updateConfig(deviceIp, configPatch);
 
-    // Update device in database with new config
     const updatedDevice: DiscoveredMiner = {
       ...device,
       minerData: {
         ...(device.minerData ?? ({} as DiscoveredMiner["minerData"])),
-        config: {
-          ...(device.minerData?.config ?? {}),
-          ...configPatch,
-        },
       },
     };
 
@@ -346,6 +321,36 @@ export const patchDeviceSystemInfo = async (req: Request, res: Response) => {
     if (error instanceof Error) {
       res.status(500).json({
         error: "Failed to update device system info",
+        details: error.message,
+      });
+    } else {
+      res.status(500).json({ error: "Failed to process the request" });
+    }
+  }
+};
+
+export const getDeviceConfigForm = async (req: Request, res: Response) => {
+  try {
+    const { id }: { id: string } = req.params as any;
+
+    const devices = await deviceService.getImprintedDevices();
+    const device = devices.find((d) => id === d.mac);
+
+    if (!device) {
+      return res.status(404).json({ error: "Device not found" });
+    }
+
+    const driver = driverFactory.getDriverForDevice(device.type, device.mac);
+    const schema = driver.getConfigSchema();
+    const values = driver.getEditableValues(device.minerData);
+
+    res.status(200).json({ schema, values });
+  } catch (error) {
+    logger.error("Error in getDeviceConfigForm request:", error);
+
+    if (error instanceof Error) {
+      res.status(500).json({
+        error: "Failed to get device config form",
         details: error.message,
       });
     } else {

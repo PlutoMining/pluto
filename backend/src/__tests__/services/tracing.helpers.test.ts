@@ -2,7 +2,7 @@ import {
   extractHostnameFromMinerData,
   extractModelFromMinerData,
 } from "@/services/tracing.helpers";
-import type { MinerData } from "@pluto/pyasic-bridge-client";
+import type { MinerData } from "@pluto/interfaces";
 
 describe("tracing.helpers", () => {
   describe("extractHostnameFromMinerData", () => {
@@ -19,12 +19,12 @@ describe("tracing.helpers", () => {
       expect(extractHostnameFromMinerData(minerData)).toBe("test-miner");
     });
 
-    it("falls back to IP when hostname not in top-level", () => {
+    it("falls back to IP when hostname not set", () => {
       const minerData: MinerData = {
         ip: "192.168.1.100",
-        device_info: {
-          model: "BM1368",
-        },
+        deviceInfo: { model: "BM1368" },
+        fans: [],
+        hashboards: [],
       } as MinerData;
       expect(extractHostnameFromMinerData(minerData)).toBe("192.168.1.100");
     });
@@ -34,6 +34,11 @@ describe("tracing.helpers", () => {
         ip: "192.168.1.100",
       } as MinerData;
       expect(extractHostnameFromMinerData(minerData)).toBe("192.168.1.100");
+    });
+
+    it("returns 'unknown' when both hostname and ip are undefined", () => {
+      const minerData = { hostname: undefined, ip: undefined } as unknown as MinerData;
+      expect(extractHostnameFromMinerData(minerData)).toBe("unknown");
     });
 
     it("prefers top-level hostname over IP", () => {
@@ -51,33 +56,33 @@ describe("tracing.helpers", () => {
       expect(extractModelFromMinerData(undefined)).toBe("unknown");
     });
 
-    it("extracts model from top-level field", () => {
+    it("extracts model from deviceInfo", () => {
       const minerData: MinerData = {
         ip: "192.168.1.100",
-        model: "BM1368",
+        deviceInfo: { model: "BM1368" },
+        fans: [],
+        hashboards: [],
       } as MinerData;
       expect(extractModelFromMinerData(minerData)).toBe("BM1368");
     });
 
-    it("extracts model from device_info", () => {
+    it("returns 'unknown' when deviceInfo has no model", () => {
       const minerData: MinerData = {
         ip: "192.168.1.100",
-        device_info: {
-          model: "BM1370",
-        },
+        deviceInfo: {},
+        fans: [],
+        hashboards: [],
       } as MinerData;
-      expect(extractModelFromMinerData(minerData)).toBe("BM1370");
+      expect(extractModelFromMinerData(minerData)).toBe("unknown");
     });
 
-    it("prefers top-level model over device_info", () => {
+    it("returns 'unknown' when deviceInfo is missing", () => {
       const minerData: MinerData = {
         ip: "192.168.1.100",
-        model: "BM1368",
-        device_info: {
-          model: "BM1370",
-        },
+        fans: [],
+        hashboards: [],
       } as MinerData;
-      expect(extractModelFromMinerData(minerData)).toBe("BM1368");
+      expect(extractModelFromMinerData(minerData)).toBe("unknown");
     });
   });
 });

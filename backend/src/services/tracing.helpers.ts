@@ -6,7 +6,7 @@
  * See <https://www.gnu.org/licenses/>.
  */
 
-import type { MinerData } from "@pluto/pyasic-bridge-client";
+import type { MinerData } from "@pluto/interfaces";
 
 /**
  * Extract hostname from MinerData structure.
@@ -29,5 +29,5 @@ export function extractModelFromMinerData(minerData: MinerData | null | undefine
     return "unknown";
   }
   
-  return minerData.model ?? minerData.device_info?.model ?? "unknown";
+  return minerData.deviceInfo?.model ?? "unknown";
 }
