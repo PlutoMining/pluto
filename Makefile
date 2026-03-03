@@ -3,7 +3,7 @@
 
 SHELL := /bin/bash
 COMPOSE_FILE = docker-compose.dev.local.yml
-.PHONY: help setup start stop up down logs build rebuild clean restart status shell lint-apps test-apps lint-app test-app lint-pyasic-bridge test-pyasic-bridge setup-pyasic-bridge build-pyasic-bridge-client generate-pyasic-bridge-client up-stable down-stable logs-stable up-beta down-beta logs-beta
+.PHONY: help setup start stop up down logs build rebuild clean restart status shell lint-apps test-apps lint-app test-app lint-pyasic-bridge test-pyasic-bridge setup-pyasic-bridge up-stable down-stable logs-stable up-beta down-beta logs-beta
 
 APPS ?= backend discovery frontend mock
 
@@ -70,9 +70,8 @@ restart: ## Restart all services
 	@docker compose -f $(COMPOSE_FILE) up
 	@echo "Restart complete."
 
-reload: ## Reload all services (including shared clients)
+reload: ## Reload all services
 	@echo "Reloading all services..."
-	$(MAKE) build-pyasic-bridge-client
 	$(MAKE) stop && $(MAKE) rebuild && $(MAKE) start
 	@echo "Reload complete."
 
@@ -187,26 +186,6 @@ lint-pyasic-bridge: ## Lint and fix pyasic-bridge Python code
 			echo "Warning: ruff not found. Run 'make setup-pyasic-bridge' or install with: pip install ruff"; \
 			echo "Skipping linting..."; \
 		fi
-
-build-pyasic-bridge-client: ## Build @pluto/pyasic-bridge-client TypeScript package
-	@echo "→ Building @pluto/pyasic-bridge-client..."
-	@npm --prefix common/pyasic-bridge-client run build
-
-generate-pyasic-bridge-client: ## Regenerate pyasic-bridge TS client + extra_config schemas and build the package
-	@echo "→ Generating pyasic-bridge TypeScript client and extra_config schemas..."
-	@cd pyasic-bridge && \
-		if [ -d "venv" ]; then \
-			. venv/bin/activate && \
-			python scripts/extract_extra_config_schemas.py && \
-			python scripts/generate_client.py; \
-		elif command -v python3 > /dev/null 2>&1; then \
-			python3 scripts/extract_extra_config_schemas.py && \
-			python3 scripts/generate_client.py; \
-		else \
-			echo "Error: Python not found. Run 'make setup-pyasic-bridge' first."; \
-			exit 1; \
-		fi
-	@$(MAKE) build-pyasic-bridge-client
 
 test-pyasic-bridge: ## Run tests for pyasic-bridge
 	@echo "→ Testing pyasic-bridge..."
