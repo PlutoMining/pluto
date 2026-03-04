@@ -1,11 +1,24 @@
 import type { MinerDataGenerator } from "./miner-data-generator.interface";
 import type { BitaxeAxeOSInfo } from "../types/bitaxe-axeos.types";
 
+function stableIndex(key: string | undefined, length: number, salt = ""): number {
+  const input = (key && key.length > 0 ? key : "bitaxe") + salt;
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) % length;
+}
+
 /**
  * BitAxe / AxeOS-specific system info generator.
  *
  * Produces a payload that closely matches the real Bitaxe
  * `/api/system/info` JSON so that pyasic can normalise it.
+ *
+ * Identity/config fields (ASIC model, board version, firmware) are
+ * derived deterministically from the hostname so a given mock device
+ * keeps a stable identity across polls.
  */
 export class BitaxeAxeOSDataGenerator
   implements MinerDataGenerator<BitaxeAxeOSInfo>
@@ -20,16 +33,15 @@ export class BitaxeAxeOSDataGenerator
     const getRandomFloat = (min: number, max: number, decimals: number) =>
       parseFloat((Math.random() * (max - min) + min).toFixed(decimals));
 
-    // Randomize BitAxe model based on ASICModel
     const bitaxeModels = [
       { asicModel: "BM1370", model: "Gamma", boardVersion: "601" },
       { asicModel: "BM1368", model: "Supra", boardVersion: "401" },
       { asicModel: "BM1366", model: "Ultra", boardVersion: "201" },
       { asicModel: "BM1397", model: "Max", boardVersion: "101" },
     ];
-    const selectedModel = bitaxeModels[getRandomInt(0, bitaxeModels.length - 1)];
+    const modelIdx = stableIndex(hostname, bitaxeModels.length, ":model");
+    const selectedModel = bitaxeModels[modelIdx];
 
-    // Randomize firmware version (common AxeOS versions)
     const firmwareVersions = [
       "v2.12.2",
       "v2.12.1",
@@ -43,10 +55,9 @@ export class BitaxeAxeOSDataGenerator
       "v2.10.5",
       "v2.10.4",
     ];
-    const firmwareVersion =
-      firmwareVersions[getRandomInt(0, firmwareVersions.length - 1)];
+    const fwIdx = stableIndex(hostname, firmwareVersions.length, ":fw");
+    const firmwareVersion = firmwareVersions[fwIdx];
 
-    // Simple deterministic MAC address for mocks (same logic as legacy helpers)
     const generateMacAddress = (h: string): string => {
       const match = h.match(/\d+$/);
       const numericPart = match ? parseInt(match[0], 10) : 0;
@@ -86,7 +97,6 @@ export class BitaxeAxeOSDataGenerator
       frequency: getRandomInt(490, 550),
       ssid: "FRITZ!Box 5530 AG",
       macAddr: generateMacAddress(hostname),
-      // Use the actual server hostname (mockaxe1, mockaxe2, etc.) for identification
       hostname,
       ipv4: "192.168.178.229",
       ipv6: "FE80::32ED:A0FF:FE30:1030",
@@ -104,13 +114,11 @@ export class BitaxeAxeOSDataGenerator
       ASICModel: selectedModel.asicModel,
       stratumURL: "stratum+tcp://192.168.178.28:2018",
       stratumPort: 2018,
-      // Use "bitaxe" in stratumUser to match real miner format
       stratumUser: "bc1qr0aklhexw6l7kzyg4qjmr3t98p2gjq726uzcvj.bitaxe",
       stratumSuggestedDifficulty: 1000,
       stratumExtranonceSubscribe: 0,
       fallbackStratumURL: "eusolo.ckpool.org",
       fallbackStratumPort: 3333,
-      // Use "bitaxe" in fallbackStratumUser to match real miner format
       fallbackStratumUser: "bc1qr0aklhexw6l7kzyg4qjmr3t98p2gjq726uzcvj.bitaxe",
       fallbackStratumSuggestedDifficulty: 1000,
       fallbackStratumExtranonceSubscribe: 0,

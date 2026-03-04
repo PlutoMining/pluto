@@ -35,9 +35,23 @@ const POOL_URLS = [
   "stratum+tcp://public-pool.io:21496",
 ];
 
+function stableIndex(key: string | undefined, length: number, salt = ""): number {
+  const input = (key && key.length > 0 ? key : "generic-miner") + salt;
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) | 0;
+  }
+  const idx = Math.abs(hash) % length;
+  return idx;
+}
+
 /**
  * Generates randomized data for a generic (non-vendor-specific) mock miner.
  * All fields align with what pyasic-bridge would return in `PbMinerData`.
+ *
+ * Identity/config fields (make/model/firmware/pool) are chosen
+ * deterministically from the hostname so they remain stable across polls.
+ * Live metrics (hashrate, temps, power, shares, etc.) remain random.
  */
 export class GenericMinerDataGenerator
   implements MinerDataGenerator<GenericMinerInfo>
@@ -58,11 +72,17 @@ export class GenericMinerDataGenerator
       return `ff:ff:ff:ff:${((n >> 8) & 0xff).toString(16).padStart(2, "0")}:${(n & 0xff).toString(16).padStart(2, "0")}`;
     };
 
-    const make = MAKES[randInt(0, MAKES.length - 1)];
+    const makeIdx = stableIndex(hostname, MAKES.length, ":make");
+    const make = MAKES[makeIdx];
     const variants = MODELS[make];
-    const variant = variants[randInt(0, variants.length - 1)];
-    const fw = FIRMWARE_VERSIONS[randInt(0, FIRMWARE_VERSIONS.length - 1)];
-    const poolUrl = POOL_URLS[randInt(0, POOL_URLS.length - 1)];
+    const variantIdx = stableIndex(hostname, variants.length, ":model");
+    const variant = variants[variantIdx];
+
+    const fwIdx = stableIndex(hostname, FIRMWARE_VERSIONS.length, ":fw");
+    const fw = FIRMWARE_VERSIONS[fwIdx];
+
+    const poolIdx = stableIndex(hostname, POOL_URLS.length, ":pool");
+    const poolUrl = POOL_URLS[poolIdx];
 
     const chipsPerBoard = Math.floor(variant.chips / variant.boards);
     const hashPerBoard = variant.expectedHashrate / variant.boards;
