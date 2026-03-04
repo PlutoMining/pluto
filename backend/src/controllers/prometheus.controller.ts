@@ -8,6 +8,7 @@
 
 import type { Request, Response } from "express";
 import axios from "axios";
+import { logger } from "@pluto/logger";
 
 import { prometheusQuery, prometheusQueryRange } from "../services/prometheus.service";
 
@@ -39,6 +40,11 @@ export const queryRange = async (req: Request, res: Response) => {
       end: req.query.end,
       step: req.query.step,
     });
+
+    const result = response.data?.data?.result;
+    if (Array.isArray(result) && result.length === 0) {
+      logger.debug(`Prometheus query_range returned empty result for query: ${req.query.query}`);
+    }
 
     res.status(200).json(response.data);
   } catch (error) {

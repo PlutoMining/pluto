@@ -573,6 +573,36 @@ describe("tracing.service", () => {
       );
     });
 
+    it("preserves device labels from last successful poll on error", async () => {
+      const minerData = makeMinerData();
+      mockFetchData.mockResolvedValue(minerData);
+      mockUpdateOne.mockResolvedValue({ ...makeStaleMiner(), minerData });
+
+      const device = makeStaleMiner();
+      await updateOriginalIpsListeners([device], false);
+
+      // First poll succeeded — metrics set with full labels
+      expect(mockUpdateDeviceMetrics).toHaveBeenCalledWith(device.mac, minerData);
+
+      // Next poll fails
+      mockFetchData.mockRejectedValue(new Error("poll failed"));
+      mockUpdateOne.mockResolvedValue(makeStaleMiner());
+      mockUpdateDeviceMetrics.mockClear();
+
+      await jest.advanceTimersByTimeAsync(5000);
+
+      expect(mockUpdateDeviceMetrics).toHaveBeenCalledWith(
+        device.mac,
+        expect.objectContaining({
+          ip: device.ip,
+          hostname: minerData.hostname,
+          deviceInfo: minerData.deviceInfo,
+          fans: [],
+          hashboards: [],
+        })
+      );
+    });
+
     it("handles null miner data", async () => {
       mockFetchData.mockResolvedValue(null);
       mockUpdateOne.mockResolvedValue(makeStaleMiner());

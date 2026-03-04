@@ -260,8 +260,11 @@ async function startDeviceMonitoring(
         ioInstance?.emit("error", { ...discoveredMiner, tracing: false, error: errorMessage });
       }
 
+      const prevMinerData = ipMap[discoveredMiner.ip]?.minerData;
       updateDeviceMetrics(discoveredMiner.mac, {
         ip: discoveredMiner.ip,
+        hostname: prevMinerData?.hostname,
+        deviceInfo: prevMinerData?.deviceInfo,
         fans: [],
         hashboards: [],
       });
