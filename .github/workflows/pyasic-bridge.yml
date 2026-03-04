@@ -1,0 +1,42 @@
+name: Pyasic Bridge CI
+
+on:
+  pull_request:
+    branches:
+      - "**"
+    paths:
+      - 'pyasic-bridge/**'
+
+# Cancel in-flight runs for the same ref so we don't get duplicate jobs
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  test:
+    name: Test Pyasic Bridge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          # Do not use cache: 'pip' here; it can trigger ELOOP when the cache walks the repo
+
+      - name: Install dependencies
+        working-directory: pyasic-bridge
+        run: |
+          pip install -r requirements.txt || pip install -r requirements-dev.txt || true
+
+      - name: Run tests
+        working-directory: pyasic-bridge
+        run: |
+          pytest tests/ -v
+
+      - name: Run contract compliance tests
+        working-directory: pyasic-bridge
+        run: |
+          pytest tests/test_contract_compliance.py tests/test_api_contracts.py -v

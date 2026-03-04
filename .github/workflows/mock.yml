@@ -1,11 +1,6 @@
 name: Mock CI
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-      - "release/**"
   pull_request:
     branches:
       - "**"
@@ -32,7 +27,7 @@ jobs:
 
       - name: Install shared common packages
         run: |
-          for pkg in common/interfaces common/logger; do
+          for pkg in common/interfaces common/logger common/utils; do
             if [ -f "$pkg/package-lock.json" ]; then
               echo "Installing deps for $pkg"
               (cd "$pkg" && npm ci)

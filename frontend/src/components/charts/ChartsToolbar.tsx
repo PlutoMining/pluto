@@ -26,7 +26,7 @@ export function ChartsToolbar({
     <div
       className={cn(
         "flex flex-col gap-3 border border-border bg-card px-4 py-3",
-        "tablet:flex-row tablet:items-end tablet:justify-between",
+        "md:flex-row md:items-end md:justify-between",
         className
       )}
     >
@@ -35,7 +35,7 @@ export function ChartsToolbar({
         <p className="font-accent text-xs text-muted-foreground">Applies to charts only (not live stats).</p>
       </div>
 
-      <div className="flex flex-col items-start gap-3 tablet:flex-row tablet:items-end">
+      <div className="flex flex-col items-start gap-3 md:flex-row md:items-end">
         <div className="flex flex-col items-start gap-1">
           <p className="font-accent text-xs text-muted-foreground">Time range</p>
           <TimeRangeSelect value={range} onChange={onRangeChange} />

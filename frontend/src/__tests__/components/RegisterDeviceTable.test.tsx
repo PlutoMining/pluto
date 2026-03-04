@@ -3,9 +3,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { RegisterDeviceTable } from "@/components/Table/RegisterDeviceTable";
 
-jest.mock("@/utils/minerMap", () => ({
-  getMinerName: jest.fn(() => undefined),
-}));
 
 describe("RegisterDeviceTable", () => {
   it("renders an empty state when no devices are present", () => {
@@ -31,12 +28,12 @@ describe("RegisterDeviceTable", () => {
       {
         ip: "10.0.0.1",
         mac: "aa",
-        info: {
+        type: "BitAxe",
+        minerData: {
           hostname: "miner-01",
-          boardVersion: "x",
-          deviceModel: "FallbackModel",
-          ASICModel: "S19",
-          version: "v1",
+          make: "BitAxe",
+          model: "Gamma",
+          fw_ver: "v2.12.2",
         },
       },
     ] as any;
@@ -101,12 +98,12 @@ describe("RegisterDeviceTable", () => {
       {
         ip: "10.0.0.1",
         mac: "aa",
-        info: {
+        type: "BitAxe",
+        minerData: {
           hostname: "miner-01",
-          boardVersion: "x",
-          deviceModel: "FallbackModel",
-          ASICModel: "S19",
-          version: "v1",
+          make: "BitAxe",
+          model: "Gamma",
+          fw_ver: "v2.12.2",
         },
       },
     ] as any;

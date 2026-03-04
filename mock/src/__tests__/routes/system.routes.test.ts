@@ -16,6 +16,7 @@ describe("system.routes", () => {
   });
 
   it("mounts /api/system/info", () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const routes = require("@/routes/system.routes").default;
     const layer = (routes as any).stack.find((l: any) => l.route?.path === "/api/system/info");
     expect(layer).toBeTruthy();
@@ -23,6 +24,7 @@ describe("system.routes", () => {
   });
 
   it("mounts /api/system", () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const routes = require("@/routes/system.routes").default;
     const layer = (routes as any).stack.find((l: any) => l.route?.path === "/api/system");
     expect(layer).toBeTruthy();
@@ -30,6 +32,7 @@ describe("system.routes", () => {
   });
 
   it("mounts /api/system/restart", () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const routes = require("@/routes/system.routes").default;
     const layer = (routes as any).stack.find((l: any) => l.route?.path === "/api/system/restart");
     expect(layer).toBeTruthy();

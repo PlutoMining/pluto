@@ -125,20 +125,12 @@ describe('MonitoringClient', () => {
     socketProvider.useSocket.mockReturnValueOnce({ isConnected: true, socket });
     axios.get.mockReturnValue(new Promise(() => {}));
 
-    const view = render(<MonitoringClient id="rig-1" />);
+    const view = render(<MonitoringClient id="aa" />);
 
     await flushEffects();
 
-    expect(screen.getByText('rig-1 Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Pool preset')).toBeInTheDocument();
-    expect(screen.getByText('Custom')).toBeInTheDocument();
-
-    expect(screen.getByText(/- GH\/s/)).toBeInTheDocument();
-
-    act(() => {
-      screen.getByTestId('time-range').click();
-    });
-    expect(screen.getByTestId('time-range')).toHaveTextContent('not-a-range');
+    // While device data is loading we show the loading skeleton, not stats/cards yet.
+    expect(screen.getByText('Loading device data…')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(socket.on).toHaveBeenCalled();
@@ -170,25 +162,23 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: false,
             presetUuid: 'p1',
-            info: {
+            minerData: {
               hostname: 'rig-1',
-              hashRate: 10,
-              hashRate_10m: 11,
+              hashrate: { rate: 10 },
               sharesAccepted: 1,
               sharesRejected: 2,
-              bestDiff: '1',
-              bestSessionDiff: '1',
-              uptimeSeconds: 60,
-              power: 100,
-              temp: 50,
-              vrTemp: 55,
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              uptime: 60,
+              wattage: 100,
+              temperatureAvg: 50,
             },
           },
         ],
       },
     });
 
-    const view = render(<MonitoringClient id="rig-1" />);
+    const view = render(<MonitoringClient id="aa" />);
 
     await flushEffects();
 
@@ -196,12 +186,16 @@ describe('MonitoringClient', () => {
     expect(screen.getByText('offline')).toBeInTheDocument();
 
     act(() => {
-      socket.emit('stat_update', { mac: 'bb', tracing: true });
+      socket.emit('stat_update', { mac: 'bb', tracing: true, minerData: { hostname: 'other' } });
     });
     expect(screen.getByText('offline')).toBeInTheDocument();
 
     act(() => {
-      socket.emit('stat_update', { mac: 'aa', tracing: true, info: { hostname: 'rig-1' } });
+      socket.emit('stat_update', {
+        mac: 'aa',
+        tracing: true,
+        minerData: { hostname: 'rig-1' },
+      });
     });
     expect(await screen.findByText('online')).toBeInTheDocument();
 
@@ -224,13 +218,19 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: 'p1',
-            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', sharesAccepted: 0, sharesRejected: 0 },
+            minerData: {
+              hostname: 'rig-1',
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              sharesAccepted: 0,
+              sharesRejected: 0,
+            },
           },
         ],
       },
     });
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     await flushEffects();
     expect(await screen.findByText('Custom')).toBeInTheDocument();
@@ -246,35 +246,52 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: null,
-            info: {
+            minerData: {
               hostname: 'rig-1',
-              hashRate: Number.NaN,
+              hashrate: { rate: Number.NaN },
               sharesAccepted: 0,
               sharesRejected: 0,
-              bestDiff: '1',
-              bestSessionDiff: '1',
-              power: Number.POSITIVE_INFINITY,
-              temp: Number.NaN,
-              vrTemp: Number.NaN,
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              wattage: Number.POSITIVE_INFINITY,
+              temperatureAvg: Number.NaN,
             },
           },
         ],
       },
     });
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     await flushEffects();
 
     expect(await screen.findByText('online')).toBeInTheDocument();
     expect(screen.getByText(/- GH\/s/)).toBeInTheDocument();
-    expect(screen.getByText(/- W/)).toBeInTheDocument();
+    // Non-finite power is treated as "missing" so the Power summary card is hidden.
   });
 
   it('updates auto refresh interval when time range changes', async () => {
-    axios.get.mockResolvedValue({ data: { data: [] } });
+    axios.get.mockResolvedValue({
+      data: {
+        data: [
+          {
+            mac: 'aa',
+            ip: '1.1.1.1',
+            type: 'rig',
+            tracing: true,
+            presetUuid: null,
+            minerData: {
+              hostname: 'rig-1',
+              hashrate: { rate: 1 },
+              sharesAccepted: 0,
+              sharesRejected: 0,
+            },
+          },
+        ],
+      },
+    });
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     await flushEffects();
 
@@ -296,7 +313,7 @@ describe('MonitoringClient', () => {
     expect(screen.getByRole('button', { name: 'Auto (5m)' })).toBeInTheDocument();
   });
 
-  it('renders PSRAM heap values and skips polling when hidden', async () => {
+  it('skips Prometheus polling when document is hidden and resumes when visible', async () => {
     const originalVisibilityState = document.visibilityState;
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
 
@@ -310,35 +327,24 @@ describe('MonitoringClient', () => {
               type: 'rig',
               tracing: true,
               presetUuid: null,
-              info: {
+              minerData: {
                 hostname: 'rig-1',
-                hashRate: 10,
+                hashrate: { rate: 10 },
                 sharesAccepted: 0,
                 sharesRejected: 0,
-                bestDiff: '1',
-                bestSessionDiff: '1',
-                isPSRAMAvailable: 1,
-                freeHeapInternal: Number.POSITIVE_INFINITY,
-                freeHeapSpiram: 2 * 1024 * 1024,
+                bestDifficulty: '1',
+                bestSessionDifficulty: '1',
               },
             },
           ],
         },
       });
 
-      render(<MonitoringClient id="rig-1" />);
+      render(<MonitoringClient id="aa" />);
 
       await flushEffects();
 
       expect(await screen.findByText('online')).toBeInTheDocument();
-      expect(screen.getByText('Internal | PSRAM')).toBeInTheDocument();
-
-      const heapValue = screen.getByText((content, element) => {
-        return element?.tagName === 'P' && content.includes('2.00') && content.includes('MB');
-      });
-      expect(heapValue).toHaveTextContent(/-\s*MB/);
-      expect(heapValue).toHaveTextContent(/2\.00\s*MB/);
-
       expect(prom.promQueryRange).not.toHaveBeenCalled();
 
       // Restore visibility and let the polling loop run once.
@@ -372,13 +378,21 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: null,
-            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', sharesAccepted: 0, sharesRejected: 0 },
+            minerData: {
+              hostname: 'rig-1',
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              sharesAccepted: 0,
+              sharesRejected: 0,
+              hashrate: { rate: 1 },
+              wattage: 1,
+            },
           },
         ],
       },
     });
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     await act(async () => {
       deferred.resolve({ status: 'success', data: { resultType: 'matrix', result: [] } });
@@ -386,7 +400,7 @@ describe('MonitoringClient', () => {
       await Promise.resolve();
     });
 
-    expect(await screen.findByText('rig-1 Dashboard')).toBeInTheDocument();
+    expect(await screen.findByText('Pool preset')).toBeInTheDocument();
     await waitFor(() => {
       expect(prom.matrixToSeries).toHaveBeenCalled();
     });
@@ -408,22 +422,21 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: null,
-            info: {
+            minerData: {
               hostname: 'rig-1',
-              bestDiff: '1',
-              bestSessionDiff: '1',
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
               sharesAccepted: 0,
               sharesRejected: 0,
-              isPSRAMAvailable: 1,
-              freeHeapInternal: 1024 * 1024,
-              freeHeapSpiram: 2 * 1024 * 1024,
+              hashrate: { rate: 1 },
+              wattage: 1,
             },
           },
         ],
       },
     });
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     // Resolve all query_range calls in one go.
     await act(async () => {
@@ -434,15 +447,8 @@ describe('MonitoringClient', () => {
 
     await waitFor(() => {
       const charts = screen.getAllByTestId('line-chart');
+      expect(charts.length).toBeGreaterThan(0);
       expect(Math.max(...charts.map((c) => Number(c.getAttribute('data-points') ?? '0')))).toBeGreaterThan(0);
-    });
-
-    await waitFor(() => {
-      const heapChart = screen
-        .getAllByTestId('multi-line')
-        .find((el) => el.getAttribute('data-title') === 'Free heap');
-      expect(heapChart).toBeTruthy();
-      expect(heapChart).toHaveAttribute('data-series', '3');
     });
   });
 
@@ -456,7 +462,13 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: null,
-            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', sharesAccepted: 0, sharesRejected: 0 },
+            minerData: {
+              hostname: 'rig-1',
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              sharesAccepted: 0,
+              sharesRejected: 0,
+            },
           },
         ],
       },
@@ -467,7 +479,7 @@ describe('MonitoringClient', () => {
       new Promise((resolve) => setTimeout(() => resolve({ status: 'success', data: { resultType: 'matrix', result: [] } }), 50))
     );
 
-    const view = render(<MonitoringClient id="rig-1" />);
+    const view = render(<MonitoringClient id="aa" />);
     view.unmount();
 
     await act(async () => {
@@ -490,7 +502,13 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: null,
-            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', sharesAccepted: 0, sharesRejected: 0 },
+            minerData: {
+              hostname: 'rig-1',
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              sharesAccepted: 0,
+              sharesRejected: 0,
+            },
           },
         ],
       },
@@ -498,7 +516,7 @@ describe('MonitoringClient', () => {
 
     prom.promQueryRange.mockRejectedValueOnce(new DOMException('Aborted', 'AbortError'));
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     await act(async () => {
       await Promise.resolve();
@@ -513,7 +531,7 @@ describe('MonitoringClient', () => {
     axios.get.mockRejectedValueOnce(new Error('device-fail'));
     prom.promQueryRange.mockRejectedValueOnce(new Error('prom-fail'));
 
-    render(<MonitoringClient id="rig-1" />);
+    render(<MonitoringClient id="aa" />);
 
     await flushEffects();
 
@@ -557,7 +575,13 @@ describe('MonitoringClient', () => {
             type: 'rig',
             tracing: true,
             presetUuid: null,
-            info: { hostname: 'rig-1', bestDiff: '1', bestSessionDiff: '1', sharesAccepted: 0, sharesRejected: 0 },
+            minerData: {
+              hostname: 'rig-1',
+              bestDifficulty: '1',
+              bestSessionDifficulty: '1',
+              sharesAccepted: 0,
+              sharesRejected: 0,
+            },
           },
         ],
       },
@@ -565,14 +589,14 @@ describe('MonitoringClient', () => {
 
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    const view = render(<MonitoringClient id="rig-1" />);
+    const view = render(<MonitoringClient id="aa" />);
 
     await act(async () => {
       jest.advanceTimersByTime(1);
       await Promise.resolve();
     });
 
-    view.rerender(<MonitoringClient id="rig-2" />);
+    view.rerender(<MonitoringClient id="bb" />);
 
     await act(async () => {
       jest.advanceTimersByTime(1);
@@ -588,11 +612,6 @@ describe('MonitoringClient', () => {
     });
 
     expect(consoleErrorSpy).not.toHaveBeenCalled();
-
-    const efficiencyChart = screen
-      .getAllByTestId('line-chart')
-      .find((el) => el.getAttribute('data-title') === 'Efficiency');
-    expect(efficiencyChart?.getAttribute('data-unit')).toBe('J/TH');
 
     consoleErrorSpy.mockRestore();
   });

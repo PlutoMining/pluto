@@ -179,6 +179,7 @@ services:
         - "require('net').connect(7776,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
       interval: 5s
       timeout: 3s
+      start_period: 120s
       retries: 20
     user: "1000:1000"
 
@@ -236,7 +237,28 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     user: "65534:65534"
+
+  pyasic-bridge:
+    build:
+      context: pyasic-bridge
+      dockerfile: Dockerfile.development
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./pyasic-bridge:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\" || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
 volumes:
   backend_node_modules:

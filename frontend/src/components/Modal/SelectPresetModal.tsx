@@ -8,7 +8,8 @@
 
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { HostnameBadge } from "../Badge";
-import { Device, Preset } from "@pluto/interfaces";
+import type { DiscoveredMiner, Preset } from "@pluto/interfaces";
+import { getHostname } from "@/utils/minerDataHelpers";
 import { Select } from "../Select";
 import Button from "../Button/Button";
 import { ArrowIcon } from "../icons/ArrowIcon";
@@ -17,7 +18,7 @@ import { Modal } from "@/components/ui/modal";
 interface SelectPresetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  devices: Device[];
+  devices: DiscoveredMiner[];
   presets: Preset[];
   onCloseSuccessfully: (uuid: string) => void;
 }
@@ -58,7 +59,7 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
   return (
     <Modal open={isOpen} onClose={onClose} variant="sheet">
       <div className="w-full max-w-[1440px] border border-border bg-card text-card-foreground">
-        <div className="relative mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto p-4 tablet:p-8">
+        <div className="relative mx-auto max-h-[calc(100vh-8rem)] overflow-y-auto p-4 md:p-8">
           <div className="flex items-start justify-between gap-6">
             <h2 className="font-heading text-2xl font-medium">Pool Preset</h2>
             <button
@@ -78,7 +79,7 @@ export const SelectPresetModal: React.FC<SelectPresetModalProps> = ({
                 <HostnameBadge
                   key={`hostname-badge-${i}`}
                   mac={device.mac}
-                  hostname={device.info.hostname}
+                  hostname={getHostname(device.minerData)}
                   ip={device.ip}
                   tracing={device.tracing || false}
                 />

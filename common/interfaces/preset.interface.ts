@@ -1,17 +1,14 @@
 /**
- * Copyright (C) 2024 Alberto Gangarossa.
- * Pluto is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License
- * as published by the Free Software Foundation, version 3.
- * See <https://www.gnu.org/licenses/>.
-*/
+ * A reusable mining configuration preset that can be applied to devices.
+ */
 
-import type { Device } from "./device-info.interface";
+import type { DiscoveredMiner } from "./discovered-miner.interface";
 import type { Entity } from "./entity.interface";
+import type { MinerConfig } from "./miner-config.interface";
 
 export interface Preset extends Entity {
   uuid: string;
   name: string;
-  configuration: Record<string, any>;
-  associatedDevices?: Device[];
+  configuration: MinerConfig;
+  associatedDevices?: DiscoveredMiner[];
 }

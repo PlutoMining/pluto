@@ -1,17 +1,41 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import type { Device, Preset } from "@pluto/interfaces";
+import type { DiscoveredMiner, Preset } from "@pluto/interfaces";
 import { SelectPresetModal } from "@/components/Modal/SelectPresetModal";
 
-const buildDevice = (overrides: Partial<Device> = {}): Device => {
+const buildDiscoveredMiner = (overrides: Partial<DiscoveredMiner> = {}): DiscoveredMiner => {
   return {
     mac: "aa:bb:cc:dd:ee:ff",
     ip: "192.168.0.10",
-    info: { hostname: "miner-01" } as any,
+    type: "Bitaxe",
+    supportLevel: "native",
     tracing: true,
+    presetUuid: null,
+    minerData: {
+      ip: "192.168.0.10",
+      hostname: "miner-01",
+      fans: [],
+      hashboards: [],
+      deviceInfo: {
+        model: "BM1397",
+      },
+      pools: {
+        groups: [
+          {
+            pools: [
+              {
+                url: "stratum+tcp://pool.example.com:3333",
+                user: "user",
+                password: "",
+              },
+            ],
+          },
+        ],
+      },
+    },
     ...overrides,
-  } as unknown as Device;
+  } as any;
 };
 
 const buildPreset = (uuid: string, name: string): Preset => {
@@ -22,7 +46,7 @@ describe("SelectPresetModal", () => {
   it("defaults to first preset and calls onCloseSuccessfully with selected preset", async () => {
     const onClose = jest.fn();
     const onCloseSuccessfully = jest.fn();
-    const devices = [buildDevice()];
+    const devices = [buildDiscoveredMiner()];
     const presets = [buildPreset("p1", "One"), buildPreset("p2", "Two")];
 
     render(
@@ -55,7 +79,7 @@ describe("SelectPresetModal", () => {
       <SelectPresetModal
         isOpen={true}
         onClose={onClose}
-        devices={[buildDevice({ tracing: false })]}
+        devices={[buildDiscoveredMiner({ tracing: false })]}
         presets={[]}
         onCloseSuccessfully={onCloseSuccessfully}
       />

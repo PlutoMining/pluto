@@ -21,11 +21,11 @@
     "@pluto/db": "file:../common/db",
     "@pluto/interfaces": "file:../common/interfaces",
     "@pluto/logger": "file:../common/logger",
-    "axios": "^1.7.7",
     "dotenv": "^16.4.5",
     "express": "^4.19.2"
   },
   "devDependencies": {
+    "axios": "^1.7.7",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.12",
     "@types/node": "^22.5.2",

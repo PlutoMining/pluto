@@ -12,12 +12,12 @@ import { logger } from "@pluto/logger";
 
 export const discoverDevices = async (req: Request, res: Response) => {
   try {
-    const devices = await discoveryService.discoverDevices({
+    const discoveredMiners = await discoveryService.discoverDevices({
       ip: req.query.ip as string | undefined,
       mac: req.query.mac as string | undefined,
       partialMatch: false,
     });
-    res.json(devices);
+    res.json(discoveredMiners);
   } catch (error) {
     logger.error("Error in /discover request:", error);
     res.status(500).json({ error: "Failed to discover devices" });

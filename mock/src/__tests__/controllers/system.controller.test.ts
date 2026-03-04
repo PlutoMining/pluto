@@ -1,24 +1,11 @@
 import type { Request, Response } from "express";
 
-import { DeviceApiVersion } from "@pluto/interfaces";
-
 import {
   getSystemInfo,
+  getRoot,
   patchSystemInfo,
   restartSystem,
 } from "@/controllers/system.controller";
-
-jest.mock("@/services/mock.service", () => ({
-  generateSystemInfo: jest.fn(),
-  generateSystemInfoAlt: jest.fn(),
-}));
-
-const { generateSystemInfo, generateSystemInfoAlt } = jest.requireMock(
-  "@/services/mock.service"
-) as {
-  generateSystemInfo: jest.Mock;
-  generateSystemInfoAlt: jest.Mock;
-};
 
 const mockRes = () =>
   ({
@@ -40,62 +27,47 @@ describe("system.controller", () => {
   });
 
   describe("getSystemInfo", () => {
-    it("returns legacy info for legacy API", async () => {
-      generateSystemInfo.mockReturnValueOnce({ legacy: true });
+    it("delegates to context.getSystemInfo() when context is present", async () => {
+      const mockContext = {
+        getSystemInfo: jest.fn().mockReturnValue({ fromContext: true }),
+      };
       const req = {
         app: {
-          locals: {
-            hostname: "mockaxe1",
-            apiVersion: DeviceApiVersion.Legacy,
-            startTime: new Date(Date.now() - 10_000),
-            systemInfo: { power: 1 },
-          },
+          locals: { mockContext },
         },
       } as unknown as Request;
       const res = mockRes();
 
       await getSystemInfo(req, res);
 
-      expect(generateSystemInfo).toHaveBeenCalledWith(
-        "mockaxe1",
-        expect.any(Number),
-        { power: 1 }
+      expect(mockContext.getSystemInfo).toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith({ fromContext: true });
+    });
+
+    it("returns 500 when context is absent", async () => {
+      const req = {
+        app: { locals: {} },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await getSystemInfo(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: "MockMinerContext not initialised" })
       );
-      expect(res.json).toHaveBeenCalledWith({ legacy: true });
     });
 
-    it("returns new info for new API", async () => {
-      generateSystemInfoAlt.mockReturnValueOnce({ modern: true });
+    it("returns 500 with non-Error thrown value when context throws", async () => {
+      const mockContext = {
+        getSystemInfo: jest.fn().mockImplementation(() => {
+          // eslint-disable-next-line @typescript-eslint/only-throw-error
+          throw "string error";
+        }),
+      };
       const req = {
         app: {
-          locals: {
-            hostname: "mockaxe2",
-            apiVersion: DeviceApiVersion.New,
-            startTime: new Date(Date.now() - 10_000),
-            systemInfo: { power: 1 },
-          },
-        },
-      } as unknown as Request;
-      const res = mockRes();
-
-      await getSystemInfo(req, res);
-
-      expect(generateSystemInfoAlt).toHaveBeenCalled();
-      expect(res.json).toHaveBeenCalledWith({ modern: true });
-    });
-
-    it("returns 500 when generator throws", async () => {
-      generateSystemInfo.mockImplementationOnce(() => {
-        throw new Error("boom");
-      });
-
-      const req = {
-        app: {
-          locals: {
-            hostname: "mockaxe1",
-            apiVersion: DeviceApiVersion.Legacy,
-            startTime: new Date(),
-          },
+          locals: { mockContext },
         },
       } as unknown as Request;
       const res = mockRes();
@@ -103,39 +75,66 @@ describe("system.controller", () => {
       await getSystemInfo(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Failed to retrieve system info" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ details: "string error" })
+      );
+    });
+
+    it("returns 500 with Error message when context throws Error", async () => {
+      const mockContext = {
+        getSystemInfo: jest.fn().mockImplementation(() => {
+          throw new Error("boom");
+        }),
+      };
+      const req = {
+        app: {
+          locals: { mockContext },
+        },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await getSystemInfo(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: "Failed to retrieve system info", details: "boom" })
+      );
     });
   });
 
   describe("patchSystemInfo", () => {
-    it("initializes locals.systemInfo if missing", async () => {
+    it("delegates to context.patchSystemInfo() when context is present", async () => {
+      const mockContext = {
+        patchSystemInfo: jest.fn(),
+      };
       const req = {
-        body: { power: 123 },
+        body: { hashrate: 500 },
         app: {
-          locals: {},
+          locals: { mockContext },
         },
       } as unknown as Request;
       const res = mockRes();
 
       await patchSystemInfo(req, res);
 
-      expect(req.app.locals.systemInfo).toEqual({ power: 123 });
+      expect(mockContext.patchSystemInfo).toHaveBeenCalledWith({ hashrate: 500 });
       expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: "System info updated successfully" });
     });
 
-    it("merges updates into existing locals.systemInfo", async () => {
+    it("returns 500 when context is absent", async () => {
       const req = {
-        body: { power: 456 },
-        app: {
-          locals: { systemInfo: { voltage: 1 } },
-        },
+        body: { power: 123 },
+        app: { locals: {} },
       } as unknown as Request;
       const res = mockRes();
 
       await patchSystemInfo(req, res);
 
-      expect(req.app.locals.systemInfo).toEqual({ voltage: 1, power: 456 });
-      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: "MockMinerContext not initialised" })
+      );
     });
 
     it("returns 500 on error", async () => {
@@ -144,7 +143,7 @@ describe("system.controller", () => {
           throw new Error("bad body");
         },
         app: {
-          locals: {},
+          locals: { mockContext: { patchSystemInfo: jest.fn() } },
         },
       } as unknown as Request;
       const res = mockRes();
@@ -153,6 +152,37 @@ describe("system.controller", () => {
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: "Failed to update system info" });
+    });
+  });
+
+  describe("getRoot", () => {
+    it("returns HTML from context.getRootHtml()", async () => {
+      const mockContext = {
+        getRootHtml: jest.fn().mockReturnValue("<html>miner</html>"),
+      };
+      const req = {
+        app: { locals: { mockContext } },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await getRoot(req, res);
+
+      expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "text/html");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith("<html>miner</html>");
+    });
+
+    it("returns empty string when context is absent", async () => {
+      const req = {
+        app: { locals: {} },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await getRoot(req, res);
+
+      expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "text/html");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith("");
     });
   });
 

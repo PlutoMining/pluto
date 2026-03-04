@@ -13,7 +13,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: mock/Dockerfile
-    image: ghcr.io/plutomining/pluto-mock:0.7.0-beta.2@sha256:d671879becdc28863fea1a30a8ff4e9d72b65119f20d74b579a340a68a2b2ee8
+    image: ghcr.io/plutomining/pluto-mock:1.0.0-beta.0@sha256:6c1a764c994477203fc70e5a4fdb5a5e061a29bbb84b2b1c7935a38a768b483c
     container_name: pluto-next_mock_1
     ports:
       - "7670:7670"
@@ -47,7 +47,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: discovery/Dockerfile
-    image: ghcr.io/plutomining/pluto-discovery:1.2.0-beta.3@sha256:be54194031cd2e781f7141e6008ba74221cd60b451e1c4813c082d622f2ebbd4
+    image: ghcr.io/plutomining/pluto-discovery:2.0.0-beta.0@sha256:5f04d73a85a29f69cc6b5a4f16400f713c621ae57745c62792e9eb3cfec167ea
     container_name: pluto-next_discovery_1
     network_mode: "host"
     # ports:
@@ -79,7 +79,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: backend/Dockerfile
-    image: ghcr.io/plutomining/pluto-backend:2.0.0-beta.2@sha256:16151792ac2113c435c8c8fbb892833153dd436df6ff513d28319a55c1b8d9c7
+    image: ghcr.io/plutomining/pluto-backend:3.0.0-beta.0@sha256:b2b86aeb043fda0c054b78a67abb765f2e51c3c80595bd79771bf4f5523a83fe
     container_name: pluto-next_backend_1
     # ports:
     #   - "7676:7676"
@@ -110,7 +110,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    image: ghcr.io/plutomining/pluto-frontend:2.0.0-beta.4@sha256:f268783c5052f718a115226a8ced9012527f48179e9e3ec10e69f6feb7611793
+    image: ghcr.io/plutomining/pluto-frontend:3.0.0-beta.1@sha256:bbe8561a5090c95199903379256af42f95b2b5a9087e484293be005ddc8600ce
     container_name: pluto-next_frontend_1
     ports:
       - "7677:7677" # Map port 7777 on the host to port 7777 on the container
@@ -134,9 +134,10 @@ services:
     user: "1000:1000"
 
   prometheus:
-    build:
-      context: .
-      dockerfile: prometheus/Dockerfile.next
+    #build:
+    #  context: .
+    #  dockerfile: prometheus/Dockerfile.next
+    image: ghcr.io/plutomining/pluto-prometheus:1.2.0-beta.3@sha256:9d6d864939e2e1b85703ea0a3f78c8e7dc87ac16c3983673dc3326689bae77fc
     container_name: pluto-next_prometheus_1
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -156,3 +157,21 @@ services:
       timeout: 5s
       retries: 5
     user: "65534:65534"
+
+  pyasic-bridge:
+    #build:
+      # context: .
+      # dockerfile: pyasic-bridge/Dockerfile
+    image: ghcr.io/plutomining/pluto-pyasic-bridge:1.0.0-beta.2@sha256:02781d7d33cb26937352005dfa6f079508cc9fe0df2482ce04b887608aae712a
+    container_name: pluto-next_pyasic-bridge_1
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\" || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s

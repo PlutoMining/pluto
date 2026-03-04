@@ -8,82 +8,76 @@ describe("DeviceHeatmapCard", () => {
       {
         mac: "aa",
         tracing: true,
-        info: {
+        minerData: {
           hostname: "cold",
-          hashRate_10m: 10,
+          hashrate: { rate: 10 },
           sharesAccepted: 0,
           sharesRejected: 0,
-          power: 100,
-          temp: 25,
-          vrTemp: null,
-          bestSessionDiff: 1,
-          bestDiff: 2,
-          uptimeSeconds: 60,
+          wattage: 100,
+          temperatureAvg: 25,
+          bestSessionDifficulty: 1,
+          bestDifficulty: 2,
+          uptime: 60,
         },
       },
       {
         mac: "bb",
         tracing: true,
-        info: {
+        minerData: {
           hostname: "hot",
-          // hashRate_10m undefined -> fallback to hashRate
-          hashRate: "123",
+          hashrate: { rate: 123 },
           sharesAccepted: 0,
           sharesRejected: 0,
-          power: "bad",
-          temp: 90,
-          vrTemp: 50,
-          bestSessionDiff: 1,
-          bestDiff: 2,
-          uptimeSeconds: 60,
+          wattage: 0,
+          temperatureAvg: 90,
+          bestSessionDifficulty: 1,
+          bestDifficulty: 2,
+          uptime: 60,
         },
       },
       {
         mac: "cc",
         tracing: true,
-        info: {
+        minerData: {
           hostname: "vr-only",
-          // hashRate_10m + hashRate undefined -> fallback to 0
+          hashrate: { rate: 0 },
           sharesAccepted: 0,
           sharesRejected: 0,
-          power: 200,
-          temp: undefined,
-          vrTemp: 70,
-          bestSessionDiff: 1,
-          bestDiff: 2,
-          uptimeSeconds: 60,
+          wattage: 200,
+          temperatureAvg: undefined,
+          bestSessionDifficulty: 1,
+          bestDifficulty: 2,
+          uptime: 60,
         },
       },
       {
         mac: "dd",
         tracing: false,
-        info: {
+        minerData: {
           hostname: "offline",
-          hashRate: 1,
+          hashrate: { rate: 1 },
           sharesAccepted: 0,
           sharesRejected: 0,
-          power: 100,
-          temp: undefined,
-          vrTemp: undefined,
-          bestSessionDiff: 1,
-          bestDiff: 2,
-          uptimeSeconds: 60,
+          wattage: 100,
+          temperatureAvg: undefined,
+          bestSessionDifficulty: 1,
+          bestDifficulty: 2,
+          uptime: 60,
         },
       },
       {
         mac: "ee",
         tracing: true,
-        info: {
+        minerData: {
           hostname: "unknown-temp",
-          hashRate: 1,
+          hashrate: { rate: 1 },
           sharesAccepted: 0,
           sharesRejected: 0,
-          power: 100,
-          temp: undefined,
-          vrTemp: undefined,
-          bestSessionDiff: 1,
-          bestDiff: 2,
-          uptimeSeconds: 60,
+          wattage: 100,
+          temperatureAvg: undefined,
+          bestSessionDifficulty: 1,
+          bestDifficulty: 2,
+          uptime: 60,
         },
       },
     ] as any;
@@ -97,8 +91,8 @@ describe("DeviceHeatmapCard", () => {
     expect(screen.getByText("offline")).toBeInTheDocument();
     expect(screen.getByText("unknown-temp")).toBeInTheDocument();
 
-    // Hot device should get the destructive ring class.
-    const hotLink = container.querySelector('a[href*="/monitoring/hot"]');
+    // Hot device (mac "bb") should get the destructive ring class.
+    const hotLink = container.querySelector('a[href*="/monitoring/bb"]');
     expect(hotLink?.className).toContain("ring-2");
   });
 });

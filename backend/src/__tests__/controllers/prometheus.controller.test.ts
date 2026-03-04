@@ -97,6 +97,20 @@ describe('prometheus.controller', () => {
       expect(res.json).toHaveBeenCalledWith({ status: 'success' });
     });
 
+    it('logs (and still returns 200) when query_range result is empty', async () => {
+      const promBody = { status: 'success', data: { result: [] } };
+      prometheusService.prometheusQueryRange.mockResolvedValue({ data: promBody });
+      const req = {
+        query: { query: 'up', start: '1', end: '2', step: '15s' },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await prometheusController.queryRange(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(promBody);
+    });
+
     it('maps axios errors to upstream status/data', async () => {
       const error = {
         message: 'bad gateway',

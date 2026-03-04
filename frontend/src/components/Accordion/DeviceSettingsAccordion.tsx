@@ -10,14 +10,25 @@ import { useSocket } from "@/providers/SocketProvider";
 import { Modal } from "@/components/ui/modal";
 import { useDisclosure } from "@/hooks/useDisclosure";
 import { cn } from "@/lib/utils";
-import { Device, Preset } from "@pluto/interfaces";
+import type { DiscoveredMiner, Preset, ConfigFormSchema } from "@pluto/interfaces";
+import type { MinerConfig } from "@pluto/interfaces";
 import { validateDomain, validateTCPPort } from "@pluto/utils";
+import {
+  getHostname,
+  getStratumUrl,
+  getStratumPort,
+  getStratumUser,
+  getStratumPassword,
+} from "@/utils/minerDataHelpers";
+import {
+  parseStratumUrl,
+  type StratumFormState,
+} from "@/utils/deviceConfigHelpers";
 import axios from "axios";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { AlertInterface, AlertStatus } from "../Alert/interfaces";
 import { DeviceStatusBadge } from "../Badge";
 import Button from "../Button/Button";
-import { Checkbox } from "../Checkbox/Checkbox";
 import { ArrowIcon, ArrowRightUpIcon } from "../icons/ArrowIcon";
 import { RestartIcon } from "../icons/RestartIcon";
 import { Input } from "../Input/Input";
@@ -27,17 +38,18 @@ import { RestartModal } from "../Modal/RestartModal";
 import { RadioButtonValues } from "../Modal/SaveAndRestartModal";
 import { SelectPresetModal } from "../Modal/SelectPresetModal";
 import { RadioButton } from "../RadioButton";
+import { VendorConfigFieldRenderer } from "@/components/VendorConfigFields";
 import { Select } from "../Select/Select";
 
 interface DeviceSettingsAccordionProps {
-  fetchedDevices: Device[] | undefined;
+  fetchedDevices: DiscoveredMiner[] | undefined;
   alert?: AlertInterface;
   setAlert: React.Dispatch<React.SetStateAction<AlertInterface | undefined>>;
   onOpenAlert: () => void;
 }
 
 interface AccordionItemProps {
-  device: Device;
+  device: DiscoveredMiner;
   presets: Preset[];
   alert?: AlertInterface;
   setAlert: React.Dispatch<React.SetStateAction<AlertInterface | undefined>>;
@@ -66,7 +78,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 
   const [isSelectPoolPresetOpen, setIsSelectPoolPresetModalOpen] = useState(false);
 
-  const [devices, setDevices] = useState<Device[]>(fetchedDevices || []);
+  const [devices, setDevices] = useState<DiscoveredMiner[]>(fetchedDevices || []);
 
   const [checkedFetchedItems, setCheckedFetchedItems] = useState<{ mac: string; value: boolean }[]>(
     []
@@ -123,8 +135,6 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
       e.preventDefault();
       onCloseModal();
 
-      // setCheckedFetchedItems([]);
-
       const handleRestart = (mac: string) => axios.post(`/api/devices/${mac}/system/restart`);
 
       try {
@@ -164,42 +174,79 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
         onOpenAlert();
       }
     },
-    [checkedFetchedItems, onOpenAlert, setAlert]
+    [checkedFetchedItems, onCloseModal, onOpenAlert, setAlert]
   );
 
   const handleCloseSuccessfully = async (uuid: string) => {
     setIsSelectPoolPresetModalOpen(false);
 
-    const handleSavePreset = (mac: string, d: Device) =>
-      axios.patch<{ message: string; data: Device }>(`/api/devices/${mac}/system`, d);
+    const preset = presets.find((p) => p.uuid === uuid);
+    if (!preset) {
+      setAlert({
+        status: AlertStatus.ERROR,
+        title: "Preset Not Found",
+        message: "The selected preset could not be found.",
+      });
+      onOpenAlert();
+      return;
+    }
 
-    const handleChangesOnImprintedDevices = (mac: string, d: Device) =>
-      axios.patch<{ message: string; data: Device }>(`/api/devices/imprint/${mac}`, {
+    const handleSavePreset = (mac: string, config: MinerConfig) =>
+      axios.patch<{ message: string; data: DiscoveredMiner }>(`/api/devices/${mac}/system`, config);
+
+    const handleChangesOnImprintedDevices = (mac: string, d: DiscoveredMiner) =>
+      axios.patch<{ message: string; data: DiscoveredMiner }>(`/api/devices/imprint/${mac}`, {
         device: d,
       });
 
     try {
       if (devices) {
         await Promise.all(
-          devices.reduce((acc: Array<Promise<any>>, device: Device) => {
+          devices.reduce((acc: Array<Promise<DiscoveredMiner>>, device: DiscoveredMiner) => {
             const isChecked = checkedFetchedItems.some(
               (item) => item.mac === device.mac && item.value === true
             );
             if (isChecked) {
               acc.push(
                 (async () => {
+                  const presetConfig = preset.configuration as MinerConfig;
+                  const poolConfig = presetConfig.pools?.groups?.[0]?.pools?.[0];
+
+                  const workerName = getHostname(device.minerData);
+
+                  const config: MinerConfig = {
+                    pools: {
+                      groups: [
+                        {
+                          pools: [
+                            {
+                              url: poolConfig?.url || "",
+                              user: poolConfig?.user ? `${poolConfig.user}.${workerName}` : workerName,
+                              password: poolConfig?.password || "",
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  };
+
                   const {
                     data: { data: updatedDestDevice },
-                  } = await handleSavePreset(device.mac, { ...device, presetUuid: uuid });
+                  } = await handleSavePreset(device.mac, config);
+
+                  const updatedDeviceWithPreset: DiscoveredMiner = {
+                    ...updatedDestDevice,
+                    presetUuid: uuid,
+                  };
 
                   const {
                     data: { data: updatedDevice },
                   } = await handleChangesOnImprintedDevices(
                     updatedDestDevice.mac,
-                    updatedDestDevice
+                    updatedDeviceWithPreset
                   );
 
-                  return updatedDevice ? { ...device, ...updatedDevice } : device;
+                  return updatedDevice || device;
                 })()
               );
             } else {
@@ -217,7 +264,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
         title: "Save Successful",
         message: "All the selected devices have been successfully saved.",
       });
-      onOpenAlert(); // Aprire l'alert per mostrare il messaggio di successo
+      onOpenAlert();
     } catch (error) {
       let errorMessage = "An error occurred while saving devices.";
 
@@ -230,27 +277,23 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
         title: "Save Failed",
         message: `${errorMessage} Please try again.`,
       });
-      onOpenAlert(); // Aprire l'alert per mostrare il messaggio di errore
+      onOpenAlert();
     }
   };
 
   const handleCheckboxChange = useCallback((mac: string, isChecked: boolean) => {
     setCheckedFetchedItems((prevItems) => {
-      // Controlla se l'elemento con il MAC esiste già
       const existingItem = prevItems.find((item) => item.mac === mac);
 
       if (existingItem) {
-        // Se esiste, aggiorna il valore
         return prevItems.map((item) => (item.mac === mac ? { ...item, value: isChecked } : item));
       } else {
-        // Se non esiste, aggiungi un nuovo elemento
         return [...prevItems, { mac, value: isChecked }];
       }
     });
 
-    // Chiudi l'accordion se la checkbox è selezionata
     if (isChecked) {
-      setOpenMacs([]); // Chiude l'accordion
+      setOpenMacs([]);
     }
   }, []);
   const selectedCount = checkedFetchedItems.filter((d) => d.value === true).length;
@@ -259,7 +302,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
   return (
     <>
       <div className="flex flex-col gap-4">
-	        <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
+	        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 	          <label className="flex shrink-0 items-center gap-2">
 	            <input
 	              type="checkbox"
@@ -284,7 +327,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
 	            </span>
 	          </label>
 
-	          <div className="flex w-full flex-wrap items-center justify-between gap-4 mobileL:justify-end tablet:w-auto tablet:flex-1 tablet:justify-end">
+	          <div className="flex w-full flex-wrap items-center justify-between gap-4 sm:justify-end md:w-auto md:flex-1 md:justify-end">
 	            <Button
 	              onClick={() => setIsSelectPoolPresetModalOpen(true)}
 	              variant="text"
@@ -305,9 +348,9 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
         </div>
 
         <div className="border border-border bg-card text-card-foreground">
-          <div className="hidden items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 tablet:flex">
+          <div className="hidden items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 md:flex">
             <div className="flex flex-[8] items-center gap-3">
-              <div className="hidden w-4 tablet:block" aria-hidden="true" />
+              <div className="hidden w-4 md:block" aria-hidden="true" />
               <span className="select-none text-xs leading-none text-primary opacity-0" aria-hidden="true">
                 ▾
               </span>
@@ -319,7 +362,7 @@ export const DeviceSettingsAccordion: React.FC<DeviceSettingsAccordionProps> = (
               <span className="font-accent text-xs font-semibold uppercase text-muted-foreground">
                 Status
               </span>
-              <span className="hidden w-24 shrink-0 tablet:inline-flex" aria-hidden="true" />
+              <span className="hidden w-24 shrink-0 md:inline-flex" aria-hidden="true" />
             </div>
           </div>
 
@@ -402,10 +445,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
   checkedItems,
   isAccordionOpen,
 }) => {
-  const [device, setDevice] = useState<Device>({
-    ...deviceInfo,
-    info: deviceInfo.info,
-  });
+  const [device, setDevice] = useState<DiscoveredMiner>(deviceInfo);
 
   const [deviceError, setDeviceError] = useState<Record<string, string>>({
     hostname: "",
@@ -414,7 +454,6 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     stratumPort: "",
     stratumUser: "",
     stratumPassword: "",
-    fanspeed: "",
   });
 
   const [isSaveAndRestartModalOpen, setIsSaveAndRestartModalOpen] = useState(false);
@@ -430,60 +469,141 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     stratumUser: "",
   });
 
+  const [stratumFormState, setStratumFormState] = useState<StratumFormState>(() => ({
+    stratumURL: getStratumUrl(deviceInfo.minerData),
+    stratumPort: getStratumPort(deviceInfo.minerData),
+    stratumUser: getStratumUser(deviceInfo.minerData),
+    stratumPassword: getStratumPassword(deviceInfo.minerData),
+    workerName: getHostname(deviceInfo.minerData),
+  }));
+
+  // Schema-driven vendor config
+  const [configSchema, setConfigSchema] = useState<ConfigFormSchema | null>(null);
+  const [vendorValues, setVendorValues] = useState<Record<string, unknown>>({});
+  const [schemaLoaded, setSchemaLoaded] = useState(false);
+
   const { isConnected, socket } = useSocket();
+
+  // Fetch config form schema when accordion opens
+  useEffect(() => {
+    if (isAccordionOpen && !schemaLoaded) {
+      fetch(`/api/devices/${device.mac}/config/form`)
+        .then((r) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
+        .then((data: { schema: ConfigFormSchema; values: Record<string, unknown> }) => {
+          setConfigSchema(data.schema);
+          setVendorValues(data.values);
+          setSchemaLoaded(true);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch config form:", err);
+          setSchemaLoaded(true);
+        });
+    }
+  }, [isAccordionOpen, schemaLoaded, device.mac]);
 
   useEffect(() => {
     if (presets && deviceInfo) {
       let foundPreset = presets.find((p) => p.uuid === deviceInfo?.presetUuid);
-
       setSelectedPreset(foundPreset || presets[0]);
     }
   }, [presets, deviceInfo]);
 
   useEffect(() => {
     if (device) {
-      const currentDeviceStratumUser = device.info.stratumUser;
-      const dotIndex = currentDeviceStratumUser.indexOf(".");
+      const currentDeviceStratumUser = getStratumUser(device.minerData);
+      const hostname = getHostname(device.minerData);
 
       setStratumUser({
-        workerName:
-          dotIndex === -1 || currentDeviceStratumUser.substring(dotIndex + 1).length === 0
-            ? device.info.hostname
-            : currentDeviceStratumUser.substring(dotIndex + 1),
-        stratumUser:
-          dotIndex === -1
-            ? currentDeviceStratumUser
-            : currentDeviceStratumUser.substring(0, dotIndex),
+        workerName: hostname,
+        stratumUser: currentDeviceStratumUser,
+      });
+
+      setStratumFormState({
+        stratumURL: getStratumUrl(device.minerData),
+        stratumPort: getStratumPort(device.minerData),
+        stratumUser: currentDeviceStratumUser,
+        stratumPassword: getStratumPassword(device.minerData),
+        workerName: hostname,
       });
     }
-  }, []);
+  }, [device]);
+
+  const buildPoolsConfig = useCallback(() => {
+    const url = stratumFormState.stratumURL;
+    const port = stratumFormState.stratumPort;
+    const poolUrl = port ? `${url}:${port}` : url;
+    return {
+      groups: [
+        {
+          quota: 1,
+          pools: [
+            {
+              url: poolUrl || "",
+              user: stratumFormState.workerName
+                ? `${stratumFormState.stratumUser}.${stratumFormState.workerName}`
+                : stratumFormState.stratumUser,
+              password: stratumFormState.stratumPassword || "",
+            },
+          ],
+        },
+      ],
+    };
+  }, [stratumFormState]);
 
   const handleSaveOrSaveAndRestartDeviceSettings = useCallback(
     async (shouldRestart: boolean) => {
       try {
-        const deviceToUpdate = selectedPreset
-          ? {
-              ...device,
-              presetUuid: selectedPreset.uuid,
-              info: {
-                ...device.info,
-                stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
-              },
-            }
-          : device;
+        let config: MinerConfig;
+
+        if (selectedPreset && isPresetRadioButtonSelected) {
+          const presetConfig = selectedPreset.configuration as MinerConfig;
+          const poolConfig = presetConfig.pools?.groups?.[0]?.pools?.[0];
+
+          config = {
+            pools: {
+              groups: [
+                {
+                  quota: 1,
+                  pools: [
+                    {
+                      url: poolConfig?.url || "",
+                      user: poolConfig?.user ? `${poolConfig.user}.${stratumFormState.workerName}` : stratumFormState.workerName,
+                      password: poolConfig?.password || "",
+                    },
+                  ],
+                },
+              ],
+            },
+            vendorConfig: Object.keys(vendorValues).length > 0 ? { ...vendorValues } : undefined,
+          };
+        } else {
+          config = {
+            pools: buildPoolsConfig(),
+            vendorConfig: Object.keys(vendorValues).length > 0 ? { ...vendorValues } : undefined,
+          };
+        }
 
         const {
           data: { data: updatedDestDevice },
-        } = await axios.patch<{ message: string; data: Device }>(
-          `/api/devices/${deviceToUpdate.mac}/system`,
-          deviceToUpdate
+        } = await axios.patch<{ message: string; data: DiscoveredMiner }>(
+          `/api/devices/${device.mac}/system`,
+          config
         );
+
+        const updatedDeviceWithPreset: DiscoveredMiner = {
+          ...updatedDestDevice,
+          presetUuid: selectedPreset && isPresetRadioButtonSelected ? selectedPreset.uuid : device.presetUuid,
+        };
+
         const {
           data: { data: updatedDevice },
-        } = await axios.patch<{ message: string; data: Device }>(
+        } = await axios.patch<{ message: string; data: DiscoveredMiner }>(
           `/api/devices/imprint/${device.mac}`,
           {
-            device: updatedDestDevice,
+            device: updatedDeviceWithPreset,
           }
         );
 
@@ -495,9 +615,8 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
             title: "Save Successful",
             message: `The settings for device ${device.mac} have been successfully saved.`,
           });
-          onOpenAlert(); // Aprire l'alert per mostrare il messaggio di successo
+          onOpenAlert();
 
-          // Se il salvataggio è andato a buon fine e serve il restart, esegui subito il restart
           if (shouldRestart) {
             handleRestartDevice(true);
           }
@@ -514,17 +633,23 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
           title: "Save Failed",
           message: `${errorMessage} Please try again.`,
         });
-        onOpenAlert(); // Aprire l'alert per mostrare il messaggio di errore
+        onOpenAlert();
       }
     },
-    [device, stratumUser.workerName]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      device,
+      onOpenAlert,
+      selectedPreset,
+      setAlert,
+      isPresetRadioButtonSelected,
+      stratumFormState,
+      vendorValues,
+      buildPoolsConfig,
+    ]
   );
 
-  const validatePercentage = (value: string) => {
-    return parseInt(value) <= 100 && parseInt(value) >= 0;
-  };
-
-  const validateFieldByName = (name: string, value: string) => {
+  const validateFieldByName = useCallback((name: string, value: string) => {
     switch (name) {
       case "stratumURL":
         return validateDomain(value, { allowIP: true });
@@ -533,10 +658,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         return validateTCPPort(numericRegex.test(value) ? Number(value) : -1);
       }
       case "stratumUser":
-        // return validateBitcoinAddress(value);
         return !value.includes(".");
-      case "fanspeed":
-        return validatePercentage(value);
       case "workerName": {
         const regex = /^[a-zA-Z0-9]+$/;
         return regex.test(value);
@@ -544,7 +666,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
       default:
         return true;
     }
-  };
+  }, []);
 
   const validateField = useCallback(
     (name: string, value: string) => {
@@ -569,25 +691,15 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
       validateField(name, value);
 
-      const isCheckbox = type === "checkbox";
-
       const numericFields = new Set([
-        "frequency",
-        "coreVoltage",
         "stratumPort",
-        "fanspeed",
-        "autoscreenoff",
-        "overheat_temp",
       ]);
 
       const nextValue = (() => {
-        if (isCheckbox) {
+        if (type === "checkbox") {
           return (e.target as HTMLInputElement).checked ? 1 : 0;
         }
 
-        // Keep string fields as strings. The previous implementation used
-        // `parseInt(value) || value`, which turns IPs like "192.168.0.252" into
-        // the number 192 (because parseInt stops at the first dot).
         if (!numericFields.has(name)) {
           return value;
         }
@@ -597,17 +709,19 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         return Number.isNaN(parsed) ? value : parsed;
       })();
 
-      const updatedDevice = {
-        ...device,
-        info: {
-          ...device.info,
+      if (name === "stratumURL" || name === "stratumPort" || name === "stratumPassword") {
+        setStratumFormState((prev) => ({
+          ...prev,
           [name]: nextValue,
-        },
-      };
-
-      setDevice(updatedDevice);
+        }));
+      } else if (name === "hostname") {
+        setStratumFormState((prev) => ({
+          ...prev,
+          workerName: typeof nextValue === "string" ? nextValue : prev.workerName,
+        }));
+      }
     },
-    [device, validateField]
+    [validateField]
   );
 
   const handleChangeOnStratumUser = useCallback(
@@ -616,20 +730,34 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
       validateField(name, value);
 
-      const editedStratumUser = { ...stratumUser, [name]: value };
-      setStratumUser(editedStratumUser);
-
-      const updatedDevice = {
-        ...device,
-        info: {
-          ...device.info,
-          stratumUser: `${editedStratumUser.stratumUser}.${editedStratumUser.workerName}`,
-        },
-      };
-
-      setDevice(updatedDevice);
+      if (name === "stratumUser") {
+        setStratumFormState((prev) => ({
+          ...prev,
+          stratumUser: value,
+        }));
+        setStratumUser((prev) => ({
+          ...prev,
+          stratumUser: value,
+        }));
+      } else if (name === "workerName") {
+        setStratumFormState((prev) => ({
+          ...prev,
+          workerName: value,
+        }));
+        setStratumUser((prev) => ({
+          ...prev,
+          workerName: value,
+        }));
+      }
     },
-    [device, stratumUser]
+    [validateField]
+  );
+
+  const handleVendorConfigChange = useCallback(
+    (fieldName: string, value: unknown) => {
+      setVendorValues((prev) => ({ ...prev, [fieldName]: value }));
+    },
+    []
   );
 
   const handleRadioButtonChange = (value: string) => {
@@ -646,13 +774,23 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     }
 
     if (value === RadioButtonStatus.PRESET && selectedPreset) {
+      const presetConfig = selectedPreset.configuration as MinerConfig;
+      const poolConfig = presetConfig.pools?.groups?.[0]?.pools?.[0];
+
+      if (poolConfig) {
+        const parsedUrl = parseStratumUrl(poolConfig.url || "");
+        setStratumFormState((prev) => ({
+          ...prev,
+          stratumURL: parsedUrl.url,
+          stratumPort: parsedUrl.port,
+          stratumUser: poolConfig.user || "",
+          stratumPassword: poolConfig.password || "",
+        }));
+      }
+
       setDevice({
         ...device,
         presetUuid: selectedPreset.uuid,
-        info: {
-          ...device.info,
-          stratumUser: `${selectedPreset.configuration.stratumUser}.${stratumUser.workerName}`,
-        },
       });
     }
   };
@@ -702,45 +840,37 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
       if (preset) {
         setSelectedPreset(preset);
 
-        const updatedDevice = {
+        const presetConfig = preset.configuration as MinerConfig;
+        const poolConfig = presetConfig.pools?.groups?.[0]?.pools?.[0];
+
+        if (poolConfig) {
+          const parsedUrl = parseStratumUrl(poolConfig.url || "");
+          setStratumFormState((prev) => ({
+            ...prev,
+            stratumURL: parsedUrl.url,
+            stratumPort: parsedUrl.port,
+            stratumUser: poolConfig.user || "",
+            stratumPassword: poolConfig.password || "",
+          }));
+        }
+
+        setDevice({
           ...device,
           presetUuid: preset.uuid,
-          info: {
-            ...device.info,
-            stratumUser: `${preset.configuration.stratumUser}.${stratumUser.workerName}`,
-          },
-        };
-
-        setDevice(updatedDevice);
+        });
       }
     },
-    [presets]
+    [device, presets]
   );
 
   useEffect(() => {
-    const listener = (e: Device) => {
+    const listener = (e: DiscoveredMiner) => {
       setDevice((prevDevice) => {
         if (!prevDevice || prevDevice.mac !== e.mac) return prevDevice;
-        // Solo aggiorna i dati se l'accordion è aperto
         if (isAccordionOpen) {
-          return { ...prevDevice, tracing: e.tracing }; // Esegui solo l'aggiornamento della proprietà di interesse
+          return { ...prevDevice, tracing: e.tracing };
         }
-        return {
-          ...e,
-          info: {
-            ...e.info,
-            frequencyOptions:
-              Array.isArray((e.info as any)?.frequencyOptions) &&
-              (e.info as any).frequencyOptions.length > 0
-                ? (e.info as any).frequencyOptions
-                : (prevDevice.info as any)?.frequencyOptions || [],
-            coreVoltageOptions:
-              Array.isArray((e.info as any)?.coreVoltageOptions) &&
-              (e.info as any).coreVoltageOptions.length > 0
-                ? (e.info as any).coreVoltageOptions
-                : (prevDevice.info as any)?.coreVoltageOptions || [],
-          },
-        };
+        return { ...e };
       });
     };
 
@@ -755,37 +885,17 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     }
   }, [isAccordionOpen, isConnected, socket]);
 
-  const hasEmptyFields = (obj: any): boolean => {
-    for (const key in obj) {
-      if (typeof obj[key] === "object" && obj[key] !== null) {
-        if (hasEmptyFields(obj[key])) return true; // Ricorsione per oggetti annidati
-      } else if (obj[key] === "") {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const hasErrorFields = (obj: Record<string, string>): boolean => {
-    for (const [key, value] of Object.entries(obj)) {
-      if (value === "") continue;
-
-      if (key === "fanspeed" && device.info.autofanspeed !== 0) {
-        continue;
-      }
-
-      return true;
-    }
-
-    return false;
-  };
-
   const isDeviceValid = useCallback(() => {
-    return hasEmptyFields(device) || hasErrorFields(deviceError);
-  }, [device, deviceError]);
+    const hasEmptyStratumFields =
+      !stratumFormState.stratumURL ||
+      !stratumFormState.stratumUser;
+
+    const hasErrors = Object.values(deviceError).some((v) => v !== "");
+
+    return hasEmptyStratumFields || hasErrors;
+  }, [stratumFormState, deviceError]);
 
   const handleSaveAndRestartModalClose = async (value: string) => {
-    // Funzione di callback per gestire il valore restituito dalla modale
     if (value !== "") {
       const shouldRestart = value === RadioButtonValues.SAVE_AND_RESTART ? true : false;
       await handleSaveOrSaveAndRestartDeviceSettings(shouldRestart);
@@ -793,13 +903,15 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     setIsSaveAndRestartModalOpen(false);
   };
 
-  const handleRestartModalClose = useCallback(async (value: boolean) => {
-    // Funzione di callback per gestire il valore restituito dalla modale
-    if (value) {
-      handleRestartDevice(false);
-    }
-    setIsRestartModalOpen(false);
-  }, []);
+  const handleRestartModalClose = useCallback(
+    async (value: boolean) => {
+      if (value) {
+        handleRestartDevice(false);
+      }
+      setIsRestartModalOpen(false);
+    },
+    [handleRestartDevice]
+  );
 
   const handleRestartOpenModal = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -810,7 +922,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
     <>
       <summary className="flex cursor-pointer items-center justify-between gap-4 bg-card px-4 py-3 hover:bg-muted">
         <div className="flex flex-[8] items-center gap-3">
-          <div className="hidden tablet:block" onClick={(e) => e.stopPropagation()}>
+          <div className="hidden md:block" onClick={(e) => e.stopPropagation()}>
             <input
               type="checkbox"
               className="h-4 w-4 rounded-none border border-input bg-background accent-primary"
@@ -820,7 +932,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
           </div>
           <span className="text-primary">▾</span>
           <div className="flex items-center gap-2">
-            <span className="font-accent text-sm font-normal capitalize">{device.info.hostname}</span>
+            <span className="font-accent text-sm font-normal capitalize">{getHostname(device.minerData)}</span>
             <span className="hidden tablet:inline text-sm text-muted-foreground">-</span>
             <span className="hidden tablet:inline">
               <Link
@@ -838,11 +950,11 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
           </div>
         </div>
 
-        <div className="flex flex-[5] items-center justify-between gap-4 tablet:justify-end">
+        <div className="flex flex-[5] items-center justify-between gap-4 md:justify-end">
           <DeviceStatusBadge status={device.tracing ? "online" : "offline"} />
           <button
             type="button"
-            className="hidden items-center gap-2 font-accent text-sm font-medium uppercase text-foreground underline tablet:inline-flex"
+            className="hidden items-center gap-2 font-accent text-sm font-medium uppercase text-foreground underline md:inline-flex"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -852,7 +964,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
             <RestartIcon color="currentColor" />
             Restart
           </button>
-          <div className="tablet:hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="md:hidden" onClick={(e) => e.stopPropagation()}>
             <input
               type="checkbox"
               className="h-4 w-4 rounded-none border border-input bg-background accent-primary"
@@ -865,18 +977,10 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
 
       <div className="border-t border-border bg-card p-4">
         <div className="flex flex-col gap-6">
+          {/* General (always shown) */}
           <div className="flex flex-col gap-4">
             <p className="font-heading text-sm font-bold uppercase">General</p>
-            <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
-              <Input
-                label="Hostname"
-                name="hostname"
-                id={`${device.mac}-hostname`}
-                placeholder="hostname"
-                defaultValue={device.info.hostname}
-                onChange={handleChange}
-                error={deviceError.hostname}
-              />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Input
                 label="Worker Name"
                 name="workerName"
@@ -889,76 +993,31 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <p className="font-heading text-sm font-bold uppercase">Hardware settings</p>
-            <div className="flex flex-col gap-4 desktop:flex-row">
-              <div className="flex flex-col gap-4 tablet:flex-row desktop:flex-[2]">
-                <Select
-                  id={`${device.mac}-frequency`}
-                  label="Frequency"
-                  name="frequency"
-                  onChange={handleChange}
-                  value={device.info.frequency}
-                  defaultValue={device.info.frequency}
-                  optionValues={device.info.frequencyOptions}
-                  allowCustom={true}
-                />
-                <Select
-                  id={`${device.mac}-coreVoltage`}
-                  label="Core Voltage"
-                  name="coreVoltage"
-                  onChange={handleChange}
-                  value={device.info.coreVoltage}
-                  defaultValue={device.info.coreVoltage}
-                  optionValues={device.info.coreVoltageOptions}
-                  allowCustom={true}
-                />
-              </div>
-
-              <div className="flex flex-col gap-4 desktop:flex-[3]">
-                <p className="font-body text-xs font-semibold uppercase text-muted-foreground">
-                  Advanced Hardware Settings
-                </p>
-                <div className="flex flex-col gap-4 tablet:flex-row tablet:flex-wrap tablet:items-center">
-                  <Checkbox
-                    id={`${device.mac}-flipscreen`}
-                    name="flipscreen"
-                    label="Flip Screen"
-                    defaultChecked={device.info.flipscreen === 1}
-                    onChange={handleChange}
+          {/* Schema-driven vendor sections */}
+          {configSchema?.sections.map((section) => (
+            <div key={section.key} className="flex flex-col gap-4">
+              <p className="font-heading text-sm font-bold uppercase">{section.label}</p>
+              <div
+                className="grid grid-cols-1 gap-4"
+                style={{
+                  gridTemplateColumns: `repeat(${section.columns ?? 4}, minmax(0, 1fr))`,
+                }}
+              >
+                {section.fields.map((field) => (
+                  <VendorConfigFieldRenderer
+                    key={field.name}
+                    field={field}
+                    value={vendorValues[field.name]}
+                    onChange={handleVendorConfigChange}
+                    deviceMac={device.mac}
+                    error={deviceError[field.name]}
                   />
-                  <Checkbox
-                    id={`${device.mac}-invertfanpolarity`}
-                    name="invertfanpolarity"
-                    label="Invert Fan Polarity"
-                    defaultChecked={device.info.invertfanpolarity === 1}
-                    onChange={handleChange}
-                  />
-                  <Checkbox
-                    id={`${device.mac}-autofanspeed`}
-                    name="autofanspeed"
-                    label="Automatic Fan Control"
-                    defaultChecked={device.info.autofanspeed === 1}
-                    onChange={handleChange}
-                  />
-                  <div className="w-full tablet:max-w-[200px]">
-                    <Input
-                      name="fanspeed"
-                      id={`${device.mac}-fanspeed`}
-                      placeholder=""
-                      type="number"
-                      defaultValue={device.info.fanspeed || 0}
-                      onChange={handleChange}
-                      isDisabled={device.info.autofanspeed === 1}
-                      rightAddon={"%"}
-                      error={deviceError.fanspeed}
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-          </div>
+          ))}
 
+          {/* Pool settings */}
           <div className="flex flex-col gap-4">
             <p className="font-heading text-sm font-bold uppercase">Pool settings</p>
 
@@ -997,36 +1056,46 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                         label: preset.name,
                       }))}
                     />
-                    <div className="flex flex-col gap-4 tablet:flex-row">
+                    <div className="flex flex-col gap-4 md:flex-row">
                       <div className="flex-1">
                         <Input
                           isDisabled={true}
                           type="text"
-                          label="Stratum URL"
+                          label="Pool URL"
                           name="stratumURL"
                           id={`${selectedPreset.uuid}-stratumUrl`}
-                          defaultValue={selectedPreset.configuration.stratumURL}
+                          defaultValue={
+                            (selectedPreset.configuration as MinerConfig).pools?.groups?.[0]?.pools?.[0]
+                              ?.url || ""
+                          }
                         />
                       </div>
                       <div className="flex-1">
                         <Input
                           isDisabled={true}
                           type="number"
-                          label="Stratum Port"
+                          label="Pool Port"
                           name="stratumPort"
                           id={`${selectedPreset.uuid}-stratumPort`}
-                          defaultValue={selectedPreset.configuration.stratumPort}
+                          defaultValue={
+                            getStratumPort({
+                              pools: (selectedPreset.configuration as MinerConfig).pools,
+                            } as any) || undefined
+                          }
                         />
                       </div>
                       <div className="flex-[2]">
                         <Input
                           isDisabled={true}
                           type="text"
-                          label="Stratum User"
+                          label="Pool User"
                           name="stratumUser"
                           id={`${selectedPreset.uuid}-stratumUser`}
-                          defaultValue={selectedPreset.configuration.stratumUser}
-                          rightAddon={`.${stratumUser.workerName}`}
+                          defaultValue={
+                            (selectedPreset.configuration as MinerConfig).pools?.groups?.[0]?.pools?.[0]
+                              ?.user || ""
+                          }
+                          rightAddon={`.${stratumFormState.workerName}`}
                         />
                       </div>
                     </div>
@@ -1034,52 +1103,52 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
                 ) : null}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-6">
-                <div className="desktop:col-span-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+                <div className="xl:col-span-2">
                   <Input
                     type="text"
-                    label="Stratum URL"
+                    label="Pool URL"
                     name="stratumURL"
                     id={`${device.mac}-stratumUrl`}
-                    placeholder="Add your stratum URL"
-                    defaultValue={device.info.stratumURL}
+                    placeholder="Add your pool URL"
+                    defaultValue={stratumFormState.stratumURL}
                     onChange={handleChange}
                     error={deviceError.stratumURL}
                   />
                 </div>
-                <div className="desktop:col-span-2">
+                <div className="xl:col-span-2">
                   <Input
                     type="number"
-                    label="Stratum Port"
+                    label="Pool Port"
                     name="stratumPort"
                     id={`${device.mac}-stratumPort`}
-                    placeholder="Add your stratum port"
-                    defaultValue={device.info.stratumPort}
+                    placeholder="Add your pool port"
+                    defaultValue={stratumFormState.stratumPort}
                     onChange={handleChange}
                     error={deviceError.stratumPort}
                   />
                 </div>
-                <div className="desktop:col-span-2">
+                <div className="xl:col-span-2">
                   <Input
                     type="text"
-                    label="Stratum User"
+                    label="Pool User"
                     name="stratumUser"
                     id={`${device.mac}-stratumUser`}
-                    placeholder="Add your stratum user"
-                    defaultValue={stratumUser.stratumUser}
+                    placeholder="Add your pool user"
+                    defaultValue={stratumFormState.stratumUser}
                     onChange={handleChangeOnStratumUser}
-                    rightAddon={`.${stratumUser.workerName}`}
+                    rightAddon={`.${stratumFormState.workerName}`}
                     error={deviceError.stratumUser}
                   />
                 </div>
-                <div className="desktop:col-span-2">
+                <div className="xl:col-span-2">
                   <Input
                     type="password"
-                    label="Stratum Password"
+                    label="Pool Password"
                     name="stratumPassword"
                     id={`${device.mac}-stratumPassword`}
-                    placeholder="Add your stratum password"
-                    defaultValue={device.info.stratumPassword}
+                    placeholder="Add your pool password"
+                    defaultValue={stratumFormState.stratumPassword}
                     error={deviceError.stratumPassword}
                     onChange={handleChange}
                   />
@@ -1100,7 +1169,7 @@ const AccordionItem: React.FC<AccordionItemProps & { isAccordionOpen: boolean }>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 border-t border-border bg-muted px-4 py-2 tablet:hidden">
+      <div className="flex items-center justify-between gap-4 border-t border-border bg-muted px-4 py-2 md:hidden">
         <div className="flex items-center gap-2 font-accent">
           <span className="text-sm font-medium">IP</span>
           <span className="text-sm font-medium text-muted-foreground">-</span>

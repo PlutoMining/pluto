@@ -1,7 +1,9 @@
 import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 
 import { DeviceSettingsAccordion } from "@/components/Accordion";
+
 
 jest.mock("@/providers/SocketProvider", () => ({
   useSocket: () => ({
@@ -10,25 +12,121 @@ jest.mock("@/providers/SocketProvider", () => ({
   }),
 }));
 
-describe("DeviceSettingsAccordion", () => {
-  beforeEach(() => {
-    (global as any).fetch = jest.fn(async () => ({
-      ok: true,
-      json: async () => ({
-        data: [
-          {
-            uuid: "preset-1",
-            name: "Preset 1",
-            configuration: {
-              stratumURL: "pool.example.com",
-              stratumPort: 3333,
-              stratumUser: "user",
+const makeDiscoveredMiner = (mac: string, hostname: string): DiscoveredMiner => ({
+  mac,
+  ip: mac === "aa" ? "10.0.0.1" : "10.0.0.2",
+  type: "Bitaxe",
+  supportLevel: "native",
+  tracing: true,
+  presetUuid: null,
+  minerData: {
+    ip: mac === "aa" ? "10.0.0.1" : "10.0.0.2",
+    hostname,
+    fans: [],
+    hashboards: [],
+    deviceInfo: {
+      model: "BM1397",
+    },
+    pools: {
+      groups: [
+        {
+          pools: [
+            {
+              url: "stratum+tcp://pool.example.com:3333",
+              user: "user.worker",
+              password: "pass",
             },
-            associatedDevices: [],
+          ],
+        },
+      ],
+    },
+    bitaxe: {
+      frequency: 100,
+      coreVoltage: 900,
+      fanspeed: 50,
+      autofanspeed: 1,
+      invertscreen: 0,
+    },
+  } as any,
+});
+
+const defaultConfigForm = {
+  schema: {
+    sections: [
+      {
+        key: "hardware",
+        label: "Hardware Settings",
+        columns: 4,
+        fields: [
+          {
+            name: "frequency",
+            label: "Frequency",
+            type: "select",
+            options: [{ label: "490 MHz", value: 490 }],
+          },
+          {
+            name: "coreVoltage",
+            label: "Core Voltage",
+            type: "number",
+          },
+          {
+            name: "invertscreen",
+            label: "Invert Screen",
+            type: "checkbox",
           },
         ],
-      }),
-    }));
+      },
+    ],
+  },
+  values: { frequency: 490, coreVoltage: 900, invertscreen: 0 },
+};
+
+function createFetchMock(options?: {
+  presets?: { data: unknown[] };
+  configForm?: { schema: { sections: unknown[] }; values: Record<string, unknown> };
+}) {
+  return jest.fn(async (url: string) => {
+    if (url === "/api/presets") {
+      return {
+        ok: true,
+        json: async () =>
+          options?.presets ?? {
+            data: [
+              {
+                uuid: "preset-1",
+                name: "Preset 1",
+                configuration: {
+                  pools: {
+                    groups: [
+                      {
+                        pools: [
+                          {
+                            url: "stratum+tcp://pool.example.com:3333",
+                            user: "user",
+                            password: "",
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+                associatedDevices: [],
+              },
+            ],
+          },
+      };
+    }
+    if (url.match(/^\/api\/devices\/[^/]+\/config\/form$/)) {
+      const cf = options?.configForm ?? defaultConfigForm;
+      return { ok: true, json: async () => cf };
+    }
+    return { ok: false };
+  });
+}
+
+describe("DeviceSettingsAccordion", () => {
+  beforeEach(() => {
+    (global as any).fetch = createFetchMock();
   });
 
   it("enables bulk actions only when multiple devices are selected", async () => {
@@ -36,49 +134,9 @@ describe("DeviceSettingsAccordion", () => {
     const onOpenAlert = jest.fn();
 
     const devices = [
-      {
-        mac: "aa",
-        ip: "10.0.0.1",
-        tracing: true,
-        presetUuid: null,
-        info: {
-          hostname: "miner-01",
-          stratumUser: "user.worker",
-          stratumURL: "pool.example.com",
-          stratumPort: 3333,
-          stratumPassword: "pass",
-          flipscreen: 0,
-          invertfanpolarity: 0,
-          autofanspeed: 1,
-          fanspeed: 50,
-          frequency: 100,
-          frequencyOptions: [{ label: "100", value: 100 }],
-          coreVoltage: 900,
-          coreVoltageOptions: [{ label: "900", value: 900 }],
-        },
-      },
-      {
-        mac: "bb",
-        ip: "10.0.0.2",
-        tracing: true,
-        presetUuid: null,
-        info: {
-          hostname: "miner-02",
-          stratumUser: "user.worker",
-          stratumURL: "pool.example.com",
-          stratumPort: 3333,
-          stratumPassword: "pass",
-          flipscreen: 0,
-          invertfanpolarity: 0,
-          autofanspeed: 1,
-          fanspeed: 50,
-          frequency: 100,
-          frequencyOptions: [{ label: "100", value: 100 }],
-          coreVoltage: 900,
-          coreVoltageOptions: [{ label: "900", value: 900 }],
-        },
-      },
-    ] as any;
+      makeDiscoveredMiner("aa", "miner-01"),
+      makeDiscoveredMiner("bb", "miner-02"),
+    ];
 
     const { container } = render(
       <DeviceSettingsAccordion
@@ -124,29 +182,7 @@ describe("DeviceSettingsAccordion", () => {
     const setAlert = jest.fn();
     const onOpenAlert = jest.fn();
 
-    const devices = [
-      {
-        mac: "aa",
-        ip: "10.0.0.1",
-        tracing: true,
-        presetUuid: null,
-        info: {
-          hostname: "miner-01",
-          stratumUser: "user.worker",
-          stratumURL: "pool.example.com",
-          stratumPort: 3333,
-          stratumPassword: "pass",
-          flipscreen: 0,
-          invertfanpolarity: 0,
-          autofanspeed: 1,
-          fanspeed: 50,
-          frequency: 100,
-          frequencyOptions: [{ label: "100", value: 100 }],
-          coreVoltage: 900,
-          coreVoltageOptions: [{ label: "900", value: 900 }],
-        },
-      },
-    ] as any;
+    const devices = [makeDiscoveredMiner("aa", "miner-01")];
 
     const { container } = render(
       <DeviceSettingsAccordion
@@ -174,5 +210,75 @@ describe("DeviceSettingsAccordion", () => {
 
     fireEvent.click(selectAll);
     expect(details.open).toBe(false);
+  });
+
+  it("renders Hardware settings section for Bitaxe with schema-driven fields", async () => {
+    const devices = [makeDiscoveredMiner("aa", "miner-01")];
+    const { container } = render(
+      <DeviceSettingsAccordion
+        fetchedDevices={devices}
+        alert={undefined}
+        setAlert={jest.fn() as any}
+        onOpenAlert={jest.fn()}
+      />
+    );
+    await waitFor(() => expect((global as any).fetch).toHaveBeenCalledWith("/api/presets"));
+
+    const details = container.querySelector("details") as HTMLDetailsElement;
+    await act(async () => {
+      details.open = true;
+      fireEvent(details, new Event("toggle"));
+    });
+
+    // Wait for Hardware settings fields to render after opening accordion
+    await waitFor(() => {
+      expect(container.querySelector("#aa-frequency")).not.toBeNull();
+    });
+
+    const frequencyField = container.querySelector("#aa-frequency");
+    const coreVoltageField = container.querySelector("#aa-coreVoltage");
+
+    expect(frequencyField).not.toBeNull();
+    expect(coreVoltageField).not.toBeNull();
+  });
+
+  it("does not render Hardware settings section when config form returns empty schema", async () => {
+    (global as any).fetch = createFetchMock({
+      configForm: { schema: { sections: [] }, values: {} },
+    });
+
+    const antminer: DiscoveredMiner = {
+      ...makeDiscoveredMiner("aa", "miner-01"),
+      type: "Antminer S19",
+      minerData: {
+        ...makeDiscoveredMiner("aa", "miner-01").minerData,
+        deviceInfo: { model: "S19" },
+      },
+    } as any;
+    const { container } = render(
+      <DeviceSettingsAccordion
+        fetchedDevices={[antminer]}
+        alert={undefined}
+        setAlert={jest.fn() as any}
+        onOpenAlert={jest.fn()}
+      />
+    );
+    await waitFor(() => expect((global as any).fetch).toHaveBeenCalledWith("/api/presets"));
+
+    const details = container.querySelector("details") as HTMLDetailsElement;
+    await act(async () => {
+      details.open = true;
+      fireEvent(details, new Event("toggle"));
+    });
+
+    await waitFor(() => {
+      expect((global as any).fetch).toHaveBeenCalledWith(
+        expect.stringMatching(/\/api\/devices\/aa\/config\/form$/)
+      );
+    });
+    await waitFor(() => {
+      expect(container.querySelector("#aa-frequency")).toBeNull();
+      expect(container.querySelector("#aa-coreVoltage")).toBeNull();
+    });
   });
 });

@@ -4,6 +4,10 @@ FROM node:24-alpine AS builder
 # Set the working directory
 WORKDIR /home/node/app
 
+# Copy tooling directory early (needed for tsconfig.base.json used by common packages)
+RUN mkdir -p /home/node/tooling
+COPY ./tooling /home/node/tooling
+
 # Copy package.json and package-lock.json and install dependencies
 COPY ./backend/package*.json ./
 RUN mkdir -p /home/node/common
@@ -13,10 +17,6 @@ RUN npm ci --prefix /home/node/common/db
 RUN npm ci --prefix /home/node/common/interfaces
 RUN npm ci --prefix /home/node/common/logger
 RUN npm ci
-
-# Copy tooling directory (needed for tsconfig.base.json)
-RUN mkdir -p /home/node/tooling
-COPY ./tooling /home/node/tooling
 
 # Copy the rest of the files and build the application
 COPY ./backend .

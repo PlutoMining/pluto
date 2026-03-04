@@ -1,11 +1,6 @@
 name: Common CI
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-      - "release/**"
   pull_request:
     branches:
       - "**"

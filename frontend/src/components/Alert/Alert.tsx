@@ -6,7 +6,7 @@
  * See <https://www.gnu.org/licenses/>.
 */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { CloseIcon } from "../icons/CloseIcon";
@@ -15,11 +15,14 @@ import { SuccessIcon } from "../icons/SuccessIcon";
 import { WarningIcon } from "../icons/WarningIcon";
 import { AlertProps, AlertStatus } from "./interfaces";
 
+const AUTO_DISMISS_MS = 5000;
+
 const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
   const { isOpen, onClose, content } = alertProps;
 
   const [icon, setIcon] = useState<React.JSX.Element>();
   const [variantClass, setVariantClass] = useState<string>("border-border");
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     switch (content.status) {
@@ -43,12 +46,38 @@ const Alert: React.FC<AlertProps> = (alertProps: AlertProps) => {
     }
   }, [content.status]);
 
+  // Auto-dismiss after AUTO_DISMISS_MS
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(onClose, AUTO_DISMISS_MS);
+    return () => clearTimeout(timer);
+  }, [isOpen, onClose]);
+
+  // Dismiss on any click outside the card
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-x-0 top-16 z-50 px-4">
+    // pointer-events-none on the full-width wrapper so it never blocks sidebar clicks
+    <div className="pointer-events-none fixed inset-x-0 top-16 z-50 px-4">
       <div className="container">
-        <div className={cn("relative border bg-card p-3 text-card-foreground", variantClass)}>
+        <div
+          ref={cardRef}
+          className={cn(
+            "pointer-events-auto relative border bg-card p-3 text-card-foreground",
+            variantClass
+          )}
+        >
           <div className="absolute right-2 top-2 cursor-pointer text-muted-foreground hover:text-foreground">
             <CloseIcon h={"18"} color="currentColor" onClick={onClose} />
           </div>

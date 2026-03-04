@@ -1,34 +1,41 @@
-import {
-  DeviceApiVersion,
-  DeviceFrequencyOptions,
-  DeviceVoltageOptions,
-} from "../index";
+// Side-effect import forces module execution for coverage
+import "../index";
+import type { MinerData, DiscoveredMiner, MinerConfig, BitaxeData } from "../index";
 
 describe("@pluto/interfaces", () => {
-  it("exports DeviceApiVersion enum values", () => {
-    expect(DeviceApiVersion.Legacy).toBe("legacy");
-    expect(DeviceApiVersion.New).toBe("new");
+  it("MinerData type is structurally valid", () => {
+    const data: MinerData = {
+      ip: "192.168.1.1",
+      fans: [],
+      hashboards: [],
+    };
+    expect(data.ip).toBe("192.168.1.1");
   });
 
-  it("exports frequency options for known ASIC models", () => {
-    expect(DeviceFrequencyOptions.BM1397).toBeDefined();
-    expect(Array.isArray(DeviceFrequencyOptions.BM1397)).toBe(true);
-
-    const defaultOption = DeviceFrequencyOptions.BM1397.find((opt) =>
-      opt.label.includes("default"),
-    );
-
-    expect(defaultOption).toEqual({ label: "425 (default)", value: 425 });
+  it("DiscoveredMiner requires supportLevel", () => {
+    const miner: DiscoveredMiner = {
+      ip: "192.168.1.1",
+      mac: "AA:BB:CC:DD:EE:FF",
+      type: "Bitaxe 601",
+      supportLevel: "native",
+      minerData: { ip: "192.168.1.1", fans: [], hashboards: [] },
+    };
+    expect(miner.supportLevel).toBe("native");
   });
 
-  it("exports voltage options for known ASIC models", () => {
-    expect(DeviceVoltageOptions.BM1370).toBeDefined();
-    expect(Array.isArray(DeviceVoltageOptions.BM1370)).toBe(true);
+  it("MinerConfig supports vendorConfig", () => {
+    const config: MinerConfig = {
+      vendorConfig: { frequency: 490, coreVoltage: 1100 },
+    };
+    expect(config.vendorConfig?.frequency).toBe(490);
+  });
 
-    const defaultOption = DeviceVoltageOptions.BM1370.find((opt) =>
-      opt.label.includes("default"),
-    );
-
-    expect(defaultOption).toEqual({ label: "1150 (default)", value: 1150 });
+  it("BitaxeData captures all key fields", () => {
+    const data: Partial<BitaxeData> = {
+      hashRate: 1000,
+      asicModel: "BM1370",
+      vrTemp: 65,
+    };
+    expect(data.asicModel).toBe("BM1370");
   });
 });

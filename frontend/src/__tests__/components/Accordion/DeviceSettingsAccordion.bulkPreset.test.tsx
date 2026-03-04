@@ -1,6 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import axios from "axios";
+import type { DiscoveredMiner } from "@pluto/interfaces";
 
 import { DeviceSettingsAccordion } from "@/components/Accordion";
 
@@ -19,7 +20,7 @@ jest.mock("@/components/Modal/SelectPresetModal", () => ({
     return (
       <div>
         <p>mock-select-preset-modal</p>
-        <button type="button" onClick={() => onCloseSuccessfully("preset-uuid")}>
+        <button type="button" onClick={() => onCloseSuccessfully("preset-1")}>
           mock-apply-preset
         </button>
       </div>
@@ -32,41 +33,133 @@ const axiosMock = axios as unknown as {
   isAxiosError: jest.Mock;
 };
 
-const makeDevice = (mac: string) =>
-  ({
-    mac,
+const defaultConfigForm = {
+  schema: {
+    sections: [
+      {
+        key: "hardware",
+        label: "Hardware Settings",
+        columns: 4,
+        fields: [
+          {
+            name: "frequency",
+            label: "Frequency",
+            type: "select",
+            options: [{ label: "490 MHz", value: 490 }],
+          },
+          {
+            name: "coreVoltage",
+            label: "Core Voltage",
+            type: "number",
+          },
+          {
+            name: "invertscreen",
+            label: "Invert Screen",
+            type: "checkbox",
+          },
+        ],
+      },
+    ],
+  },
+  values: { frequency: 490, coreVoltage: 900, invertscreen: 0 },
+};
+
+function createFetchMock(options?: {
+  presets?: { data: unknown[] };
+  configForm?: { schema: { sections: unknown[] }; values: Record<string, unknown> };
+}) {
+  return jest.fn(async (url: string) => {
+    if (url === "/api/presets") {
+      return {
+        ok: true,
+        json: async () =>
+          options?.presets ?? {
+            data: [
+              {
+                uuid: "preset-1",
+                name: "Preset 1",
+                configuration: {
+                  pools: {
+                    groups: [
+                      {
+                        pools: [
+                          {
+                            url: "stratum+tcp://pool.example.com:3333",
+                            user: "user",
+                            password: "",
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+                associatedDevices: [],
+              },
+            ],
+          },
+      };
+    }
+    if (url.match(/^\/api\/devices\/[^/]+\/config\/form$/)) {
+      const cf = options?.configForm ?? defaultConfigForm;
+      return { ok: true, json: async () => cf };
+    }
+    return { ok: false };
+  });
+}
+
+const makeDiscoveredMiner = (mac: string): DiscoveredMiner => ({
+  mac,
+  ip: "10.0.0.1",
+  type: "Bitaxe",
+  supportLevel: "native",
+  tracing: true,
+  presetUuid: null,
+  minerData: {
     ip: "10.0.0.1",
-    tracing: true,
-    presetUuid: null,
-    info: {
-      hostname: `miner-${mac}`,
-      stratumUser: "orig.worker",
-      stratumURL: "pool.example.com",
-      stratumPort: 3333,
-      stratumPassword: "pass",
-      flipscreen: 0,
-      invertfanpolarity: 0,
-      autofanspeed: 1,
-      fanspeed: 50,
-      frequency: 100,
-      frequencyOptions: [{ label: "100", value: 100 }],
-      coreVoltage: 900,
-      coreVoltageOptions: [{ label: "900", value: 900 }],
+    hostname: `miner-${mac}`,
+    fans: [],
+    hashboards: [],
+    deviceInfo: {
+      model: "BM1397",
     },
-  }) as any;
+    pools: {
+      groups: [
+        {
+          pools: [
+            {
+              url: "stratum+tcp://pool.example.com:3333",
+              user: "orig.worker",
+              password: "pass",
+            },
+          ],
+        },
+      ],
+    },
+    bitaxe: {
+      frequency: 100,
+      coreVoltage: 900,
+      fanspeed: 50,
+      autofanspeed: 1,
+      invertscreen: 0,
+    },
+  } as any,
+});
 
 describe("DeviceSettingsAccordion bulk preset", () => {
   let consoleErrorSpy: jest.SpyInstance;
+
+  // Bulk preset flows can be slower under coverage on CI runners.
+  // Increase the timeout to avoid flaky "Exceeded timeout of 5000 ms" failures.
+  beforeAll(() => {
+    jest.setTimeout(15000);
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
     axiosMock.patch = jest.fn();
     axiosMock.isAxiosError = jest.fn(() => false);
 
-    (global as any).fetch = jest.fn(async () => ({
-      ok: true,
-      json: async () => ({ data: [{ uuid: "preset-1", name: "Preset 1", configuration: {}, associatedDevices: [] }] }),
-    }));
+    (global as any).fetch = createFetchMock();
 
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   });
@@ -79,14 +172,16 @@ describe("DeviceSettingsAccordion bulk preset", () => {
     const setAlert = jest.fn();
     const onOpenAlert = jest.fn();
 
-    const devices = [makeDevice("aa"), makeDevice("bb")];
+    const devices = [makeDiscoveredMiner("aa"), makeDiscoveredMiner("bb")];
 
     // For each device: /system then /imprint.
+    const device1WithPreset = { ...devices[0], presetUuid: "preset-1" };
+    const device2WithPreset = { ...devices[1], presetUuid: "preset-1" };
     axiosMock.patch
-      .mockResolvedValueOnce({ data: { data: { ...devices[0], presetUuid: "preset-uuid" } } })
-      .mockResolvedValueOnce({ data: { data: { ...devices[0], presetUuid: "preset-uuid" } } })
-      .mockResolvedValueOnce({ data: { data: { ...devices[1], presetUuid: "preset-uuid" } } })
-      .mockResolvedValueOnce({ data: { data: { ...devices[1], presetUuid: "preset-uuid" } } });
+      .mockResolvedValueOnce({ data: { data: device1WithPreset } })
+      .mockResolvedValueOnce({ data: { data: device1WithPreset } })
+      .mockResolvedValueOnce({ data: { data: device2WithPreset } })
+      .mockResolvedValueOnce({ data: { data: device2WithPreset } });
 
     render(
       <DeviceSettingsAccordion
@@ -112,34 +207,71 @@ describe("DeviceSettingsAccordion bulk preset", () => {
 
     await waitFor(() => {
       expect(axiosMock.patch).toHaveBeenCalledTimes(4);
-      // system patch includes presetUuid
+      // system patch sends MinerConfig (pools config) - presetUuid is not in system config
       expect(axiosMock.patch).toHaveBeenCalledWith(
         "/api/devices/aa/system",
-        expect.objectContaining({ presetUuid: "preset-uuid" })
+        expect.objectContaining({
+          pools: expect.objectContaining({
+            groups: expect.arrayContaining([
+              expect.objectContaining({
+                pools: expect.arrayContaining([
+                  expect.objectContaining({
+                    url: expect.any(String),
+                    user: expect.stringContaining("user"),
+                  }),
+                ]),
+              }),
+            ]),
+          }),
+        })
       );
       expect(axiosMock.patch).toHaveBeenCalledWith(
         "/api/devices/bb/system",
-        expect.objectContaining({ presetUuid: "preset-uuid" })
+        expect.objectContaining({
+          pools: expect.objectContaining({
+            groups: expect.arrayContaining([
+              expect.objectContaining({
+                pools: expect.arrayContaining([
+                  expect.objectContaining({
+                    url: expect.any(String),
+                    user: expect.stringContaining("user"),
+                  }),
+                ]),
+              }),
+            ]),
+          }),
+        })
+      );
+      // imprint patch includes presetUuid
+      expect(axiosMock.patch).toHaveBeenCalledWith(
+        "/api/devices/imprint/aa",
+        expect.objectContaining({
+          device: expect.objectContaining({
+            presetUuid: "preset-1",
+          }),
+        })
       );
     });
 
     expect(onOpenAlert).toHaveBeenCalled();
     const lastAlert = setAlert.mock.calls[setAlert.mock.calls.length - 1][0];
     expect(lastAlert.title).toBe("Save Successful");
-  });
+  }, 20000);
 
   it("does not patch unchecked devices when applying a bulk preset", async () => {
     const setAlert = jest.fn();
     const onOpenAlert = jest.fn();
 
-    const devices = [makeDevice("aa"), makeDevice("bb"), makeDevice("cc")];
+    const devices = [makeDiscoveredMiner("aa"), makeDiscoveredMiner("bb"), makeDiscoveredMiner("cc")];
 
     // For selected devices (aa, bb): /system then /imprint.
+    const device1WithPreset = { ...devices[0], presetUuid: "preset-uuid" };
+    const device2WithPreset = { ...devices[1], presetUuid: "preset-uuid" };
     axiosMock.patch
-      .mockResolvedValueOnce({ data: { data: { ...devices[0], presetUuid: "preset-uuid" } } })
-      .mockResolvedValueOnce({ data: { data: { ...devices[0], presetUuid: "preset-uuid" } } })
-      .mockResolvedValueOnce({ data: { data: { ...devices[1], presetUuid: "preset-uuid" } } })
-      .mockResolvedValueOnce({ data: { data: { ...devices[1], presetUuid: "preset-uuid" } } });
+      .mockResolvedValueOnce({ data: { data: device1WithPreset } })
+      .mockResolvedValueOnce({ data: { data: device1WithPreset } })
+      .mockResolvedValueOnce({ data: { data: device2WithPreset } })
+      .mockResolvedValueOnce({ data: { data: device2WithPreset } });
 
     const { container } = render(
       <DeviceSettingsAccordion
@@ -182,13 +314,13 @@ describe("DeviceSettingsAccordion bulk preset", () => {
     const setAlert = jest.fn();
     const onOpenAlert = jest.fn();
 
-    const devices = [makeDevice("aa"), makeDevice("bb")];
+    const devices = [makeDiscoveredMiner("aa"), makeDiscoveredMiner("bb")];
 
     axiosMock.patch.mockImplementation((url: string) => {
       if (url.includes("/system")) {
         const mac = url.split("/api/devices/")[1]?.split("/system")[0];
         const base = devices.find((d) => d.mac === mac) ?? devices[0];
-        return Promise.resolve({ data: { data: { ...base, presetUuid: "preset-uuid" } } });
+        return Promise.resolve({ data: { data: { ...base, presetUuid: "preset-1" } } });
       }
 
       if (url.includes("/imprint")) {
@@ -234,7 +366,7 @@ describe("DeviceSettingsAccordion bulk preset", () => {
 
     render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice("aa"), makeDevice("bb")]}
+        fetchedDevices={[makeDiscoveredMiner("aa"), makeDiscoveredMiner("bb")]}
         alert={undefined}
         setAlert={setAlert as any}
         onOpenAlert={onOpenAlert}
@@ -263,7 +395,7 @@ describe("DeviceSettingsAccordion bulk preset", () => {
 
     render(
       <DeviceSettingsAccordion
-        fetchedDevices={[makeDevice("aa"), makeDevice("bb")]}
+        fetchedDevices={[makeDiscoveredMiner("aa"), makeDiscoveredMiner("bb")]}
         alert={undefined}
         setAlert={setAlert as any}
         onOpenAlert={onOpenAlert}

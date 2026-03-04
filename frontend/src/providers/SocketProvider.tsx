@@ -11,7 +11,9 @@
 import axios from "axios";
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { io as ClientIO } from "socket.io-client";
-import { Device } from "@pluto/interfaces";
+import type { DiscoveredMiner } from "@pluto/interfaces";
+
+type Device = DiscoveredMiner;
 
 type SocketContextType = {
   socket: any | null;

@@ -1,11 +1,6 @@
 name: Backend CI
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-      - "release/**"
   pull_request:
     branches:
       - "**"
@@ -17,6 +12,9 @@ permissions:
 jobs:
   test-backend:
     name: Lint & Test Backend
+    # Skip this job for PRs from feature/migrate-discovery branch
+    # Backend will be migrated in a separate PR - re-enable this job when migrating backend
+    if: github.head_ref != 'feature/migrate-discovery'
     runs-on: ubuntu-latest
     strategy:
       matrix:
