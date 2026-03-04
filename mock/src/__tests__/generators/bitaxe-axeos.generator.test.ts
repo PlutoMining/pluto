@@ -89,6 +89,25 @@ describe("BitaxeAxeOSDataGenerator", () => {
     expect(result.macAddr).toBe("ff:ff:ff:ff:00:00");
   });
 
+  it("keeps a stable identity even when hostname is empty", () => {
+    const generator = new BitaxeAxeOSDataGenerator();
+    const validAsicModels = ["BM1370", "BM1368", "BM1366", "BM1397"];
+    const validBoardVersions = ["601", "401", "201", "101"];
+
+    const result1 = generator.generate("", 0);
+    const result2 = generator.generate("", 100);
+
+    expect(validAsicModels).toContain(result1.ASICModel);
+    expect(validBoardVersions).toContain(result1.boardVersion);
+    expect(typeof result1.version).toBe("string");
+    expect(result1.version).toMatch(/^v\d+\.\d+\.\d+$/);
+
+    // Same empty hostname should map to the same identity across calls
+    expect(result2.ASICModel).toBe(result1.ASICModel);
+    expect(result2.boardVersion).toBe(result1.boardVersion);
+    expect(result2.version).toBe(result1.version);
+  });
+
   it("merges overrides into generated base", () => {
     const generator = new BitaxeAxeOSDataGenerator();
     const overrides = { power: 99, hostname: "custom-host" };
